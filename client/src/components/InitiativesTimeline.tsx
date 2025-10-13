@@ -156,7 +156,7 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
                     return (
                       <td
                         key={sprint.sprintId}
-                        className="px-4 text-center relative"
+                        className={`text-center relative ${showColorBlock ? 'p-0' : 'px-4 py-3'}`}
                         data-testid={`cell-sprint-${initiative.id}-${sprint.sprintId}`}
                       >
                         <div
@@ -165,9 +165,11 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
                             borderRadius: showColorBlock 
                               ? `${isFirstColored ? '10px' : '0px'} ${isLastColored ? '10px' : '0px'} ${isLastColored ? '10px' : '0px'} ${isFirstColored ? '10px' : '0px'}`
                               : '0px',
-                            paddingTop: '5px',
-                            paddingBottom: '5px',
-                            height: '100%'
+                            padding: showColorBlock ? '5px 16px' : '0',
+                            minHeight: showColorBlock ? '40px' : 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                           }}
                         >
                           {initiativeSprint ? (
