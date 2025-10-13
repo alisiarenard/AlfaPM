@@ -247,27 +247,27 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
       <table className="w-full border-collapse">
           <thead className="sticky top-0 z-[110] bg-background">
             <tr className="border-b border-border">
-              <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px]">
+              <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px] max-w-[220px]">
                 <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Инициатива
                 </span>
               </th>
-              <th className="px-4 py-3 text-left w-[140px]">
+              <th className="sticky left-[220px] z-[120] bg-background px-4 py-3 text-left min-w-[140px] max-w-[140px]">
                 <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Дата начала
                 </span>
               </th>
-              <th className="px-4 py-3 text-left w-[100px]">
+              <th className="sticky left-[360px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
                 <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Размер
                 </span>
               </th>
-              <th className="px-4 py-3 text-left w-[100px]">
+              <th className="sticky left-[460px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
                 <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Выполнено
                 </span>
               </th>
-              <th className="px-4 py-3 text-left w-[120px]">
+              <th className="sticky left-[560px] z-[120] bg-background px-4 py-3 text-left min-w-[120px] max-w-[120px]">
                 <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Вовлечённость
                 </span>
@@ -297,27 +297,27 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                 className="border-b border-border hover-elevate transition-colors duration-150"
                 data-testid={`row-initiative-${initiative.id}`}
               >
-                <td className="sticky left-0 z-[100] bg-background px-4 py-3">
-                  <span className="font-medium text-sm text-foreground">
+                <td className="sticky left-0 z-[100] bg-background px-4 py-3 min-w-[220px] max-w-[220px] overflow-hidden">
+                  <span className="font-medium text-sm text-foreground truncate block">
                     {initiative.name}
                   </span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="sticky left-[220px] z-[100] bg-background px-4 py-3 min-w-[140px] max-w-[140px]">
                   <span className="font-mono text-sm text-foreground">
                     {format(new Date(initiative.startDate), "dd.MM.yyyy")}
                   </span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="sticky left-[360px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
                   <span className="text-sm text-foreground font-medium">
                     {initiative.size}
                   </span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="sticky left-[460px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
                   <span className="text-sm text-foreground font-medium">
                     {calculateCompletedPoints(initiative)}
                   </span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="sticky left-[560px] z-[100] bg-background px-4 py-3 min-w-[120px] max-w-[120px]">
                   <span className="text-sm text-foreground font-medium">
                     {calculateInvolvement(initiative)}%
                   </span>

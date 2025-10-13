@@ -56,12 +56,14 @@ Preferred communication style: Simple, everyday language.
   - Renders Tabs UI for multi-team navigation when data is present
   - Each tab shows team name and contains TeamHeader + InitiativesTimeline
 - `InitiativesTimeline`: Main visualization component showing initiatives mapped to sprint timelines with columns:
-  - Инициатива (Initiative name) - sticky left column
-  - Дата начала (Start date)
-  - Размер (Size) - total story points for initiative
-  - Выполнено (Completed) - sum of all story points across all sprints
-  - Вовлечённость (Involvement) - automatically calculated percentage of initiative's story points vs all story points in the initiative's time period
-  - Sprint columns with story points and colored status blocks
+  - **Fixed columns** (sticky, remain visible during horizontal scroll):
+    - Инициатива (Initiative name) - left: 0px, width: 220px
+    - Дата начала (Start date) - left: 220px, width: 140px
+    - Размер (Size) - left: 360px, width: 100px - total story points for initiative
+    - Выполнено (Completed) - left: 460px, width: 100px - sum of all story points across all sprints
+    - Вовлечённость (Involvement) - left: 560px, width: 120px - automatically calculated percentage of initiative's story points vs all story points in the initiative's time period
+  - **Scrollable columns** (horizontal scroll):
+    - Sprint columns with story points and colored status blocks (min-width: 140px each)
 - `TeamHeader`: Displays team information, velocity metrics, and innovation rate
   - Shows team name and board ID
   - Displays Velocity metric
