@@ -84,11 +84,6 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
                   Вовлечённость
                 </span>
               </th>
-              <th className="px-4 py-3 text-left w-[140px]">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Статус
-                </span>
-              </th>
               {allSprints.map((sprint) => (
                 <th
                   key={sprint.sprintId}
@@ -133,9 +128,6 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
                   <span className="text-sm text-foreground font-medium">
                     {initiative.involvement}%
                   </span>
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={initiative.status} />
                 </td>
 {(() => {
                   // Найти первый и последний цветной блок
