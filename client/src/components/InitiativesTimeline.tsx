@@ -137,31 +137,51 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
                 <td className="px-4 py-3">
                   <StatusBadge status={initiative.status} />
                 </td>
-                {allSprints.map((sprint, sprintIndex) => {
-                  const initiativeSprint = initiative.sprints.find(
-                    (s) => s.sprintId === sprint.sprintId
-                  );
-                  const showColorBlock = shouldShowColorBlock(initiative, sprint, sprintIndex);
+{(() => {
+                  // Найти первый и последний цветной блок
+                  const coloredBlocks = allSprints.map((s, idx) => ({ sprint: s, index: idx }))
+                    .filter(({ sprint, index }) => shouldShowColorBlock(initiative, sprint, index));
                   
-                  return (
-                    <td
-                      key={sprint.sprintId}
-                      className="px-4 py-3 text-center relative"
-                      style={{
-                        backgroundColor: showColorBlock ? getStatusColor(initiative.status) : 'hsl(220 12% 94% / 0.1)'
-                      }}
-                      data-testid={`cell-sprint-${initiative.id}-${sprint.sprintId}`}
-                    >
-                      {initiativeSprint ? (
-                        <span className="font-mono text-base font-semibold text-foreground relative z-10">
-                          {initiativeSprint.storyPoints}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm relative z-10">—</span>
-                      )}
-                    </td>
-                  );
-                })}
+                  const firstColoredIndex = coloredBlocks.length > 0 ? coloredBlocks[0].index : -1;
+                  const lastColoredIndex = coloredBlocks.length > 0 ? coloredBlocks[coloredBlocks.length - 1].index : -1;
+                  
+                  return allSprints.map((sprint, sprintIndex) => {
+                    const initiativeSprint = initiative.sprints.find(
+                      (s) => s.sprintId === sprint.sprintId
+                    );
+                    const showColorBlock = shouldShowColorBlock(initiative, sprint, sprintIndex);
+                    const isFirstColored = sprintIndex === firstColoredIndex;
+                    const isLastColored = sprintIndex === lastColoredIndex;
+                    
+                    return (
+                      <td
+                        key={sprint.sprintId}
+                        className="px-4 text-center relative"
+                        data-testid={`cell-sprint-${initiative.id}-${sprint.sprintId}`}
+                      >
+                        <div
+                          className="py-[5px]"
+                          style={{
+                            backgroundColor: showColorBlock ? getStatusColor(initiative.status) : 'transparent',
+                            borderRadius: showColorBlock 
+                              ? `${isFirstColored ? '10px' : '0px'} ${isLastColored ? '10px' : '0px'} ${isLastColored ? '10px' : '0px'} ${isFirstColored ? '10px' : '0px'}`
+                              : '0px',
+                            marginTop: '5px',
+                            marginBottom: '5px'
+                          }}
+                        >
+                          {initiativeSprint ? (
+                            <span className="font-mono text-base font-semibold text-foreground relative z-10">
+                              {initiativeSprint.storyPoints}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm relative z-10">—</span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  });
+                })()}
               </tr>
             ))}
           </tbody>
