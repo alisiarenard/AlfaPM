@@ -1,6 +1,5 @@
 import { TeamHeader } from "@/components/TeamHeader";
 import { InitiativesTimeline } from "@/components/InitiativesTimeline";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery } from "@tanstack/react-query";
@@ -65,7 +64,6 @@ export default function HomePage() {
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
           <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
-          <ThemeToggle />
         </div>
 
         <div className="max-w-4xl mx-auto p-6 mt-12">
@@ -113,19 +111,16 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
         <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              queryClient.setQueryData(["/api/team-data"], null);
-            }}
-            data-testid="button-clear-data"
-          >
-            Очистить данные
-          </Button>
-          <ThemeToggle />
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            queryClient.setQueryData(["/api/team-data"], null);
+          }}
+          data-testid="button-clear-data"
+        >
+          Очистить данные
+        </Button>
       </div>
       
       <TeamHeader team={teamData.team} />
