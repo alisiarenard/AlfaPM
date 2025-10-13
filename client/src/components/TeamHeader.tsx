@@ -1,11 +1,33 @@
-import { Building2, TrendingUp } from "lucide-react";
-import type { Team } from "@shared/schema";
+import { Building2, TrendingUp, Lightbulb } from "lucide-react";
+import type { Team, Initiative } from "@shared/schema";
 
 interface TeamHeaderProps {
   team: Team;
+  initiatives: Initiative[];
 }
 
-export function TeamHeader({ team }: TeamHeaderProps) {
+export function TeamHeader({ team, initiatives }: TeamHeaderProps) {
+  const calculateInnovationRate = (): string => {
+    let totalStoryPoints = 0;
+    let epicStoryPoints = 0;
+
+    initiatives.forEach(initiative => {
+      const initiativePoints = initiative.sprints.reduce((sum, sprint) => sum + sprint.storyPoints, 0);
+      totalStoryPoints += initiativePoints;
+      
+      if (initiative.type === "Epic") {
+        epicStoryPoints += initiativePoints;
+      }
+    });
+
+    if (totalStoryPoints === 0) {
+      return "—";
+    }
+
+    const rate = (epicStoryPoints / totalStoryPoints) * 100;
+    return `${Math.round(rate)}%`;
+  };
+
   return (
     <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
       <div className="flex items-center gap-3">
@@ -21,11 +43,20 @@ export function TeamHeader({ team }: TeamHeaderProps) {
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
-        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-        <div className="flex flex-col">
-          <span className="text-xs text-muted-foreground">Velocity</span>
-          <span className="text-sm font-semibold font-mono text-foreground">{team.velocity}</span>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">Velocity</span>
+            <span className="text-sm font-semibold font-mono text-foreground" data-testid="text-velocity">{team.velocity}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
+          <Lightbulb className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">Innovation Rate</span>
+            <span className="text-sm font-semibold font-mono text-foreground" data-testid="text-innovation-rate">{calculateInnovationRate()}</span>
+          </div>
         </div>
       </div>
     </div>

@@ -138,7 +138,7 @@ export default function HomePage() {
           
           {teamDataArray.map((teamData) => (
             <TabsContent key={teamData.team.teamId} value={teamData.team.teamId}>
-              <TeamHeader team={teamData.team} />
+              <TeamHeader team={teamData.team} initiatives={teamData.initiatives} />
               <div className="mt-6">
                 <InitiativesTimeline initiatives={teamData.initiatives} team={teamData.team} />
               </div>
