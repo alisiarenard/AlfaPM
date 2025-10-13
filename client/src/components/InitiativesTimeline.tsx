@@ -160,14 +160,14 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
                         data-testid={`cell-sprint-${initiative.id}-${sprint.sprintId}`}
                       >
                         <div
-                          className="py-[5px]"
                           style={{
                             backgroundColor: showColorBlock ? getStatusColor(initiative.status) : 'transparent',
                             borderRadius: showColorBlock 
                               ? `${isFirstColored ? '10px' : '0px'} ${isLastColored ? '10px' : '0px'} ${isLastColored ? '10px' : '0px'} ${isFirstColored ? '10px' : '0px'}`
                               : '0px',
-                            marginTop: '5px',
-                            marginBottom: '5px'
+                            paddingTop: '5px',
+                            paddingBottom: '5px',
+                            height: '100%'
                           }}
                         >
                           {initiativeSprint ? (
