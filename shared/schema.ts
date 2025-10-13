@@ -40,6 +40,7 @@ export interface Team {
   teamId: string;
   name: string;
   velocity: number;
+  sprintDuration?: number;
 }
 
 export interface TeamData {

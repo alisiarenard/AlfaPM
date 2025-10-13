@@ -9,6 +9,7 @@ const teamDataSchema = z.array(z.object({
     teamId: z.string(),
     name: z.string(),
     velocity: z.number(),
+    sprintDuration: z.number().optional(),
   }),
   initiatives: z.array(z.object({
     id: z.string(),

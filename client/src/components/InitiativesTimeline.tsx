@@ -1,13 +1,15 @@
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { StatusBadge } from "./StatusBadge";
-import type { Initiative, Sprint } from "@shared/schema";
+import type { Initiative, Sprint, Team } from "@shared/schema";
 
 interface InitiativesTimelineProps {
   initiatives: Initiative[];
+  team: Team;
 }
 
-export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
-  const allSprints = initiatives.reduce((acc, initiative) => {
+export function InitiativesTimeline({ initiatives, team }: InitiativesTimelineProps) {
+  // Собрать все спринты из данных
+  const dataSprints = initiatives.reduce((acc, initiative) => {
     initiative.sprints.forEach(sprint => {
       if (!acc.some(s => s.sprintId === sprint.sprintId)) {
         acc.push(sprint);
@@ -16,7 +18,107 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
     return acc;
   }, [] as Sprint[]);
 
-  allSprints.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  // Генерировать все спринты до конца года
+  const generateSprintsToEndOfYear = (): Sprint[] => {
+    // Валидация: если нет sprintDuration, нет данных или sprintDuration некорректен
+    if (!team.sprintDuration || team.sprintDuration <= 0 || dataSprints.length === 0) {
+      return dataSprints;
+    }
+
+    const sprintDuration = team.sprintDuration;
+    const endOfYear = new Date(new Date().getFullYear(), 11, 31); // 31 декабря текущего года
+    
+    // Сортируем существующие спринты по дате начала
+    const sortedDataSprints = [...dataSprints].sort(
+      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+    
+    // Найти максимальный номер спринта для продолжения нумерации
+    let maxSprintNum = 0;
+    sortedDataSprints.forEach(sprint => {
+      const num = parseInt(sprint.sprintId.replace(/\D/g, ''));
+      if (num > maxSprintNum) {
+        maxSprintNum = num;
+      }
+    });
+    let sprintCounter = maxSprintNum + 1;
+    
+    const allSprints: Sprint[] = [];
+    
+    // Функция для заполнения пробела синтетическими спринтами
+    const fillGap = (gapStartDate: Date, gapEndDate: Date, isLastGap: boolean = false) => {
+      let currentDate = new Date(gapStartDate);
+      
+      while (currentDate <= gapEndDate) {
+        // Рассчитываем дату окончания нового спринта
+        const calculatedEndDate = addDays(currentDate, sprintDuration - 1);
+        
+        // Ограничиваем дату окончания концом пробела или концом года
+        const maxAllowedEndDate = gapEndDate < endOfYear ? gapEndDate : endOfYear;
+        const endDate = calculatedEndDate <= maxAllowedEndDate ? calculatedEndDate : maxAllowedEndDate;
+        
+        // Проверяем, достаточно ли места для полноценного спринта
+        const daysBetween = Math.floor(
+          (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+        ) + 1;
+        
+        // Если это не последний пробел (до конца года), пропускаем слишком короткие спринты
+        // Для последнего пробела создаем частичный спринт до конца года
+        if (daysBetween < sprintDuration && !isLastGap) {
+          break;
+        }
+        
+        // Если это последний пробел и остались дни до конца года, создаем частичный спринт
+        if (daysBetween > 0 && currentDate <= gapEndDate) {
+          allSprints.push({
+            sprintId: `${sprintCounter}`,
+            name: `Спринт ${sprintCounter}`,
+            startDate: currentDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0],
+            storyPoints: 0
+          });
+          sprintCounter++;
+        }
+        
+        currentDate = addDays(endDate, 1);
+        
+        // Выходим если достигли конца пробела
+        if (currentDate > gapEndDate) {
+          break;
+        }
+      }
+    };
+    
+    // Заполняем от начала первого спринта, через все существующие спринты, до конца года
+    let lastEndDate: Date | null = null;
+    
+    for (let i = 0; i < sortedDataSprints.length; i++) {
+      const currentSprint = sortedDataSprints[i];
+      const currentStartDate = new Date(currentSprint.startDate);
+      
+      // Заполняем пробел перед текущим спринтом, если он есть
+      if (lastEndDate && lastEndDate < addDays(currentStartDate, -1)) {
+        const gapStart = addDays(lastEndDate, 1);
+        const gapEnd = addDays(currentStartDate, -1);
+        fillGap(gapStart, gapEnd);
+      }
+      
+      // Добавляем текущий существующий спринт
+      allSprints.push(currentSprint);
+      lastEndDate = new Date(currentSprint.endDate);
+    }
+    
+    // Заполняем пробел после последнего спринта до конца года
+    if (lastEndDate && lastEndDate < endOfYear) {
+      const gapStart = addDays(lastEndDate, 1);
+      fillGap(gapStart, endOfYear, true); // isLastGap=true для включения частичного спринта
+    }
+    
+    // Возвращаем уже отсортированный массив
+    return allSprints.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  };
+
+  const allSprints = generateSprintsToEndOfYear();
 
   const getStatusColor = (status: string): string => {
     const normalizedStatus = status.toLowerCase();

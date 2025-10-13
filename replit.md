@@ -71,9 +71,17 @@ Preferred communication style: Simple, everyday language.
 - Migration support configured with `drizzle-kit`
 
 **Data Models:**
-- `Team`: boardId, teamId, name, velocity
+- `Team`: boardId, teamId, name, velocity, sprintDuration (optional, number of days per sprint)
 - `Initiative`: id, name, status, startDate, size, involvement, sprints array
 - `Sprint`: sprintId, name, startDate, endDate, storyPoints
+
+**Sprint Auto-Generation:**
+- When `sprintDuration` is provided in team data, the system automatically generates sprint columns until the end of the current year
+- Existing sprints from data are always preserved
+- Generated sprints fill gaps between existing sprints and after the last sprint up to December 31
+- Sprint generation respects irregular sprint lengths and avoids overlaps
+- The final partial sprint is included even if shorter than sprintDuration
+- Generated sprints are named "Спринт N" where N continues from the maximum existing sprint number
 
 ### Authentication and Authorization
 

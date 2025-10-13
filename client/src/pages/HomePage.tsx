@@ -85,7 +85,7 @@ export default function HomePage() {
 
           <div className="space-y-4">
             <Textarea
-              placeholder='[{"team": {"boardId": "...", "teamId": "...", "name": "...", "velocity": 42}, "initiatives": [...]}]'
+              placeholder='[{"team": {"boardId": "...", "teamId": "...", "name": "...", "velocity": 42, "sprintDuration": 14}, "initiatives": [...]}]'
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
               className="min-h-[300px] font-mono text-sm"
@@ -126,7 +126,7 @@ export default function HomePage() {
       <TeamHeader team={teamData.team} />
       
       <div className="p-6">
-        <InitiativesTimeline initiatives={teamData.initiatives} />
+        <InitiativesTimeline initiatives={teamData.initiatives} team={teamData.team} />
       </div>
     </div>
   );
