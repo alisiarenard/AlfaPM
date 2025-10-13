@@ -46,7 +46,10 @@ Preferred communication style: Simple, everyday language.
   - Выполнено (Completed) - sum of all story points across all sprints
   - Вовлечённость (Involvement) - automatically calculated percentage of initiative's story points vs all story points in the initiative's time period
   - Sprint columns with story points and colored status blocks
-- `TeamHeader`: Displays team information and velocity metrics
+- `TeamHeader`: Displays team information, velocity metrics, and innovation rate
+  - Shows team name and board ID
+  - Displays Velocity metric
+  - Displays Innovation Rate metric (percentage of Epic story points vs total story points)
 - `StatusBadge`: Color-coded status indicators with icons
 - `ThemeToggle`: Theme switching between light and dark modes
 
@@ -104,6 +107,13 @@ Preferred communication style: Simple, everyday language.
 **Sprint Header Format:**
 - First row: Dates in dd.MM - dd.MM format (monospace font)
 - Second row: IR percentage (bold)
+
+**Innovation Rate Calculation:**
+- Displayed in TeamHeader next to Velocity metric
+- Formula: Innovation Rate = (Epic story points / Total story points) × 100%
+- Shows percentage of Epic initiative story points vs all story points
+- Rounds to nearest integer
+- Shows "—" when total story points = 0
 
 **Involvement (Вовлечённость) Calculation:**
 - Automatically calculated based on initiative's time period, not from JSON
