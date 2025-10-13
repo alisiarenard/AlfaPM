@@ -22,6 +22,12 @@ Preferred communication style: Simple, everyday language.
 - Wouter for lightweight client-side routing
 - React Query (TanStack Query) for server state management with infinite stale time and disabled refetching
 
+**Layout & Responsive Design:**
+- Main content container: max-width 1200px, centered with `mx-auto`
+- Applies to all states: empty state (upload form) and data state (timeline view)
+- Timeline table: horizontal scroll within container when wider than max-width
+- Responsive: full width on narrow screens, centered with whitespace on wide screens
+
 **UI Component System:**
 - Shadcn/ui components built on Radix UI primitives
 - Tailwind CSS for styling with custom design tokens

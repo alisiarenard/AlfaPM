@@ -243,9 +243,8 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
   };
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="inline-block min-w-full">
-        <table className="w-full border-collapse">
+    <div className="w-full overflow-x-auto max-w-full">
+      <table className="w-full border-collapse">
           <thead className="sticky top-0 z-[110] bg-background">
             <tr className="border-b border-border">
               <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px]">
@@ -374,7 +373,6 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
             ))}
           </tbody>
         </table>
-      </div>
     </div>
   );
 }
