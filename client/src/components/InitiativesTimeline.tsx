@@ -280,9 +280,6 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                   data-testid={`header-sprint-${sprint.sprintId}`}
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {sprint.name}
-                    </span>
                     <span className="text-xs text-muted-foreground font-mono">
                       {format(new Date(sprint.startDate), "dd.MM")} - {format(new Date(sprint.endDate), "dd.MM")}
                     </span>

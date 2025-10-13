@@ -84,8 +84,12 @@ Preferred communication style: Simple, everyday language.
 **Investment Ratio (IR) Calculation:**
 - Sprint headers display IR (Investment Ratio) as the percentage of Epic initiative story points vs. total sprint story points
 - Formula: IR = (Epic story points / Total story points) × 100%
-- Displayed in sprint header as third row below dates
+- Displayed in sprint header as second row below dates
 - Shows "—" for sprints with no story points
+
+**Sprint Header Format:**
+- First row: Dates in dd.MM - dd.MM format (monospace font)
+- Second row: IR percentage (bold)
 
 **Involvement (Вовлечённость) Calculation:**
 - Automatically calculated based on initiative's time period, not from JSON
