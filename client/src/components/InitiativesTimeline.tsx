@@ -164,9 +164,9 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
     <div className="w-full overflow-x-auto">
       <div className="inline-block min-w-full">
         <table className="w-full border-collapse">
-          <thead className="sticky top-0 z-10 bg-background">
+          <thead className="sticky top-0 z-[110] bg-background">
             <tr className="border-b border-border">
-              <th className="sticky left-0 z-20 bg-background px-4 py-3 text-left min-w-[220px]">
+              <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px]">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Инициатива
                 </span>
@@ -211,7 +211,7 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                 className="border-b border-border hover-elevate transition-colors duration-150"
                 data-testid={`row-initiative-${initiative.id}`}
               >
-                <td className="sticky left-0 z-10 bg-background px-4 py-3">
+                <td className="sticky left-0 z-[100] bg-background px-4 py-3">
                   <span className="font-medium text-sm text-foreground">
                     {initiative.name}
                   </span>
