@@ -146,7 +146,7 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
                   return (
                     <td
                       key={sprint.sprintId}
-                      className={`px-4 py-3 text-center relative ${showColorBlock ? getStatusColor(initiative.status) + '/20' : 'bg-muted/10'}`}
+                      className={`px-4 py-3 text-center relative ${showColorBlock ? getStatusColor(initiative.status) + '/40' : 'bg-muted/10'}`}
                       data-testid={`cell-sprint-${initiative.id}-${sprint.sprintId}`}
                     >
                       {initiativeSprint ? (
