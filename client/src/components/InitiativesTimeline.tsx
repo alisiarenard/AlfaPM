@@ -150,6 +150,58 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
     return initiative.sprints.reduce((sum, sprint) => sum + sprint.storyPoints, 0);
   };
 
+  // Рассчитать вовлечённость инициативы автоматически
+  const calculateInvolvement = (initiative: Initiative): string => {
+    if (initiative.sprints.length === 0) {
+      return '0';
+    }
+
+    // Найти период инициативы: от даты начала до последнего спринта
+    const initiativeStartDate = new Date(initiative.startDate);
+    
+    const lastInitiativeSprint = initiative.sprints.reduce((latest, s) => {
+      const currentSprintIndex = allSprints.findIndex(as => as.sprintId === s.sprintId);
+      const latestSprintIndex = allSprints.findIndex(as => as.sprintId === latest.sprintId);
+      return currentSprintIndex > latestSprintIndex ? s : latest;
+    }, initiative.sprints[0]);
+    
+    const lastSprintEndDate = new Date(lastInitiativeSprint.endDate);
+    
+    // Найти все спринты, которые попадают в период инициативы (по датам)
+    const sprintsInPeriod = allSprints.filter(sprint => {
+      const sprintStartDate = new Date(sprint.startDate);
+      const sprintEndDate = new Date(sprint.endDate);
+      
+      // Спринт попадает в период, если он хотя бы частично пересекается с периодом инициативы
+      return sprintStartDate <= lastSprintEndDate && sprintEndDate >= initiativeStartDate;
+    });
+    
+    const sprintIdsInPeriod = new Set(sprintsInPeriod.map(s => s.sprintId));
+    
+    // Сумма сторипойнтов текущей инициативы за этот период
+    const initiativeTotal = initiative.sprints
+      .filter(s => sprintIdsInPeriod.has(s.sprintId))
+      .reduce((sum, sprint) => sum + sprint.storyPoints, 0);
+    
+    // Сумма всех сторипойнтов всех инициатив за тот же период
+    let totalAllInitiatives = 0;
+    
+    initiatives.forEach(init => {
+      init.sprints.forEach(sprint => {
+        if (sprintIdsInPeriod.has(sprint.sprintId)) {
+          totalAllInitiatives += sprint.storyPoints;
+        }
+      });
+    });
+    
+    if (totalAllInitiatives === 0) {
+      return '0';
+    }
+    
+    const involvement = Math.round((initiativeTotal / totalAllInitiatives) * 100);
+    return `${involvement}`;
+  };
+
   const getStatusColor = (status: string): string => {
     const normalizedStatus = status.toLowerCase();
     switch (normalizedStatus) {
@@ -271,7 +323,7 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-sm text-foreground font-medium">
-                    {initiative.involvement}%
+                    {calculateInvolvement(initiative)}%
                   </span>
                 </td>
 {(() => {

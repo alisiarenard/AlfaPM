@@ -38,7 +38,7 @@ Preferred communication style: Simple, everyday language.
   - Дата начала (Start date)
   - Размер (Size) - total story points for initiative
   - Выполнено (Completed) - sum of all story points across all sprints
-  - Вовлечённость (Involvement) - involvement percentage
+  - Вовлечённость (Involvement) - automatically calculated percentage of initiative's story points vs all story points in the initiative's time period
   - Sprint columns with story points and colored status blocks
 - `TeamHeader`: Displays team information and velocity metrics
 - `StatusBadge`: Color-coded status indicators with icons
@@ -86,6 +86,13 @@ Preferred communication style: Simple, everyday language.
 - Formula: IR = (Epic story points / Total story points) × 100%
 - Displayed in sprint header as third row below dates
 - Shows "—" for sprints with no story points
+
+**Involvement (Вовлечённость) Calculation:**
+- Automatically calculated based on initiative's time period, not from JSON
+- Period: from initiative start date to the end date of last sprint in initiative
+- Formula: Involvement = (Initiative's story points / All story points in period) × 100%
+- Includes ALL sprints in the period when calculating total, even if initiative has no points in some sprints
+- Example: Initiative A has 100 points in Sprints 1&3, period is Sprint 1-3, total in period is 160 (including Sprint 2 from other initiatives) → Involvement = 63%
 
 **Sprint Auto-Generation:**
 - When `sprintDuration` is provided in team data, the system automatically generates sprint columns until the end of the current year
