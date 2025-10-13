@@ -2,6 +2,7 @@ import { TeamHeader } from "@/components/TeamHeader";
 import { InitiativesTimeline } from "@/components/InitiativesTimeline";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Upload, AlertCircle } from "lucide-react";
@@ -46,8 +47,6 @@ export default function HomePage() {
     }
   };
 
-  const teamData = teamDataArray?.[0];
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -59,7 +58,7 @@ export default function HomePage() {
     );
   }
 
-  if (!teamData) {
+  if (!teamDataArray || teamDataArray.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
@@ -123,10 +122,29 @@ export default function HomePage() {
         </Button>
       </div>
       
-      <TeamHeader team={teamData.team} />
-      
       <div className="p-6">
-        <InitiativesTimeline initiatives={teamData.initiatives} team={teamData.team} />
+        <Tabs defaultValue={teamDataArray[0].team.teamId} className="w-full">
+          <TabsList className="mb-6" data-testid="tabs-teams">
+            {teamDataArray.map((teamData) => (
+              <TabsTrigger 
+                key={teamData.team.teamId} 
+                value={teamData.team.teamId}
+                data-testid={`tab-team-${teamData.team.teamId}`}
+              >
+                {teamData.team.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          {teamDataArray.map((teamData) => (
+            <TabsContent key={teamData.team.teamId} value={teamData.team.teamId}>
+              <TeamHeader team={teamData.team} />
+              <div className="mt-6">
+                <InitiativesTimeline initiatives={teamData.initiatives} team={teamData.team} />
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
     </div>
   );
