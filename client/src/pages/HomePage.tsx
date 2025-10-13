@@ -1,91 +1,131 @@
-import { useState } from "react";
 import { TeamHeader } from "@/components/TeamHeader";
 import { InitiativesTimeline } from "@/components/InitiativesTimeline";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Upload, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { TeamData } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function HomePage() {
-  // TODO: remove mock functionality - replace with real data from API
-  const [teamData] = useState<TeamData>({
-    team: {
-      boardId: "BOARD-2024-Q1",
-      teamId: "TEAM-PLATFORM-01",
-      name: "Platform Engineering Team",
-      velocity: 42
-    },
-    initiatives: [
-      {
-        id: "INIT-001",
-        name: "Cloud Infrastructure Migration",
-        status: "Active",
-        startDate: "2024-01-22",
-        size: 144,
-        involvement: 80,
-        sprints: [
-          { sprintId: "SP-2024-02", name: "Sprint 2", startDate: "2024-01-22", endDate: "2024-02-04", storyPoints: 18 },
-          { sprintId: "SP-2024-03", name: "Sprint 3", startDate: "2024-02-05", endDate: "2024-02-18", storyPoints: 24 },
-          { sprintId: "SP-2024-04", name: "Sprint 4", startDate: "2024-02-19", endDate: "2024-03-03", storyPoints: 19 },
-        ]
-      },
-      {
-        id: "INIT-002",
-        name: "API Gateway Redesign",
-        status: "Planned",
-        startDate: "2024-02-05",
-        size: 89,
-        involvement: 60,
-        sprints: [
-          { sprintId: "SP-2024-03", name: "Sprint 3", startDate: "2024-02-05", endDate: "2024-02-18", storyPoints: 21 },
-          { sprintId: "SP-2024-04", name: "Sprint 4", startDate: "2024-02-19", endDate: "2024-03-03", storyPoints: 17 },
-          { sprintId: "SP-2024-05", name: "Sprint 5", startDate: "2024-03-04", endDate: "2024-03-17", storyPoints: 15 },
-        ]
-      },
-      {
-        id: "INIT-003",
-        name: "Security Compliance Audit",
-        status: "Completed",
-        startDate: "2024-01-08",
-        size: 55,
-        involvement: 100,
-        sprints: [
-          { sprintId: "SP-2024-01", name: "Sprint 1", startDate: "2024-01-08", endDate: "2024-01-21", storyPoints: 13 },
-          { sprintId: "SP-2024-02", name: "Sprint 2", startDate: "2024-01-22", endDate: "2024-02-04", storyPoints: 8 },
-        ]
-      },
-      {
-        id: "INIT-004",
-        name: "Mobile App Performance Optimization",
-        status: "At Risk",
-        startDate: "2024-01-15",
-        size: 72,
-        involvement: 75,
-        sprints: [
-          { sprintId: "SP-2024-01", name: "Sprint 1", startDate: "2024-01-08", endDate: "2024-01-21", storyPoints: 18 },
-          { sprintId: "SP-2024-02", name: "Sprint 2", startDate: "2024-01-22", endDate: "2024-02-04", storyPoints: 12 },
-          { sprintId: "SP-2024-03", name: "Sprint 3", startDate: "2024-02-05", endDate: "2024-02-18", storyPoints: 8 },
-        ]
-      },
-      {
-        id: "INIT-005",
-        name: "Data Analytics Platform",
-        status: "Active",
-        startDate: "2024-02-12",
-        size: 120,
-        involvement: 90,
-        sprints: [
-          { sprintId: "SP-2024-03", name: "Sprint 3", startDate: "2024-02-05", endDate: "2024-02-18", storyPoints: 16 },
-          { sprintId: "SP-2024-04", name: "Sprint 4", startDate: "2024-02-19", endDate: "2024-03-03", storyPoints: 22 },
-          { sprintId: "SP-2024-05", name: "Sprint 5", startDate: "2024-03-04", endDate: "2024-03-17", storyPoints: 19 },
-        ]
-      }
-    ]
+  const [jsonInput, setJsonInput] = useState("");
+  const [uploadError, setUploadError] = useState("");
+
+  const { data: teamDataArray, isLoading, error } = useQuery<TeamData[]>({
+    queryKey: ["/api/team-data"],
   });
+
+  const handleUpload = async () => {
+    setUploadError("");
+    
+    try {
+      const parsedData = JSON.parse(jsonInput);
+      
+      const response = await fetch("/api/team-data", {
+        method: "POST",
+        body: JSON.stringify(parsedData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+      
+      await queryClient.invalidateQueries({ queryKey: ["/api/team-data"] });
+      setJsonInput("");
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        setUploadError("Invalid JSON format. Please check your data.");
+      } else {
+        setUploadError("Failed to upload data. Please try again.");
+      }
+    }
+  };
+
+  const teamData = teamDataArray?.[0];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Загрузка данных...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!teamData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
+          <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
+          <ThemeToggle />
+        </div>
+
+        <div className="max-w-4xl mx-auto p-6 mt-12">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-semibold text-foreground mb-2">
+              Загрузите данные инициатив
+            </h1>
+            <p className="text-muted-foreground">
+              Вставьте JSON данные в формате API для отображения временной шкалы
+            </p>
+          </div>
+
+          {uploadError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{uploadError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4">
+            <Textarea
+              placeholder='[{"team": {"boardId": "...", "teamId": "...", "name": "...", "velocity": 42}, "initiatives": [...]}]'
+              value={jsonInput}
+              onChange={(e) => setJsonInput(e.target.value)}
+              className="min-h-[300px] font-mono text-sm"
+              data-testid="textarea-json-input"
+            />
+            
+            <Button 
+              onClick={handleUpload} 
+              className="w-full gap-2"
+              disabled={!jsonInput.trim()}
+              data-testid="button-upload-data"
+            >
+              <Upload className="h-4 w-4" />
+              Загрузить данные
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
         <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              queryClient.setQueryData(["/api/team-data"], null);
+            }}
+            data-testid="button-clear-data"
+          >
+            Очистить данные
+          </Button>
+          <ThemeToggle />
+        </div>
       </div>
       
       <TeamHeader team={teamData.team} />
