@@ -248,27 +248,27 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
           <thead className="sticky top-0 z-[110] bg-background">
             <tr className="border-b border-border">
               <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px]">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Инициатива
                 </span>
               </th>
               <th className="px-4 py-3 text-left w-[140px]">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Дата начала
                 </span>
               </th>
               <th className="px-4 py-3 text-left w-[100px]">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Размер
                 </span>
               </th>
               <th className="px-4 py-3 text-left w-[100px]">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Выполнено
                 </span>
               </th>
               <th className="px-4 py-3 text-left w-[120px]">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                   Вовлечённость
                 </span>
               </th>

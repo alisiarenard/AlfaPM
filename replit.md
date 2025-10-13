@@ -23,9 +23,12 @@ Preferred communication style: Simple, everyday language.
 - React Query (TanStack Query) for server state management with infinite stale time and disabled refetching
 
 **Layout & Responsive Design:**
-- Main content container: max-width 1200px, centered with `mx-auto`
+- Main content container with responsive width:
+  - Viewport < 1400px: max-width 1200px
+  - Viewport >= 1400px: 80% of viewport width (80vw)
+- Container centered with `mx-auto`
 - Applies to all states: empty state (upload form) and data state (timeline view)
-- Timeline table: horizontal scroll within container when wider than max-width
+- Timeline table: horizontal scroll within container when wider than container width
 - Responsive: full width on narrow screens, centered with whitespace on wide screens
 
 **UI Component System:**

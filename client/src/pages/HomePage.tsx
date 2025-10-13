@@ -61,7 +61,7 @@ export default function HomePage() {
   if (!teamDataArray || teamDataArray.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1200px] min-[1400px]:max-w-[80vw] min-[1400px]:w-[80vw] mx-auto">
           <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
             <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
           </div>
@@ -110,7 +110,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[1200px] mx-auto">
+      <div className="max-w-[1200px] min-[1400px]:max-w-[80vw] min-[1400px]:w-[80vw] mx-auto">
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
           <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
           <Button
