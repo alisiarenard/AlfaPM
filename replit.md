@@ -33,7 +33,13 @@ Preferred communication style: Simple, everyday language.
 - Hover and active state elevation system using CSS variables (--elevate-1, --elevate-2)
 
 **Key Components:**
-- `InitiativesTimeline`: Main visualization component showing initiatives mapped to sprint timelines
+- `InitiativesTimeline`: Main visualization component showing initiatives mapped to sprint timelines with columns:
+  - Инициатива (Initiative name) - sticky left column
+  - Дата начала (Start date)
+  - Размер (Size) - total story points for initiative
+  - Выполнено (Completed) - sum of all story points across all sprints
+  - Вовлечённость (Involvement) - involvement percentage
+  - Sprint columns with story points and colored status blocks
 - `TeamHeader`: Displays team information and velocity metrics
 - `StatusBadge`: Color-coded status indicators with icons
 - `ThemeToggle`: Theme switching between light and dark modes

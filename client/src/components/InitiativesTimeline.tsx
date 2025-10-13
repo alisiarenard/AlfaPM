@@ -145,6 +145,11 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
     return `${ir}%`;
   };
 
+  // Рассчитать сумму сторипойнтов для инициативы
+  const calculateCompletedPoints = (initiative: Initiative): number => {
+    return initiative.sprints.reduce((sum, sprint) => sum + sprint.storyPoints, 0);
+  };
+
   const getStatusColor = (status: string): string => {
     const normalizedStatus = status.toLowerCase();
     switch (normalizedStatus) {
@@ -206,6 +211,11 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                   Размер
                 </span>
               </th>
+              <th className="px-4 py-3 text-left w-[100px]">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Выполнено
+                </span>
+              </th>
               <th className="px-4 py-3 text-left w-[120px]">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Вовлечённость
@@ -252,6 +262,11 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                 <td className="px-4 py-3">
                   <span className="text-sm text-foreground font-medium">
                     {initiative.size}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-sm text-foreground font-medium">
+                    {calculateCompletedPoints(initiative)}
                   </span>
                 </td>
                 <td className="px-4 py-3">
