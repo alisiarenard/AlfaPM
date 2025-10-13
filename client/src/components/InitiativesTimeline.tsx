@@ -18,20 +18,20 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
 
   allSprints.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     const normalizedStatus = status.toLowerCase();
     switch (normalizedStatus) {
       case "active":
       case "in progress":
-        return "bg-status-active";
+        return "hsl(142 76% 45% / 0.4)";
       case "planned":
-        return "bg-status-planned";
+        return "hsl(215 80% 60% / 0.4)";
       case "completed":
-        return "bg-status-completed";
+        return "hsl(220 8% 55% / 0.4)";
       case "at risk":
-        return "bg-status-at-risk";
+        return "hsl(25 95% 55% / 0.4)";
       default:
-        return "bg-muted";
+        return "hsl(220 12% 94% / 0.3)";
     }
   };
 
@@ -146,7 +146,10 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
                   return (
                     <td
                       key={sprint.sprintId}
-                      className={`px-4 py-3 text-center relative ${showColorBlock ? getStatusColor(initiative.status) + '/40' : 'bg-muted/10'}`}
+                      className="px-4 py-3 text-center relative"
+                      style={{
+                        backgroundColor: showColorBlock ? getStatusColor(initiative.status) : 'hsl(220 12% 94% / 0.1)'
+                      }}
                       data-testid={`cell-sprint-${initiative.id}-${sprint.sprintId}`}
                     >
                       {initiativeSprint ? (
