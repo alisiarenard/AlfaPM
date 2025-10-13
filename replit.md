@@ -8,6 +8,12 @@ The application supports **multiple teams** in a single JSON array, with each te
 
 The application follows a utility-first design philosophy inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles, prioritizing information density with clarity and scannable data presentation.
 
+### Initial Data Loading
+- Team data is stored in `client/public/team-data.json`
+- On first load, if no data exists, the application automatically loads data from this file
+- Users can also manually upload custom JSON data through the UI
+- Data includes two teams: "Каркас" and "Общие сервисы"
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

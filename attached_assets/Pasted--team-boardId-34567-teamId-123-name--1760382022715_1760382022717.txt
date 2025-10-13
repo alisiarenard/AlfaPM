@@ -1,0 +1,224 @@
+[
+  {
+    "team": {
+      "boardId": "34567",
+      "teamId": "123",
+      "name": "Каркас",
+      "velocity": 26,
+      "sprintDuration": 14
+    },
+    "initiatives": [
+      {
+        "id": "1234",
+        "name": "Поддержка бизнеса",
+        "status": "In Progress",
+        "startDate": "2025-01-10",
+        "size": 300,
+        "involvement": 100,
+		"type": "Support",
+        "sprints": [
+          {
+            "sprintId": "34",
+            "name": "10.01. - 24.01",
+            "startDate": "2025-01-10",
+            "endDate": "2025-01-24",
+            "storyPoints": 20
+          },
+          {
+            "sprintId": "35",
+            "name": "25.01. - 10.02",
+            "startDate": "2025-01-25",
+            "endDate": "2025-02-10",
+            "storyPoints": 17
+          }
+        ]
+      },
+ {
+        "id": "1235",
+        "name": "Технические задачи",
+        "status": "In Progress",
+        "startDate": "2025-01-10",
+        "size": 300,
+   "involvement": 100,
+"type": "Techical Debt",
+        "sprints": [
+          {
+            "sprintId": "34",
+            "name": "10.01. - 24.01",
+            "startDate": "2025-01-10",
+            "endDate": "2025-01-24",
+            "storyPoints": 20
+          },
+          {
+            "sprintId": "35",
+            "name": "25.01. - 10.02",
+            "startDate": "2025-01-25",
+            "endDate": "2025-02-10",
+            "storyPoints": 17
+          }
+        ]
+ },
+ {
+        "id": "1236",
+        "name": "Повышение цены ОСАГО",
+        "status": "In Progress",
+        "startDate": "2025-02-01",
+        "size": 300,
+   "involvement": 100,
+"type": "Epic",
+        "sprints": [
+          {
+            "sprintId": "34",
+            "name": "25.01. - 10.02",
+            "startDate": "2025-01-25",
+            "endDate": "2025-0210",
+            "storyPoints": 20
+          },
+          {
+            "sprintId": "35",
+            "name": "11.02. - 25.02",
+            "startDate": "2025-02-11",
+            "endDate": "2025-02-25",
+            "storyPoints": 17
+          }
+        ]
+ },
+ {
+        "id": "1238",
+        "name": "КАСКО райдеры",
+        "status": "In Progress",
+        "startDate": "2025-01-10",
+        "size": 300,
+   "involvement": 100,
+"type": "Epic",
+        "sprints": [
+          {
+            "sprintId": "34",
+            "name": "10.01. - 24.01",
+            "startDate": "2025-01-10",
+            "endDate": "2025-01-24",
+            "storyPoints": 20
+          },
+          {
+            "sprintId": "35",
+            "name": "25.01. - 10.02",
+            "startDate": "2025-01-25",
+            "endDate": "2025-02-10",
+            "storyPoints": 17
+          }
+        ]
+      }
+    ]
+  },
+{
+    "team": {
+      "boardId": "34568",
+      "teamId": "124",
+      "name": "Общие сервисы",
+      "velocity": 26,
+      "sprintDuration": 14
+    },
+    "initiatives": [
+      {
+        "id": "1234",
+        "name": "Поддержка бизнеса",
+        "status": "In Progress",
+        "startDate": "2025-01-10",
+        "size": 300,
+        "involvement": 100,
+		"type": "Support",
+        "sprints": [
+          {
+            "sprintId": "34",
+            "name": "10.01. - 24.01",
+            "startDate": "2025-01-10",
+            "endDate": "2025-01-24",
+            "storyPoints": 20
+          },
+          {
+            "sprintId": "35",
+            "name": "25.01. - 10.02",
+            "startDate": "2025-01-25",
+            "endDate": "2025-02-10",
+            "storyPoints": 17
+          }
+        ]
+      },
+ {
+        "id": "1235",
+        "name": "Технические задачи",
+        "status": "In Progress",
+        "startDate": "2025-01-10",
+        "size": 300,
+   "involvement": 100,
+"type": "Techical Debt",
+        "sprints": [
+          {
+            "sprintId": "34",
+            "name": "10.01. - 24.01",
+            "startDate": "2025-01-10",
+            "endDate": "2025-01-24",
+            "storyPoints": 20
+          },
+          {
+            "sprintId": "35",
+            "name": "25.01. - 10.02",
+            "startDate": "2025-01-25",
+            "endDate": "2025-02-10",
+            "storyPoints": 17
+          }
+        ]
+ },
+ {
+        "id": "1236",
+        "name": "Повышение цены ОСАГО",
+        "status": "In Progress",
+        "startDate": "2025-02-01",
+        "size": 300,
+   "involvement": 100,
+"type": "Epic",
+        "sprints": [
+          {
+            "sprintId": "34",
+            "name": "25.01. - 10.02",
+            "startDate": "2025-01-25",
+            "endDate": "2025-0210",
+            "storyPoints": 20
+          },
+          {
+            "sprintId": "35",
+            "name": "11.02. - 25.02",
+            "startDate": "2025-02-11",
+            "endDate": "2025-02-25",
+            "storyPoints": 17
+          }
+        ]
+ },
+ {
+        "id": "1238",
+        "name": "КАСКО райдеры",
+        "status": "In Progress",
+        "startDate": "2025-01-10",
+        "size": 300,
+   "involvement": 100,
+"type": "Epic",
+        "sprints": [
+          {
+            "sprintId": "34",
+            "name": "10.01. - 24.01",
+            "startDate": "2025-01-10",
+            "endDate": "2025-01-24",
+            "storyPoints": 20
+          },
+          {
+            "sprintId": "35",
+            "name": "25.01. - 10.02",
+            "startDate": "2025-01-25",
+            "endDate": "2025-02-10",
+            "storyPoints": 17
+          }
+        ]
+      }
+    ]
+  }
+]

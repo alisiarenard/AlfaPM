@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { TeamData } from "@shared/schema";
@@ -13,10 +13,49 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 export default function HomePage() {
   const [jsonInput, setJsonInput] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
 
   const { data: teamDataArray, isLoading, error } = useQuery<TeamData[]>({
     queryKey: ["/api/team-data"],
   });
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      if (!initialLoadAttempted && (!teamDataArray || teamDataArray.length === 0)) {
+        setInitialLoadAttempted(true);
+        try {
+          const response = await fetch("/team-data.json");
+          if (!response.ok) {
+            console.error("Failed to fetch team-data.json:", response.status);
+            setUploadError("Не удалось загрузить файл с данными команд");
+            return;
+          }
+
+          const data = await response.json();
+          const postResponse = await fetch("/api/team-data", {
+            method: "POST",
+            body: JSON.stringify(data),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!postResponse.ok) {
+            console.error("Failed to upload initial data:", postResponse.status);
+            setUploadError("Не удалось загрузить начальные данные");
+            return;
+          }
+
+          await queryClient.invalidateQueries({ queryKey: ["/api/team-data"] });
+        } catch (error) {
+          console.error("Failed to load initial data:", error);
+          setUploadError("Ошибка при загрузке начальных данных");
+        }
+      }
+    };
+
+    loadInitialData();
+  }, [teamDataArray, initialLoadAttempted]);
 
   const handleUpload = async () => {
     setUploadError("");
@@ -54,6 +93,19 @@ export default function HomePage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Загрузка данных...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Ошибка при загрузке данных. Пожалуйста, перезагрузите страницу.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
