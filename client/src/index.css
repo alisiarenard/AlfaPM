@@ -353,3 +353,15 @@
     inset: -1px;
   }
 }
+
+/* Responsive container width */
+.responsive-container {
+  max-width: 1200px;
+}
+
+@media (min-width: 1400px) {
+  .responsive-container {
+    max-width: 80vw !important;
+    width: 80vw !important;
+  }
+}

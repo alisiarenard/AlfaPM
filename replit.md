@@ -24,12 +24,13 @@ Preferred communication style: Simple, everyday language.
 
 **Layout & Responsive Design:**
 - Main content container with responsive width:
-  - Viewport < 1400px: max-width 1200px
-  - Viewport >= 1400px: 80% of viewport width (80vw)
+  - Viewport < 1280px (xl breakpoint): max-width 1200px
+  - Viewport >= 1280px (xl breakpoint): 80% of viewport width
 - Container centered with `mx-auto`
 - Applies to all states: empty state (upload form) and data state (timeline view)
 - Timeline table: horizontal scroll within container when wider than container width
 - Responsive: full width on narrow screens, centered with whitespace on wide screens
+- Uses Tailwind classes: `max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto`
 
 **UI Component System:**
 - Shadcn/ui components built on Radix UI primitives
