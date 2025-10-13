@@ -29,6 +29,7 @@ export interface Initiative {
   id: string;
   name: string;
   status: string;
+  type?: string;
   startDate: string;
   size: number;
   involvement: number;

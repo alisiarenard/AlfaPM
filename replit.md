@@ -72,8 +72,14 @@ Preferred communication style: Simple, everyday language.
 
 **Data Models:**
 - `Team`: boardId, teamId, name, velocity, sprintDuration (optional, number of days per sprint)
-- `Initiative`: id, name, status, startDate, size, involvement, sprints array
+- `Initiative`: id, name, status, type (optional, e.g., "Epic" or "Feature"), startDate, size, involvement, sprints array
 - `Sprint`: sprintId, name, startDate, endDate, storyPoints
+
+**Investment Ratio (IR) Calculation:**
+- Sprint headers display IR (Investment Ratio) as the percentage of Epic initiative story points vs. total sprint story points
+- Formula: IR = (Epic story points / Total story points) × 100%
+- Displayed in sprint header as third row below dates
+- Shows "—" for sprints with no story points
 
 **Sprint Auto-Generation:**
 - When `sprintDuration` is provided in team data, the system automatically generates sprint columns until the end of the current year

@@ -120,6 +120,31 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
 
   const allSprints = generateSprintsToEndOfYear();
 
+  // Рассчитать IR (Investment Ratio) для каждого спринта
+  const calculateSprintIR = (sprint: Sprint): string => {
+    let totalStoryPoints = 0;
+    let epicStoryPoints = 0;
+
+    initiatives.forEach(initiative => {
+      const initiativeSprint = initiative.sprints.find(s => s.sprintId === sprint.sprintId);
+      if (initiativeSprint && initiativeSprint.storyPoints > 0) {
+        totalStoryPoints += initiativeSprint.storyPoints;
+        
+        // Если type === "Epic", добавляем к epicStoryPoints
+        if (initiative.type?.toLowerCase() === 'epic') {
+          epicStoryPoints += initiativeSprint.storyPoints;
+        }
+      }
+    });
+
+    if (totalStoryPoints === 0) {
+      return '—';
+    }
+
+    const ir = Math.round((epicStoryPoints / totalStoryPoints) * 100);
+    return `${ir}%`;
+  };
+
   const getStatusColor = (status: string): string => {
     const normalizedStatus = status.toLowerCase();
     switch (normalizedStatus) {
@@ -198,6 +223,9 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                     </span>
                     <span className="text-xs text-muted-foreground font-mono">
                       {format(new Date(sprint.startDate), "dd.MM")} - {format(new Date(sprint.endDate), "dd.MM")}
+                    </span>
+                    <span className="text-xs font-semibold text-foreground">
+                      IR: {calculateSprintIR(sprint)}
                     </span>
                   </div>
                 </th>

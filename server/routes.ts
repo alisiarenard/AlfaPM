@@ -15,6 +15,7 @@ const teamDataSchema = z.array(z.object({
     id: z.string(),
     name: z.string(),
     status: z.string(),
+    type: z.string().optional(),
     startDate: z.string(),
     size: z.number(),
     involvement: z.number(),
