@@ -4,6 +4,8 @@
 
 This is a project management application designed to visualize and track team initiatives across sprint timelines. The application allows users to upload team data in JSON format and displays initiatives with their associated story points, sprint allocations, and status information in a clean, data-focused interface.
 
+The application supports **multiple teams** in a single JSON array, with each team displayed in a separate tab for easy navigation between different team timelines.
+
 The application follows a utility-first design philosophy inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles, prioritizing information density with clarity and scannable data presentation.
 
 ## User Preferences
@@ -33,6 +35,10 @@ Preferred communication style: Simple, everyday language.
 - Hover and active state elevation system using CSS variables (--elevate-1, --elevate-2)
 
 **Key Components:**
+- `HomePage`: Main page component that handles multi-team display with Tabs
+  - Displays upload form when no data is loaded
+  - Renders Tabs UI for multi-team navigation when data is present
+  - Each tab shows team name and contains TeamHeader + InitiativesTimeline
 - `InitiativesTimeline`: Main visualization component showing initiatives mapped to sprint timelines with columns:
   - Инициатива (Initiative name) - sticky left column
   - Дата начала (Start date)
@@ -43,6 +49,14 @@ Preferred communication style: Simple, everyday language.
 - `TeamHeader`: Displays team information and velocity metrics
 - `StatusBadge`: Color-coded status indicators with icons
 - `ThemeToggle`: Theme switching between light and dark modes
+
+**Multi-Team Support:**
+- Application accepts JSON array with multiple teams: `[{team: {...}, initiatives: [...]}, {...}]`
+- Each team is displayed in a separate tab using Shadcn Tabs component
+- Tab labels show team names from `team.name` field
+- Default active tab is the first team in the array
+- Users can switch between teams by clicking on tabs
+- Each tab independently displays its own TeamHeader and InitiativesTimeline
 
 ### Backend Architecture
 
