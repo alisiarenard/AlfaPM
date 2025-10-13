@@ -20,6 +20,8 @@ export type User = typeof users.$inferSelect;
 export interface Sprint {
   sprintId: string;
   name: string;
+  startDate: string;
+  endDate: string;
   storyPoints: number;
 }
 
@@ -29,6 +31,7 @@ export interface Initiative {
   status: string;
   startDate: string;
   size: number;
+  involvement: number;
   sprints: Sprint[];
 }
 
@@ -36,6 +39,7 @@ export interface Team {
   boardId: string;
   teamId: string;
   name: string;
+  velocity: number;
 }
 
 export interface TeamData {
