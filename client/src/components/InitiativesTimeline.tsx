@@ -39,24 +39,23 @@ export function InitiativesTimeline({ initiatives }: InitiativesTimelineProps) {
     const initiativeStartDate = new Date(initiative.startDate);
     const sprintStartDate = new Date(sprint.startDate);
     
-    const hasSprintData = initiative.sprints.some(s => s.sprintId === sprint.sprintId);
-    
-    const isAfterInitiativeStart = sprintStartDate >= initiativeStartDate;
-    
-    if (hasSprintData) {
-      return true;
-    }
-    
-    if (!isAfterInitiativeStart) {
+    if (sprintStartDate < initiativeStartDate) {
       return false;
     }
     
-    const initiativeSprintIds = initiative.sprints.map(s => s.sprintId);
-    const hasAnySprintInFuture = allSprints
-      .slice(sprintIndex)
-      .some(s => initiativeSprintIds.includes(s.sprintId));
+    if (initiative.sprints.length === 0) {
+      return false;
+    }
     
-    return hasAnySprintInFuture;
+    const lastInitiativeSprint = initiative.sprints.reduce((latest, s) => {
+      const currentSprintIndex = allSprints.findIndex(as => as.sprintId === s.sprintId);
+      const latestSprintIndex = allSprints.findIndex(as => as.sprintId === latest.sprintId);
+      return currentSprintIndex > latestSprintIndex ? s : latest;
+    }, initiative.sprints[0]);
+    
+    const lastSprintIndex = allSprints.findIndex(s => s.sprintId === lastInitiativeSprint.sprintId);
+    
+    return sprintIndex <= lastSprintIndex;
   };
 
   return (
