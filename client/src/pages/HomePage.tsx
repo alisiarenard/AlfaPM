@@ -16,6 +16,7 @@ export default function HomePage() {
   const [uploadError, setUploadError] = useState("");
   const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("");
 
   const { data: teamDataArray, isLoading, error } = useQuery<TeamData[]>({
     queryKey: ["/api/team-data"],
@@ -35,6 +36,12 @@ export default function HomePage() {
       setSelectedDepartment(departments[0].id);
     }
   }, [departments, selectedDepartment]);
+
+  useEffect(() => {
+    if (departmentTeams && departmentTeams.length > 0) {
+      setActiveTab(departmentTeams[0].teamId);
+    }
+  }, [departmentTeams]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -201,8 +208,8 @@ export default function HomePage() {
         </div>
         
         <div className="p-6">
-          {departmentTeams && departmentTeams.length > 0 ? (
-            <Tabs defaultValue={departmentTeams[0].teamId} className="w-full">
+          {departmentTeams && departmentTeams.length > 0 && activeTab ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-6" data-testid="tabs-teams">
                 {departmentTeams.map((team) => (
                   <TabsTrigger 
