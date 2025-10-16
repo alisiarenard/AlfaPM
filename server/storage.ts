@@ -39,9 +39,10 @@ export interface IStorage {
     state: "1-queued" | "2-inProgress" | "3-done",
     size: number,
     condition: "1-live" | "2-archived",
-    initCardId?: number,
+    initCardId?: number | null,
     type?: string,
-    completedAt?: string
+    completedAt?: string,
+    sprintId?: number | null
   ): Promise<TaskRow>;
 }
 
@@ -139,6 +140,7 @@ export class MemStorage implements IStorage {
     return { 
       ...task, 
       id,
+      sprintId: task.sprintId ?? null,
       type: task.type ?? null,
       completedAt: task.completedAt ?? null,
       initCardId: task.initCardId ?? null
@@ -161,9 +163,10 @@ export class MemStorage implements IStorage {
     state: "1-queued" | "2-inProgress" | "3-done",
     size: number,
     condition: "1-live" | "2-archived",
-    initCardId?: number,
+    initCardId?: number | null,
     type?: string,
-    completedAt?: string
+    completedAt?: string,
+    sprintId?: number | null
   ): Promise<TaskRow> {
     const id = randomUUID();
     return {
@@ -175,6 +178,7 @@ export class MemStorage implements IStorage {
       state,
       size,
       condition,
+      sprintId: sprintId ?? null,
       initCardId: initCardId ?? null,
       type: type ?? null,
       completedAt: completedAt ?? null
@@ -330,9 +334,10 @@ export class DbStorage implements IStorage {
     state: "1-queued" | "2-inProgress" | "3-done",
     size: number,
     condition: "1-live" | "2-archived",
-    initCardId?: number,
+    initCardId?: number | null,
     type?: string,
-    completedAt?: string
+    completedAt?: string,
+    sprintId?: number | null
   ): Promise<TaskRow> {
     const existing = await this.getTaskByCardId(cardId);
     
@@ -346,6 +351,7 @@ export class DbStorage implements IStorage {
           size,
           condition, 
           boardId,
+          sprintId: sprintId ?? null,
           initCardId: initCardId ?? null,
           type: type ?? null,
           completedAt: completedAt ?? null
@@ -364,6 +370,7 @@ export class DbStorage implements IStorage {
           size,
           condition, 
           boardId,
+          sprintId: sprintId ?? null,
           initCardId: initCardId ?? null,
           type: type ?? null,
           completedAt: completedAt ?? null

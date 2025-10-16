@@ -521,6 +521,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/kaiten/sync-sprint/:sprintId", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid sprint ID" 
+        });
+      }
+
+      log(`[Kaiten Sync Sprint] Fetching sprint ${sprintId} from Kaiten`);
+      
+      // Получаем данные спринта из Kaiten
+      const sprint = await kaitenClient.getSprint(sprintId);
+      
+      if (!sprint.cards || !Array.isArray(sprint.cards)) {
+        log(`[Kaiten Sync Sprint] No cards found in sprint ${sprintId}`);
+        return res.json({
+          success: true,
+          synced: 0,
+          message: "No cards found in sprint"
+        });
+      }
+
+      log(`[Kaiten Sync Sprint] Sprint has ${sprint.cards.length} cards`);
+      
+      const syncedTasks = [];
+      
+      // Создаем записи в tasks для каждой карточки из спринта
+      for (const card of sprint.cards) {
+        log(`[Kaiten Sync Sprint] Syncing card ${card.id}: ${card.title}`);
+        
+        let state: "1-queued" | "2-inProgress" | "3-done";
+        
+        if (card.state === 3) {
+          state = "3-done";
+        } else if (card.state === 2) {
+          state = "2-inProgress";
+        } else {
+          state = "1-queued";
+        }
+        
+        const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+        const synced = await storage.syncTaskFromKaiten(
+          card.id,
+          card.board_id,
+          card.title,
+          card.created || new Date().toISOString(),
+          state,
+          card.size || 0,
+          condition,
+          null, // init_card_id оставляем пустым
+          card.type_id?.toString(),
+          card.completed_at ?? undefined,
+          sprintId // передаем sprint_id
+        );
+        
+        syncedTasks.push(synced);
+      }
+
+      log(`[Kaiten Sync Sprint] Synced ${syncedTasks.length} tasks from sprint ${sprintId}`);
+      
+      res.json({
+        success: true,
+        synced: syncedTasks.length,
+        sprintId,
+        tasks: syncedTasks
+      });
+    } catch (error) {
+      console.error("POST /api/kaiten/sync-sprint/:sprintId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to sync sprint" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/test", async (req, res) => {
     try {
       const isConnected = await kaitenClient.testConnection();
