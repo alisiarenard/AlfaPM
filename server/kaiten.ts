@@ -11,6 +11,11 @@ export interface KaitenCard {
   condition: number;
   size: number;
   archived: boolean;
+  sprint_id?: number | null;
+  children?: KaitenCard[];
+  created?: string;
+  type_id?: number | null;
+  completed_at?: string | null;
 }
 
 export interface KaitenCardListResponse {
