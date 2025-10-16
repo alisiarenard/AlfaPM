@@ -15,6 +15,7 @@ export default function HomePage() {
   const [jsonInput, setJsonInput] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
 
   const { data: teamDataArray, isLoading, error } = useQuery<TeamData[]>({
     queryKey: ["/api/team-data"],
@@ -23,6 +24,12 @@ export default function HomePage() {
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
   });
+
+  useEffect(() => {
+    if (departments && departments.length > 0 && !selectedDepartment) {
+      setSelectedDepartment(departments[0].id);
+    }
+  }, [departments, selectedDepartment]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -170,7 +177,11 @@ export default function HomePage() {
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
           <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
-          <Select data-testid="select-department">
+          <Select 
+            value={selectedDepartment} 
+            onValueChange={setSelectedDepartment}
+            data-testid="select-department"
+          >
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Выберите департамент" />
             </SelectTrigger>
