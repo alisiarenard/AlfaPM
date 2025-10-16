@@ -26,6 +26,7 @@ export interface IStorage {
   ): Promise<InitiativeRow>;
   getAllTasks(): Promise<TaskRow[]>;
   getTasksByBoardId(boardId: number): Promise<TaskRow[]>;
+  getTasksByInitCardId(initCardId: number): Promise<TaskRow[]>;
   getTask(id: string): Promise<TaskRow | undefined>;
   getTaskByCardId(cardId: number): Promise<TaskRow | undefined>;
   createTask(task: InsertTask): Promise<TaskRow>;
@@ -124,6 +125,10 @@ export class MemStorage implements IStorage {
   }
 
   async getTasksByBoardId(boardId: number): Promise<TaskRow[]> {
+    return [];
+  }
+
+  async getTasksByInitCardId(initCardId: number): Promise<TaskRow[]> {
     return [];
   }
 
@@ -291,6 +296,11 @@ export class DbStorage implements IStorage {
 
   async getTasksByBoardId(boardId: number): Promise<TaskRow[]> {
     const result = await db.select().from(tasks).where(eq(tasks.boardId, boardId));
+    return result;
+  }
+
+  async getTasksByInitCardId(initCardId: number): Promise<TaskRow[]> {
+    const result = await db.select().from(tasks).where(eq(tasks.initCardId, initCardId));
     return result;
   }
 

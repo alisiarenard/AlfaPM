@@ -56,7 +56,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       const initiatives = await storage.getInitiativesByBoardId(initBoardId);
-      res.json(initiatives);
+      
+      // Добавляем массив sprints для каждой инициативы
+      const initiativesWithSprints = await Promise.all(
+        initiatives.map(async (initiative) => {
+          // Получаем все таски для данной инициативы
+          const tasks = await storage.getTasksByInitCardId(initiative.cardId);
+          
+          // Группируем по sprint_id и считаем сумму size
+          const sprintsMap = new Map<number, number>();
+          tasks.forEach(task => {
+            if (task.sprintId !== null) {
+              const currentSp = sprintsMap.get(task.sprintId) || 0;
+              sprintsMap.set(task.sprintId, currentSp + task.size);
+            }
+          });
+          
+          // Преобразуем в массив объектов {sprint_id, sp}
+          const sprints = Array.from(sprintsMap.entries()).map(([sprint_id, sp]) => ({
+            sprint_id,
+            sp
+          }));
+          
+          return {
+            ...initiative,
+            sprints
+          };
+        })
+      );
+      
+      res.json(initiativesWithSprints);
     } catch (error) {
       console.error("GET /api/initiatives/board/:initBoardId error:", error);
       res.status(500).json({ 
