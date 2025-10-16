@@ -8,11 +8,14 @@ The application supports **multiple teams** in a single JSON array, with each te
 
 The application follows a utility-first design philosophy inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles, prioritizing information density with clarity and scannable data presentation.
 
-### Initial Data Loading
-- Team initiative data is loaded directly from `client/public/team-data.json`
-- No database storage for initiative data - JSON file is the single source of truth
-- Team metadata (velocity, department) is stored in PostgreSQL teams table
-- Data includes two teams: "Каркас" (UUID: 898cfdfd-ff1a-4fc3-9f65-e9a473dce1af) and "Общие сервисы" (UUID: 622c81aa-0e45-49ea-b329-c7af1345fc93)
+### Current Data Flow (October 16, 2025)
+- **Initiative data**: Loaded from PostgreSQL database via `/api/initiatives/board/:initBoardId` endpoint
+- **Team metadata**: Fetched from database via `/api/teams/:departmentId` endpoint  
+- **Kaiten Integration**: Initiatives synced from Kaiten API (feature.kaiten.ru) to database
+- **Data Source**: Database is the single source of truth (migrated from JSON files)
+- **Sprint data**: Currently empty (sprints[] array), timeline shows only 5 metadata columns
+- **Date handling**: start_date field not in DB schema - displays "—" for missing dates
+- Active teams: "Каркас" (UUID: 898cfdfd-ff1a-4fc3-9f65-e9a473dce1af) and "Общие сервисы" (UUID: 622c81aa-0e45-49ea-b329-c7af1345fc93, init_board_id: 1532130)
 
 ## User Preferences
 
@@ -52,10 +55,12 @@ Preferred communication style: Simple, everyday language.
 
 **Key Components:**
 - `HomePage`: Main page component that handles multi-team display with Tabs
-  - Loads initiative data directly from team-data.json on mount
+  - Fetches department list via GET /api/departments
+  - Loads team metadata via GET /api/teams/:departmentId
+  - Fetches initiatives via GET /api/initiatives/board/:initBoardId
   - Renders Tabs UI for multi-team navigation
   - Each tab shows team name and contains TeamHeader + InitiativesTimeline
-  - Fetches team metadata from database via /api/teams/:departmentId
+  - Maps database state (1-queued, 2-inProgress, 3-done) to UI status (planned, active, completed)
 - `InitiativesTimeline`: Main visualization component showing initiatives mapped to sprint timelines with columns:
   - **Fixed columns** (sticky, remain visible during horizontal scroll):
     - Инициатива (Initiative name) - left: 0px, width: 220px
@@ -73,12 +78,12 @@ Preferred communication style: Simple, everyday language.
 - `ThemeToggle`: Theme switching between light and dark modes
 
 **Multi-Team Support:**
-- Application accepts JSON array with multiple teams: `[{team: {...}, initiatives: [...]}, {...}]`
-- Each team is displayed in a separate tab using Shadcn Tabs component
-- Tab labels show team names from `team.name` field
-- Default active tab is the first team in the array
-- Users can switch between teams by clicking on tabs
-- Each tab independently displays its own TeamHeader and InitiativesTimeline
+- Each department can have multiple teams stored in database
+- Teams displayed in separate tabs using Shadcn Tabs component
+- Tab labels show team names from database `team_name` field
+- Users select department from dropdown, then switch between team tabs
+- Each tab independently fetches and displays its own initiatives via init_board_id
+- Each tab shows TeamHeader (velocity, innovation rate) + InitiativesTimeline
 
 ### Backend Architecture
 
@@ -97,7 +102,6 @@ Preferred communication style: Simple, everyday language.
 - POST `/api/initiatives`: Create new initiative
 - PATCH `/api/initiatives/:id`: Update initiative
 - DELETE `/api/initiatives/:id`: Delete initiative
-- Team initiative timeline data (loaded from JSON file directly)
 
 **Kaiten API Integration:**
 - POST `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten board to database
@@ -152,13 +156,11 @@ Preferred communication style: Simple, everyday language.
   - `deleteInitiative(id)`: Deletes an initiative
   - User management methods (getUser, getUserByUsername, createUser)
 - All writes wrapped in transactions for data integrity
-- Initiative timeline data from team-data.json (different from initiatives table)
 
 **Data Models:**
 - `Team`: boardId, teamId (UUID), name, velocity, sprintDuration (optional, number of days per sprint)
-- `Initiative`: id, name, status, type (optional, e.g., "Epic" or "Feature"), startDate, size, involvement, sprints array (from JSON)
+- `Initiative`: id, name, status, type (optional, e.g., "Epic" or "Feature"), startDate, size, involvement, sprints array
 - `Sprint`: sprintId, name, startDate, endDate, storyPoints
-- `TeamData`: Contains team object and initiatives array, loaded from team-data.json file
 - `TeamRow`: Database model for teams table (team_id as UUID, team_name, vilocity, sprint_duration, department_id, etc.)
 - `InitiativeRow`: Database model for initiatives table (id as UUID, card_id, title, state, condition, size, init_board_id)
 
@@ -177,10 +179,10 @@ Preferred communication style: Simple, everyday language.
 - Formula: Innovation Rate = (Epic story points / Total story points) × 100%
 - Shows percentage of Epic initiative story points vs all story points
 - Rounds to nearest integer
-- Shows "—" when total story points = 0
+- Shows "0%" when total story points = 0
 
 **Involvement (Вовлечённость) Calculation:**
-- Automatically calculated based on initiative's time period, not from JSON
+- Automatically calculated based on initiative's time period
 - Period: from initiative start date to the end date of last sprint in initiative
 - Formula: Involvement = (Initiative's story points / All story points in period) × 100%
 - Includes ALL sprints in the period when calculating total, even if initiative has no points in some sprints
