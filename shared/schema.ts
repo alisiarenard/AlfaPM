@@ -1,7 +1,24 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+export const initiativeStateEnum = pgEnum("initiative_state", ["1-queued", "2-inProgress", "3-done"]);
+export const initiativeConditionEnum = pgEnum("initiative_condition", ["1-live", "2-archived"]);
+
+export const initiatives = pgTable("initiatives", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cardId: integer("card_id").notNull(),
+  title: varchar("title").notNull(),
+  state: initiativeStateEnum("state").notNull(),
+  condition: initiativeConditionEnum("condition").notNull(),
+  size: integer("size").notNull(),
+  initBoardId: integer("init_board_id").notNull(),
+});
+
+export const insertInitiativeSchema = createInsertSchema(initiatives).omit({ id: true });
+export type InsertInitiative = z.infer<typeof insertInitiativeSchema>;
+export type InitiativeRow = typeof initiatives.$inferSelect;
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

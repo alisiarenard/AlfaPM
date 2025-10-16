@@ -91,7 +91,13 @@ Preferred communication style: Simple, everyday language.
 - RESTful endpoints under `/api` prefix
 - GET `/api/departments`: Retrieve list of departments
 - GET `/api/teams/:departmentId`: Retrieve teams for a specific department
-- No endpoints for team initiative data (loaded from JSON file directly)
+- GET `/api/initiatives`: Retrieve all initiatives
+- GET `/api/initiatives/board/:initBoardId`: Retrieve initiatives for a specific board
+- GET `/api/initiatives/:id`: Retrieve a specific initiative
+- POST `/api/initiatives`: Create new initiative
+- PATCH `/api/initiatives/:id`: Update initiative
+- DELETE `/api/initiatives/:id`: Delete initiative
+- Team initiative timeline data (loaded from JSON file directly)
 
 **Development Setup:**
 - Vite middleware integration in development mode
@@ -112,6 +118,7 @@ Preferred communication style: Simple, everyday language.
 - `users` table: id (UUID), username, password - for future authentication
 - `departments` table: id (UUID), department (varchar) - department names
 - `teams` table: team_id (varchar/UUID), team_name, vilocity, sprint_duration, department_id (UUID), space_id, sprint_board_id, init_board_id, sp_price
+- `initiatives` table: id (UUID), card_id (integer), title (varchar), state (ENUM: 1-queued, 2-inProgress, 3-done), condition (ENUM: 1-live, 2-archived), size (integer), init_board_id (integer)
 - Schema defined in `shared/schema.ts` for type safety across client and server
 - Migrations managed through `drizzle-kit` (use `npm run db:push`)
 
@@ -126,16 +133,23 @@ Preferred communication style: Simple, everyday language.
 - Methods:
   - `getDepartments()`: Returns list of departments
   - `getTeamsByDepartment(departmentId)`: Returns teams for a department
+  - `getAllInitiatives()`: Returns all initiatives
+  - `getInitiativesByBoardId(initBoardId)`: Returns initiatives for a specific board
+  - `getInitiative(id)`: Returns a specific initiative
+  - `createInitiative(initiative)`: Creates a new initiative
+  - `updateInitiative(id, initiative)`: Updates an initiative
+  - `deleteInitiative(id)`: Deletes an initiative
   - User management methods (getUser, getUserByUsername, createUser)
 - All writes wrapped in transactions for data integrity
-- Initiative data is not stored in database - only in team-data.json file
+- Initiative timeline data from team-data.json (different from initiatives table)
 
 **Data Models:**
 - `Team`: boardId, teamId (UUID), name, velocity, sprintDuration (optional, number of days per sprint)
-- `Initiative`: id, name, status, type (optional, e.g., "Epic" or "Feature"), startDate, size, involvement, sprints array
+- `Initiative`: id, name, status, type (optional, e.g., "Epic" or "Feature"), startDate, size, involvement, sprints array (from JSON)
 - `Sprint`: sprintId, name, startDate, endDate, storyPoints
 - `TeamData`: Contains team object and initiatives array, loaded from team-data.json file
 - `TeamRow`: Database model for teams table (team_id as UUID, team_name, vilocity, sprint_duration, department_id, etc.)
+- `InitiativeRow`: Database model for initiatives table (id as UUID, card_id, title, state, condition, size, init_board_id)
 
 **Investment Ratio (IR) Calculation:**
 - Sprint headers display IR (Investment Ratio) as the percentage of Epic initiative story points vs. total sprint story points
