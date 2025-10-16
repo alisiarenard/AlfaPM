@@ -6,14 +6,17 @@ This project is a web-based application designed to visualize and track team ini
 ## Recent Changes (October 16, 2025)
 - Added `tasks` table to PostgreSQL database with full CRUD API support
 - Created task management endpoints: GET/POST/PATCH/DELETE `/api/tasks` and `/api/tasks/board/:boardId`
-- Tasks table includes fields: id, card_id, title, created, state, size, condition, board_id, type (nullable), completed_at (nullable), init_card_id (nullable)
+- Tasks table includes fields: id, card_id, title, created, state, size, condition, board_id, sprint_id (nullable), type (nullable), completed_at (nullable), init_card_id (nullable)
 - Tasks reuse initiative_state and initiative_condition ENUMs for consistency
 - Implemented storage layer methods for tasks: getAllTasks, getTasksByBoardId, createTask, updateTask, deleteTask, syncTaskFromKaiten
 - Added Kaiten tasks synchronization endpoint: POST `/api/kaiten/sync-tasks/:boardId`
-- Tasks sync processes ALL children cards from Kaiten board where state=3 (done), regardless of sprint_id value (updated from previous sprint_id filtering requirement)
+- Tasks sync processes ALL children cards from Kaiten board where state=3 (done), regardless of sprint_id value
 - Parent card_id is stored in init_card_id field to link tasks to their parent initiatives
 - Kaiten API limitation: children data only available via individual card fetch (/cards/{cardId}), not board fetch (/boards/{boardId})
 - Sync implementation: fetches each parent card individually to retrieve children array, then filters and syncs children with state=3
+- Added sprint_id field to tasks table for sprint association
+- Created endpoint POST `/api/kaiten/update-sprint/:sprintId` to fetch sprint data from Kaiten and update sprint_id for tasks where card_id matches cards in the sprint
+- Added getSprint() method to KaitenClient for fetching sprint data from `/api/latest/sprints/{sprintId}`
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -49,6 +52,7 @@ The backend uses Express.js with TypeScript and an ESM module system. It provide
 - `/api/tasks/board/:boardId`: Retrieve tasks for a specific board.
 - `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten.
 - `/api/kaiten/sync-tasks/:boardId`: Sync tasks (children cards) from Kaiten.
+- `/api/kaiten/update-sprint/:sprintId`: Fetch sprint from Kaiten and update sprint_id for tasks where card_id matches.
 
 **Kaiten Integration:**
 - Syncs initiatives from the Kaiten API (feature.kaiten.ru) to the database, mapping Kaiten card states to initiative states (queued, inProgress, done). Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN` environment variables.
@@ -61,7 +65,7 @@ PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neo
 - `departments`: Department names.
 - `teams`: Team metadata (ID, name, velocity, sprint duration, department ID, board IDs).
 - `initiatives`: Initiative details (ID, card ID, title, state, condition, size, board ID).
-- `tasks`: Task details (ID, card ID, title, created, state, size, condition, board ID, type, completed_at, init_card_id).
+- `tasks`: Task details (ID, card ID, title, created, state, size, condition, board ID, sprint_id, type, completed_at, init_card_id).
 - Schema is defined in `shared/schema.ts` for type safety.
 - Drizzle-kit manages migrations.
 
