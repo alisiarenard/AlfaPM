@@ -12,9 +12,18 @@ export interface IStorage {
   getAllInitiatives(): Promise<InitiativeRow[]>;
   getInitiativesByBoardId(initBoardId: number): Promise<InitiativeRow[]>;
   getInitiative(id: string): Promise<InitiativeRow | undefined>;
+  getInitiativeByCardId(cardId: number): Promise<InitiativeRow | undefined>;
   createInitiative(initiative: InsertInitiative): Promise<InitiativeRow>;
   updateInitiative(id: string, initiative: Partial<InsertInitiative>): Promise<InitiativeRow | undefined>;
   deleteInitiative(id: string): Promise<void>;
+  syncInitiativeFromKaiten(
+    cardId: number, 
+    boardId: number, 
+    title: string, 
+    state: "1-queued" | "2-inProgress" | "3-done", 
+    condition: "1-live" | "2-archived", 
+    size: number
+  ): Promise<InitiativeRow>;
 }
 
 export class MemStorage implements IStorage {
@@ -61,17 +70,33 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
+  async getInitiativeByCardId(cardId: number): Promise<InitiativeRow | undefined> {
+    return undefined;
+  }
+
   async createInitiative(initiative: InsertInitiative): Promise<InitiativeRow> {
     const id = randomUUID();
     return { ...initiative, id };
   }
 
-  async updateInitiative(id: string, initiative: Partial<InsertInitiative>): Promise<InitiativeRow> {
+  async updateInitiative(id: string, initiative: Partial<InsertInitiative>): Promise<InitiativeRow | undefined> {
     throw new Error("Not implemented");
   }
 
   async deleteInitiative(id: string): Promise<void> {
     return;
+  }
+
+  async syncInitiativeFromKaiten(
+    cardId: number, 
+    boardId: number, 
+    title: string, 
+    state: "1-queued" | "2-inProgress" | "3-done", 
+    condition: "1-live" | "2-archived", 
+    size: number
+  ): Promise<InitiativeRow> {
+    const id = randomUUID();
+    return { id, cardId, title, state, condition, size, initBoardId: boardId };
   }
 }
 
@@ -138,6 +163,39 @@ export class DbStorage implements IStorage {
 
   async deleteInitiative(id: string): Promise<void> {
     await db.delete(initiatives).where(eq(initiatives.id, id));
+  }
+
+  async getInitiativeByCardId(cardId: number): Promise<InitiativeRow | undefined> {
+    const result = await db.query.initiatives.findFirst({
+      where: eq(initiatives.cardId, cardId),
+    });
+    return result;
+  }
+
+  async syncInitiativeFromKaiten(
+    cardId: number, 
+    boardId: number, 
+    title: string, 
+    state: string, 
+    condition: string, 
+    size: number
+  ): Promise<InitiativeRow> {
+    const existing = await this.getInitiativeByCardId(cardId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(initiatives)
+        .set({ title, state, condition, size, initBoardId: boardId })
+        .where(eq(initiatives.cardId, cardId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(initiatives)
+        .values({ cardId, title, state, condition, size, initBoardId: boardId })
+        .returning();
+      return created;
+    }
   }
 }
 
