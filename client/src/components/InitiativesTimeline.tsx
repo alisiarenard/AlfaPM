@@ -7,10 +7,20 @@ interface InitiativesTimelineProps {
 }
 
 export function InitiativesTimeline({ initiatives, team }: InitiativesTimelineProps) {
+  // Сортировка инициатив: сначала активные, потом планируемые
+  const sortedInitiatives = [...initiatives].sort((a, b) => {
+    const stateOrder: { [key: string]: number } = {
+      "2-inProgress": 1,  // Active
+      "1-queued": 2,      // Planned
+      "3-done": 3         // Completed
+    };
+    return (stateOrder[a.state] || 999) - (stateOrder[b.state] || 999);
+  });
+
   // Собрать все уникальные sprint_id из всех инициатив
   const allSprintIds = Array.from(
     new Set(
-      initiatives.flatMap(init => init.sprints.map(s => s.sprint_id))
+      sortedInitiatives.flatMap(init => init.sprints.map(s => s.sprint_id))
     )
   ).sort((a, b) => a - b);
 
@@ -48,7 +58,7 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
     
     // Сумма всех SP всех инициатив в тех же спринтах
     let totalAllInitiatives = 0;
-    initiatives.forEach(init => {
+    sortedInitiatives.forEach(init => {
       init.sprints.forEach(sprint => {
         if (initiativeSprintIds.has(sprint.sprint_id)) {
           totalAllInitiatives += sprint.sp;
@@ -68,7 +78,7 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
   const calculateSprintIR = (sprintId: number): string => {
     let totalSP = 0;
 
-    initiatives.forEach(init => {
+    sortedInitiatives.forEach(init => {
       const sp = getSprintSP(init, sprintId);
       totalSP += sp;
     });
@@ -171,7 +181,7 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
           </tr>
         </thead>
         <tbody>
-          {initiatives.map((initiative) => (
+          {sortedInitiatives.map((initiative) => (
             <tr
               key={initiative.id}
               className="border-b border-border hover:bg-muted/50 transition-colors"
