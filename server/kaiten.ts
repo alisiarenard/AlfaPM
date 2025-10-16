@@ -67,6 +67,7 @@ export class KaitenClient {
   async getCardsFromBoard(boardId: number): Promise<KaitenCard[]> {
     log(`[Kaiten API] Fetching cards from board ${boardId}`);
     const response = await this.makeRequest<KaitenCardListResponse>(`/cards?board_id=${boardId}`);
+    log(`[Kaiten API] Raw response: ${JSON.stringify(response).substring(0, 500)}`);
     return response.data || [];
   }
 
