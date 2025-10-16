@@ -17,6 +17,13 @@ export interface KaitenCardListResponse {
   data: KaitenCard[];
 }
 
+export interface KaitenBoardResponse {
+  id: number;
+  title: string;
+  cards?: KaitenCard[];
+  [key: string]: any;
+}
+
 export class KaitenClient {
   private baseUrl: string;
   private apiKey: string;
@@ -65,10 +72,25 @@ export class KaitenClient {
   }
 
   async getCardsFromBoard(boardId: number): Promise<KaitenCard[]> {
-    log(`[Kaiten API] Fetching cards from board ${boardId}`);
-    const response = await this.makeRequest<KaitenCardListResponse>(`/cards?board_id=${boardId}`);
-    log(`[Kaiten API] Raw response: ${JSON.stringify(response).substring(0, 500)}`);
-    return response.data || [];
+    log(`[Kaiten API] Fetching board ${boardId} using /api/latest/boards/${boardId}`);
+    const response = await this.makeRequest<KaitenBoardResponse>(`/boards/${boardId}`);
+    log(`[Kaiten API] Board response keys: ${Object.keys(response).join(', ')}`);
+    log(`[Kaiten API] Raw response (first 800 chars): ${JSON.stringify(response).substring(0, 800)}`);
+    
+    // Try different possible card locations in response
+    if (response.cards && Array.isArray(response.cards)) {
+      log(`[Kaiten API] Found ${response.cards.length} cards in response.cards`);
+      return response.cards;
+    }
+    
+    // Check if response itself is an array
+    if (Array.isArray(response)) {
+      log(`[Kaiten API] Response is array with ${response.length} items`);
+      return response as unknown as KaitenCard[];
+    }
+    
+    log(`[Kaiten API] No cards found in response`);
+    return [];
   }
 
   async testConnection(): Promise<boolean> {
