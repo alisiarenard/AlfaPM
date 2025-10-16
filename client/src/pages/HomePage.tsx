@@ -1,17 +1,13 @@
-import { TeamHeader } from "@/components/TeamHeader";
-import { InitiativesTimeline } from "@/components/InitiativesTimeline";
+import { InitiativesList } from "@/components/InitiativesList";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { TeamData, Department, TeamRow } from "@shared/schema";
+import type { Department, TeamRow, InitiativeRow } from "@shared/schema";
 
 export default function HomePage() {
-  const [teamDataArray, setTeamDataArray] = useState<TeamData[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [loadError, setLoadError] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("");
 
@@ -36,55 +32,11 @@ export default function HomePage() {
     }
   }, [departmentTeams]);
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        const response = await fetch("/team-data.json");
-        if (!response.ok) {
-          setLoadError("Не удалось загрузить файл с данными команд");
-          return;
-        }
-
-        const data = await response.json();
-        setTeamDataArray(data);
-      } catch (error) {
-        console.error("Failed to load initial data:", error);
-        setLoadError("Ошибка при загрузке данных");
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
-
-    loadInitialData();
-  }, []);
-
-  if (isLoadingData) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Загрузка данных...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{loadError}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
-          <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
+          <h2 className="text-sm font-medium text-muted-foreground">Список инициатив</h2>
           <Select 
             value={selectedDepartment} 
             onValueChange={setSelectedDepartment}
@@ -118,25 +70,11 @@ export default function HomePage() {
                 ))}
               </TabsList>
               
-              {departmentTeams.map((team) => {
-                const teamData = teamDataArray?.find(td => td.team.teamId === team.teamId);
-                return (
-                  <TabsContent key={team.teamId} value={team.teamId}>
-                    {teamData ? (
-                      <>
-                        <TeamHeader team={teamData.team} initiatives={teamData.initiatives} dbTeam={team} />
-                        <div className="mt-6">
-                          <InitiativesTimeline initiatives={teamData.initiatives} team={teamData.team} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-12 text-muted-foreground">
-                        Нет данных для команды {team.teamName}
-                      </div>
-                    )}
-                  </TabsContent>
-                );
-              })}
+              {departmentTeams.map((team) => (
+                <TabsContent key={team.teamId} value={team.teamId}>
+                  <TeamInitiativesTab team={team} />
+                </TabsContent>
+              ))}
             </Tabs>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
@@ -147,4 +85,41 @@ export default function HomePage() {
       </div>
     </div>
   );
+}
+
+function TeamInitiativesTab({ team }: { team: TeamRow }) {
+  const { data: initiatives, isLoading, error } = useQuery<InitiativeRow[]>({
+    queryKey: ["/api/initiatives/board", team.initBoardId],
+    enabled: !!team.initBoardId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Загрузка инициатив...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Ошибка при загрузке инициатив: {error instanceof Error ? error.message : "Неизвестная ошибка"}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!team.initBoardId) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        У команды {team.teamName} не настроена доска инициатив
+      </div>
+    );
+  }
+
+  return <InitiativesList initiatives={initiatives || []} teamName={team.teamName} />;
 }
