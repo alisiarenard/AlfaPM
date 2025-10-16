@@ -31,6 +31,18 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<TaskRow>;
   updateTask(id: string, task: Partial<InsertTask>): Promise<TaskRow | undefined>;
   deleteTask(id: string): Promise<void>;
+  syncTaskFromKaiten(
+    cardId: number,
+    boardId: number,
+    title: string,
+    created: string,
+    state: "1-queued" | "2-inProgress" | "3-done",
+    size: number,
+    condition: "1-live" | "2-archived",
+    initCardId?: number,
+    type?: string,
+    completedAt?: string
+  ): Promise<TaskRow>;
 }
 
 export class MemStorage implements IStorage {
@@ -139,6 +151,34 @@ export class MemStorage implements IStorage {
 
   async deleteTask(id: string): Promise<void> {
     return;
+  }
+
+  async syncTaskFromKaiten(
+    cardId: number,
+    boardId: number,
+    title: string,
+    created: string,
+    state: "1-queued" | "2-inProgress" | "3-done",
+    size: number,
+    condition: "1-live" | "2-archived",
+    initCardId?: number,
+    type?: string,
+    completedAt?: string
+  ): Promise<TaskRow> {
+    const id = randomUUID();
+    return {
+      id,
+      cardId,
+      boardId,
+      title,
+      created,
+      state,
+      size,
+      condition,
+      initCardId: initCardId ?? null,
+      type: type ?? null,
+      completedAt: completedAt ?? null
+    };
   }
 }
 
@@ -280,6 +320,57 @@ export class DbStorage implements IStorage {
 
   async deleteTask(id: string): Promise<void> {
     await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  async syncTaskFromKaiten(
+    cardId: number,
+    boardId: number,
+    title: string,
+    created: string,
+    state: "1-queued" | "2-inProgress" | "3-done",
+    size: number,
+    condition: "1-live" | "2-archived",
+    initCardId?: number,
+    type?: string,
+    completedAt?: string
+  ): Promise<TaskRow> {
+    const existing = await this.getTaskByCardId(cardId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(tasks)
+        .set({ 
+          title, 
+          created,
+          state, 
+          size,
+          condition, 
+          boardId,
+          initCardId: initCardId ?? null,
+          type: type ?? null,
+          completedAt: completedAt ?? null
+        })
+        .where(eq(tasks.cardId, cardId))
+        .returning();
+      return updated;
+    } else {
+      const [newTask] = await db
+        .insert(tasks)
+        .values({ 
+          cardId, 
+          title, 
+          created: created,
+          state, 
+          size,
+          condition, 
+          boardId,
+          initCardId: initCardId ?? null,
+          type: type ?? null,
+          completedAt: completedAt ?? null
+        })
+        .returning();
+      return newTask;
+    }
   }
 }
 
