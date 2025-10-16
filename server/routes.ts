@@ -398,8 +398,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const child of card.children) {
             totalChildrenProcessed++;
             
-            // Filter: state === 3 and sprint_id is not empty
-            if (child.state === 3 && child.sprint_id != null && child.sprint_id !== undefined) {
+            // Filter: state === 3 and sprint_id is not empty (not null, undefined, 0, or empty string)
+            if (child.state === 3 && child.sprint_id && child.sprint_id !== 0) {
               log(`[Kaiten Sync Tasks] Processing child ${child.id} with sprint_id ${child.sprint_id}`);
               
               let state: "1-queued" | "2-inProgress" | "3-done";
@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 condition,
                 card.id, // parent card_id goes to init_card_id
                 child.type_id?.toString(),
-                child.completed_at
+                child.completed_at ?? undefined
               );
               
               syncedTasks.push(synced);
