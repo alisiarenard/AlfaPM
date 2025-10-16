@@ -373,6 +373,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/kaiten/sync-tasks/:boardId", async (req, res) => {
+    try {
+      const boardId = parseInt(req.params.boardId);
+      if (isNaN(boardId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid board ID" 
+        });
+      }
+
+      log(`[Kaiten Sync Tasks] Starting sync for board ${boardId}`);
+      
+      const cards = await kaitenClient.getCardsFromBoard(boardId);
+      log(`[Kaiten Sync Tasks] Found ${cards.length} parent cards`);
+
+      const syncedTasks = [];
+      let totalChildrenProcessed = 0;
+      
+      for (const card of cards) {
+        if (card.children && Array.isArray(card.children)) {
+          log(`[Kaiten Sync Tasks] Card ${card.id} has ${card.children.length} children`);
+          
+          for (const child of card.children) {
+            totalChildrenProcessed++;
+            
+            // Filter: state === 3 and sprint_id is not empty
+            if (child.state === 3 && child.sprint_id != null && child.sprint_id !== undefined) {
+              log(`[Kaiten Sync Tasks] Processing child ${child.id} with sprint_id ${child.sprint_id}`);
+              
+              let state: "1-queued" | "2-inProgress" | "3-done";
+              
+              if (child.state === 3) {
+                state = "3-done";
+              } else if (child.state === 2) {
+                state = "2-inProgress";
+              } else {
+                state = "1-queued";
+              }
+              
+              const condition: "1-live" | "2-archived" = child.archived ? "2-archived" : "1-live";
+
+              const synced = await storage.syncTaskFromKaiten(
+                child.id,
+                boardId,
+                child.title,
+                child.created || new Date().toISOString(),
+                state,
+                child.size || 0,
+                condition,
+                card.id, // parent card_id goes to init_card_id
+                child.type_id?.toString(),
+                child.completed_at
+              );
+              
+              syncedTasks.push(synced);
+            }
+          }
+        }
+      }
+
+      log(`[Kaiten Sync Tasks] Processed ${totalChildrenProcessed} children total, synced ${syncedTasks.length} tasks`);
+      
+      res.json({
+        success: true,
+        count: syncedTasks.length,
+        totalChildrenProcessed,
+        tasks: syncedTasks
+      });
+    } catch (error) {
+      console.error("POST /api/kaiten/sync-tasks/:boardId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to sync tasks from Kaiten" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/test", async (req, res) => {
     try {
       const isConnected = await kaitenClient.testConnection();
