@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type TeamRow, users, teamData, departments, teams } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type TeamRow, users, departments, teams } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -7,19 +7,15 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  getTeamData(): Promise<TeamData[]>;
-  setTeamData(data: TeamData[]): Promise<void>;
   getDepartments(): Promise<Department[]>;
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
-  private teamData: TeamData[];
 
   constructor() {
     this.users = new Map();
-    this.teamData = [];
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -37,14 +33,6 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
-  }
-
-  async getTeamData(): Promise<TeamData[]> {
-    return this.teamData;
-  }
-
-  async setTeamData(data: TeamData[]): Promise<void> {
-    this.teamData = data;
   }
 
   async getDepartments(): Promise<Department[]> {
@@ -74,26 +62,6 @@ export class DbStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
-  }
-
-  async getTeamData(): Promise<TeamData[]> {
-    const result = await db.select().from(teamData);
-    return result.map((row: any) => row.data as TeamData);
-  }
-
-  async setTeamData(data: TeamData[]): Promise<void> {
-    await db.transaction(async (tx: any) => {
-      await tx.delete(teamData);
-      
-      if (data.length > 0) {
-        await tx.insert(teamData).values(
-          data.map((td: TeamData) => ({
-            teamId: td.team.teamId,
-            data: td,
-          }))
-        );
-      }
-    });
   }
 
   async getDepartments(): Promise<Department[]> {

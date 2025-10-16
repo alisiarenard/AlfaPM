@@ -1,26 +1,19 @@
 import { TeamHeader } from "@/components/TeamHeader";
 import { InitiativesTimeline } from "@/components/InitiativesTimeline";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Upload, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { TeamData, Department, TeamRow } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function HomePage() {
-  const [jsonInput, setJsonInput] = useState("");
-  const [uploadError, setUploadError] = useState("");
-  const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
+  const [teamDataArray, setTeamDataArray] = useState<TeamData[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("");
-
-  const { data: teamDataArray, isLoading, error } = useQuery<TeamData[]>({
-    queryKey: ["/api/team-data"],
-  });
 
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
@@ -45,72 +38,27 @@ export default function HomePage() {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      if (!initialLoadAttempted && (!teamDataArray || teamDataArray.length === 0)) {
-        setInitialLoadAttempted(true);
-        try {
-          const response = await fetch("/team-data.json");
-          if (!response.ok) {
-            console.error("Failed to fetch team-data.json:", response.status);
-            setUploadError("Не удалось загрузить файл с данными команд");
-            return;
-          }
-
-          const data = await response.json();
-          const postResponse = await fetch("/api/team-data", {
-            method: "POST",
-            body: JSON.stringify(data),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (!postResponse.ok) {
-            console.error("Failed to upload initial data:", postResponse.status);
-            setUploadError("Не удалось загрузить начальные данные");
-            return;
-          }
-
-          await queryClient.invalidateQueries({ queryKey: ["/api/team-data"] });
-        } catch (error) {
-          console.error("Failed to load initial data:", error);
-          setUploadError("Ошибка при загрузке начальных данных");
+      try {
+        const response = await fetch("/team-data.json");
+        if (!response.ok) {
+          setLoadError("Не удалось загрузить файл с данными команд");
+          return;
         }
+
+        const data = await response.json();
+        setTeamDataArray(data);
+      } catch (error) {
+        console.error("Failed to load initial data:", error);
+        setLoadError("Ошибка при загрузке данных");
+      } finally {
+        setIsLoadingData(false);
       }
     };
 
     loadInitialData();
-  }, [teamDataArray, initialLoadAttempted]);
+  }, []);
 
-  const handleUpload = async () => {
-    setUploadError("");
-    
-    try {
-      const parsedData = JSON.parse(jsonInput);
-      
-      const response = await fetch("/api/team-data", {
-        method: "POST",
-        body: JSON.stringify(parsedData),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-      
-      await queryClient.invalidateQueries({ queryKey: ["/api/team-data"] });
-      setJsonInput("");
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        setUploadError("Invalid JSON format. Please check your data.");
-      } else {
-        setUploadError("Failed to upload data. Please try again.");
-      }
-    }
-  };
-
-  if (isLoading) {
+  if (isLoadingData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -121,65 +69,13 @@ export default function HomePage() {
     );
   }
 
-  if (error) {
+  if (loadError) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Ошибка при загрузке данных. Пожалуйста, перезагрузите страницу.
-          </AlertDescription>
+          <AlertDescription>{loadError}</AlertDescription>
         </Alert>
-      </div>
-    );
-  }
-
-  if (!teamDataArray || teamDataArray.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto">
-          <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
-            <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
-          </div>
-
-          <div className="max-w-4xl mx-auto p-6 mt-12">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-semibold text-foreground mb-2">
-                Загрузите данные инициатив
-              </h1>
-              <p className="text-muted-foreground">
-                Вставьте JSON данные в формате API для отображения временной шкалы
-              </p>
-            </div>
-
-            {uploadError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{uploadError}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-4">
-              <Textarea
-                placeholder='[{"team": {"boardId": "...", "teamId": "...", "name": "...", "velocity": 42, "sprintDuration": 14}, "initiatives": [...]}]'
-                value={jsonInput}
-                onChange={(e) => setJsonInput(e.target.value)}
-                className="min-h-[300px] font-mono text-sm"
-                data-testid="textarea-json-input"
-              />
-              
-              <Button 
-                onClick={handleUpload} 
-                className="w-full gap-2"
-                disabled={!jsonInput.trim()}
-                data-testid="button-upload-data"
-              >
-                <Upload className="h-4 w-4" />
-                Загрузить данные
-              </Button>
-            </div>
-          </div>
-        </div>
       </div>
     );
   }

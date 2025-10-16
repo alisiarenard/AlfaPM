@@ -9,10 +9,10 @@ The application supports **multiple teams** in a single JSON array, with each te
 The application follows a utility-first design philosophy inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles, prioritizing information density with clarity and scannable data presentation.
 
 ### Initial Data Loading
-- Team data is stored in `client/public/team-data.json`
-- On first load, if no data exists, the application automatically loads data from this file
-- Users can also manually upload custom JSON data through the UI
-- Data includes two teams: "Каркас" and "Общие сервисы"
+- Team initiative data is loaded directly from `client/public/team-data.json`
+- No database storage for initiative data - JSON file is the single source of truth
+- Team metadata (velocity, department) is stored in PostgreSQL teams table
+- Data includes two teams: "Каркас" (UUID: 898cfdfd-ff1a-4fc3-9f65-e9a473dce1af) and "Общие сервисы" (UUID: 622c81aa-0e45-49ea-b329-c7af1345fc93)
 
 ## User Preferences
 
@@ -52,9 +52,10 @@ Preferred communication style: Simple, everyday language.
 
 **Key Components:**
 - `HomePage`: Main page component that handles multi-team display with Tabs
-  - Displays upload form when no data is loaded
-  - Renders Tabs UI for multi-team navigation when data is present
+  - Loads initiative data directly from team-data.json on mount
+  - Renders Tabs UI for multi-team navigation
   - Each tab shows team name and contains TeamHeader + InitiativesTimeline
+  - Fetches team metadata from database via /api/teams/:departmentId
 - `InitiativesTimeline`: Main visualization component showing initiatives mapped to sprint timelines with columns:
   - **Fixed columns** (sticky, remain visible during horizontal scroll):
     - Инициатива (Initiative name) - left: 0px, width: 220px
@@ -88,9 +89,9 @@ Preferred communication style: Simple, everyday language.
 
 **API Structure:**
 - RESTful endpoints under `/api` prefix
-- POST `/api/team-data`: Upload and validate team initiative data
-- GET `/api/team-data`: Retrieve stored team data
-- Zod schema validation for incoming data
+- GET `/api/departments`: Retrieve list of departments
+- GET `/api/teams/:departmentId`: Retrieve teams for a specific department
+- No endpoints for team initiative data (loaded from JSON file directly)
 
 **Development Setup:**
 - Vite middleware integration in development mode
@@ -109,7 +110,8 @@ Preferred communication style: Simple, everyday language.
 
 **Database Schema:**
 - `users` table: id (UUID), username, password - for future authentication
-- `team_data` table: id (UUID), teamId (unique), data (JSONB) - stores all team initiative data
+- `departments` table: id (UUID), department (varchar) - department names
+- `teams` table: team_id (varchar/UUID), team_name, vilocity, sprint_duration, department_id (UUID), space_id, sprint_board_id, init_board_id, sp_price
 - Schema defined in `shared/schema.ts` for type safety across client and server
 - Migrations managed through `drizzle-kit` (use `npm run db:push`)
 
@@ -122,16 +124,18 @@ Preferred communication style: Simple, everyday language.
 **Storage Layer:**
 - `DbStorage` class in `server/storage.ts`
 - Methods:
-  - `getTeamData()`: Returns array of TeamData from database
-  - `setTeamData(data)`: Saves team data using atomic transaction
+  - `getDepartments()`: Returns list of departments
+  - `getTeamsByDepartment(departmentId)`: Returns teams for a department
   - User management methods (getUser, getUserByUsername, createUser)
 - All writes wrapped in transactions for data integrity
+- Initiative data is not stored in database - only in team-data.json file
 
 **Data Models:**
-- `Team`: boardId, teamId, name, velocity, sprintDuration (optional, number of days per sprint)
+- `Team`: boardId, teamId (UUID), name, velocity, sprintDuration (optional, number of days per sprint)
 - `Initiative`: id, name, status, type (optional, e.g., "Epic" or "Feature"), startDate, size, involvement, sprints array
 - `Sprint`: sprintId, name, startDate, endDate, storyPoints
-- `TeamData`: Contains team object and initiatives array, stored as JSONB in database
+- `TeamData`: Contains team object and initiatives array, loaded from team-data.json file
+- `TeamRow`: Database model for teams table (team_id as UUID, team_name, vilocity, sprint_duration, department_id, etc.)
 
 **Investment Ratio (IR) Calculation:**
 - Sprint headers display IR (Investment Ratio) as the percentage of Epic initiative story points vs. total sprint story points

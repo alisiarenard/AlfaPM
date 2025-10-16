@@ -17,16 +17,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-export const teamData = pgTable("team_data", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  teamId: text("team_id").notNull().unique(),
-  data: jsonb("data").notNull(),
-});
-
-export const insertTeamDataSchema = createInsertSchema(teamData).omit({ id: true });
-export type InsertTeamData = z.infer<typeof insertTeamDataSchema>;
-export type TeamDataRow = typeof teamData.$inferSelect;
-
 export const departments = pgTable("departments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   department: varchar("department").notNull(),

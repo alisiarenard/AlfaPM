@@ -2,7 +2,7 @@
   {
     "team": {
       "boardId": "34567",
-      "teamId": "123",
+      "teamId": "898cfdfd-ff1a-4fc3-9f65-e9a473dce1af",
       "name": "Каркас",
       "velocity": 26,
       "sprintDuration": 14
@@ -113,7 +113,7 @@
   {
     "team": {
       "boardId": "34568",
-      "teamId": "124",
+      "teamId": "622c81aa-0e45-49ea-b329-c7af1345fc93",
       "name": "Общие сервисы",
       "velocity": 26,
       "sprintDuration": 14
