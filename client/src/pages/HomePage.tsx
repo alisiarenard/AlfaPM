@@ -1,4 +1,5 @@
-import { InitiativesList } from "@/components/InitiativesList";
+import { SimpleInitiativesTimeline } from "@/components/SimpleInitiativesTimeline";
+import { SimpleTeamHeader } from "@/components/SimpleTeamHeader";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
@@ -36,7 +37,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
-          <h2 className="text-sm font-medium text-muted-foreground">Список инициатив</h2>
+          <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
           <Select 
             value={selectedDepartment} 
             onValueChange={setSelectedDepartment}
@@ -121,5 +122,10 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     );
   }
 
-  return <InitiativesList initiatives={initiatives || []} teamName={team.teamName} />;
+  return (
+    <>
+      <SimpleTeamHeader team={team} initiativesCount={initiatives?.length || 0} />
+      <SimpleInitiativesTimeline initiatives={initiatives || []} teamName={team.teamName} />
+    </>
+  );
 }
