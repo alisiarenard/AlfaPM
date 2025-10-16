@@ -13,8 +13,9 @@ The application follows a utility-first design philosophy inspired by Linear's m
 - **Team metadata**: Fetched from database via `/api/teams/:departmentId` endpoint  
 - **Kaiten Integration**: Initiatives synced from Kaiten API (feature.kaiten.ru) to database
 - **Data Source**: Database is the single source of truth (migrated from JSON files)
-- **Sprint data**: Currently empty (sprints[] array), timeline shows only 5 metadata columns
+- **Sprint data**: Auto-generated from current date to end of year using sprintDuration (14 days)
 - **Date handling**: start_date field not in DB schema - displays "—" for missing dates
+- **Sprint display**: Empty sprints show "—" placeholder, no colored blocks for initiatives
 - Active teams: "Каркас" (UUID: 898cfdfd-ff1a-4fc3-9f65-e9a473dce1af) and "Общие сервисы" (UUID: 622c81aa-0e45-49ea-b329-c7af1345fc93, init_board_id: 1532130)
 
 ## User Preferences
@@ -190,11 +191,12 @@ Preferred communication style: Simple, everyday language.
 
 **Sprint Auto-Generation:**
 - When `sprintDuration` is provided in team data, the system automatically generates sprint columns until the end of the current year
-- Existing sprints from data are always preserved
-- Generated sprints fill gaps between existing sprints and after the last sprint up to December 31
+- **If no sprints exist in data**: Generates sprints from current date to Dec 31 with sequential naming ("Спринт 1", "Спринт 2", etc.)
+- **If sprints exist in data**: Preserves existing sprints and fills gaps between them, continuing to year-end
 - Sprint generation respects irregular sprint lengths and avoids overlaps
 - The final partial sprint is included even if shorter than sprintDuration
 - Generated sprints are named "Спринт N" where N continues from the maximum existing sprint number
+- All generated sprints have storyPoints = 0 (empty by default)
 
 ### Authentication and Authorization
 
