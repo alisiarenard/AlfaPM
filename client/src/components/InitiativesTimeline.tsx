@@ -20,30 +20,66 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
     return sprint?.sp || 0;
   };
 
-  // Рассчитать общую сумму SP для инициативы
+  // Рассчитать общую сумму SP для инициативы (выполнено)
   const getTotalSP = (initiative: Initiative): number => {
     return initiative.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
+  };
+
+  // Получить минимальный sprint_id как "дату начала"
+  const getStartSprint = (initiative: Initiative): string => {
+    if (initiative.sprints.length === 0) {
+      return '—';
+    }
+    const minSprintId = Math.min(...initiative.sprints.map(s => s.sprint_id));
+    return `Спринт ${minSprintId}`;
+  };
+
+  // Рассчитать вовлечённость (процент SP инициативы от всех SP в её спринтах)
+  const calculateInvolvement = (initiative: Initiative): string => {
+    if (initiative.sprints.length === 0) {
+      return '0%';
+    }
+
+    // Найти все спринты, в которых есть эта инициатива
+    const initiativeSprintIds = new Set(initiative.sprints.map(s => s.sprint_id));
+    
+    // Сумма SP текущей инициативы в её спринтах
+    const initiativeTotal = getTotalSP(initiative);
+    
+    // Сумма всех SP всех инициатив в тех же спринтах
+    let totalAllInitiatives = 0;
+    initiatives.forEach(init => {
+      init.sprints.forEach(sprint => {
+        if (initiativeSprintIds.has(sprint.sprint_id)) {
+          totalAllInitiatives += sprint.sp;
+        }
+      });
+    });
+    
+    if (totalAllInitiatives === 0) {
+      return '0%';
+    }
+    
+    const involvement = Math.round((initiativeTotal / totalAllInitiatives) * 100);
+    return `${involvement}%`;
   };
 
   // Рассчитать Investment Ratio для спринта (процент Epic SP от всех SP в спринте)
   const calculateSprintIR = (sprintId: number): string => {
     let totalSP = 0;
-    let epicSP = 0;
 
     initiatives.forEach(init => {
       const sp = getSprintSP(init, sprintId);
       totalSP += sp;
-      // Если инициатива - это Epic (например, проверяем по полю type или другой логике)
-      // Пока считаем все как Epic для примера
-      epicSP += sp;
     });
 
     if (totalSP === 0) {
       return '—';
     }
 
-    const ir = Math.round((epicSP / totalSP) * 100);
-    return `${ir}%`;
+    // Для IR пока считаем все инициативы как Epic (100%)
+    // Можно доработать логику позже, если нужно различать типы
+    return '100%';
   };
 
   // Преобразовать state в читабельный статус
@@ -73,6 +109,19 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
     }
   };
 
+  // Определить, нужно ли показывать цветной блок
+  const shouldShowColorBlock = (initiative: Initiative, sprintId: number): boolean => {
+    if (initiative.sprints.length === 0) {
+      return false;
+    }
+
+    const initiativeSprintIds = initiative.sprints.map(s => s.sprint_id).sort((a, b) => a - b);
+    const minSprintId = initiativeSprintIds[0];
+    const maxSprintId = initiativeSprintIds[initiativeSprintIds.length - 1];
+
+    return sprintId >= minSprintId && sprintId <= maxSprintId;
+  };
+
   return (
     <div className="w-full overflow-x-auto max-w-full">
       <table className="w-full border-collapse">
@@ -83,19 +132,24 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                 Инициатива
               </span>
             </th>
-            <th className="sticky left-[220px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[220px] z-[120] bg-background px-4 py-3 text-left min-w-[140px] max-w-[140px]">
+              <span className="text-xs font-semibold tracking-wide text-muted-foreground">
+                Дата начала
+              </span>
+            </th>
+            <th className="sticky left-[360px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
               <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                 Размер
               </span>
             </th>
-            <th className="sticky left-[320px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[460px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
               <span className="text-xs font-semibold tracking-wide text-muted-foreground">
                 Выполнено
               </span>
             </th>
-            <th className="sticky left-[420px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[560px] z-[120] bg-background px-4 py-3 text-left min-w-[120px] max-w-[120px]">
               <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-                Статус
+                Вовлечённость
               </span>
             </th>
             {allSprintIds.map((sprintId) => (
@@ -128,24 +182,32 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                   <span className="text-sm font-medium text-foreground">
                     {initiative.title}
                   </span>
+                  <StatusBadge status={getStatusFromState(initiative.state)} />
                 </div>
               </td>
-              <td className="sticky left-[220px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
+              <td className="sticky left-[220px] z-[100] bg-background px-4 py-3 min-w-[140px] max-w-[140px]">
+                <span className="text-sm font-mono text-muted-foreground">
+                  {getStartSprint(initiative)}
+                </span>
+              </td>
+              <td className="sticky left-[360px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-sm font-mono text-foreground">
                   {initiative.size} SP
                 </span>
               </td>
-              <td className="sticky left-[320px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
+              <td className="sticky left-[460px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-sm font-mono text-foreground">
                   {getTotalSP(initiative)} SP
                 </span>
               </td>
-              <td className="sticky left-[420px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
-                <StatusBadge status={getStatusFromState(initiative.state)} />
+              <td className="sticky left-[560px] z-[100] bg-background px-4 py-3 min-w-[120px] max-w-[120px]">
+                <span className="text-sm font-mono text-foreground">
+                  {calculateInvolvement(initiative)}
+                </span>
               </td>
               {allSprintIds.map((sprintId) => {
                 const sp = getSprintSP(initiative, sprintId);
-                const hasAllocation = sp > 0;
+                const showBlock = shouldShowColorBlock(initiative, sprintId);
 
                 return (
                   <td
@@ -154,13 +216,13 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                     data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                   >
                     <div className="flex items-center justify-center gap-2">
-                      {hasAllocation && (
+                      {showBlock && (
                         <div
-                          className="h-8 rounded px-3 flex items-center justify-center"
+                          className="h-8 rounded px-3 flex items-center justify-center min-w-[60px]"
                           style={{ backgroundColor: getStatusColor(initiative.state) }}
                         >
                           <span className="text-xs font-mono font-semibold text-foreground">
-                            {sp} SP
+                            {sp > 0 ? `${sp} SP` : ''}
                           </span>
                         </div>
                       )}
