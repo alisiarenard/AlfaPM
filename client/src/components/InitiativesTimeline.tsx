@@ -1,6 +1,5 @@
-import { format, addDays } from "date-fns";
 import { StatusBadge } from "./StatusBadge";
-import type { Initiative, Sprint, Team } from "@shared/schema";
+import type { Initiative, Team } from "@shared/schema";
 
 interface InitiativesTimelineProps {
   initiatives: Initiative[];
@@ -8,407 +7,171 @@ interface InitiativesTimelineProps {
 }
 
 export function InitiativesTimeline({ initiatives, team }: InitiativesTimelineProps) {
-  // Собрать все спринты из данных
-  const dataSprints = initiatives.reduce((acc, initiative) => {
-    initiative.sprints.forEach(sprint => {
-      if (!acc.some(s => s.sprintId === sprint.sprintId)) {
-        acc.push(sprint);
-      }
-    });
-    return acc;
-  }, [] as Sprint[]);
+  // Собрать все уникальные sprint_id из всех инициатив
+  const allSprintIds = Array.from(
+    new Set(
+      initiatives.flatMap(init => init.sprints.map(s => s.sprint_id))
+    )
+  ).sort((a, b) => a - b);
 
-  // Генерировать все спринты до конца года
-  const generateSprintsToEndOfYear = (): Sprint[] => {
-    // Валидация: если нет sprintDuration или некорректен
-    if (!team.sprintDuration || team.sprintDuration <= 0) {
-      return dataSprints;
-    }
-
-    const sprintDuration = team.sprintDuration;
-    const endOfYear = new Date(new Date().getFullYear(), 11, 31); // 31 декабря текущего года
-    
-    // Если нет спринтов в данных, начинаем с текущей даты
-    if (dataSprints.length === 0) {
-      const today = new Date();
-      const allSprints: Sprint[] = [];
-      let currentDate = new Date(today);
-      let sprintCounter = 1;
-      
-      while (currentDate <= endOfYear) {
-        const calculatedEndDate = addDays(currentDate, sprintDuration - 1);
-        const endDate = calculatedEndDate <= endOfYear ? calculatedEndDate : endOfYear;
-        
-        const daysBetween = Math.floor(
-          (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
-        ) + 1;
-        
-        if (daysBetween > 0) {
-          allSprints.push({
-            sprintId: `${sprintCounter}`,
-            name: `Спринт ${sprintCounter}`,
-            startDate: currentDate.toISOString().split('T')[0],
-            endDate: endDate.toISOString().split('T')[0],
-            storyPoints: 0
-          });
-          sprintCounter++;
-        }
-        
-        currentDate = addDays(endDate, 1);
-        
-        if (currentDate > endOfYear) {
-          break;
-        }
-      }
-      
-      return allSprints;
-    }
-    
-    // Сортируем существующие спринты по дате начала
-    const sortedDataSprints = [...dataSprints].sort(
-      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-    );
-    
-    // Найти максимальный номер спринта для продолжения нумерации
-    let maxSprintNum = 0;
-    sortedDataSprints.forEach(sprint => {
-      const num = parseInt(sprint.sprintId.replace(/\D/g, ''));
-      if (num > maxSprintNum) {
-        maxSprintNum = num;
-      }
-    });
-    let sprintCounter = maxSprintNum + 1;
-    
-    const allSprints: Sprint[] = [];
-    
-    // Функция для заполнения пробела синтетическими спринтами
-    const fillGap = (gapStartDate: Date, gapEndDate: Date, isLastGap: boolean = false) => {
-      let currentDate = new Date(gapStartDate);
-      
-      while (currentDate <= gapEndDate) {
-        // Рассчитываем дату окончания нового спринта
-        const calculatedEndDate = addDays(currentDate, sprintDuration - 1);
-        
-        // Ограничиваем дату окончания концом пробела или концом года
-        const maxAllowedEndDate = gapEndDate < endOfYear ? gapEndDate : endOfYear;
-        const endDate = calculatedEndDate <= maxAllowedEndDate ? calculatedEndDate : maxAllowedEndDate;
-        
-        // Проверяем, достаточно ли места для полноценного спринта
-        const daysBetween = Math.floor(
-          (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
-        ) + 1;
-        
-        // Если это не последний пробел (до конца года), пропускаем слишком короткие спринты
-        // Для последнего пробела создаем частичный спринт до конца года
-        if (daysBetween < sprintDuration && !isLastGap) {
-          break;
-        }
-        
-        // Если это последний пробел и остались дни до конца года, создаем частичный спринт
-        if (daysBetween > 0 && currentDate <= gapEndDate) {
-          allSprints.push({
-            sprintId: `${sprintCounter}`,
-            name: `Спринт ${sprintCounter}`,
-            startDate: currentDate.toISOString().split('T')[0],
-            endDate: endDate.toISOString().split('T')[0],
-            storyPoints: 0
-          });
-          sprintCounter++;
-        }
-        
-        currentDate = addDays(endDate, 1);
-        
-        // Выходим если достигли конца пробела
-        if (currentDate > gapEndDate) {
-          break;
-        }
-      }
-    };
-    
-    // Заполняем от начала первого спринта, через все существующие спринты, до конца года
-    let lastEndDate: Date | null = null;
-    
-    for (let i = 0; i < sortedDataSprints.length; i++) {
-      const currentSprint = sortedDataSprints[i];
-      const currentStartDate = new Date(currentSprint.startDate);
-      
-      // Заполняем пробел перед текущим спринтом, если он есть
-      if (lastEndDate && lastEndDate < addDays(currentStartDate, -1)) {
-        const gapStart = addDays(lastEndDate, 1);
-        const gapEnd = addDays(currentStartDate, -1);
-        fillGap(gapStart, gapEnd);
-      }
-      
-      // Добавляем текущий существующий спринт
-      allSprints.push(currentSprint);
-      lastEndDate = new Date(currentSprint.endDate);
-    }
-    
-    // Заполняем пробел после последнего спринта до конца года
-    if (lastEndDate && lastEndDate < endOfYear) {
-      const gapStart = addDays(lastEndDate, 1);
-      fillGap(gapStart, endOfYear, true); // isLastGap=true для включения частичного спринта
-    }
-    
-    // Возвращаем уже отсортированный массив
-    return allSprints.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  // Получить SP для конкретной инициативы в конкретном спринте
+  const getSprintSP = (initiative: Initiative, sprintId: number): number => {
+    const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
+    return sprint?.sp || 0;
   };
 
-  const allSprints = generateSprintsToEndOfYear();
+  // Рассчитать общую сумму SP для инициативы
+  const getTotalSP = (initiative: Initiative): number => {
+    return initiative.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
+  };
 
-  // Рассчитать IR (Investment Ratio) для каждого спринта
-  const calculateSprintIR = (sprint: Sprint): string => {
-    let totalStoryPoints = 0;
-    let epicStoryPoints = 0;
+  // Рассчитать Investment Ratio для спринта (процент Epic SP от всех SP в спринте)
+  const calculateSprintIR = (sprintId: number): string => {
+    let totalSP = 0;
+    let epicSP = 0;
 
-    initiatives.forEach(initiative => {
-      const initiativeSprint = initiative.sprints.find(s => s.sprintId === sprint.sprintId);
-      if (initiativeSprint && initiativeSprint.storyPoints > 0) {
-        totalStoryPoints += initiativeSprint.storyPoints;
-        
-        // Если type === "Epic", добавляем к epicStoryPoints
-        if (initiative.type?.toLowerCase() === 'epic') {
-          epicStoryPoints += initiativeSprint.storyPoints;
-        }
-      }
+    initiatives.forEach(init => {
+      const sp = getSprintSP(init, sprintId);
+      totalSP += sp;
+      // Если инициатива - это Epic (например, проверяем по полю type или другой логике)
+      // Пока считаем все как Epic для примера
+      epicSP += sp;
     });
 
-    if (totalStoryPoints === 0) {
+    if (totalSP === 0) {
       return '—';
     }
 
-    const ir = Math.round((epicStoryPoints / totalStoryPoints) * 100);
+    const ir = Math.round((epicSP / totalSP) * 100);
     return `${ir}%`;
   };
 
-  // Рассчитать сумму сторипойнтов для инициативы
-  const calculateCompletedPoints = (initiative: Initiative): number => {
-    return initiative.sprints.reduce((sum, sprint) => sum + sprint.storyPoints, 0);
+  // Преобразовать state в читабельный статус
+  const getStatusFromState = (state: string): string => {
+    switch (state) {
+      case "1-queued":
+        return "Planned";
+      case "2-inProgress":
+        return "Active";
+      case "3-done":
+        return "Completed";
+      default:
+        return "Unknown";
+    }
   };
 
-  // Рассчитать вовлечённость инициативы автоматически
-  const calculateInvolvement = (initiative: Initiative): string => {
-    if (initiative.sprints.length === 0) {
-      return '0';
-    }
-
-    // Найти период инициативы: от даты начала до последнего спринта
-    const initiativeStartDate = new Date(initiative.startDate);
-    
-    const lastInitiativeSprint = initiative.sprints.reduce((latest, s) => {
-      const currentSprintIndex = allSprints.findIndex(as => as.sprintId === s.sprintId);
-      const latestSprintIndex = allSprints.findIndex(as => as.sprintId === latest.sprintId);
-      return currentSprintIndex > latestSprintIndex ? s : latest;
-    }, initiative.sprints[0]);
-    
-    const lastSprintEndDate = new Date(lastInitiativeSprint.endDate);
-    
-    // Найти все спринты, которые попадают в период инициативы (по датам)
-    const sprintsInPeriod = allSprints.filter(sprint => {
-      const sprintStartDate = new Date(sprint.startDate);
-      const sprintEndDate = new Date(sprint.endDate);
-      
-      // Спринт попадает в период, если он хотя бы частично пересекается с периодом инициативы
-      return sprintStartDate <= lastSprintEndDate && sprintEndDate >= initiativeStartDate;
-    });
-    
-    const sprintIdsInPeriod = new Set(sprintsInPeriod.map(s => s.sprintId));
-    
-    // Сумма сторипойнтов текущей инициативы за этот период
-    const initiativeTotal = initiative.sprints
-      .filter(s => sprintIdsInPeriod.has(s.sprintId))
-      .reduce((sum, sprint) => sum + sprint.storyPoints, 0);
-    
-    // Сумма всех сторипойнтов всех инициатив за тот же период
-    let totalAllInitiatives = 0;
-    
-    initiatives.forEach(init => {
-      init.sprints.forEach(sprint => {
-        if (sprintIdsInPeriod.has(sprint.sprintId)) {
-          totalAllInitiatives += sprint.storyPoints;
-        }
-      });
-    });
-    
-    if (totalAllInitiatives === 0) {
-      return '0';
-    }
-    
-    const involvement = Math.round((initiativeTotal / totalAllInitiatives) * 100);
-    return `${involvement}`;
-  };
-
-  const getStatusColor = (status: string): string => {
-    const normalizedStatus = status.toLowerCase();
-    switch (normalizedStatus) {
-      case "active":
-      case "in progress":
+  const getStatusColor = (state: string): string => {
+    switch (state) {
+      case "2-inProgress":
         return "hsl(142 76% 45% / 0.4)";
-      case "planned":
+      case "1-queued":
         return "hsl(215 80% 60% / 0.4)";
-      case "completed":
+      case "3-done":
         return "hsl(220 8% 55% / 0.4)";
-      case "at risk":
-        return "hsl(25 95% 55% / 0.4)";
       default:
         return "hsl(220 12% 94% / 0.3)";
     }
   };
 
-  const shouldShowColorBlock = (initiative: Initiative, sprint: Sprint, sprintIndex: number) => {
-    if (initiative.sprints.length === 0 || !initiative.startDate) {
-      return false;
-    }
-    
-    const initiativeStartDate = new Date(initiative.startDate);
-    const sprintStartDate = new Date(sprint.startDate);
-    
-    if (sprintStartDate < initiativeStartDate) {
-      return false;
-    }
-    
-    const lastInitiativeSprint = initiative.sprints.reduce((latest, s) => {
-      const currentSprintIndex = allSprints.findIndex(as => as.sprintId === s.sprintId);
-      const latestSprintIndex = allSprints.findIndex(as => as.sprintId === latest.sprintId);
-      return currentSprintIndex > latestSprintIndex ? s : latest;
-    }, initiative.sprints[0]);
-    
-    const lastSprintIndex = allSprints.findIndex(s => s.sprintId === lastInitiativeSprint.sprintId);
-    
-    return sprintIndex <= lastSprintIndex;
-  };
-
   return (
     <div className="w-full overflow-x-auto max-w-full">
       <table className="w-full border-collapse">
-          <thead className="sticky top-0 z-[110] bg-background">
-            <tr className="border-b border-border">
-              <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px] max-w-[220px]">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  Инициатива
-                </span>
-              </th>
-              <th className="sticky left-[220px] z-[120] bg-background px-4 py-3 text-left min-w-[140px] max-w-[140px]">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  Дата начала
-                </span>
-              </th>
-              <th className="sticky left-[360px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  Размер
-                </span>
-              </th>
-              <th className="sticky left-[460px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  Выполнено
-                </span>
-              </th>
-              <th className="sticky left-[560px] z-[120] bg-background px-4 py-3 text-left min-w-[120px] max-w-[120px]">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-                  Вовлечённость
-                </span>
-              </th>
-              {allSprints.map((sprint) => (
-                <th
-                  key={sprint.sprintId}
-                  className="px-4 py-3 text-center min-w-[140px] bg-muted/30"
-                  data-testid={`header-sprint-${sprint.sprintId}`}
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs text-muted-foreground font-mono">
-                      {format(new Date(sprint.startDate), "dd.MM")} - {format(new Date(sprint.endDate), "dd.MM")}
-                    </span>
-                    <span className="text-xs font-semibold text-foreground">
-                      IR: {calculateSprintIR(sprint)}
-                    </span>
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {initiatives.map((initiative) => (
-              <tr
-                key={initiative.id}
-                className="border-b border-border hover-elevate transition-colors duration-150"
-                data-testid={`row-initiative-${initiative.id}`}
+        <thead className="sticky top-0 z-[110] bg-background">
+          <tr className="border-b border-border">
+            <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px] max-w-[220px]">
+              <span className="text-xs font-semibold tracking-wide text-muted-foreground">
+                Инициатива
+              </span>
+            </th>
+            <th className="sticky left-[220px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
+              <span className="text-xs font-semibold tracking-wide text-muted-foreground">
+                Размер
+              </span>
+            </th>
+            <th className="sticky left-[320px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
+              <span className="text-xs font-semibold tracking-wide text-muted-foreground">
+                Выполнено
+              </span>
+            </th>
+            <th className="sticky left-[420px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
+              <span className="text-xs font-semibold tracking-wide text-muted-foreground">
+                Статус
+              </span>
+            </th>
+            {allSprintIds.map((sprintId) => (
+              <th
+                key={sprintId}
+                className="px-4 py-3 text-center min-w-[140px] bg-muted/30"
+                data-testid={`header-sprint-${sprintId}`}
               >
-                <td className="sticky left-0 z-[100] bg-background px-4 py-3 min-w-[220px] max-w-[220px] overflow-hidden">
-                  <span className="font-medium text-sm text-foreground truncate block">
-                    {initiative.name}
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-semibold text-foreground font-mono">
+                    Спринт {sprintId}
                   </span>
-                </td>
-                <td className="sticky left-[220px] z-[100] bg-background px-4 py-3 min-w-[140px] max-w-[140px]">
-                  <span className="font-mono text-sm text-foreground">
-                    {initiative.startDate ? format(new Date(initiative.startDate), "dd.MM.yyyy") : "—"}
+                  <span className="text-xs text-muted-foreground">
+                    IR: {calculateSprintIR(sprintId)}
                   </span>
-                </td>
-                <td className="sticky left-[360px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
-                  <span className="text-sm text-foreground font-medium">
-                    {initiative.size}
-                  </span>
-                </td>
-                <td className="sticky left-[460px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
-                  <span className="text-sm text-foreground font-medium">
-                    {calculateCompletedPoints(initiative)}
-                  </span>
-                </td>
-                <td className="sticky left-[560px] z-[100] bg-background px-4 py-3 min-w-[120px] max-w-[120px]">
-                  <span className="text-sm text-foreground font-medium">
-                    {calculateInvolvement(initiative)}%
-                  </span>
-                </td>
-{(() => {
-                  // Найти первый и последний цветной блок
-                  const coloredBlocks = allSprints.map((s, idx) => ({ sprint: s, index: idx }))
-                    .filter(({ sprint, index }) => shouldShowColorBlock(initiative, sprint, index));
-                  
-                  const firstColoredIndex = coloredBlocks.length > 0 ? coloredBlocks[0].index : -1;
-                  const lastColoredIndex = coloredBlocks.length > 0 ? coloredBlocks[coloredBlocks.length - 1].index : -1;
-                  
-                  return allSprints.map((sprint, sprintIndex) => {
-                    const initiativeSprint = initiative.sprints.find(
-                      (s) => s.sprintId === sprint.sprintId
-                    );
-                    const showColorBlock = shouldShowColorBlock(initiative, sprint, sprintIndex);
-                    const isFirstColored = sprintIndex === firstColoredIndex;
-                    const isLastColored = sprintIndex === lastColoredIndex;
-                    
-                    return (
-                      <td
-                        key={sprint.sprintId}
-                        className={`text-center relative ${showColorBlock ? 'p-0' : 'px-4 py-3'}`}
-                        data-testid={`cell-sprint-${initiative.id}-${sprint.sprintId}`}
-                      >
-                        <div
-                          style={{
-                            backgroundColor: showColorBlock ? getStatusColor(initiative.status) : 'transparent',
-                            borderRadius: showColorBlock 
-                              ? `${isFirstColored ? '10px' : '0px'} ${isLastColored ? '10px' : '0px'} ${isLastColored ? '10px' : '0px'} ${isFirstColored ? '10px' : '0px'}`
-                              : '0px',
-                            padding: showColorBlock ? '5px 16px' : '0',
-                            minHeight: showColorBlock ? '40px' : 'auto',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          {initiativeSprint ? (
-                            <span className="font-mono text-base font-semibold text-foreground relative z-10">
-                              {initiativeSprint.storyPoints}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground text-sm relative z-10">—</span>
-                          )}
-                        </div>
-                      </td>
-                    );
-                  });
-                })()}
-              </tr>
+                </div>
+              </th>
             ))}
-          </tbody>
-        </table>
+          </tr>
+        </thead>
+        <tbody>
+          {initiatives.map((initiative) => (
+            <tr
+              key={initiative.id}
+              className="border-b border-border hover:bg-muted/50 transition-colors"
+              data-testid={`row-initiative-${initiative.id}`}
+            >
+              <td className="sticky left-0 z-[100] bg-background px-4 py-3 min-w-[220px] max-w-[220px]">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-foreground">
+                    {initiative.title}
+                  </span>
+                </div>
+              </td>
+              <td className="sticky left-[220px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
+                <span className="text-sm font-mono text-foreground">
+                  {initiative.size} SP
+                </span>
+              </td>
+              <td className="sticky left-[320px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
+                <span className="text-sm font-mono text-foreground">
+                  {getTotalSP(initiative)} SP
+                </span>
+              </td>
+              <td className="sticky left-[420px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
+                <StatusBadge status={getStatusFromState(initiative.state)} />
+              </td>
+              {allSprintIds.map((sprintId) => {
+                const sp = getSprintSP(initiative, sprintId);
+                const hasAllocation = sp > 0;
+
+                return (
+                  <td
+                    key={sprintId}
+                    className="px-4 py-3 min-w-[140px]"
+                    data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      {hasAllocation && (
+                        <div
+                          className="h-8 rounded px-3 flex items-center justify-center"
+                          style={{ backgroundColor: getStatusColor(initiative.state) }}
+                        >
+                          <span className="text-xs font-mono font-semibold text-foreground">
+                            {sp} SP
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

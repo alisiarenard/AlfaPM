@@ -78,23 +78,20 @@ export const insertTeamSchema = createInsertSchema(teams).omit({ teamId: true })
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type TeamRow = typeof teams.$inferSelect;
 
-export interface Sprint {
-  sprintId: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  storyPoints: number;
+export interface SprintAllocation {
+  sprint_id: number;
+  sp: number;
 }
 
 export interface Initiative {
   id: string;
-  name: string;
-  status: string;
-  type?: string;
-  startDate: string;
+  cardId: number;
+  title: string;
+  state: string;
+  condition: string;
   size: number;
-  involvement: number;
-  sprints: Sprint[];
+  initBoardId: number;
+  sprints: SprintAllocation[];
 }
 
 export interface Team {
