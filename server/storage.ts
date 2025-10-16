@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, users, teamData, departments } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type TeamRow, users, teamData, departments, teams } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -10,6 +10,7 @@ export interface IStorage {
   getTeamData(): Promise<TeamData[]>;
   setTeamData(data: TeamData[]): Promise<void>;
   getDepartments(): Promise<Department[]>;
+  getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -47,6 +48,10 @@ export class MemStorage implements IStorage {
   }
 
   async getDepartments(): Promise<Department[]> {
+    return [];
+  }
+
+  async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {
     return [];
   }
 }
@@ -93,6 +98,11 @@ export class DbStorage implements IStorage {
 
   async getDepartments(): Promise<Department[]> {
     const result = await db.select().from(departments);
+    return result;
+  }
+
+  async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {
+    const result = await db.select().from(teams).where(eq(teams.departmentId, departmentId));
     return result;
   }
 }

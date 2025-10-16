@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Upload, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { TeamData, Department } from "@shared/schema";
+import type { TeamData, Department, TeamRow } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function HomePage() {
@@ -23,6 +23,11 @@ export default function HomePage() {
 
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
+  });
+
+  const { data: departmentTeams } = useQuery<TeamRow[]>({
+    queryKey: ["/api/teams", selectedDepartment],
+    enabled: !!selectedDepartment,
   });
 
   useEffect(() => {
@@ -196,28 +201,45 @@ export default function HomePage() {
         </div>
         
         <div className="p-6">
-          <Tabs defaultValue={teamDataArray[0].team.teamId} className="w-full">
-            <TabsList className="mb-6" data-testid="tabs-teams">
-              {teamDataArray.map((teamData) => (
-                <TabsTrigger 
-                  key={teamData.team.teamId} 
-                  value={teamData.team.teamId}
-                  data-testid={`tab-team-${teamData.team.teamId}`}
-                >
-                  {teamData.team.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            
-            {teamDataArray.map((teamData) => (
-              <TabsContent key={teamData.team.teamId} value={teamData.team.teamId}>
-                <TeamHeader team={teamData.team} initiatives={teamData.initiatives} />
-                <div className="mt-6">
-                  <InitiativesTimeline initiatives={teamData.initiatives} team={teamData.team} />
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+          {departmentTeams && departmentTeams.length > 0 ? (
+            <Tabs defaultValue={departmentTeams[0].teamId} className="w-full">
+              <TabsList className="mb-6" data-testid="tabs-teams">
+                {departmentTeams.map((team) => (
+                  <TabsTrigger 
+                    key={team.teamId} 
+                    value={team.teamId}
+                    data-testid={`tab-team-${team.teamId}`}
+                  >
+                    {team.teamName}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {departmentTeams.map((team) => {
+                const teamData = teamDataArray?.find(td => td.team.teamId === team.teamId);
+                return (
+                  <TabsContent key={team.teamId} value={team.teamId}>
+                    {teamData ? (
+                      <>
+                        <TeamHeader team={teamData.team} initiatives={teamData.initiatives} />
+                        <div className="mt-6">
+                          <InitiativesTimeline initiatives={teamData.initiatives} team={teamData.team} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground">
+                        Нет данных для команды {team.teamName}
+                      </div>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              Нет команд в выбранном департаменте
+            </div>
+          )}
         </div>
       </div>
     </div>
