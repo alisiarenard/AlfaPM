@@ -385,22 +385,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Kaiten Sync Tasks] Starting sync for board ${boardId}`);
       
-      const cards = await kaitenClient.getCardsFromBoard(boardId);
-      log(`[Kaiten Sync Tasks] Found ${cards.length} parent cards`);
+      // Step 1: Get list of card IDs from board
+      const boardCards = await kaitenClient.getCardsFromBoard(boardId);
+      log(`[Kaiten Sync Tasks] Found ${boardCards.length} parent cards on board`);
 
       const syncedTasks = [];
       let totalChildrenProcessed = 0;
       
-      for (const card of cards) {
+      // Step 2: Fetch each card individually to get children
+      for (const boardCard of boardCards) {
+        const card = await kaitenClient.getCard(boardCard.id);
+        log(`[Kaiten Sync Tasks] Card ${card.id} - children: ${card.children?.length || 0}`);
+        
         if (card.children && Array.isArray(card.children)) {
           log(`[Kaiten Sync Tasks] Card ${card.id} has ${card.children.length} children`);
           
           for (const child of card.children) {
             totalChildrenProcessed++;
+            log(`[Kaiten Sync Tasks]   Child ${child.id}: state=${child.state}, sprint_id=${child.sprint_id}, title="${child.title}"`);
             
             // Filter: state === 3 and sprint_id is not empty (not null, undefined, 0, or empty string)
             if (child.state === 3 && child.sprint_id && child.sprint_id !== 0) {
-              log(`[Kaiten Sync Tasks] Processing child ${child.id} with sprint_id ${child.sprint_id}`);
+              log(`[Kaiten Sync Tasks]   ✓ Syncing child ${child.id}`);
               
               let state: "1-queued" | "2-inProgress" | "3-done";
               
