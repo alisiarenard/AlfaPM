@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInitiativeSchema } from "@shared/schema";
+import { insertInitiativeSchema, insertTaskSchema } from "@shared/schema";
 import { kaitenClient } from "./kaiten";
 import { log } from "./vite";
 
@@ -171,6 +171,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: "Failed to delete initiative" 
+      });
+    }
+  });
+
+  // Tasks endpoints
+  app.get("/api/tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getAllTasks();
+      res.json(tasks);
+    } catch (error) {
+      console.error("GET /api/tasks error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve tasks" 
+      });
+    }
+  });
+
+  app.get("/api/tasks/board/:boardId", async (req, res) => {
+    try {
+      const boardId = parseInt(req.params.boardId);
+      if (isNaN(boardId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid board ID" 
+        });
+      }
+      const tasks = await storage.getTasksByBoardId(boardId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("GET /api/tasks/board/:boardId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve tasks" 
+      });
+    }
+  });
+
+  app.get("/api/tasks/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const task = await storage.getTask(id);
+      if (!task) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Task not found" 
+        });
+      }
+      res.json(task);
+    } catch (error) {
+      console.error("GET /api/tasks/:id error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve task" 
+      });
+    }
+  });
+
+  app.post("/api/tasks", async (req, res) => {
+    try {
+      const validatedData = insertTaskSchema.parse(req.body);
+      const task = await storage.createTask(validatedData);
+      res.status(201).json(task);
+    } catch (error) {
+      console.error("POST /api/tasks error:", error);
+      
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          success: false, 
+          error: error.message 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Internal server error" 
+      });
+    }
+  });
+
+  app.patch("/api/tasks/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Request body cannot be empty" 
+        });
+      }
+      
+      const validatedData = insertTaskSchema.partial().parse(req.body);
+      
+      if (Object.keys(validatedData).length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "At least one field must be provided for update" 
+        });
+      }
+      
+      const task = await storage.updateTask(id, validatedData);
+      
+      if (!task) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Task not found" 
+        });
+      }
+      
+      res.json(task);
+    } catch (error) {
+      console.error("PATCH /api/tasks/:id error:", error);
+      
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          success: false, 
+          error: error.message 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Internal server error" 
+      });
+    }
+  });
+
+  app.delete("/api/tasks/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTask(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("DELETE /api/tasks/:id error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to delete task" 
       });
     }
   });
