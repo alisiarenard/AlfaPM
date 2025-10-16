@@ -373,25 +373,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Debug endpoint to check card details
-  app.get("/api/kaiten/debug-card/:cardId", async (req, res) => {
-    try {
-      const cardId = parseInt(req.params.cardId);
-      const card = await kaitenClient.getCard(cardId);
-      
-      console.log("=".repeat(80));
-      console.log(`KAITEN CARD ${cardId} FULL DATA:`);
-      console.log("=".repeat(80));
-      console.log(JSON.stringify(card, null, 2));
-      console.log("=".repeat(80));
-      
-      res.json(card);
-    } catch (error) {
-      console.error(`Error fetching card ${req.params.cardId}:`, error);
-      res.status(500).json({ error: error instanceof Error ? error.message : "Failed to fetch card" });
-    }
-  });
-
   app.post("/api/kaiten/sync-tasks/:boardId", async (req, res) => {
     try {
       const boardId = parseInt(req.params.boardId);
@@ -423,8 +404,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalChildrenProcessed++;
             log(`[Kaiten Sync Tasks]   Child ${child.id}: state=${child.state}, sprint_id=${child.sprint_id}, title="${child.title}"`);
             
-            // Filter: state === 3 and sprint_id is not empty (not null, undefined, 0, or empty string)
-            if (child.state === 3 && child.sprint_id && child.sprint_id !== 0) {
+            // Filter: sync all tasks with state === 3 (done)
+            if (child.state === 3) {
               log(`[Kaiten Sync Tasks]   ✓ Syncing child ${child.id}`);
               
               let state: "1-queued" | "2-inProgress" | "3-done";

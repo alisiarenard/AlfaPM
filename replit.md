@@ -10,8 +10,10 @@ This project is a web-based application designed to visualize and track team ini
 - Tasks reuse initiative_state and initiative_condition ENUMs for consistency
 - Implemented storage layer methods for tasks: getAllTasks, getTasksByBoardId, createTask, updateTask, deleteTask, syncTaskFromKaiten
 - Added Kaiten tasks synchronization endpoint: POST `/api/kaiten/sync-tasks/:boardId`
-- Tasks sync processes children cards from Kaiten board where state=3 (done) and sprint_id is not empty (filters out null, undefined, 0, and empty strings)
+- Tasks sync processes ALL children cards from Kaiten board where state=3 (done), regardless of sprint_id value (updated from previous sprint_id filtering requirement)
 - Parent card_id is stored in init_card_id field to link tasks to their parent initiatives
+- Kaiten API limitation: children data only available via individual card fetch (/cards/{cardId}), not board fetch (/boards/{boardId})
+- Sync implementation: fetches each parent card individually to retrieve children array, then filters and syncs children with state=3
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
