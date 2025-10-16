@@ -29,7 +29,13 @@ export class KaitenClient {
       throw new Error("KAITEN_DOMAIN and KAITEN_API_KEY environment variables are required");
     }
 
-    this.baseUrl = `https://${domain}.kaiten.io/api/latest`;
+    const normalizedDomain = domain.replace(/^https?:\/\//, '');
+    
+    if (normalizedDomain.includes('.')) {
+      this.baseUrl = `https://${normalizedDomain}/api/latest`;
+    } else {
+      this.baseUrl = `https://${normalizedDomain}.kaiten.io/api/latest`;
+    }
     this.apiKey = apiKey;
   }
 

@@ -193,13 +193,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const syncedInitiatives = [];
       
       for (const card of cards) {
-        const stateMap: Record<number, "1-queued" | "2-inProgress" | "3-done"> = {
-          1: "1-queued",
-          2: "2-inProgress", 
-          3: "3-done"
-        };
+        let state: "1-queued" | "2-inProgress" | "3-done";
         
-        const state = stateMap[card.state] || "1-queued";
+        // Basic Kaiten state mapping (can be extended for more states)
+        // state 1 = queued, state 2 = in progress, state 3 = done
+        // TODO: Add configurable mapping for custom Kaiten workflow states
+        if (card.state === 3) {
+          state = "3-done";
+        } else if (card.state === 2) {
+          state = "2-inProgress";
+        } else {
+          state = "1-queued";
+        }
+        
         const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
 
         const synced = await storage.syncInitiativeFromKaiten(
