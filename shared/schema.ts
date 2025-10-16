@@ -36,6 +36,22 @@ export const insertDepartmentSchema = createInsertSchema(departments).omit({ id:
 export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 export type Department = typeof departments.$inferSelect;
 
+export const teams = pgTable("teams", {
+  spaceId: integer("space_id").notNull(),
+  sprintBoardId: integer("sprint_board_id").notNull(),
+  initBoardId: integer("init_board_id").notNull(),
+  teamId: varchar("team_id").primaryKey().default(sql`gen_random_uuid()`),
+  teamName: varchar("team_name").notNull(),
+  vilocity: integer("vilocity").notNull(),
+  sprintDuration: integer("sprint_duration").notNull(),
+  departmentId: integer("department_id").notNull(),
+  spPrice: integer("sp_price").notNull(),
+});
+
+export const insertTeamSchema = createInsertSchema(teams).omit({ teamId: true });
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type TeamRow = typeof teams.$inferSelect;
+
 export interface Sprint {
   sprintId: string;
   name: string;
