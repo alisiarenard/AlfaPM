@@ -456,6 +456,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/kaiten/update-sprint/:sprintId", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid sprint ID" 
+        });
+      }
+
+      log(`[Kaiten Update Sprint] Fetching sprint ${sprintId} from Kaiten`);
+      
+      // Получаем данные спринта из Kaiten
+      const sprint = await kaitenClient.getSprint(sprintId);
+      
+      if (!sprint.cards || !Array.isArray(sprint.cards)) {
+        log(`[Kaiten Update Sprint] No cards found in sprint ${sprintId}`);
+        return res.json({
+          success: true,
+          updated: 0,
+          message: "No cards found in sprint"
+        });
+      }
+
+      log(`[Kaiten Update Sprint] Sprint has ${sprint.cards.length} cards`);
+      log(`[Kaiten Update Sprint] Sprint card IDs: ${sprint.cards.map(c => c.id).join(', ')}`);
+      
+      // Получаем все tasks из базы данных
+      const allTasks = await storage.getAllTasks();
+      log(`[Kaiten Update Sprint] Found ${allTasks.length} tasks in database`);
+      log(`[Kaiten Update Sprint] Task card IDs: ${allTasks.map(t => t.cardId).join(', ')}`);
+      
+      // Создаем Set с card_id из спринта для быстрого поиска
+      const sprintCardIds = new Set(sprint.cards.map(card => card.id));
+      
+      let updatedCount = 0;
+      
+      // Обновляем sprint_id для tasks, у которых card_id совпадает с card_id из спринта
+      for (const task of allTasks) {
+        if (sprintCardIds.has(task.cardId)) {
+          log(`[Kaiten Update Sprint] Updating task ${task.id} (card_id: ${task.cardId}) with sprint_id: ${sprintId}`);
+          
+          await storage.updateTask(task.id, { sprintId });
+          updatedCount++;
+        }
+      }
+
+      log(`[Kaiten Update Sprint] Updated ${updatedCount} tasks with sprint_id ${sprintId}`);
+      
+      res.json({
+        success: true,
+        updated: updatedCount,
+        sprintId,
+        totalCardsInSprint: sprint.cards.length,
+        totalTasksInDb: allTasks.length
+      });
+    } catch (error) {
+      console.error("POST /api/kaiten/update-sprint/:sprintId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to update sprint info" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/test", async (req, res) => {
     try {
       const isConnected = await kaitenClient.testConnection();

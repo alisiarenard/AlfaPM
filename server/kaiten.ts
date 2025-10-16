@@ -29,6 +29,13 @@ export interface KaitenBoardResponse {
   [key: string]: any;
 }
 
+export interface KaitenSprintResponse {
+  id: number;
+  title: string;
+  cards?: Array<{ id: number; [key: string]: any }>;
+  [key: string]: any;
+}
+
 export class KaitenClient {
   private baseUrl: string;
   private apiKey: string;
@@ -96,6 +103,11 @@ export class KaitenClient {
     
     log(`[Kaiten API] No cards found in response`);
     return [];
+  }
+
+  async getSprint(sprintId: number): Promise<KaitenSprintResponse> {
+    log(`[Kaiten API] Fetching sprint ${sprintId}`);
+    return this.makeRequest<KaitenSprintResponse>(`/sprints/${sprintId}`);
   }
 
   async testConnection(): Promise<boolean> {

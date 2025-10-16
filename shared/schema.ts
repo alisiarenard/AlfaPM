@@ -29,6 +29,7 @@ export const tasks = pgTable("tasks", {
   size: integer("size").notNull(),
   condition: initiativeConditionEnum("condition").notNull(),
   boardId: integer("board_id").notNull(),
+  sprintId: integer("sprint_id"),
   completedAt: varchar("completed_at"),
   type: varchar("type"),
   initCardId: integer("init_card_id"),
