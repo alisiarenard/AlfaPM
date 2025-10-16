@@ -1,12 +1,12 @@
-import { SimpleInitiativesTimeline } from "@/components/SimpleInitiativesTimeline";
-import { SimpleTeamHeader } from "@/components/SimpleTeamHeader";
+import { InitiativesTimeline } from "@/components/InitiativesTimeline";
+import { TeamHeader } from "@/components/TeamHeader";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { Department, TeamRow, InitiativeRow } from "@shared/schema";
+import type { Department, TeamRow, InitiativeRow, Initiative, Team } from "@shared/schema";
 
 export default function HomePage() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
@@ -89,7 +89,7 @@ export default function HomePage() {
 }
 
 function TeamInitiativesTab({ team }: { team: TeamRow }) {
-  const { data: initiatives, isLoading, error } = useQuery<InitiativeRow[]>({
+  const { data: initiativeRows, isLoading, error } = useQuery<InitiativeRow[]>({
     queryKey: ["/api/initiatives/board", team.initBoardId],
     enabled: !!team.initBoardId,
   });
@@ -122,10 +122,40 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     );
   }
 
+  // Преобразование данных из БД в формат компонента
+  const mapStateToStatus = (state: string): string => {
+    const stateMap: { [key: string]: string } = {
+      "1-queued": "planned",
+      "2-inProgress": "active",
+      "3-done": "completed",
+    };
+    return stateMap[state] || "planned";
+  };
+
+  const initiatives: Initiative[] = (initiativeRows || []).map(row => ({
+    id: row.id,
+    name: row.title,
+    status: mapStateToStatus(row.state),
+    startDate: new Date().toISOString().split('T')[0],
+    size: row.size,
+    involvement: 0,
+    sprints: []
+  }));
+
+  const teamData: Team = {
+    boardId: team.initBoardId.toString(),
+    teamId: team.teamId,
+    name: team.teamName,
+    velocity: team.vilocity,
+    sprintDuration: team.sprintDuration
+  };
+
   return (
     <>
-      <SimpleTeamHeader team={team} initiativesCount={initiatives?.length || 0} />
-      <SimpleInitiativesTimeline initiatives={initiatives || []} teamName={team.teamName} />
+      <TeamHeader team={teamData} initiatives={initiatives} dbTeam={team} />
+      <div className="mt-6">
+        <InitiativesTimeline initiatives={initiatives} team={teamData} />
+      </div>
     </>
   );
 }
