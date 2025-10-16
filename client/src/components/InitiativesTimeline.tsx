@@ -20,13 +20,49 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
 
   // Генерировать все спринты до конца года
   const generateSprintsToEndOfYear = (): Sprint[] => {
-    // Валидация: если нет sprintDuration, нет данных или sprintDuration некорректен
-    if (!team.sprintDuration || team.sprintDuration <= 0 || dataSprints.length === 0) {
+    // Валидация: если нет sprintDuration или некорректен
+    if (!team.sprintDuration || team.sprintDuration <= 0) {
       return dataSprints;
     }
 
     const sprintDuration = team.sprintDuration;
     const endOfYear = new Date(new Date().getFullYear(), 11, 31); // 31 декабря текущего года
+    
+    // Если нет спринтов в данных, начинаем с текущей даты
+    if (dataSprints.length === 0) {
+      const today = new Date();
+      const allSprints: Sprint[] = [];
+      let currentDate = new Date(today);
+      let sprintCounter = 1;
+      
+      while (currentDate <= endOfYear) {
+        const calculatedEndDate = addDays(currentDate, sprintDuration - 1);
+        const endDate = calculatedEndDate <= endOfYear ? calculatedEndDate : endOfYear;
+        
+        const daysBetween = Math.floor(
+          (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+        ) + 1;
+        
+        if (daysBetween > 0) {
+          allSprints.push({
+            sprintId: `${sprintCounter}`,
+            name: `Спринт ${sprintCounter}`,
+            startDate: currentDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0],
+            storyPoints: 0
+          });
+          sprintCounter++;
+        }
+        
+        currentDate = addDays(endDate, 1);
+        
+        if (currentDate > endOfYear) {
+          break;
+        }
+      }
+      
+      return allSprints;
+    }
     
     // Сортируем существующие спринты по дате начала
     const sortedDataSprints = [...dataSprints].sort(
