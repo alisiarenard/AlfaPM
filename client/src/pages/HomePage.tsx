@@ -3,11 +3,12 @@ import { InitiativesTimeline } from "@/components/InitiativesTimeline";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Upload, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { TeamData } from "@shared/schema";
+import type { TeamData, Department } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function HomePage() {
@@ -17,6 +18,10 @@ export default function HomePage() {
 
   const { data: teamDataArray, isLoading, error } = useQuery<TeamData[]>({
     queryKey: ["/api/team-data"],
+  });
+
+  const { data: departments } = useQuery<Department[]>({
+    queryKey: ["/api/departments"],
   });
 
   useEffect(() => {
@@ -165,16 +170,18 @@ export default function HomePage() {
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
           <h2 className="text-sm font-medium text-muted-foreground">Initiatives Timeline</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              queryClient.setQueryData(["/api/team-data"], null);
-            }}
-            data-testid="button-clear-data"
-          >
-            Очистить данные
-          </Button>
+          <Select data-testid="select-department">
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Выберите департамент" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments?.map((dept) => (
+                <SelectItem key={dept.id} value={dept.id} data-testid={`option-department-${dept.id}`}>
+                  {dept.department}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="p-6">

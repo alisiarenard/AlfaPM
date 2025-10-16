@@ -64,6 +64,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/departments", async (req, res) => {
+    try {
+      const departments = await storage.getDepartments();
+      res.json(departments);
+    } catch (error) {
+      console.error("GET /api/departments error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve departments" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
