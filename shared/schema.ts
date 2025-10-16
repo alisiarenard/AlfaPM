@@ -44,7 +44,7 @@ export const teams = pgTable("teams", {
   teamName: varchar("team_name").notNull(),
   vilocity: integer("vilocity").notNull(),
   sprintDuration: integer("sprint_duration").notNull(),
-  departmentId: integer("department_id").notNull(),
+  departmentId: varchar("department_id").notNull(),
   spPrice: integer("sp_price").notNull(),
 });
 
