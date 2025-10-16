@@ -8,7 +8,10 @@ This project is a web-based application designed to visualize and track team ini
 - Created task management endpoints: GET/POST/PATCH/DELETE `/api/tasks` and `/api/tasks/board/:boardId`
 - Tasks table includes fields: id, card_id, title, created, state, size, condition, board_id, type (nullable), completed_at (nullable), init_card_id (nullable)
 - Tasks reuse initiative_state and initiative_condition ENUMs for consistency
-- Implemented storage layer methods for tasks: getAllTasks, getTasksByBoardId, createTask, updateTask, deleteTask
+- Implemented storage layer methods for tasks: getAllTasks, getTasksByBoardId, createTask, updateTask, deleteTask, syncTaskFromKaiten
+- Added Kaiten tasks synchronization endpoint: POST `/api/kaiten/sync-tasks/:boardId`
+- Tasks sync processes children cards from Kaiten board where state=3 (done) and sprint_id is not empty (filters out null, undefined, 0, and empty strings)
+- Parent card_id is stored in init_card_id field to link tasks to their parent initiatives
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -43,6 +46,7 @@ The backend uses Express.js with TypeScript and an ESM module system. It provide
 - `/api/tasks` (GET, POST, PATCH, DELETE): Manage tasks.
 - `/api/tasks/board/:boardId`: Retrieve tasks for a specific board.
 - `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten.
+- `/api/kaiten/sync-tasks/:boardId`: Sync tasks (children cards) from Kaiten.
 
 **Kaiten Integration:**
 - Syncs initiatives from the Kaiten API (feature.kaiten.ru) to the database, mapping Kaiten card states to initiative states (queued, inProgress, done). Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN` environment variables.
