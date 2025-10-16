@@ -20,6 +20,24 @@ export const insertInitiativeSchema = createInsertSchema(initiatives).omit({ id:
 export type InsertInitiative = z.infer<typeof insertInitiativeSchema>;
 export type InitiativeRow = typeof initiatives.$inferSelect;
 
+export const tasks = pgTable("tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cardId: integer("card_id").notNull(),
+  title: varchar("title").notNull(),
+  created: varchar("created").notNull(),
+  state: initiativeStateEnum("state").notNull(),
+  size: integer("size").notNull(),
+  condition: initiativeConditionEnum("condition").notNull(),
+  boardId: integer("board_id").notNull(),
+  completedAt: varchar("completed_at"),
+  type: varchar("type"),
+  initCardId: integer("init_card_id"),
+});
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true });
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type TaskRow = typeof tasks.$inferSelect;
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),

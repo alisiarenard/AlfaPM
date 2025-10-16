@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type TeamRow, type InitiativeRow, type InsertInitiative, users, departments, teams, initiatives } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, users, departments, teams, initiatives, tasks } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -24,6 +24,13 @@ export interface IStorage {
     condition: "1-live" | "2-archived", 
     size: number
   ): Promise<InitiativeRow>;
+  getAllTasks(): Promise<TaskRow[]>;
+  getTasksByBoardId(boardId: number): Promise<TaskRow[]>;
+  getTask(id: string): Promise<TaskRow | undefined>;
+  getTaskByCardId(cardId: number): Promise<TaskRow | undefined>;
+  createTask(task: InsertTask): Promise<TaskRow>;
+  updateTask(id: string, task: Partial<InsertTask>): Promise<TaskRow | undefined>;
+  deleteTask(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -97,6 +104,41 @@ export class MemStorage implements IStorage {
   ): Promise<InitiativeRow> {
     const id = randomUUID();
     return { id, cardId, title, state, condition, size, initBoardId: boardId };
+  }
+
+  async getAllTasks(): Promise<TaskRow[]> {
+    return [];
+  }
+
+  async getTasksByBoardId(boardId: number): Promise<TaskRow[]> {
+    return [];
+  }
+
+  async getTask(id: string): Promise<TaskRow | undefined> {
+    return undefined;
+  }
+
+  async getTaskByCardId(cardId: number): Promise<TaskRow | undefined> {
+    return undefined;
+  }
+
+  async createTask(task: InsertTask): Promise<TaskRow> {
+    const id = randomUUID();
+    return { 
+      ...task, 
+      id,
+      type: task.type ?? null,
+      completedAt: task.completedAt ?? null,
+      initCardId: task.initCardId ?? null
+    };
+  }
+
+  async updateTask(id: string, task: Partial<InsertTask>): Promise<TaskRow | undefined> {
+    throw new Error("Not implemented");
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    return;
   }
 }
 
@@ -196,6 +238,48 @@ export class DbStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async getAllTasks(): Promise<TaskRow[]> {
+    const result = await db.select().from(tasks);
+    return result;
+  }
+
+  async getTasksByBoardId(boardId: number): Promise<TaskRow[]> {
+    const result = await db.select().from(tasks).where(eq(tasks.boardId, boardId));
+    return result;
+  }
+
+  async getTask(id: string): Promise<TaskRow | undefined> {
+    const result = await db.query.tasks.findFirst({
+      where: eq(tasks.id, id),
+    });
+    return result;
+  }
+
+  async getTaskByCardId(cardId: number): Promise<TaskRow | undefined> {
+    const result = await db.query.tasks.findFirst({
+      where: eq(tasks.cardId, cardId),
+    });
+    return result;
+  }
+
+  async createTask(task: InsertTask): Promise<TaskRow> {
+    const [result] = await db.insert(tasks).values(task).returning();
+    return result;
+  }
+
+  async updateTask(id: string, updateData: Partial<InsertTask>): Promise<TaskRow | undefined> {
+    const [result] = await db
+      .update(tasks)
+      .set(updateData)
+      .where(eq(tasks.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
 }
 
