@@ -136,7 +136,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     id: row.id,
     name: row.title,
     status: mapStateToStatus(row.state),
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: "",
     size: row.size,
     involvement: 0,
     sprints: []

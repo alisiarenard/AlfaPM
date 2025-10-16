@@ -220,14 +220,14 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
   };
 
   const shouldShowColorBlock = (initiative: Initiative, sprint: Sprint, sprintIndex: number) => {
+    if (initiative.sprints.length === 0 || !initiative.startDate) {
+      return false;
+    }
+    
     const initiativeStartDate = new Date(initiative.startDate);
     const sprintStartDate = new Date(sprint.startDate);
     
     if (sprintStartDate < initiativeStartDate) {
-      return false;
-    }
-    
-    if (initiative.sprints.length === 0) {
       return false;
     }
     
@@ -304,7 +304,7 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                 </td>
                 <td className="sticky left-[220px] z-[100] bg-background px-4 py-3 min-w-[140px] max-w-[140px]">
                   <span className="font-mono text-sm text-foreground">
-                    {format(new Date(initiative.startDate), "dd.MM.yyyy")}
+                    {initiative.startDate ? format(new Date(initiative.startDate), "dd.MM.yyyy") : "—"}
                   </span>
                 </td>
                 <td className="sticky left-[360px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">

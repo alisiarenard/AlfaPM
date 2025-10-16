@@ -22,7 +22,7 @@ export function TeamHeader({ team, initiatives, dbTeam }: TeamHeaderProps) {
     });
 
     if (totalStoryPoints === 0) {
-      return "—";
+      return "0%";
     }
 
     const rate = (epicStoryPoints / totalStoryPoints) * 100;
