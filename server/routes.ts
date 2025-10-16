@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertInitiativeSchema } from "@shared/schema";
+import { kaitenClient } from "./kaiten";
+import { log } from "./vite";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/departments", async (req, res) => {
@@ -169,6 +171,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: "Failed to delete initiative" 
+      });
+    }
+  });
+
+  app.post("/api/kaiten/sync-board/:boardId", async (req, res) => {
+    try {
+      const boardId = parseInt(req.params.boardId);
+      if (isNaN(boardId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid board ID" 
+        });
+      }
+
+      log(`[Kaiten Sync] Starting sync for board ${boardId}`);
+      
+      const cards = await kaitenClient.getCardsFromBoard(boardId);
+      log(`[Kaiten Sync] Found ${cards.length} cards`);
+
+      const syncedInitiatives = [];
+      
+      for (const card of cards) {
+        const stateMap: Record<number, "1-queued" | "2-inProgress" | "3-done"> = {
+          1: "1-queued",
+          2: "2-inProgress", 
+          3: "3-done"
+        };
+        
+        const state = stateMap[card.state] || "1-queued";
+        const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+        const synced = await storage.syncInitiativeFromKaiten(
+          card.id,
+          boardId,
+          card.title,
+          state,
+          condition,
+          card.size || 0
+        );
+        
+        syncedInitiatives.push(synced);
+      }
+
+      log(`[Kaiten Sync] Successfully synced ${syncedInitiatives.length} initiatives`);
+      
+      res.json({
+        success: true,
+        count: syncedInitiatives.length,
+        initiatives: syncedInitiatives
+      });
+    } catch (error) {
+      console.error("POST /api/kaiten/sync-board/:boardId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to sync initiatives from Kaiten" 
+      });
+    }
+  });
+
+  app.get("/api/kaiten/test", async (req, res) => {
+    try {
+      const isConnected = await kaitenClient.testConnection();
+      res.json({ 
+        success: true, 
+        connected: isConnected,
+        message: isConnected ? "Kaiten API connection successful" : "Kaiten API connection failed"
+      });
+    } catch (error) {
+      console.error("GET /api/kaiten/test error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to test Kaiten connection" 
       });
     }
   });

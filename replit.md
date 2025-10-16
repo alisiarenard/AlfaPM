@@ -99,6 +99,14 @@ Preferred communication style: Simple, everyday language.
 - DELETE `/api/initiatives/:id`: Delete initiative
 - Team initiative timeline data (loaded from JSON file directly)
 
+**Kaiten API Integration:**
+- POST `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten board to database
+- GET `/api/kaiten/test`: Test Kaiten API connection
+- Requires environment variables: `KAITEN_API_KEY` and `KAITEN_DOMAIN`
+- Uses undici for HTTP requests
+- Automatically maps Kaiten card states to initiative states (1=queued, 2=inProgress, 3=done)
+- Updates existing initiatives by card_id or creates new ones
+
 **Development Setup:**
 - Vite middleware integration in development mode
 - SSR template serving for production builds

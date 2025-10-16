@@ -1,4 +1,5 @@
 import { log } from "./vite";
+import { request } from "undici";
 
 export interface KaitenCard {
   id: number;
@@ -32,42 +33,40 @@ export class KaitenClient {
     this.apiKey = apiKey;
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async makeRequest<T>(endpoint: string): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
-    const response = await fetch(url, {
-      ...options,
+    const { statusCode, body } = await request(url, {
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
-        ...options.headers,
       },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      log(`[Kaiten API] Error ${response.status}: ${errorText}`);
-      throw new Error(`Kaiten API error: ${response.status} - ${errorText}`);
+    const responseText = await body.text();
+
+    if (statusCode !== 200) {
+      log(`[Kaiten API] Error ${statusCode}: ${responseText}`);
+      throw new Error(`Kaiten API error: ${statusCode} - ${responseText}`);
     }
 
-    return response.json();
+    return JSON.parse(responseText);
   }
 
   async getCard(cardId: number): Promise<KaitenCard> {
     log(`[Kaiten API] Fetching card ${cardId}`);
-    return this.request<KaitenCard>(`/cards/${cardId}`);
+    return this.makeRequest<KaitenCard>(`/cards/${cardId}`);
   }
 
   async getCardsFromBoard(boardId: number): Promise<KaitenCard[]> {
     log(`[Kaiten API] Fetching cards from board ${boardId}`);
-    const response = await this.request<KaitenCardListResponse>(`/cards?board_id=${boardId}`);
+    const response = await this.makeRequest<KaitenCardListResponse>(`/cards?board_id=${boardId}`);
     return response.data || [];
   }
 
   async testConnection(): Promise<boolean> {
     try {
-      // Test API connection by making a simple request
-      await this.request('/spaces');
+      await this.makeRequest('/spaces');
       log('[Kaiten API] Connection test successful');
       return true;
     } catch (error) {
