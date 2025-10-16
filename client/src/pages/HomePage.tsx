@@ -89,7 +89,7 @@ export default function HomePage() {
 }
 
 function TeamInitiativesTab({ team }: { team: TeamRow }) {
-  const { data: initiativeRows, isLoading, error } = useQuery<InitiativeRow[]>({
+  const { data: initiativeRows, isLoading, error } = useQuery<Initiative[]>({
     queryKey: ["/api/initiatives/board", team.initBoardId],
     enabled: !!team.initBoardId,
   });
@@ -122,25 +122,8 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     );
   }
 
-  // Преобразование данных из БД в формат компонента
-  const mapStateToStatus = (state: string): string => {
-    const stateMap: { [key: string]: string } = {
-      "1-queued": "planned",
-      "2-inProgress": "active",
-      "3-done": "completed",
-    };
-    return stateMap[state] || "planned";
-  };
-
-  const initiatives: Initiative[] = (initiativeRows || []).map(row => ({
-    id: row.id,
-    name: row.title,
-    status: mapStateToStatus(row.state),
-    startDate: "",
-    size: row.size,
-    involvement: 0,
-    sprints: []
-  }));
+  // Данные уже приходят в правильном формате Initiative с сервера
+  const initiatives: Initiative[] = initiativeRows || [];
 
   const teamData: Team = {
     boardId: team.initBoardId.toString(),
