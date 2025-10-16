@@ -56,6 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = await storage.getTeamData();
       res.json(data);
     } catch (error) {
+      console.error("GET /api/team-data error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve data" 

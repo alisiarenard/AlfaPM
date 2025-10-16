@@ -1,5 +1,7 @@
-import { type User, type InsertUser, type TeamData } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, users, teamData } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -44,4 +46,45 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DbStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await db.query.users.findFirst({
+      where: eq(users.id, id),
+    });
+    return result;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await db.query.users.findFirst({
+      where: eq(users.username, username),
+    });
+    return result;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async getTeamData(): Promise<TeamData[]> {
+    const result = await db.select().from(teamData);
+    return result.map((row: any) => row.data as TeamData);
+  }
+
+  async setTeamData(data: TeamData[]): Promise<void> {
+    await db.transaction(async (tx: any) => {
+      await tx.delete(teamData);
+      
+      if (data.length > 0) {
+        await tx.insert(teamData).values(
+          data.map((td: TeamData) => ({
+            teamId: td.team.teamId,
+            data: td,
+          }))
+        );
+      }
+    });
+  }
+}
+
+export const storage = new DbStorage();

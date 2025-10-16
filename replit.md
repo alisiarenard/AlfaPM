@@ -101,20 +101,37 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage Solutions
 
 **Current Implementation:**
-- In-memory storage using `MemStorage` class
-- Data stored in Maps and arrays for quick access
-- No persistent database currently configured
+- PostgreSQL database powered by Neon
+- Drizzle ORM with Neon HTTP driver for type-safe database queries
+- `DbStorage` class implements `IStorage` interface
+- Data persists across app restarts and page refreshes
+- Transactional writes ensure data integrity
 
-**Database Schema (Prepared):**
-- Drizzle ORM configured for PostgreSQL
-- User table with UUID primary keys, username, and password fields
+**Database Schema:**
+- `users` table: id (UUID), username, password - for future authentication
+- `team_data` table: id (UUID), teamId (unique), data (JSONB) - stores all team initiative data
 - Schema defined in `shared/schema.ts` for type safety across client and server
-- Migration support configured with `drizzle-kit`
+- Migrations managed through `drizzle-kit` (use `npm run db:push`)
+
+**Database Connection:**
+- File: `server/db.ts`
+- Driver: Neon HTTP driver (`drizzle-orm/neon-http`)
+- Connection via `DATABASE_URL` environment variable
+- Automatic schema binding for type-safe queries
+
+**Storage Layer:**
+- `DbStorage` class in `server/storage.ts`
+- Methods:
+  - `getTeamData()`: Returns array of TeamData from database
+  - `setTeamData(data)`: Saves team data using atomic transaction
+  - User management methods (getUser, getUserByUsername, createUser)
+- All writes wrapped in transactions for data integrity
 
 **Data Models:**
 - `Team`: boardId, teamId, name, velocity, sprintDuration (optional, number of days per sprint)
 - `Initiative`: id, name, status, type (optional, e.g., "Epic" or "Feature"), startDate, size, involvement, sprints array
 - `Sprint`: sprintId, name, startDate, endDate, storyPoints
+- `TeamData`: Contains team object and initiatives array, stored as JSONB in database
 
 **Investment Ratio (IR) Calculation:**
 - Sprint headers display IR (Investment Ratio) as the percentage of Epic initiative story points vs. total sprint story points
@@ -163,9 +180,10 @@ Preferred communication style: Simple, everyday language.
 ### External Dependencies
 
 **Database:**
-- Neon Serverless PostgreSQL driver (`@neondatabase/serverless`)
+- Neon HTTP driver (`@neondatabase/serverless` with `drizzle-orm/neon-http`)
 - Drizzle ORM for type-safe database queries
 - Connection configured via `DATABASE_URL` environment variable
+- JSONB storage for flexible team data structure
 
 **UI Libraries:**
 - Radix UI component primitives (accordion, alert-dialog, avatar, checkbox, dialog, dropdown-menu, popover, select, tabs, toast, tooltip, and others)
