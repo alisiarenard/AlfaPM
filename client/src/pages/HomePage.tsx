@@ -228,7 +228,7 @@ export default function HomePage() {
                   <TabsContent key={team.teamId} value={team.teamId}>
                     {teamData ? (
                       <>
-                        <TeamHeader team={teamData.team} initiatives={teamData.initiatives} />
+                        <TeamHeader team={teamData.team} initiatives={teamData.initiatives} dbTeam={team} />
                         <div className="mt-6">
                           <InitiativesTimeline initiatives={teamData.initiatives} team={teamData.team} />
                         </div>
