@@ -43,7 +43,7 @@ export function TeamHeader({ team, initiatives, dbTeam }: TeamHeaderProps) {
             {team.name}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Board ID: <span className="font-mono">{team.boardId}</span>
+            Board ID: <span>{team.boardId}</span>
           </p>
         </div>
       </div>
@@ -52,14 +52,14 @@ export function TeamHeader({ team, initiatives, dbTeam }: TeamHeaderProps) {
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">Velocity</span>
-            <span className="text-sm font-semibold font-mono text-foreground" data-testid="text-velocity">{velocity}</span>
+            <span className="text-sm font-semibold text-foreground" data-testid="text-velocity">{velocity}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
           <Lightbulb className="h-4 w-4 text-muted-foreground" />
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">Innovation Rate</span>
-            <span className="text-sm font-semibold font-mono text-foreground" data-testid="text-innovation-rate">{calculateInnovationRate()}</span>
+            <span className="text-sm font-semibold text-foreground" data-testid="text-innovation-rate">{calculateInnovationRate()}</span>
           </div>
         </div>
       </div>

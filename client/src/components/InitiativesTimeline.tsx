@@ -279,7 +279,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   data-testid={`header-sprint-${sprintId}`}
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] text-foreground font-mono">
+                    <span className="text-[11px] text-foreground">
                       {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-normal">
@@ -313,22 +313,22 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 </div>
               </td>
               <td className="sticky left-[220px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
-                <span className="text-xs font-mono text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {getStartSprint(initiative)}
                 </span>
               </td>
               <td className="sticky left-[320px] z-[100] bg-background px-2 py-3 min-w-[80px] max-w-[80px]">
-                <span className="text-xs font-mono text-foreground">
+                <span className="text-xs text-foreground">
                   {initiative.size}
                 </span>
               </td>
               <td className="sticky left-[400px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
-                <span className="text-xs font-mono text-foreground">
+                <span className="text-xs text-foreground">
                   {getTotalSP(initiative)}
                 </span>
               </td>
               <td className="sticky left-[500px] z-[100] bg-background px-2 py-3 min-w-[120px] max-w-[120px]">
-                <span className="text-xs font-mono text-foreground">
+                <span className="text-xs text-foreground">
                   {calculateInvolvement(initiative)}
                 </span>
               </td>
@@ -367,7 +367,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
                       >
                         {showBlock && sp > 0 && (
-                          <span className="text-xs font-mono font-semibold text-foreground">
+                          <span className="text-xs font-semibold text-foreground">
                             {sp}
                           </span>
                         )}
