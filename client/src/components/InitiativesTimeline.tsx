@@ -237,21 +237,19 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 return (
                   <td
                     key={sprintId}
-                    className="px-4 py-3 min-w-[140px]"
+                    className="py-3 min-w-[140px]"
                     data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      {showBlock && (
-                        <div
-                          className="h-8 rounded px-3 flex items-center justify-center min-w-[60px]"
-                          style={{ backgroundColor: getStatusColor(initiative) }}
-                        >
-                          <span className="text-xs font-mono font-semibold text-foreground">
-                            {sp > 0 ? sp : ''}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    {showBlock && (
+                      <div
+                        className="h-8 w-full flex items-center justify-center"
+                        style={{ backgroundColor: getStatusColor(initiative) }}
+                      >
+                        <span className="text-xs font-mono font-semibold text-foreground">
+                          {sp > 0 ? sp : ''}
+                        </span>
+                      </div>
+                    )}
                   </td>
                 );
               })}
