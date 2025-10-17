@@ -97,14 +97,24 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return '—';
     }
     
-    // Найти минимальный sprint_id (самый первый спринт с тасками)
-    const minSprintId = Math.min(...initiative.sprints.map(s => s.sprint_id));
+    // Получить информацию о всех спринтах с story points для этой инициативы
+    const initiativeSprintInfos = initiative.sprints
+      .map(s => getSprintInfo(s.sprint_id))
+      .filter((info): info is SprintRow => info !== undefined);
     
-    // Получить информацию о спринте
-    const sprintInfo = getSprintInfo(minSprintId);
+    if (initiativeSprintInfos.length === 0) {
+      return '—';
+    }
     
-    // Вернуть дату начала спринта
-    return formatDate(sprintInfo?.startDate);
+    // Найти спринт с самой ранней датой начала
+    const earliestSprint = initiativeSprintInfos.reduce((earliest, current) => {
+      const earliestDate = new Date(earliest.startDate).getTime();
+      const currentDate = new Date(current.startDate).getTime();
+      return currentDate < earliestDate ? current : earliest;
+    });
+    
+    // Вернуть дату начала самого раннего спринта
+    return formatDate(earliestSprint.startDate);
   };
 
   // Рассчитать вовлечённость (процент SP инициативы от всех SP в её спринтах)
