@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type TeamData, type Department, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, users, departments, teams, initiatives, tasks } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql, asc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -227,7 +227,21 @@ export class DbStorage implements IStorage {
   }
 
   async getInitiativesByBoardId(initBoardId: number): Promise<InitiativeRow[]> {
-    const result = await db.select().from(initiatives).where(eq(initiatives.initBoardId, initBoardId));
+    const result = await db
+      .select()
+      .from(initiatives)
+      .where(eq(initiatives.initBoardId, initBoardId))
+      .orderBy(
+        asc(sql`
+          CASE 
+            WHEN ${initiatives.cardId} = 0 THEN 1
+            WHEN ${initiatives.state} = '3-done' THEN 2
+            WHEN ${initiatives.state} = '2-inProgress' THEN 3
+            WHEN ${initiatives.state} = '1-queued' THEN 4
+            ELSE 5
+          END
+        `)
+      );
     return result;
   }
 
