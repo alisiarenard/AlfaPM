@@ -492,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Синхронизируем таски с state === 3 (done)
         if (card.state === 3) {
-          log(`[Kaiten Sync Tasks]   ✓ Syncing task ${card.id}`);
+          log(`[Kaiten Sync Tasks]   ✓ Syncing task ${card.id}, sprint_id=${card.sprint_id}, init_card_id=${initCardId}`);
           
           let state: "1-queued" | "2-inProgress" | "3-done";
           
@@ -516,7 +516,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             condition,
             initCardId, // parent card_id from parents_ids
             card.type_id?.toString(),
-            card.completed_at ?? undefined
+            card.completed_at ?? undefined,
+            card.sprint_id ?? null // sprint_id from Kaiten
           );
           
           syncedTasks.push(synced);
