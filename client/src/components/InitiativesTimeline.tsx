@@ -1,4 +1,3 @@
-import { StatusBadge } from "./StatusBadge";
 import type { Initiative, Team } from "@shared/schema";
 
 interface InitiativesTimelineProps {
@@ -80,20 +79,6 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
     // Для IR пока считаем все инициативы как Epic (100%)
     // Можно доработать логику позже, если нужно различать типы
     return '100%';
-  };
-
-  // Преобразовать state в читабельный статус
-  const getStatusFromState = (state: string): string => {
-    switch (state) {
-      case "1-queued":
-        return "Planned";
-      case "2-inProgress":
-        return "Active";
-      case "3-done":
-        return "Completed";
-      default:
-        return "Unknown";
-    }
   };
 
   const getStatusColor = (state: string): string => {
@@ -178,11 +163,14 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
               data-testid={`row-initiative-${initiative.id}`}
             >
               <td className="sticky left-0 z-[100] bg-background px-4 py-3 min-w-[220px] max-w-[220px]">
-                <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: getStatusColor(initiative.state) }}
+                  />
                   <span className="text-sm font-medium text-foreground">
                     {initiative.title}
                   </span>
-                  <StatusBadge status={getStatusFromState(initiative.state)} />
                 </div>
               </td>
               <td className="sticky left-[220px] z-[100] bg-background px-4 py-3 min-w-[140px] max-w-[140px]">
