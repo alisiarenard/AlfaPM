@@ -246,18 +246,18 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   let roundedClass = '';
                   if (showBlock) {
                     if (isFirst && isLast) {
-                      roundedClass = 'rounded-[10px]';
+                      roundedClass = 'rounded-[6px]';
                     } else if (isFirst) {
-                      roundedClass = 'rounded-l-[10px]';
+                      roundedClass = 'rounded-l-[6px]';
                     } else if (isLast) {
-                      roundedClass = 'rounded-r-[10px]';
+                      roundedClass = 'rounded-r-[6px]';
                     }
                   }
 
                   return (
                     <td
                       key={sprintId}
-                      className="px-0 py-[10px] min-w-[140px]"
+                      className="px-0 py-[6px] min-w-[140px]"
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
                       <div
