@@ -474,68 +474,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Kaiten Sync Tasks] Starting sync for board ${boardId}`);
       
-      // Step 1: Get list of card IDs from board
+      // Step 1: Get list of cards from board
       const boardCards = await kaitenClient.getCardsFromBoard(boardId);
-      log(`[Kaiten Sync Tasks] Found ${boardCards.length} parent cards on board`);
+      log(`[Kaiten Sync Tasks] Found ${boardCards.length} cards on board`);
 
       const syncedTasks = [];
-      let totalChildrenProcessed = 0;
       
-      // Step 2: Fetch each card individually to get children
+      // Step 2: Fetch each card individually to get parents_ids
       for (const boardCard of boardCards) {
         const card = await kaitenClient.getCard(boardCard.id);
-        log(`[Kaiten Sync Tasks] Card ${card.id} - children: ${card.children?.length || 0}`);
-        log(`[Kaiten Sync Tasks] Card ${card.id} FULL RESPONSE: ${JSON.stringify(card, null, 2)}`);
         
-        if (card.children && Array.isArray(card.children)) {
-          log(`[Kaiten Sync Tasks] Card ${card.id} has ${card.children.length} children`);
-          log(`[Kaiten Sync Tasks] Card ${card.id} CHILDREN DATA: ${JSON.stringify(card.children, null, 2)}`);
+        // Определяем init_card_id по parents_ids
+        let initCardId = 0; // По умолчанию - "Поддержка бизнеса"
+        if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+          initCardId = card.parents_ids[0]; // Первый родитель - это инициатива
+        }
+        
+        // Синхронизируем таски с state === 3 (done)
+        if (card.state === 3) {
+          log(`[Kaiten Sync Tasks]   ✓ Syncing task ${card.id}`);
           
-          for (const child of card.children) {
-            totalChildrenProcessed++;
-            log(`[Kaiten Sync Tasks]   Child ${child.id}: state=${child.state}, sprint_id=${child.sprint_id}, title="${child.title}"`);
-            
-            // Filter: sync all tasks with state === 3 (done)
-            if (child.state === 3) {
-              log(`[Kaiten Sync Tasks]   ✓ Syncing child ${child.id}`);
-              
-              let state: "1-queued" | "2-inProgress" | "3-done";
-              
-              if (child.state === 3) {
-                state = "3-done";
-              } else if (child.state === 2) {
-                state = "2-inProgress";
-              } else {
-                state = "1-queued";
-              }
-              
-              const condition: "1-live" | "2-archived" = child.archived ? "2-archived" : "1-live";
-
-              const synced = await storage.syncTaskFromKaiten(
-                child.id,
-                boardId,
-                child.title,
-                child.created || new Date().toISOString(),
-                state,
-                child.size || 0,
-                condition,
-                card.id, // parent card_id goes to init_card_id
-                child.type_id?.toString(),
-                child.completed_at ?? undefined
-              );
-              
-              syncedTasks.push(synced);
-            }
+          let state: "1-queued" | "2-inProgress" | "3-done";
+          
+          if (card.state === 3) {
+            state = "3-done";
+          } else if (card.state === 2) {
+            state = "2-inProgress";
+          } else {
+            state = "1-queued";
           }
+          
+          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+          const synced = await storage.syncTaskFromKaiten(
+            card.id,
+            boardId,
+            card.title,
+            card.created || new Date().toISOString(),
+            state,
+            card.size || 0,
+            condition,
+            initCardId, // parent card_id from parents_ids
+            card.type_id?.toString(),
+            card.completed_at ?? undefined
+          );
+          
+          syncedTasks.push(synced);
         }
       }
 
-      log(`[Kaiten Sync Tasks] Processed ${totalChildrenProcessed} children total, synced ${syncedTasks.length} tasks`);
+      log(`[Kaiten Sync Tasks] Synced ${syncedTasks.length} tasks from ${boardCards.length} cards`);
       
       res.json({
         success: true,
         count: syncedTasks.length,
-        totalChildrenProcessed,
         tasks: syncedTasks
       });
     } catch (error) {
