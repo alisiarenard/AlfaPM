@@ -73,6 +73,16 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   
   // Получить все sprint_id в хронологическом порядке
   const allSprintIds = allSprintsWithGenerated.map(s => s.sprintId);
+  
+  // Найти максимальный ID спринта из базы данных (не автогенерированный)
+  const maxDbSprintId = sortedSprints.length > 0 
+    ? Math.max(...sortedSprints.map(s => s.sprintId))
+    : 0;
+  
+  // Проверка, является ли спринт автогенерированным
+  const isGeneratedSprint = (sprintId: number): boolean => {
+    return sprintId > maxDbSprintId;
+  };
 
   // Получить SP для конкретной инициативы в конкретном спринте
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
@@ -261,6 +271,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             </th>
             {allSprintIds.map((sprintId) => {
               const sprintInfo = getSprintInfo(sprintId);
+              const isGenerated = isGeneratedSprint(sprintId);
               return (
                 <th
                   key={sprintId}
@@ -272,7 +283,10 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-normal">
-                      IR: {calculateSprintIR(sprintId)} | Velocity: {sprintInfo?.velocity || '—'}
+                      {isGenerated 
+                        ? `IR: ${calculateSprintIR(sprintId)}`
+                        : `IR: ${calculateSprintIR(sprintId)} | Velocity: ${sprintInfo?.velocity || '—'}`
+                      }
                     </span>
                   </div>
                 </th>
