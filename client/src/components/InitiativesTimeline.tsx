@@ -73,22 +73,27 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return `${involvement}%`;
   };
 
-  // Рассчитать Investment Ratio для спринта (процент Epic SP от всех SP в спринте)
+  // Рассчитать Investment Ratio для спринта (процент SP всех инициатив кроме "Поддержка бизнеса" от всех SP спринта)
   const calculateSprintIR = (sprintId: number): string => {
     let totalSP = 0;
+    let spWithoutSupport = 0;
 
     initiatives.forEach(init => {
       const sp = getSprintSP(init, sprintId);
       totalSP += sp;
+      
+      // Добавляем SP только если это НЕ "Поддержка бизнеса" (cardId !== 0)
+      if (init.cardId !== 0) {
+        spWithoutSupport += sp;
+      }
     });
 
     if (totalSP === 0) {
       return '—';
     }
 
-    // Для IR пока считаем все инициативы как Epic (100%)
-    // Можно доработать логику позже, если нужно различать типы
-    return '100%';
+    const ir = Math.round((spWithoutSupport / totalSP) * 100);
+    return `${ir}%`;
   };
 
   // Получить информацию о спринте по ID
