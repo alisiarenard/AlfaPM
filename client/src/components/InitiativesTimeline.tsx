@@ -26,6 +26,12 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
 
   // Получить минимальный sprint_id как "дату начала"
   const getStartSprint = (initiative: Initiative): string => {
+    // Для "Поддержка бизнеса" всегда первый день текущего года
+    if (initiative.cardId === 0) {
+      const currentYear = new Date().getFullYear();
+      return `01.01.${currentYear}`;
+    }
+    
     if (initiative.sprints.length === 0) {
       return '—';
     }
