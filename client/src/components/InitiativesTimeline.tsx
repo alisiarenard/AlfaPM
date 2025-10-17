@@ -7,11 +7,47 @@ interface InitiativesTimelineProps {
 
 export function InitiativesTimeline({ initiatives, team }: InitiativesTimelineProps) {
   // Собрать все уникальные sprint_id из всех инициатив
-  const allSprintIds = Array.from(
+  const existingSprintIds = Array.from(
     new Set(
       initiatives.flatMap(init => init.sprints.map(s => s.sprint_id))
     )
   ).sort((a, b) => a - b);
+
+  // Автогенерация спринтов - заполняем пробелы и добавляем спринты до конца года
+  const generateSprintIds = (): number[] => {
+    if (existingSprintIds.length === 0) {
+      // Если нет существующих спринтов, просто возвращаем пустой массив
+      return [];
+    }
+
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const endOfYear = new Date(currentYear, 11, 31); // 31 декабря текущего года
+    
+    // Используем sprintDuration из команды, если есть, иначе по умолчанию 14 дней
+    const sprintDurationDays = team.sprintDuration || 14;
+    
+    // Начинаем с минимального существующего sprint_id
+    const minSprintId = Math.min(...existingSprintIds);
+    const maxSprintId = Math.max(...existingSprintIds);
+    
+    // Рассчитываем, сколько спринтов нужно до конца года
+    const daysToEndOfYear = Math.ceil((endOfYear.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+    const sprintsToEndOfYear = Math.ceil(daysToEndOfYear / sprintDurationDays);
+    
+    const generatedIds: number[] = [];
+    
+    // Заполняем диапазон от минимального до максимального + спринты до конца года
+    const targetMaxSprintId = maxSprintId + sprintsToEndOfYear;
+    
+    for (let id = minSprintId; id <= targetMaxSprintId; id++) {
+      generatedIds.push(id);
+    }
+    
+    return generatedIds;
+  };
+
+  const allSprintIds = generateSprintIds();
 
   // Получить SP для конкретной инициативы в конкретном спринте
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
