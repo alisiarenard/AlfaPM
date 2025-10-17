@@ -148,7 +148,7 @@ export class MemStorage implements IStorage {
       sprintId: task.sprintId ?? null,
       type: task.type ?? null,
       completedAt: task.completedAt ?? null,
-      initCardId: task.initCardId ?? null
+      initCardId: task.initCardId ?? 0
     };
   }
 
@@ -184,7 +184,7 @@ export class MemStorage implements IStorage {
       size,
       condition,
       sprintId: sprintId ?? null,
-      initCardId: initCardId ?? null,
+      initCardId: initCardId ?? 0,
       type: type ?? null,
       completedAt: completedAt ?? null
     };
@@ -376,7 +376,7 @@ export class DbStorage implements IStorage {
           condition, 
           boardId,
           sprintId: sprintId ?? null,
-          initCardId: initCardId ?? null,
+          initCardId: initCardId ?? 0,
           type: type ?? null,
           completedAt: completedAt ?? null
         })
@@ -395,7 +395,7 @@ export class DbStorage implements IStorage {
           condition, 
           boardId,
           sprintId: sprintId ?? null,
-          initCardId: initCardId ?? null,
+          initCardId: initCardId ?? 0,
           type: type ?? null,
           completedAt: completedAt ?? null
         })
