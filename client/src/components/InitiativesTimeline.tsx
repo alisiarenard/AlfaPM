@@ -257,7 +257,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   return (
                     <td
                       key={sprintId}
-                      className="px-0 py-[6px] min-w-[140px]"
+                      className="p-0 min-w-[140px]"
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
                       <div
