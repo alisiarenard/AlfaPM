@@ -118,22 +118,22 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const getStatusColor = (initiative: Initiative): string => {
     // Поддержка бизнеса - серый
     if (initiative.cardId === 0) {
-      return "hsl(220 8% 55% / 0.4)";
+      return "hsl(220 8% 55% / 0.2)";
     }
     
     // Остальные инициативы - по состоянию
     switch (initiative.state) {
       case "3-done":
         // Выполненные - зеленый
-        return "hsl(142 76% 45% / 0.4)";
+        return "hsl(142 76% 45% / 0.2)";
       case "2-inProgress":
         // В процессе - голубой
-        return "hsl(200 80% 60% / 0.4)";
+        return "hsl(200 80% 60% / 0.2)";
       case "1-queued":
         // В очереди - светло-серый
-        return "hsl(220 8% 75% / 0.4)";
+        return "hsl(220 8% 75% / 0.2)";
       default:
-        return "hsl(220 12% 94% / 0.3)";
+        return "hsl(220 12% 94% / 0.2)";
     }
   };
 
@@ -270,7 +270,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
                       <div
-                        className={`h-full w-full flex items-center justify-center ${roundedClass}`}
+                        className={`h-[30px] w-full flex items-center justify-center ${roundedClass}`}
                         style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
                       >
                         {showBlock && sp > 0 && (
