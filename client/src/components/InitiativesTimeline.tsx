@@ -1,11 +1,12 @@
-import type { Initiative, Team } from "@shared/schema";
+import type { Initiative, Team, SprintRow } from "@shared/schema";
 
 interface InitiativesTimelineProps {
   initiatives: Initiative[];
   team: Team;
+  sprints: SprintRow[];
 }
 
-export function InitiativesTimeline({ initiatives, team }: InitiativesTimelineProps) {
+export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
   // Собрать все уникальные sprint_id из всех инициатив
   const existingSprintIds = Array.from(
     new Set(
@@ -123,6 +124,20 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
     return '100%';
   };
 
+  // Получить информацию о спринте по ID
+  const getSprintInfo = (sprintId: number): SprintRow | undefined => {
+    return sprints.find(s => s.sprintId === sprintId);
+  };
+
+  // Форматировать дату в формат ДД.ММ
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}.${month}`;
+  };
+
   const getStatusColor = (state: string): string => {
     switch (state) {
       case "2-inProgress":
@@ -179,22 +194,25 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                 Вовлечённость
               </span>
             </th>
-            {allSprintIds.map((sprintId) => (
-              <th
-                key={sprintId}
-                className="px-4 py-3 text-center min-w-[140px] bg-muted/30"
-                data-testid={`header-sprint-${sprintId}`}
-              >
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-semibold text-foreground font-mono">
-                    Спринт {sprintId}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    IR: {calculateSprintIR(sprintId)}
-                  </span>
-                </div>
-              </th>
-            ))}
+            {allSprintIds.map((sprintId) => {
+              const sprintInfo = getSprintInfo(sprintId);
+              return (
+                <th
+                  key={sprintId}
+                  className="px-4 py-3 text-center min-w-[140px] bg-muted/30"
+                  data-testid={`header-sprint-${sprintId}`}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-semibold text-foreground font-mono">
+                      {formatDate(sprintInfo?.startDate)} - {formatDate(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      IR: {calculateSprintIR(sprintId)} | Velocity: {sprintInfo?.velocity || '—'}
+                    </span>
+                  </div>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>

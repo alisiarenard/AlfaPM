@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, users, departments, teams, initiatives, tasks } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, users, departments, teams, initiatives, tasks, sprints } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, sql, asc } from "drizzle-orm";
@@ -45,6 +45,9 @@ export interface IStorage {
     completedAt?: string,
     sprintId?: number | null
   ): Promise<TaskRow>;
+  getAllSprints(): Promise<SprintRow[]>;
+  getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
+  getSprint(sprintId: number): Promise<SprintRow | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -188,6 +191,18 @@ export class MemStorage implements IStorage {
       type: type ?? null,
       completedAt: completedAt ?? null
     };
+  }
+
+  async getAllSprints(): Promise<SprintRow[]> {
+    return [];
+  }
+
+  async getSprintsByBoardId(boardId: number): Promise<SprintRow[]> {
+    return [];
+  }
+
+  async getSprint(sprintId: number): Promise<SprintRow | undefined> {
+    return undefined;
   }
 }
 
@@ -402,6 +417,25 @@ export class DbStorage implements IStorage {
         .returning();
       return newTask;
     }
+  }
+
+  async getAllSprints(): Promise<SprintRow[]> {
+    const result = await db.select().from(sprints).orderBy(asc(sprints.sprintId));
+    return result;
+  }
+
+  async getSprintsByBoardId(boardId: number): Promise<SprintRow[]> {
+    const result = await db.select().from(sprints)
+      .where(eq(sprints.boardId, boardId))
+      .orderBy(asc(sprints.sprintId));
+    return result;
+  }
+
+  async getSprint(sprintId: number): Promise<SprintRow | undefined> {
+    const result = await db.query.sprints.findFirst({
+      where: eq(sprints.sprintId, sprintId),
+    });
+    return result;
   }
 }
 

@@ -204,6 +204,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sprints endpoints
+  app.get("/api/sprints", async (req, res) => {
+    try {
+      const sprints = await storage.getAllSprints();
+      res.json(sprints);
+    } catch (error) {
+      console.error("GET /api/sprints error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve sprints" 
+      });
+    }
+  });
+
+  app.get("/api/sprints/board/:boardId", async (req, res) => {
+    try {
+      const boardId = parseInt(req.params.boardId);
+      if (isNaN(boardId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid board ID" 
+        });
+      }
+      const sprints = await storage.getSprintsByBoardId(boardId);
+      res.json(sprints);
+    } catch (error) {
+      console.error("GET /api/sprints/board/:boardId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve sprints" 
+      });
+    }
+  });
+
+  app.get("/api/sprints/:sprintId", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid sprint ID" 
+        });
+      }
+      const sprint = await storage.getSprint(sprintId);
+      if (!sprint) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Sprint not found" 
+        });
+      }
+      res.json(sprint);
+    } catch (error) {
+      console.error("GET /api/sprints/:sprintId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve sprint" 
+      });
+    }
+  });
+
   // Tasks endpoints
   app.get("/api/tasks", async (req, res) => {
     try {

@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { Department, TeamRow, InitiativeRow, Initiative, Team } from "@shared/schema";
+import type { Department, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
 
 export default function HomePage() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
@@ -89,26 +89,32 @@ export default function HomePage() {
 }
 
 function TeamInitiativesTab({ team }: { team: TeamRow }) {
-  const { data: initiativeRows, isLoading, error } = useQuery<Initiative[]>({
+  const { data: initiativeRows, isLoading: initiativesLoading, error: initiativesError } = useQuery<Initiative[]>({
     queryKey: ["/api/initiatives/board", team.initBoardId],
     enabled: !!team.initBoardId,
   });
+
+  const { data: sprints, isLoading: sprintsLoading } = useQuery<SprintRow[]>({
+    queryKey: ["/api/sprints"],
+  });
+
+  const isLoading = initiativesLoading || sprintsLoading;
 
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Загрузка инициатив...</p>
+        <p className="text-muted-foreground">Загрузка данных...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (initiativesError) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Ошибка при загрузке инициатив: {error instanceof Error ? error.message : "Неизвестная ошибка"}
+          Ошибка при загрузке инициатив: {initiativesError instanceof Error ? initiativesError.message : "Неизвестная ошибка"}
         </AlertDescription>
       </Alert>
     );
@@ -137,7 +143,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     <>
       <TeamHeader team={teamData} initiatives={initiatives} dbTeam={team} />
       <div className="mt-6">
-        <InitiativesTimeline initiatives={initiatives} team={teamData} />
+        <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
       </div>
     </>
   );
