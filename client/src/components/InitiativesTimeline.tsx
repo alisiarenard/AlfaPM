@@ -257,11 +257,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   return (
                     <td
                       key={sprintId}
-                      className="p-0 min-w-[140px]"
+                      className="px-0 py-[10px] min-w-[140px]"
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
                       <div
-                        className={`h-full w-full flex items-center justify-center py-[10px] min-h-[56px] ${roundedClass}`}
+                        className={`h-full w-full flex items-center justify-center ${roundedClass}`}
                         style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
                       >
                         {showBlock && sp > 0 && (
