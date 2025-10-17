@@ -167,27 +167,27 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       <table className="w-full border-collapse">
         <thead className="sticky top-0 z-[110] bg-background">
           <tr className="border-b border-border">
-            <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px] max-w-[220px]">
+            <th className="sticky left-0 z-[120] bg-background px-2 py-3 text-left min-w-[220px] max-w-[220px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Инициатива
               </span>
             </th>
-            <th className="sticky left-[220px] z-[120] bg-background px-4 py-3 text-left min-w-[140px] max-w-[140px]">
+            <th className="sticky left-[220px] z-[120] bg-background px-2 py-3 text-left min-w-[140px] max-w-[140px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Дата начала
               </span>
             </th>
-            <th className="sticky left-[360px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[360px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Размер
               </span>
             </th>
-            <th className="sticky left-[460px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[460px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Выполнено
               </span>
             </th>
-            <th className="sticky left-[560px] z-[120] bg-background px-4 py-3 text-left min-w-[120px] max-w-[120px]">
+            <th className="sticky left-[560px] z-[120] bg-background px-2 py-3 text-left min-w-[120px] max-w-[120px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Вовлечённость
               </span>
@@ -220,7 +220,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               className="border-b border-border hover:bg-muted/50 transition-colors"
               data-testid={`row-initiative-${initiative.id}`}
             >
-              <td className="sticky left-0 z-[100] bg-background px-4 py-3 min-w-[220px] max-w-[220px]">
+              <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]">
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full flex-shrink-0"
@@ -231,22 +231,22 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   </span>
                 </div>
               </td>
-              <td className="sticky left-[220px] z-[100] bg-background px-4 py-3 min-w-[140px] max-w-[140px]">
+              <td className="sticky left-[220px] z-[100] bg-background px-2 py-3 min-w-[140px] max-w-[140px]">
                 <span className="text-xs font-mono text-muted-foreground">
                   {getStartSprint(initiative)}
                 </span>
               </td>
-              <td className="sticky left-[360px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
+              <td className="sticky left-[360px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-xs font-mono text-foreground">
                   {initiative.size}
                 </span>
               </td>
-              <td className="sticky left-[460px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
+              <td className="sticky left-[460px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-xs font-mono text-foreground">
                   {getTotalSP(initiative)}
                 </span>
               </td>
-              <td className="sticky left-[560px] z-[100] bg-background px-4 py-3 min-w-[120px] max-w-[120px]">
+              <td className="sticky left-[560px] z-[100] bg-background px-2 py-3 min-w-[120px] max-w-[120px]">
                 <span className="text-xs font-mono text-foreground">
                   {calculateInvolvement(initiative)}
                 </span>
