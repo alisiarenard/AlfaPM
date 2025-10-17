@@ -240,16 +240,16 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     className="p-0 min-w-[140px]"
                     data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                   >
-                    {showBlock && (
-                      <div
-                        className="h-full w-full flex items-center justify-center py-3"
-                        style={{ backgroundColor: getStatusColor(initiative) }}
-                      >
+                    <div
+                      className="h-full w-full flex items-center justify-center py-3 min-h-[56px]"
+                      style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
+                    >
+                      {showBlock && sp > 0 && (
                         <span className="text-xs font-mono font-semibold text-foreground">
-                          {sp > 0 ? sp : ''}
+                          {sp}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 );
               })}
