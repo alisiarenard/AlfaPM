@@ -16,6 +16,7 @@ export interface KaitenCard {
   created?: string;
   type_id?: number | null;
   completed_at?: string | null;
+  parents_ids?: number[];
 }
 
 export interface KaitenCardListResponse {

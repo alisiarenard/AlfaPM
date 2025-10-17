@@ -7,8 +7,15 @@ interface InitiativesTimelineProps {
 }
 
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
-  // Получить все sprint_id из массива sprints, пришедшего с бэкенда
-  const allSprintIds = sprints.map(s => s.sprintId).sort((a, b) => a - b);
+  // Отсортировать спринты по дате начала от более ранних до более поздних
+  const sortedSprints = [...sprints].sort((a, b) => {
+    const dateA = new Date(a.startDate).getTime();
+    const dateB = new Date(b.startDate).getTime();
+    return dateA - dateB;
+  });
+  
+  // Получить все sprint_id в хронологическом порядке
+  const allSprintIds = sortedSprints.map(s => s.sprintId);
 
   // Получить SP для конкретной инициативы в конкретном спринте
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
