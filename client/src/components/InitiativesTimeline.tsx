@@ -96,13 +96,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return sprints.find(s => s.sprintId === sprintId);
   };
 
-  // Форматировать дату в формат ДД.ММ
+  // Форматировать дату в формат ДД.ММ.ГГ
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return '—';
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    return `${day}.${month}`;
+    const year = String(date.getFullYear()).slice(-2); // Последние 2 цифры года
+    return `${day}.${month}.${year}`;
   };
 
   const getStatusColor = (state: string): string => {
