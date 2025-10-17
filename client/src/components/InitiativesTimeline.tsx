@@ -25,7 +25,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const getStartSprint = (initiative: Initiative): string => {
     // Для "Поддержка бизнеса" всегда первый день текущего года
     if (initiative.cardId === 0) {
-      const currentYear = new Date().getFullYear();
+      const currentYear = String(new Date().getFullYear()).slice(-2);
       return `01.01.${currentYear}`;
     }
     
