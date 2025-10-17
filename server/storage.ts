@@ -420,14 +420,14 @@ export class DbStorage implements IStorage {
   }
 
   async getAllSprints(): Promise<SprintRow[]> {
-    const result = await db.select().from(sprints).orderBy(asc(sprints.sprintId));
+    const result = await db.select().from(sprints).orderBy(asc(sprints.startDate));
     return result;
   }
 
   async getSprintsByBoardId(boardId: number): Promise<SprintRow[]> {
     const result = await db.select().from(sprints)
       .where(eq(sprints.boardId, boardId))
-      .orderBy(asc(sprints.sprintId));
+      .orderBy(asc(sprints.startDate));
     return result;
   }
 
