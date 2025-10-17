@@ -14,8 +14,65 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return dateA - dateB;
   });
   
+  // Автогенерация спринтов до конца года
+  const generateSprintsUntilEndOfYear = (): SprintRow[] => {
+    if (!team.sprintDuration || sortedSprints.length === 0) {
+      return sortedSprints;
+    }
+
+    const currentYear = new Date().getFullYear();
+    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999); // 31 декабря текущего года
+    
+    const allSprints = [...sortedSprints];
+    const lastSprint = sortedSprints[sortedSprints.length - 1];
+    let nextStartDate = new Date(lastSprint.finishDate);
+    nextStartDate.setDate(nextStartDate.getDate() + 1); // Следующий день после окончания последнего спринта
+    
+    // Найти максимальный существующий sprintId
+    const maxExistingId = Math.max(...sortedSprints.map(s => s.sprintId));
+    let sprintCounter = maxExistingId + 1;
+    let generatedCounter = 1;
+    
+    // Генерируем спринты до конца года
+    while (nextStartDate < endOfYear) {
+      const finishDate = new Date(nextStartDate);
+      finishDate.setDate(finishDate.getDate() + team.sprintDuration - 1);
+      finishDate.setHours(23, 59, 59, 999);
+      
+      // Если финиш спринта выходит за пределы года, обрезаем до конца года
+      if (finishDate > endOfYear) {
+        finishDate.setTime(endOfYear.getTime());
+      }
+      
+      allSprints.push({
+        sprintId: sprintCounter,
+        boardId: lastSprint.boardId,
+        title: `Спринт ${generatedCounter}`,
+        velocity: lastSprint.velocity,
+        startDate: nextStartDate.toISOString(),
+        finishDate: finishDate.toISOString(),
+        actualFinishDate: null
+      });
+      
+      // Переходим к следующему спринту
+      nextStartDate = new Date(finishDate);
+      nextStartDate.setDate(nextStartDate.getDate() + 1);
+      sprintCounter++;
+      generatedCounter++;
+      
+      // Защита от бесконечного цикла
+      if (generatedCounter > 100) {
+        break;
+      }
+    }
+    
+    return allSprints;
+  };
+  
+  const allSprintsWithGenerated = generateSprintsUntilEndOfYear();
+  
   // Получить все sprint_id в хронологическом порядке
-  const allSprintIds = sortedSprints.map(s => s.sprintId);
+  const allSprintIds = allSprintsWithGenerated.map(s => s.sprintId);
 
   // Получить SP для конкретной инициативы в конкретном спринте
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
@@ -105,7 +162,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
   // Получить информацию о спринте по ID
   const getSprintInfo = (sprintId: number): SprintRow | undefined => {
-    return sprints.find(s => s.sprintId === sprintId);
+    return allSprintsWithGenerated.find(s => s.sprintId === sprintId);
   };
 
   // Форматировать дату в формат ДД.ММ.ГГ
