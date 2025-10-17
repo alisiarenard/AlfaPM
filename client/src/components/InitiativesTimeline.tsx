@@ -230,29 +230,50 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   {calculateInvolvement(initiative)}
                 </span>
               </td>
-              {allSprintIds.map((sprintId) => {
-                const sp = getSprintSP(initiative, sprintId);
-                const showBlock = shouldShowColorBlock(initiative, sprintId);
+              {(() => {
+                // Найти индексы первого и последнего блока
+                const blocksToShow = allSprintIds.map((id, idx) => ({ id, idx, show: shouldShowColorBlock(initiative, id) }));
+                const shownBlocks = blocksToShow.filter(b => b.show);
+                const firstBlockIdx = shownBlocks.length > 0 ? shownBlocks[0].idx : -1;
+                const lastBlockIdx = shownBlocks.length > 0 ? shownBlocks[shownBlocks.length - 1].idx : -1;
 
-                return (
-                  <td
-                    key={sprintId}
-                    className="p-0 min-w-[140px]"
-                    data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
-                  >
-                    <div
-                      className="h-full w-full flex items-center justify-center py-3 min-h-[56px]"
-                      style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
+                return allSprintIds.map((sprintId, idx) => {
+                  const sp = getSprintSP(initiative, sprintId);
+                  const showBlock = shouldShowColorBlock(initiative, sprintId);
+                  const isFirst = idx === firstBlockIdx;
+                  const isLast = idx === lastBlockIdx;
+
+                  let roundedClass = '';
+                  if (showBlock) {
+                    if (isFirst && isLast) {
+                      roundedClass = 'rounded-[10px]';
+                    } else if (isFirst) {
+                      roundedClass = 'rounded-l-[10px]';
+                    } else if (isLast) {
+                      roundedClass = 'rounded-r-[10px]';
+                    }
+                  }
+
+                  return (
+                    <td
+                      key={sprintId}
+                      className="p-0 min-w-[140px]"
+                      data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
-                      {showBlock && sp > 0 && (
-                        <span className="text-xs font-mono font-semibold text-foreground">
-                          {sp}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                );
-              })}
+                      <div
+                        className={`h-full w-full flex items-center justify-center py-[10px] min-h-[56px] ${roundedClass}`}
+                        style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
+                      >
+                        {showBlock && sp > 0 && (
+                          <span className="text-xs font-mono font-semibold text-foreground">
+                            {sp}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  );
+                });
+              })()}
             </tr>
           ))}
         </tbody>
