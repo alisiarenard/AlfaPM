@@ -186,12 +186,12 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
               </td>
               <td className="sticky left-[360px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-sm font-mono text-foreground">
-                  {initiative.size} SP
+                  {initiative.size}
                 </span>
               </td>
               <td className="sticky left-[460px] z-[100] bg-background px-4 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-sm font-mono text-foreground">
-                  {getTotalSP(initiative)} SP
+                  {getTotalSP(initiative)}
                 </span>
               </td>
               <td className="sticky left-[560px] z-[100] bg-background px-4 py-3 min-w-[120px] max-w-[120px]">
@@ -216,7 +216,7 @@ export function InitiativesTimeline({ initiatives, team }: InitiativesTimelinePr
                           style={{ backgroundColor: getStatusColor(initiative.state) }}
                         >
                           <span className="text-xs font-mono font-semibold text-foreground">
-                            {sp > 0 ? `${sp} SP` : ''}
+                            {sp > 0 ? sp : ''}
                           </span>
                         </div>
                       )}
