@@ -21,7 +21,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return initiative.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
   };
 
-  // Получить минимальный sprint_id как "дату начала"
+  // Получить дату начала инициативы (дата начала первого спринта)
   const getStartSprint = (initiative: Initiative): string => {
     // Для "Поддержка бизнеса" всегда первый день текущего года
     if (initiative.cardId === 0) {
@@ -32,8 +32,15 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     if (initiative.sprints.length === 0) {
       return '—';
     }
+    
+    // Найти минимальный sprint_id (самый первый спринт с тасками)
     const minSprintId = Math.min(...initiative.sprints.map(s => s.sprint_id));
-    return `Спринт ${minSprintId}`;
+    
+    // Получить информацию о спринте
+    const sprintInfo = getSprintInfo(minSprintId);
+    
+    // Вернуть дату начала спринта
+    return formatDate(sprintInfo?.startDate);
   };
 
   // Рассчитать вовлечённость (процент SP инициативы от всех SP в её спринтах)
