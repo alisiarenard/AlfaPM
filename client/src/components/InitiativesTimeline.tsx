@@ -192,7 +192,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     <span className="text-[11px] text-foreground font-mono">
                       {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground font-normal">
                       IR: {calculateSprintIR(sprintId)} | Velocity: {sprintInfo?.velocity || '—'}
                     </span>
                   </div>
