@@ -168,27 +168,27 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         <thead className="sticky top-0 z-[110] bg-background">
           <tr className="border-b border-border">
             <th className="sticky left-0 z-[120] bg-background px-4 py-3 text-left min-w-[220px] max-w-[220px]">
-              <span className="text-xs tracking-wide text-muted-foreground">
+              <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Инициатива
               </span>
             </th>
             <th className="sticky left-[220px] z-[120] bg-background px-4 py-3 text-left min-w-[140px] max-w-[140px]">
-              <span className="text-xs tracking-wide text-muted-foreground">
+              <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Дата начала
               </span>
             </th>
             <th className="sticky left-[360px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
-              <span className="text-xs tracking-wide text-muted-foreground">
+              <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Размер
               </span>
             </th>
             <th className="sticky left-[460px] z-[120] bg-background px-4 py-3 text-left min-w-[100px] max-w-[100px]">
-              <span className="text-xs tracking-wide text-muted-foreground">
+              <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Выполнено
               </span>
             </th>
             <th className="sticky left-[560px] z-[120] bg-background px-4 py-3 text-left min-w-[120px] max-w-[120px]">
-              <span className="text-xs tracking-wide text-muted-foreground">
+              <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Вовлечённость
               </span>
             </th>
