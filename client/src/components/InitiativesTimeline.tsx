@@ -180,10 +180,10 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   data-testid={`header-sprint-${sprintId}`}
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-semibold text-foreground font-mono">
+                    <span className="text-[11px] text-foreground font-mono">
                       {formatDate(sprintInfo?.startDate)} - {formatDate(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground">
                       IR: {calculateSprintIR(sprintId)} | Velocity: {sprintInfo?.velocity || '—'}
                     </span>
                   </div>
