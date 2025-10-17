@@ -39,6 +39,20 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true });
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type TaskRow = typeof tasks.$inferSelect;
 
+export const sprints = pgTable("sprints", {
+  sprintId: integer("sprint_id").primaryKey(),
+  boardId: integer("board_id").notNull(),
+  title: varchar("title").notNull(),
+  velocity: integer("velocity").notNull(),
+  startDate: varchar("start_date").notNull(),
+  finishDate: varchar("finish_date").notNull(),
+  actualFinishDate: varchar("actual_finish_date"),
+});
+
+export const insertSprintSchema = createInsertSchema(sprints);
+export type InsertSprint = z.infer<typeof insertSprintSchema>;
+export type SprintRow = typeof sprints.$inferSelect;
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),

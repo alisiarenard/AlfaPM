@@ -3,7 +3,18 @@
 ## Overview
 This project is a web-based application designed to visualize and track team initiatives across sprint timelines. It enables users to upload team data, displaying initiatives with their associated story points, sprint allocations, and status information. The application supports multiple teams, each accessible via a separate tab, and features a clean, data-focused interface inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles. The core purpose is to provide a clear, scannable overview of project progress and team allocation. The application's business vision is to streamline project management and enhance team visibility, offering market potential in organizations seeking efficient, data-driven project tracking.
 
-## Recent Changes (October 16, 2025)
+## Recent Changes (October 17, 2025)
+- Added `sprints` table to PostgreSQL database
+- Sprints table includes fields: sprint_id (PK), board_id, title, velocity, start_date, finish_date, actual_finish_date (nullable)
+- Populated sprints table with sprint data: 40895 (Sprint 1), 40896 (Sprint 2), 40897 (Sprint 3), 40909 (sprint 4)
+- Added automatic sprint generation in frontend: fills gaps between existing sprints and generates future sprints until end of year
+- Tasks with null init_card_id now default to 0 (linked to "Поддержка бизнеса" initiative)
+- Updated UI: removed "SP" text from all table cells, showing only numbers
+- Updated "Поддержка бизнеса" to always show fixed start date: 01.01.{current_year}
+- Backend sorting: "Поддержка бизнеса" (card_id=0) always first, then by state (3-done, 2-inProgress, 1-queued)
+- Replaced status badges with colored circles (green=active, blue=planned, gray=completed)
+
+## Previous Changes (October 16, 2025)
 - Added `tasks` table to PostgreSQL database with full CRUD API support
 - Created task management endpoints: GET/POST/PATCH/DELETE `/api/tasks` and `/api/tasks/board/:boardId`
 - Tasks table includes fields: id, card_id, title, created, state, size, condition, board_id, sprint_id (nullable), type (nullable), completed_at (nullable), init_card_id (nullable)
@@ -66,6 +77,7 @@ PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neo
 - `teams`: Team metadata (ID, name, velocity, sprint duration, department ID, board IDs).
 - `initiatives`: Initiative details (ID, card ID, title, state, condition, size, board ID).
 - `tasks`: Task details (ID, card ID, title, created, state, size, condition, board ID, sprint_id, type, completed_at, init_card_id).
+- `sprints`: Sprint details (sprint_id (PK), board_id, title, velocity, start_date, finish_date, actual_finish_date).
 - Schema is defined in `shared/schema.ts` for type safety.
 - Drizzle-kit manages migrations.
 
