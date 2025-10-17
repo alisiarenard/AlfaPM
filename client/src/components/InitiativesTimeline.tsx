@@ -185,7 +185,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               return (
                 <th
                   key={sprintId}
-                  className="px-4 py-3 text-center min-w-[140px] bg-muted/30"
+                  className="px-4 py-2 text-center min-w-[140px] bg-muted/30"
                   data-testid={`header-sprint-${sprintId}`}
                 >
                   <div className="flex flex-col gap-0.5">
