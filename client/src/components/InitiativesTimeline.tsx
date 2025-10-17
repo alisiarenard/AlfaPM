@@ -106,14 +106,23 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return `${day}.${month}.${year}`;
   };
 
-  const getStatusColor = (state: string): string => {
-    switch (state) {
-      case "2-inProgress":
-        return "hsl(142 76% 45% / 0.4)";
-      case "1-queued":
-        return "hsl(215 80% 60% / 0.4)";
+  const getStatusColor = (initiative: Initiative): string => {
+    // Поддержка бизнеса - серый
+    if (initiative.cardId === 0) {
+      return "hsl(220 8% 55% / 0.4)";
+    }
+    
+    // Остальные инициативы - по состоянию
+    switch (initiative.state) {
       case "3-done":
-        return "hsl(220 8% 55% / 0.4)";
+        // Выполненные - зеленый
+        return "hsl(142 76% 45% / 0.4)";
+      case "2-inProgress":
+        // В процессе - голубой
+        return "hsl(200 80% 60% / 0.4)";
+      case "1-queued":
+        // В очереди - светло-серый
+        return "hsl(220 8% 75% / 0.4)";
       default:
         return "hsl(220 12% 94% / 0.3)";
     }
@@ -194,7 +203,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: getStatusColor(initiative.state) }}
+                    style={{ backgroundColor: getStatusColor(initiative) }}
                   />
                   <span className="text-sm font-medium text-foreground">
                     {initiative.title}
@@ -235,7 +244,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       {showBlock && (
                         <div
                           className="h-8 rounded px-3 flex items-center justify-center min-w-[60px]"
-                          style={{ backgroundColor: getStatusColor(initiative.state) }}
+                          style={{ backgroundColor: getStatusColor(initiative) }}
                         >
                           <span className="text-xs font-mono font-semibold text-foreground">
                             {sp > 0 ? sp : ''}
