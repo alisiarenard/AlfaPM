@@ -485,9 +485,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const boardCard of boardCards) {
         const card = await kaitenClient.getCard(boardCard.id);
         log(`[Kaiten Sync Tasks] Card ${card.id} - children: ${card.children?.length || 0}`);
+        log(`[Kaiten Sync Tasks] Card ${card.id} FULL RESPONSE: ${JSON.stringify(card, null, 2)}`);
         
         if (card.children && Array.isArray(card.children)) {
           log(`[Kaiten Sync Tasks] Card ${card.id} has ${card.children.length} children`);
+          log(`[Kaiten Sync Tasks] Card ${card.id} CHILDREN DATA: ${JSON.stringify(card.children, null, 2)}`);
           
           for (const child of card.children) {
             totalChildrenProcessed++;
