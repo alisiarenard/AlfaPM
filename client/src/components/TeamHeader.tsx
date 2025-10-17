@@ -10,14 +10,15 @@ interface TeamHeaderProps {
 export function TeamHeader({ team, initiatives, dbTeam }: TeamHeaderProps) {
   const calculateInnovationRate = (): string => {
     let totalStoryPoints = 0;
-    let epicStoryPoints = 0;
+    let innovationStoryPoints = 0;
 
     initiatives.forEach(initiative => {
-      const initiativePoints = initiative.sprints.reduce((sum, sprint) => sum + sprint.storyPoints, 0);
+      const initiativePoints = initiative.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
       totalStoryPoints += initiativePoints;
       
-      if (initiative.type === "Epic") {
-        epicStoryPoints += initiativePoints;
+      // Считаем все инициативы кроме "Поддержка бизнеса" (cardId !== 0)
+      if (initiative.cardId !== 0) {
+        innovationStoryPoints += initiativePoints;
       }
     });
 
@@ -25,7 +26,7 @@ export function TeamHeader({ team, initiatives, dbTeam }: TeamHeaderProps) {
       return "0%";
     }
 
-    const rate = (epicStoryPoints / totalStoryPoints) * 100;
+    const rate = (innovationStoryPoints / totalStoryPoints) * 100;
     return `${Math.round(rate)}%`;
   };
 
