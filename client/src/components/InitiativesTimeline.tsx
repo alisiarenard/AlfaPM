@@ -240,7 +240,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   };
 
   return (
-    <div className="w-full overflow-x-auto max-w-full px-[10px]">
+    <div className="w-full overflow-x-auto max-w-full">
       <table className="w-full border-collapse">
         <thead className="sticky top-0 z-[110] bg-background">
           <tr className="border-b border-border">
