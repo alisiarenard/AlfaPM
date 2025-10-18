@@ -60,7 +60,7 @@ export default function HomePage() {
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex gap-4 mb-6">
-                <div className="w-[20%] h-[110px] border border-border rounded-lg p-4 flex flex-col justify-between">
+                <div className="w-[20%] h-[110px] border border-border rounded-lg px-4 py-3 flex flex-col justify-between">
                   <div className="text-sm font-bold">Innovation Rate</div>
                   <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">43%</div>
                   <div className="text-xs text-muted-foreground">-11% от планового значения</div>
