@@ -102,6 +102,8 @@ export default function HomePage() {
 }
 
 function TeamInitiativesTab({ team }: { team: TeamRow }) {
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
+  
   const { data: initiativeRows, isLoading: initiativesLoading, error: initiativesError } = useQuery<Initiative[]>({
     queryKey: ["/api/initiatives/board", team.initBoardId],
     enabled: !!team.initBoardId,
@@ -142,7 +144,12 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   }
 
   // Данные уже приходят в правильном формате Initiative с сервера
-  const initiatives: Initiative[] = initiativeRows || [];
+  const allInitiatives: Initiative[] = initiativeRows || [];
+  
+  // Фильтруем инициативы, если включен фильтр "Активные"
+  const initiatives = showActiveOnly 
+    ? allInitiatives.filter(init => init.state === "2-inProgress")
+    : allInitiatives;
 
   const teamData: Team = {
     boardId: team.initBoardId.toString(),
@@ -154,7 +161,13 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      <TeamHeader team={teamData} initiatives={initiatives} dbTeam={team} />
+      <TeamHeader 
+        team={teamData} 
+        initiatives={allInitiatives} 
+        dbTeam={team} 
+        showActiveOnly={showActiveOnly}
+        onFilterChange={setShowActiveOnly}
+      />
       <div className="px-4">
         <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
       </div>
