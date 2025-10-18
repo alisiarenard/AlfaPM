@@ -210,20 +210,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return "hsl(220 8% 55% / 0.2)";
     }
     
-    // Остальные инициативы - по состоянию
-    switch (initiative.state) {
-      case "3-done":
-        // Выполненные - зеленый
-        return "hsl(142 76% 45% / 0.2)";
-      case "2-inProgress":
-        // В процессе - голубой
-        return "hsl(200 80% 60% / 0.2)";
-      case "1-queued":
-        // В очереди - светло-серый
-        return "hsl(220 8% 75% / 0.2)";
-      default:
-        return "hsl(220 12% 94% / 0.2)";
-    }
+    // Остальные инициативы - красный #cd253d с 20% прозрачности
+    return "rgba(205, 37, 61, 0.2)";
   };
 
   // Определить, нужно ли показывать цветной блок
