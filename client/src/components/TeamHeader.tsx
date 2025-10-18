@@ -1,4 +1,4 @@
-import { Building2, TrendingUp, Lightbulb } from "lucide-react";
+import { Building2 } from "lucide-react";
 import type { Team, Initiative, TeamRow } from "@shared/schema";
 
 interface TeamHeaderProps {
@@ -30,10 +30,8 @@ export function TeamHeader({ team, initiatives, dbTeam }: TeamHeaderProps) {
     return `${Math.round(rate)}%`;
   };
 
-  const velocity = dbTeam?.vilocity ?? team.velocity;
-
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
+    <div className="px-6 py-4 border-b border-border bg-card">
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10">
           <Building2 className="h-5 w-5 text-primary" />
@@ -43,24 +41,8 @@ export function TeamHeader({ team, initiatives, dbTeam }: TeamHeaderProps) {
             {team.name}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Board ID: <span>{team.boardId}</span>
+            Innovation Rate: <span data-testid="text-innovation-rate">{calculateInnovationRate()}</span>
           </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Velocity</span>
-            <span className="text-sm font-semibold text-foreground" data-testid="text-velocity">{velocity}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
-          <Lightbulb className="h-4 w-4 text-muted-foreground" />
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Innovation Rate</span>
-            <span className="text-sm font-semibold text-foreground" data-testid="text-innovation-rate">{calculateInnovationRate()}</span>
-          </div>
         </div>
       </div>
     </div>
