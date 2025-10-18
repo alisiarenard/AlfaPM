@@ -72,7 +72,7 @@ export default function HomePage() {
                 </div>
                 <div className="w-[60%] h-[110px] border border-border rounded-lg"></div>
               </div>
-              <TabsList className="mb-6" data-testid="tabs-teams">
+              <TabsList data-testid="tabs-teams">
                 {departmentTeams.map((team) => (
                   <TabsTrigger 
                     key={team.teamId} 
