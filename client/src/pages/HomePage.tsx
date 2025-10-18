@@ -59,6 +59,11 @@ export default function HomePage() {
         <div className="p-6">
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <div className="flex gap-4 mb-6">
+                <div className="w-[20%] h-[100px] border border-border rounded-lg"></div>
+                <div className="w-[20%] h-[100px] border border-border rounded-lg"></div>
+                <div className="w-[60%] h-[100px] border border-border rounded-lg"></div>
+              </div>
               <TabsList className="mb-6" data-testid="tabs-teams">
                 {departmentTeams.map((team) => (
                   <TabsTrigger 
