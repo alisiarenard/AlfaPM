@@ -68,7 +68,7 @@ export default function HomePage() {
                 <div className="w-[20%] h-[110px] border border-border rounded-lg px-4 py-3 flex flex-col justify-between">
                   <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
                   <div className="text-3xl font-semibold" data-testid="metric-value-cost">4,7</div>
-                  <div className="text-xs text-muted-foreground">+1,7 от планового значения</div>
+                  <div className="text-xs text-muted-foreground"><span className="font-semibold text-green-600">+1,7</span> от планового значения</div>
                 </div>
                 <div className="w-[60%] h-[110px] border border-border rounded-lg"></div>
               </div>
