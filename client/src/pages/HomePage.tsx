@@ -140,11 +140,9 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   };
 
   return (
-    <>
+    <div className="border border-border rounded-lg overflow-hidden">
       <TeamHeader team={teamData} initiatives={initiatives} dbTeam={team} />
-      <div className="mt-6">
-        <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
-      </div>
-    </>
+      <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
+    </div>
   );
 }
