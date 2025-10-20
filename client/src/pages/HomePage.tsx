@@ -175,8 +175,8 @@ export default function HomePage() {
             <DialogTitle className="text-xl font-bold">Настройки</DialogTitle>
           </DialogHeader>
           <div className="flex flex-1 overflow-hidden border-t border-border">
-            <div className="w-[30%] border-r border-border px-4 pb-4 overflow-y-auto">
-              <div className="flex items-center justify-end mb-3">
+            <div className="w-[30%] border-r border-border p-4 overflow-y-auto">
+              <div className="flex items-center justify-end">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
