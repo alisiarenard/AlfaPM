@@ -698,30 +698,32 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="flex-1 p-6 space-y-6 overflow-y-auto">
-                    <div className="space-y-2">
-                      <Label htmlFor="team-department">Подразделение</Label>
-                      <Select value={selectedDepartmentForTeam} onValueChange={setSelectedDepartmentForTeam}>
-                        <SelectTrigger id="team-department" data-testid="select-department">
-                          <SelectValue placeholder="Выберите подразделение" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {departments?.map((dept) => (
-                            <SelectItem key={dept.id} value={dept.id}>
-                              {dept.department}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-team-name">Название команды</Label>
-                      <Input
-                        id="new-team-name"
-                        placeholder="Введите название команды"
-                        value={teamName}
-                        onChange={(e) => setTeamName(e.target.value)}
-                        data-testid="input-team-name"
-                      />
+                    <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="new-team-name">Название команды</Label>
+                        <Input
+                          id="new-team-name"
+                          placeholder="Введите название команды"
+                          value={teamName}
+                          onChange={(e) => setTeamName(e.target.value)}
+                          data-testid="input-team-name"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="team-department">Подразделение</Label>
+                        <Select value={selectedDepartmentForTeam} onValueChange={setSelectedDepartmentForTeam}>
+                          <SelectTrigger id="team-department" data-testid="select-department">
+                            <SelectValue placeholder="Выберите подразделение" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments?.map((dept) => (
+                              <SelectItem key={dept.id} value={dept.id}>
+                                {dept.department}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
