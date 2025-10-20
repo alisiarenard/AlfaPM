@@ -15,13 +15,11 @@ import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jp
 function DepartmentTreeItem({ 
   department, 
   isExpanded, 
-  onToggle,
-  showAddButton = false
+  onToggle
 }: { 
   department: Department; 
   isExpanded: boolean; 
   onToggle: () => void;
-  showAddButton?: boolean;
 }) {
   const { data: teams } = useQuery<TeamRow[]>({
     queryKey: ["/api/teams", department.id],
@@ -32,37 +30,15 @@ function DepartmentTreeItem({
     <div>
       <div
         className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-md hover-elevate cursor-pointer"
+        onClick={onToggle}
         data-testid={`settings-department-${department.id}`}
       >
-        <div className="flex items-center gap-2 flex-1" onClick={onToggle}>
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4 flex-shrink-0" />
-          ) : (
-            <ChevronRight className="h-4 w-4 flex-shrink-0" />
-          )}
-          <span className="font-medium">{department.department}</span>
-        </div>
-        {showAddButton && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button 
-                size="icon" 
-                variant="ghost"
-                data-testid="button-add-dropdown"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[250] bg-white dark:bg-white">
-              <DropdownMenuItem data-testid="menu-item-block">
-                Блок
-              </DropdownMenuItem>
-              <DropdownMenuItem data-testid="menu-item-team">
-                Команда
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {isExpanded ? (
+          <ChevronDown className="h-4 w-4 flex-shrink-0" />
+        ) : (
+          <ChevronRight className="h-4 w-4 flex-shrink-0" />
         )}
+        <span className="font-medium">{department.department}</span>
       </div>
       {isExpanded && teams && teams.length > 0 && (
         <div className="ml-6 mt-1 space-y-1">
@@ -200,13 +176,34 @@ export default function HomePage() {
           </DialogHeader>
           <div className="flex flex-1 overflow-hidden border-t border-border">
             <div className="w-[30%] border-r border-border p-4 overflow-y-auto">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-foreground">Подразделения</h3>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      data-testid="button-add-dropdown"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="z-[250] bg-white dark:bg-white">
+                    <DropdownMenuItem data-testid="menu-item-block">
+                      Блок
+                    </DropdownMenuItem>
+                    <DropdownMenuItem data-testid="menu-item-team">
+                      Команда
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <div className="space-y-1">
-                {departments?.map((dept, index) => (
+                {departments?.map((dept) => (
                   <DepartmentTreeItem
                     key={dept.id}
                     department={dept}
                     isExpanded={expandedDepartments.has(dept.id)}
-                    showAddButton={index === 0}
                     onToggle={() => {
                       const newExpanded = new Set(expandedDepartments);
                       if (newExpanded.has(dept.id)) {
