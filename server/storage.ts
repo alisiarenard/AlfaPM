@@ -11,6 +11,7 @@ export interface IStorage {
   createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department>;
   updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined>;
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
+  createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow>;
   updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined>;
   getAllInitiatives(): Promise<InitiativeRow[]>;
   getInitiativesByBoardId(initBoardId: number): Promise<InitiativeRow[]>;
@@ -92,6 +93,10 @@ export class MemStorage implements IStorage {
 
   async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {
     return [];
+  }
+
+  async createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow> {
+    return {} as TeamRow;
   }
 
   async updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined> {
@@ -271,6 +276,14 @@ export class DbStorage implements IStorage {
   async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {
     const result = await db.select().from(teams).where(eq(teams.departmentId, departmentId));
     return result;
+  }
+
+  async createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow> {
+    const [newTeam] = await db.insert(teams).values({
+      ...team,
+      spPrice: team.spPrice ?? 0
+    }).returning();
+    return newTeam;
   }
 
   async updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined> {

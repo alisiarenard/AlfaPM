@@ -4,16 +4,26 @@
 This project is a web-based application designed to visualize and track team initiatives across sprint timelines. It enables users to upload team data, displaying initiatives with their associated story points, sprint allocations, and status information. The application supports multiple teams, each accessible via a separate tab, and features a clean, data-focused interface inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles. The core purpose is to provide a clear, scannable overview of project progress and team allocation. The application's business vision is to streamline project management and enhance team visibility, offering market potential in organizations seeking efficient, data-driven project tracking.
 
 ## Recent Changes (October 20, 2025)
-- **Team Editing Feature**: Added full team editing functionality in settings modal
-  - Clicking on team in left panel opens team editing form in right panel
-  - Form includes all editable team fields: teamName, spaceId, sprintBoardId, initBoardId, velocity (vilocity), sprintDuration, spPrice
-  - Form pre-fills with current team data
-  - Save button enabled only when form is modified
-  - Backend: Added PATCH /api/teams/:teamId endpoint
-  - Storage: Added updateTeam() method to DbStorage
-  - UI: Team items in department tree now highlight when selected
-  - Success toast displays "Команда обновлена" after successful save
-  - Auto-refreshes team data and invalidates cache after update
+- **Team Management Feature**: Added full team creation and editing functionality in settings modal
+  - **Team Creation**: 
+    - Click "+" button and select "Команда" to open team creation form
+    - Form includes department selector and all team fields
+    - Required fields: teamName, spaceId, sprintBoardId, initBoardId, velocity, sprintDuration
+    - Optional field: spPrice (defaults to 0)
+    - "Добавить" button disabled until all required fields filled
+    - After creation, form switches to edit mode
+    - Backend: POST /api/teams endpoint
+    - Storage: createTeam() method in DbStorage
+  - **Team Editing**:
+    - Clicking on team in left panel opens editing form in right panel
+    - Form shows team name and department name in header
+    - All team fields editable with localized labels (Russian)
+    - "Сохранить" button appears only when changes detected
+    - Backend: PATCH /api/teams/:teamId endpoint
+    - Storage: updateTeam() method in DbStorage
+    - Team items highlight when selected
+    - Success toast "Команда обновлена" after save
+    - Auto-refreshes team data and invalidates cache
 
 ## Previous Changes (October 17, 2025)
 - Added `sprints` table to PostgreSQL database
@@ -69,6 +79,7 @@ The backend uses Express.js with TypeScript and an ESM module system. It provide
 **API Endpoints:**
 - `/api/departments` (GET, POST, PATCH): Manage departments.
 - `/api/teams/:departmentId` (GET): Retrieve teams for a department.
+- `/api/teams` (POST): Create a new team.
 - `/api/teams/:teamId` (PATCH): Update team details.
 - `/api/initiatives` (GET, POST, PATCH, DELETE): Manage initiatives.
 - `/api/initiatives/board/:initBoardId`: Retrieve initiatives for a specific board.

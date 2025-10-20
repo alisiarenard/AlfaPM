@@ -92,6 +92,7 @@ export default function HomePage() {
   const [valueCost, setValueCost] = useState("");
   const [editingDepartment, setEditingDepartment] = useState<DepartmentWithTeamCount | null>(null);
   const [editingTeam, setEditingTeam] = useState<TeamRow | null>(null);
+  const [selectedDepartmentForTeam, setSelectedDepartmentForTeam] = useState<string>("");
   const [teamName, setTeamName] = useState("");
   const [spaceId, setSpaceId] = useState("");
   const [sprintBoardId, setSprintBoardId] = useState("");
@@ -162,6 +163,39 @@ export default function HomePage() {
       toast({
         title: "Ошибка",
         description: "Не удалось сохранить изменения",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createTeamMutation = useMutation({
+    mutationFn: async (data: { 
+      teamName: string; 
+      spaceId: number; 
+      sprintBoardId: number; 
+      initBoardId: number; 
+      vilocity: number; 
+      sprintDuration: number; 
+      spPrice?: number;
+      departmentId: string;
+    }) => {
+      const res = await apiRequest("POST", "/api/teams", data);
+      return await res.json();
+    },
+    onSuccess: (newTeam: TeamRow) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", newTeam.departmentId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      toast({
+        title: "Успешно",
+        description: "Команда создана",
+      });
+      setEditingTeam(newTeam);
+      setRightPanelMode("editTeam");
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать команду",
         variant: "destructive",
       });
     },
@@ -239,6 +273,15 @@ export default function HomePage() {
       setBlockName("");
       setInnovationRate("");
       setValueCost("");
+    } else if (rightPanelMode === "addTeam") {
+      setTeamName("");
+      setSpaceId("");
+      setSprintBoardId("");
+      setInitBoardId("");
+      setVelocity("");
+      setSprintDuration("");
+      setSpPrice("");
+      setSelectedDepartmentForTeam(departments?.[0]?.id || "");
     } else if (rightPanelMode === "editTeam" && editingTeam) {
       setTeamName(editingTeam.teamName);
       setSpaceId(editingTeam.spaceId.toString());
@@ -248,7 +291,7 @@ export default function HomePage() {
       setSprintDuration(editingTeam.sprintDuration.toString());
       setSpPrice(editingTeam.spPrice.toString());
     }
-  }, [rightPanelMode, editingDepartment, editingTeam]);
+  }, [rightPanelMode, editingDepartment, editingTeam, departments]);
 
   const handleDepartmentClick = (dept: DepartmentWithTeamCount) => {
     setEditingDepartment(dept);
@@ -641,6 +684,149 @@ export default function HomePage() {
                       </Button>
                     </div>
                   )}
+                </div>
+              ) : rightPanelMode === "addTeam" ? (
+                <div className="flex flex-col h-full">
+                  <div className="px-6 py-4 border-b border-border bg-card">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
+                        <Folder className="h-5 w-5" style={{ color: '#cd253d' }} />
+                      </div>
+                      <h2 className="text-lg font-semibold text-foreground">
+                        Новая команда
+                      </h2>
+                    </div>
+                  </div>
+                  <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                    <div className="space-y-2">
+                      <Label htmlFor="team-department">Подразделение</Label>
+                      <Select value={selectedDepartmentForTeam} onValueChange={setSelectedDepartmentForTeam}>
+                        <SelectTrigger id="team-department" data-testid="select-department">
+                          <SelectValue placeholder="Выберите подразделение" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departments?.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id}>
+                              {dept.department}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-team-name">Название команды</Label>
+                      <Input
+                        id="new-team-name"
+                        placeholder="Введите название команды"
+                        value={teamName}
+                        onChange={(e) => setTeamName(e.target.value)}
+                        data-testid="input-team-name"
+                      />
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="new-space-id">ID пространства</Label>
+                        <Input
+                          id="new-space-id"
+                          type="number"
+                          placeholder="0"
+                          value={spaceId}
+                          onChange={(e) => setSpaceId(e.target.value)}
+                          data-testid="input-space-id"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="new-sprint-board-id">ID доски</Label>
+                        <Input
+                          id="new-sprint-board-id"
+                          type="number"
+                          placeholder="0"
+                          value={sprintBoardId}
+                          onChange={(e) => setSprintBoardId(e.target.value)}
+                          data-testid="input-sprint-board-id"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="new-init-board-id">ID доски инициатив</Label>
+                        <Input
+                          id="new-init-board-id"
+                          type="number"
+                          placeholder="0"
+                          value={initBoardId}
+                          onChange={(e) => setInitBoardId(e.target.value)}
+                          data-testid="input-init-board-id"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="new-velocity">Velocity</Label>
+                        <Input
+                          id="new-velocity"
+                          type="number"
+                          placeholder="0"
+                          value={velocity}
+                          onChange={(e) => setVelocity(e.target.value)}
+                          data-testid="input-velocity"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="new-sprint-duration">Длительность спринта (дней)</Label>
+                        <Input
+                          id="new-sprint-duration"
+                          type="number"
+                          placeholder="0"
+                          value={sprintDuration}
+                          onChange={(e) => setSprintDuration(e.target.value)}
+                          data-testid="input-sprint-duration"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="new-sp-price">Стоимость одного SP (₽)</Label>
+                        <Input
+                          id="new-sp-price"
+                          type="number"
+                          placeholder="0"
+                          value={spPrice}
+                          onChange={(e) => setSpPrice(e.target.value)}
+                          data-testid="input-sp-price"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 flex justify-end">
+                    <Button
+                      disabled={
+                        !teamName.trim() || 
+                        !spaceId || 
+                        !sprintBoardId || 
+                        !initBoardId || 
+                        !velocity || 
+                        !sprintDuration ||
+                        !selectedDepartmentForTeam ||
+                        createTeamMutation.isPending
+                      }
+                      style={{ backgroundColor: '#cd253d' }}
+                      className="hover:opacity-90 border-0"
+                      data-testid="button-add-team"
+                      onClick={() => {
+                        createTeamMutation.mutate({
+                          teamName: teamName.trim(),
+                          spaceId: parseInt(spaceId),
+                          sprintBoardId: parseInt(sprintBoardId),
+                          initBoardId: parseInt(initBoardId),
+                          vilocity: parseInt(velocity),
+                          sprintDuration: parseInt(sprintDuration),
+                          spPrice: spPrice ? parseInt(spPrice) : undefined,
+                          departmentId: selectedDepartmentForTeam
+                        });
+                      }}
+                    >
+                      {createTeamMutation.isPending ? "Создание..." : "Добавить"}
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="p-4">

@@ -102,6 +102,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/teams", async (req, res) => {
+    try {
+      const teamData = req.body;
+      const team = await storage.createTeam(teamData);
+      res.json(team);
+    } catch (error) {
+      console.error("POST /api/teams error:", error);
+      
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          success: false, 
+          error: error.message 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Internal server error" 
+      });
+    }
+  });
+
   app.patch("/api/teams/:teamId", async (req, res) => {
     try {
       const { teamId } = req.params;
