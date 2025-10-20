@@ -97,17 +97,17 @@ export default function HomePage() {
       const res = await apiRequest("POST", "/api/departments", data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newDepartment: Department) => {
       queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
       toast({
         title: "Успешно",
         description: "Блок успешно создан",
       });
-      setBlockName("");
-      setInnovationRate("");
-      setValueCost("");
-      setRightPanelMode(null);
-      setEditingDepartment(null);
+      setEditingDepartment(newDepartment);
+      setRightPanelMode("editBlock");
+      setBlockName(newDepartment.department);
+      setInnovationRate(newDepartment.plannedIr?.toString() || "");
+      setValueCost(newDepartment.plannedVc?.toString() || "");
     },
     onError: (error) => {
       toast({
@@ -124,17 +124,16 @@ export default function HomePage() {
       const res = await apiRequest("PATCH", `/api/departments/${id}`, updateData);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedDepartment: Department) => {
       queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
       toast({
         title: "Успешно",
         description: "Изменения сохранены",
       });
-      setBlockName("");
-      setInnovationRate("");
-      setValueCost("");
-      setRightPanelMode(null);
-      setEditingDepartment(null);
+      setEditingDepartment(updatedDepartment);
+      setBlockName(updatedDepartment.department);
+      setInnovationRate(updatedDepartment.plannedIr?.toString() || "");
+      setValueCost(updatedDepartment.plannedVc?.toString() || "");
     },
     onError: (error) => {
       toast({
