@@ -19,11 +19,13 @@ import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jp
 function DepartmentTreeItem({ 
   department, 
   isExpanded, 
-  onToggle
+  onToggle,
+  onDepartmentClick
 }: { 
   department: Department; 
   isExpanded: boolean; 
   onToggle: () => void;
+  onDepartmentClick: (dept: Department) => void;
 }) {
   const { data: teams } = useQuery<TeamRow[]>({
     queryKey: ["/api/teams", department.id],
@@ -34,15 +36,21 @@ function DepartmentTreeItem({
     <div>
       <div
         className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-md hover-elevate cursor-pointer"
-        onClick={onToggle}
         data-testid={`settings-department-${department.id}`}
       >
-        {isExpanded ? (
-          <ChevronDown className="h-4 w-4 flex-shrink-0" />
-        ) : (
-          <ChevronRight className="h-4 w-4 flex-shrink-0" />
-        )}
-        <span className="font-medium">{department.department}</span>
+        <div onClick={onToggle} className="flex items-center gap-2 flex-1">
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4 flex-shrink-0" />
+          ) : (
+            <ChevronRight className="h-4 w-4 flex-shrink-0" />
+          )}
+        </div>
+        <span 
+          className="font-medium flex-1" 
+          onClick={() => onDepartmentClick(department)}
+        >
+          {department.department}
+        </span>
       </div>
       {isExpanded && teams && teams.length > 0 && (
         <div className="ml-6 mt-1 space-y-1">
@@ -66,10 +74,11 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<string>("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
-  const [rightPanelMode, setRightPanelMode] = useState<null | "addBlock" | "addTeam">(null);
+  const [rightPanelMode, setRightPanelMode] = useState<null | "addBlock" | "addTeam" | "editBlock">(null);
   const [blockName, setBlockName] = useState("");
   const [innovationRate, setInnovationRate] = useState("");
   const [valueCost, setValueCost] = useState("");
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
   const { toast } = useToast();
 
   const { data: departments } = useQuery<Department[]>({
@@ -124,6 +133,23 @@ export default function HomePage() {
       setExpandedDepartments(allDepartmentIds);
     }
   }, [departments]);
+
+  useEffect(() => {
+    if (rightPanelMode === "editBlock" && editingDepartment) {
+      setBlockName(editingDepartment.department);
+      setInnovationRate(editingDepartment.plannedIr?.toString() || "");
+      setValueCost(editingDepartment.plannedVc?.toString() || "");
+    } else if (rightPanelMode === "addBlock") {
+      setBlockName("");
+      setInnovationRate("");
+      setValueCost("");
+    }
+  }, [rightPanelMode, editingDepartment]);
+
+  const handleDepartmentClick = (dept: Department) => {
+    setEditingDepartment(dept);
+    setRightPanelMode("editBlock");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -253,12 +279,13 @@ export default function HomePage() {
                       }
                       setExpandedDepartments(newExpanded);
                     }}
+                    onDepartmentClick={handleDepartmentClick}
                   />
                 ))}
               </div>
             </div>
             <div className="w-[70%] overflow-y-auto">
-              {rightPanelMode === "addBlock" ? (
+              {(rightPanelMode === "addBlock" || rightPanelMode === "editBlock") ? (
                 <div className="flex flex-col h-full">
                   <div className="px-6 py-4 border-b border-border bg-card">
                     <div className="flex items-center gap-3">
