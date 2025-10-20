@@ -40,7 +40,7 @@ export default function HomePage() {
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
           <div className="flex items-center gap-3">
             <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
-            <h2 className="text-sm font-medium text-muted-foreground">Продуктовые метрики</h2>
+            <h2 className="text-lg font-bold text-foreground">Продуктовые метрики</h2>
           </div>
           <Select 
             value={selectedDepartment} 
