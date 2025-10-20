@@ -4,9 +4,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus } from "lucide-react";
+import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Department, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
@@ -62,6 +64,10 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<string>("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
+  const [rightPanelMode, setRightPanelMode] = useState<null | "addBlock" | "addTeam">(null);
+  const [blockName, setBlockName] = useState("");
+  const [innovationRate, setInnovationRate] = useState("");
+  const [valueCost, setValueCost] = useState("");
 
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
@@ -189,10 +195,16 @@ export default function HomePage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="z-[250] bg-white dark:bg-white">
-                    <DropdownMenuItem data-testid="menu-item-block">
+                    <DropdownMenuItem 
+                      data-testid="menu-item-block"
+                      onClick={() => setRightPanelMode("addBlock")}
+                    >
                       Блок
                     </DropdownMenuItem>
-                    <DropdownMenuItem data-testid="menu-item-team">
+                    <DropdownMenuItem 
+                      data-testid="menu-item-team"
+                      onClick={() => setRightPanelMode("addTeam")}
+                    >
                       Команда
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -217,8 +229,58 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="w-[70%] p-4 overflow-y-auto">
-              <p className="text-sm text-muted-foreground">Правая панель (70%)</p>
+            <div className="w-[70%] overflow-y-auto">
+              {rightPanelMode === "addBlock" ? (
+                <div>
+                  <div className="px-6 py-4 border-b border-border bg-card">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
+                        <Folder className="h-5 w-5" style={{ color: '#cd253d' }} />
+                      </div>
+                      <h2 className="text-lg font-semibold text-foreground">Новый блок</h2>
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="block-name">Название блока</Label>
+                      <Input
+                        id="block-name"
+                        placeholder="Введите название блока"
+                        value={blockName}
+                        onChange={(e) => setBlockName(e.target.value)}
+                        data-testid="input-block-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="innovation-rate">Плановый Innovation Rate, %</Label>
+                      <Input
+                        id="innovation-rate"
+                        type="number"
+                        placeholder="0"
+                        value={innovationRate}
+                        onChange={(e) => setInnovationRate(e.target.value)}
+                        data-testid="input-innovation-rate"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="value-cost">Value/Cost</Label>
+                      <Input
+                        id="value-cost"
+                        type="number"
+                        step="0.1"
+                        placeholder="0.0"
+                        value={valueCost}
+                        onChange={(e) => setValueCost(e.target.value)}
+                        data-testid="input-value-cost"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4">
+                  <p className="text-sm text-muted-foreground">Выберите действие в меню слева</p>
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
