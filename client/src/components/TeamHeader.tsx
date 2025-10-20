@@ -1,4 +1,4 @@
-import { Building2 } from "lucide-react";
+import { Users } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import type { Team, Initiative, TeamRow } from "@shared/schema";
@@ -39,7 +39,7 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10">
-            <Building2 className="h-5 w-5 text-primary" />
+            <Users className="h-5 w-5" style={{ color: '#cd253d' }} />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground" data-testid="text-team-name">
