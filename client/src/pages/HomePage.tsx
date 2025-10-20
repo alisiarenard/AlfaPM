@@ -518,9 +518,16 @@ export default function HomePage() {
                       <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
                         <Folder className="h-5 w-5" style={{ color: '#cd253d' }} />
                       </div>
-                      <h2 className="text-lg font-semibold text-foreground">
-                        {teamName || "Команда"}
-                      </h2>
+                      <div className="flex flex-col">
+                        <h2 className="text-lg font-semibold text-foreground">
+                          {teamName || "Команда"}
+                        </h2>
+                        {editingTeam && departments && (
+                          <p className="text-sm text-muted-foreground">
+                            {departments.find(d => d.id === editingTeam.departmentId)?.department}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex-1 p-6 space-y-6 overflow-y-auto">
