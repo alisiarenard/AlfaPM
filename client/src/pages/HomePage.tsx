@@ -156,7 +156,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (departments && departments.length > 0 && !selectedDepartment) {
-      setSelectedDepartment(departments[0].id);
+      const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
+      if (firstAvailableDepartment) {
+        setSelectedDepartment(firstAvailableDepartment.id);
+      }
     }
   }, [departments, selectedDepartment]);
 
