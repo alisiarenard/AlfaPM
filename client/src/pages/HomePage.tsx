@@ -2,9 +2,11 @@ import { InitiativesTimeline } from "@/components/InitiativesTimeline";
 import { TeamHeader } from "@/components/TeamHeader";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Settings } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Department, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
@@ -12,6 +14,7 @@ import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jp
 export default function HomePage() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
@@ -42,22 +45,32 @@ export default function HomePage() {
             <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
             <h2 className="text-lg font-bold text-foreground">Продуктовые метрики</h2>
           </div>
-          <Select 
-            value={selectedDepartment} 
-            onValueChange={setSelectedDepartment}
-            data-testid="select-department"
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Выберите департамент" />
-            </SelectTrigger>
-            <SelectContent>
-              {departments?.map((dept) => (
-                <SelectItem key={dept.id} value={dept.id} data-testid={`option-department-${dept.id}`}>
-                  {dept.department}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-3">
+            <Select 
+              value={selectedDepartment} 
+              onValueChange={setSelectedDepartment}
+              data-testid="select-department"
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Выберите департамент" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments?.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.id} data-testid={`option-department-${dept.id}`}>
+                    {dept.department}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setSettingsOpen(true)}
+              data-testid="button-settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
         
         <div className="p-6">
@@ -101,6 +114,20 @@ export default function HomePage() {
           )}
         </div>
       </div>
+      
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Настройки</DialogTitle>
+            <DialogDescription>
+              Настройки приложения
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-6">
+            <p className="text-muted-foreground">Здесь будут настройки приложения</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
