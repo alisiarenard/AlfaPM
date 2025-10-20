@@ -526,7 +526,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="space-id">Space ID</Label>
+                        <Label htmlFor="space-id">ID пространства</Label>
                         <Input
                           id="space-id"
                           type="number"
@@ -537,7 +537,7 @@ export default function HomePage() {
                         />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="sprint-board-id">Sprint Board ID</Label>
+                        <Label htmlFor="sprint-board-id">ID доски</Label>
                         <Input
                           id="sprint-board-id"
                           type="number"
@@ -548,18 +548,18 @@ export default function HomePage() {
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="init-board-id">Init Board ID</Label>
-                      <Input
-                        id="init-board-id"
-                        type="number"
-                        placeholder="0"
-                        value={initBoardId}
-                        onChange={(e) => setInitBoardId(e.target.value)}
-                        data-testid="input-init-board-id"
-                      />
-                    </div>
                     <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="init-board-id">ID доски инициатив</Label>
+                        <Input
+                          id="init-board-id"
+                          type="number"
+                          placeholder="0"
+                          value={initBoardId}
+                          onChange={(e) => setInitBoardId(e.target.value)}
+                          data-testid="input-init-board-id"
+                        />
+                      </div>
                       <div className="flex-1 space-y-2">
                         <Label htmlFor="velocity">Velocity</Label>
                         <Input
@@ -571,8 +571,10 @@ export default function HomePage() {
                           data-testid="input-velocity"
                         />
                       </div>
+                    </div>
+                    <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="sprint-duration">Sprint Duration (дней)</Label>
+                        <Label htmlFor="sprint-duration">Длительность спринта (дней)</Label>
                         <Input
                           id="sprint-duration"
                           type="number"
@@ -582,17 +584,17 @@ export default function HomePage() {
                           data-testid="input-sprint-duration"
                         />
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="sp-price">SP Price (₽)</Label>
-                      <Input
-                        id="sp-price"
-                        type="number"
-                        placeholder="0"
-                        value={spPrice}
-                        onChange={(e) => setSpPrice(e.target.value)}
-                        data-testid="input-sp-price"
-                      />
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="sp-price">Стоимость одного SP (₽)</Label>
+                        <Input
+                          id="sp-price"
+                          type="number"
+                          placeholder="0"
+                          value={spPrice}
+                          onChange={(e) => setSpPrice(e.target.value)}
+                          data-testid="input-sp-price"
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="p-4 flex justify-end">
