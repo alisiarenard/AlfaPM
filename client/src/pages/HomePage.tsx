@@ -20,12 +20,14 @@ function DepartmentTreeItem({
   department, 
   isExpanded, 
   onToggle,
-  onDepartmentClick
+  onDepartmentClick,
+  isSelected
 }: { 
   department: Department; 
   isExpanded: boolean; 
   onToggle: () => void;
   onDepartmentClick: (dept: Department) => void;
+  isSelected: boolean;
 }) {
   const { data: teams } = useQuery<TeamRow[]>({
     queryKey: ["/api/teams", department.id],
@@ -35,10 +37,10 @@ function DepartmentTreeItem({
   return (
     <div>
       <div
-        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-md hover-elevate cursor-pointer"
+        className={`flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-md hover-elevate cursor-pointer ${isSelected ? 'bg-muted' : ''}`}
         data-testid={`settings-department-${department.id}`}
       >
-        <div onClick={onToggle} className="flex items-center gap-2 flex-1">
+        <div onClick={onToggle} className="flex items-center">
           {isExpanded ? (
             <ChevronDown className="h-4 w-4 flex-shrink-0" />
           ) : (
@@ -270,6 +272,7 @@ export default function HomePage() {
                     key={dept.id}
                     department={dept}
                     isExpanded={expandedDepartments.has(dept.id)}
+                    isSelected={editingDepartment?.id === dept.id}
                     onToggle={() => {
                       const newExpanded = new Set(expandedDepartments);
                       if (newExpanded.has(dept.id)) {
