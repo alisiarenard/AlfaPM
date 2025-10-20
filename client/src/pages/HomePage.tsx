@@ -231,16 +231,18 @@ export default function HomePage() {
             </div>
             <div className="w-[70%] overflow-y-auto">
               {rightPanelMode === "addBlock" ? (
-                <div>
+                <div className="flex flex-col h-full">
                   <div className="px-6 py-4 border-b border-border bg-card">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
                         <Folder className="h-5 w-5" style={{ color: '#cd253d' }} />
                       </div>
-                      <h2 className="text-lg font-semibold text-foreground">Новый блок</h2>
+                      <h2 className="text-lg font-semibold text-foreground">
+                        {blockName.trim() || "Новый блок"}
+                      </h2>
                     </div>
                   </div>
-                  <div className="p-6 space-y-6">
+                  <div className="flex-1 p-6 space-y-6 overflow-y-auto">
                     <div className="space-y-2">
                       <Label htmlFor="block-name">Название блока</Label>
                       <Input
@@ -274,14 +276,16 @@ export default function HomePage() {
                         data-testid="input-value-cost"
                       />
                     </div>
-                    <div className="flex justify-end pt-4">
-                      <Button
-                        disabled={!blockName.trim()}
-                        data-testid="button-save-block"
-                      >
-                        Сохранить
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="border-t border-border p-4 flex justify-end">
+                    <Button
+                      disabled={!blockName.trim()}
+                      style={{ backgroundColor: '#cd253d' }}
+                      className="hover:opacity-90"
+                      data-testid="button-save-block"
+                    >
+                      Сохранить
+                    </Button>
                   </div>
                 </div>
               ) : (
