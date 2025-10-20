@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!validation.valid) {
             return res.status(400).json({ 
               success: false, 
-              error: validation.error || "Доска не найдена в Kaiten"
+              error: validation.error || "Доска инициатив не найдена в Kaiten"
             });
           }
         }

@@ -131,7 +131,7 @@ export class KaitenClient {
       log(`[Kaiten API] Failed to validate board ${boardId}:`, error);
       // Kaiten API returns 403 Forbidden for non-existent boards or boards without access
       if (error.message?.includes('403') || error.message?.includes('404') || error.message?.toLowerCase().includes('not found')) {
-        return { valid: false, error: 'Доска с таким ID не найдена в Kaiten' };
+        return { valid: false, error: 'Доска инициатив с таким ID не найдена в Kaiten' };
       }
       return { valid: false, error: 'Ошибка при проверке доски в Kaiten' };
     }

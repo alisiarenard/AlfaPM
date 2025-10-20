@@ -29,14 +29,16 @@ This project is a web-based application designed to visualize and track team ini
     - Validation only runs if initBoardId value actually changed from database
     - KaitenClient.validateBoard() method checks board via GET /api/latest/boards/:boardId
     - Handles 403 Forbidden and 404 Not Found as "board not found"
-    - Shows error toast "Доска с таким ID не найдена в Kaiten" if validation fails
+    - Shows error toast "Доска инициатив с таким ID не найдена в Kaiten" if validation fails
     - Prevents saving invalid board IDs to database
     - Frontend parses error messages to extract clean error text from JSON response
-  - **Toast Notifications**:
-    - Success toast: title "Успешно", description "Команда обновлена"
+  - **Unified Toast Notifications**:
+    - All toasts use consistent default variant design (no destructive red styling)
+    - Success toast: title "Успешно", description varies by action
     - Error toast: title "Ошибка", description extracted from backend error message
-    - Both toasts use same design (default variant, no destructive red styling)
-    - Error messages are parsed from backend JSON format: "400: {"success":false,"error":"..."}"
+    - Error messages parsed from backend JSON format: "400: {"success":false,"error":"..."}"
+    - Clean error text extracted and displayed to user without HTTP codes or JSON structure
+    - Toast notifications are ephemeral by design (auto-dismiss after brief display)
 
 ## Previous Changes (October 17, 2025)
 - Added `sprints` table to PostgreSQL database

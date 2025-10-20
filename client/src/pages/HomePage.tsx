@@ -133,7 +133,6 @@ export default function HomePage() {
       toast({
         title: "Ошибка",
         description: "Не удалось создать блок",
-        variant: "destructive",
       });
     },
   });
@@ -163,7 +162,6 @@ export default function HomePage() {
       toast({
         title: "Ошибка",
         description: "Не удалось сохранить изменения",
-        variant: "destructive",
       });
     },
   });
@@ -196,7 +194,6 @@ export default function HomePage() {
       toast({
         title: "Ошибка",
         description: "Не удалось создать команду",
-        variant: "destructive",
       });
     },
   });
@@ -237,7 +234,7 @@ export default function HomePage() {
       let errorMessage = "Не удалось обновить команду";
       
       // Парсим ошибку формата "400: {"success":false,"error":"текст ошибки"}"
-      if (error.message.includes(':')) {
+      if (error.message && error.message.includes(':')) {
         const parts = error.message.split(': ');
         const jsonPart = parts.slice(1).join(': ');
         try {
@@ -248,7 +245,7 @@ export default function HomePage() {
           errorMessage = jsonPart;
         }
       } else {
-        errorMessage = error.message;
+        errorMessage = error.message || errorMessage;
       }
       
       toast({
@@ -884,7 +881,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
 
   if (initiativesError) {
     return (
-      <Alert variant="destructive">
+      <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           Ошибка при загрузке инициатив: {initiativesError instanceof Error ? initiativesError.message : "Неизвестная ошибка"}
