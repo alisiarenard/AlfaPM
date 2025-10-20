@@ -180,7 +180,7 @@ export default function HomePage() {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="z-[250]">
+                  <DropdownMenuContent align="end" className="z-[250] bg-white dark:bg-white">
                     <DropdownMenuItem data-testid="menu-item-block">
                       Блок
                     </DropdownMenuItem>
