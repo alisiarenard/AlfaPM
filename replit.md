@@ -3,7 +3,19 @@
 ## Overview
 This project is a web-based application designed to visualize and track team initiatives across sprint timelines. It enables users to upload team data, displaying initiatives with their associated story points, sprint allocations, and status information. The application supports multiple teams, each accessible via a separate tab, and features a clean, data-focused interface inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles. The core purpose is to provide a clear, scannable overview of project progress and team allocation. The application's business vision is to streamline project management and enhance team visibility, offering market potential in organizations seeking efficient, data-driven project tracking.
 
-## Recent Changes (October 17, 2025)
+## Recent Changes (October 20, 2025)
+- **Team Editing Feature**: Added full team editing functionality in settings modal
+  - Clicking on team in left panel opens team editing form in right panel
+  - Form includes all editable team fields: teamName, spaceId, sprintBoardId, initBoardId, velocity (vilocity), sprintDuration, spPrice
+  - Form pre-fills with current team data
+  - Save button enabled only when form is modified
+  - Backend: Added PATCH /api/teams/:teamId endpoint
+  - Storage: Added updateTeam() method to DbStorage
+  - UI: Team items in department tree now highlight when selected
+  - Success toast displays "Команда обновлена" after successful save
+  - Auto-refreshes team data and invalidates cache after update
+
+## Previous Changes (October 17, 2025)
 - Added `sprints` table to PostgreSQL database
 - Sprints table includes fields: sprint_id (PK), board_id, title, velocity, start_date, finish_date, actual_finish_date (nullable)
 - Populated sprints table with sprint data: 40895 (Sprint 1), 40896 (Sprint 2), 40897 (Sprint 3), 40909 (sprint 4)
@@ -55,8 +67,9 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 The backend uses Express.js with TypeScript and an ESM module system. It provides a RESTful API under the `/api` prefix.
 
 **API Endpoints:**
-- `/api/departments`: Retrieve department list.
-- `/api/teams/:departmentId`: Retrieve teams for a department.
+- `/api/departments` (GET, POST, PATCH): Manage departments.
+- `/api/teams/:departmentId` (GET): Retrieve teams for a department.
+- `/api/teams/:teamId` (PATCH): Update team details.
 - `/api/initiatives` (GET, POST, PATCH, DELETE): Manage initiatives.
 - `/api/initiatives/board/:initBoardId`: Retrieve initiatives for a specific board.
 - `/api/tasks` (GET, POST, PATCH, DELETE): Manage tasks.

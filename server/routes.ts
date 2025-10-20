@@ -102,6 +102,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/teams/:teamId", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const updateData = req.body;
+
+      const team = await storage.updateTeam(teamId, updateData);
+      
+      if (!team) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Team not found" 
+        });
+      }
+      
+      res.json(team);
+    } catch (error) {
+      console.error("PATCH /api/teams/:teamId error:", error);
+      
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          success: false, 
+          error: error.message 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Internal server error" 
+      });
+    }
+  });
+
   app.get("/api/initiatives", async (req, res) => {
     try {
       const initiatives = await storage.getAllInitiatives();
