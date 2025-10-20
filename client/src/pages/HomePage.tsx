@@ -368,28 +368,30 @@ export default function HomePage() {
                         data-testid="input-block-name"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="innovation-rate">Плановый Innovation Rate, %</Label>
-                      <Input
-                        id="innovation-rate"
-                        type="number"
-                        placeholder="0"
-                        value={innovationRate}
-                        onChange={(e) => setInnovationRate(e.target.value)}
-                        data-testid="input-innovation-rate"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="value-cost">Value/Cost</Label>
-                      <Input
-                        id="value-cost"
-                        type="number"
-                        step="0.1"
-                        placeholder="0.0"
-                        value={valueCost}
-                        onChange={(e) => setValueCost(e.target.value)}
-                        data-testid="input-value-cost"
-                      />
+                    <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="innovation-rate">Плановый Innovation Rate, %</Label>
+                        <Input
+                          id="innovation-rate"
+                          type="number"
+                          placeholder="0"
+                          value={innovationRate}
+                          onChange={(e) => setInnovationRate(e.target.value)}
+                          data-testid="input-innovation-rate"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <Label htmlFor="value-cost">Value/Cost</Label>
+                        <Input
+                          id="value-cost"
+                          type="number"
+                          step="0.1"
+                          placeholder="0.0"
+                          value={valueCost}
+                          onChange={(e) => setValueCost(e.target.value)}
+                          data-testid="input-value-cost"
+                        />
+                      </div>
                     </div>
                   </div>
                   {(rightPanelMode === "addBlock" || hasFormChanged()) && (
