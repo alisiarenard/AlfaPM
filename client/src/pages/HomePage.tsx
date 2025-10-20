@@ -4,9 +4,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { AlertCircle, BarChart3 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Department, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
+import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 
 export default function HomePage() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
@@ -38,9 +39,7 @@ export default function HomePage() {
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
         <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
-              <BarChart3 className="h-5 w-5" style={{ color: '#cd253d' }} />
-            </div>
+            <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
             <h2 className="text-sm font-medium text-muted-foreground">Продуктовые метрики</h2>
           </div>
           <Select 
