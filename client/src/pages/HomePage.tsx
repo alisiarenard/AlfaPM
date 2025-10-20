@@ -171,7 +171,7 @@ export default function HomePage() {
       
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
-          <DialogHeader className="p-[10px]">
+          <DialogHeader className="pt-4 px-4 pb-0">
             <DialogTitle className="text-xl font-bold">Настройки</DialogTitle>
           </DialogHeader>
           <div className="flex flex-1 overflow-hidden border-t border-border">
