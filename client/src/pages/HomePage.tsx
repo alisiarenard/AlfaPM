@@ -107,11 +107,39 @@ export default function HomePage() {
       setInnovationRate("");
       setValueCost("");
       setRightPanelMode(null);
+      setEditingDepartment(null);
     },
     onError: (error) => {
       toast({
         title: "Ошибка",
         description: "Не удалось создать блок",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateDepartmentMutation = useMutation({
+    mutationFn: async (data: { id: string; department?: string; plannedIr?: number | null; plannedVc?: number | null }) => {
+      const { id, ...updateData } = data;
+      const res = await apiRequest("PATCH", `/api/departments/${id}`, updateData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      toast({
+        title: "Успешно",
+        description: "Изменения сохранены",
+      });
+      setBlockName("");
+      setInnovationRate("");
+      setValueCost("");
+      setRightPanelMode(null);
+      setEditingDepartment(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить изменения",
         variant: "destructive",
       });
     },
@@ -151,6 +179,36 @@ export default function HomePage() {
   const handleDepartmentClick = (dept: Department) => {
     setEditingDepartment(dept);
     setRightPanelMode("editBlock");
+  };
+
+  const hasFormChanged = () => {
+    if (rightPanelMode === "addBlock") {
+      return true;
+    }
+    if (rightPanelMode === "editBlock" && editingDepartment) {
+      const nameChanged = blockName.trim() !== editingDepartment.department;
+      const irChanged = (innovationRate ? parseInt(innovationRate) : null) !== editingDepartment.plannedIr;
+      const vcChanged = (valueCost ? parseInt(valueCost) : null) !== editingDepartment.plannedVc;
+      return nameChanged || irChanged || vcChanged;
+    }
+    return false;
+  };
+
+  const handleSave = () => {
+    if (rightPanelMode === "addBlock") {
+      createDepartmentMutation.mutate({
+        department: blockName.trim(),
+        plannedIr: innovationRate ? parseInt(innovationRate) : null,
+        plannedVc: valueCost ? parseInt(valueCost) : null,
+      });
+    } else if (rightPanelMode === "editBlock" && editingDepartment) {
+      updateDepartmentMutation.mutate({
+        id: editingDepartment.id,
+        department: blockName.trim(),
+        plannedIr: innovationRate ? parseInt(innovationRate) : null,
+        plannedVc: valueCost ? parseInt(valueCost) : null,
+      });
+    }
   };
 
   return (
@@ -335,23 +393,23 @@ export default function HomePage() {
                       />
                     </div>
                   </div>
-                  <div className="p-4 flex justify-end">
-                    <Button
-                      disabled={!blockName.trim() || createDepartmentMutation.isPending}
-                      style={{ backgroundColor: '#cd253d' }}
-                      className="hover:opacity-90 border-0"
-                      data-testid="button-save-block"
-                      onClick={() => {
-                        createDepartmentMutation.mutate({
-                          department: blockName.trim(),
-                          plannedIr: innovationRate ? parseInt(innovationRate) : null,
-                          plannedVc: valueCost ? parseInt(valueCost) : null,
-                        });
-                      }}
-                    >
-                      {createDepartmentMutation.isPending ? "Сохранение..." : "Сохранить"}
-                    </Button>
-                  </div>
+                  {(rightPanelMode === "addBlock" || hasFormChanged()) && (
+                    <div className="p-4 flex justify-end">
+                      <Button
+                        disabled={!blockName.trim() || createDepartmentMutation.isPending || updateDepartmentMutation.isPending}
+                        style={{ backgroundColor: '#cd253d' }}
+                        className="hover:opacity-90 border-0"
+                        data-testid="button-save-block"
+                        onClick={handleSave}
+                      >
+                        {createDepartmentMutation.isPending || updateDepartmentMutation.isPending 
+                          ? "Сохранение..." 
+                          : rightPanelMode === "addBlock" 
+                            ? "Добавить" 
+                            : "Сохранить"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-4">

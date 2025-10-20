@@ -9,6 +9,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getDepartments(): Promise<Department[]>;
   createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department>;
+  updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined>;
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
   getAllInitiatives(): Promise<InitiativeRow[]>;
   getInitiativesByBoardId(initBoardId: number): Promise<InitiativeRow[]>;
@@ -82,6 +83,10 @@ export class MemStorage implements IStorage {
   async createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department> {
     const id = randomUUID();
     return { id, department: department.department, plannedIr: department.plannedIr || null, plannedVc: department.plannedVc || null };
+  }
+
+  async updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined> {
+    return undefined;
   }
 
   async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {
@@ -240,6 +245,14 @@ export class DbStorage implements IStorage {
   async createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department> {
     const [newDepartment] = await db.insert(departments).values(department).returning();
     return newDepartment;
+  }
+
+  async updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined> {
+    const [updated] = await db.update(departments)
+      .set(department)
+      .where(eq(departments.id, id))
+      .returning();
+    return updated;
   }
 
   async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {

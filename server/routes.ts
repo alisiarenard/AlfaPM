@@ -41,6 +41,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/departments/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (!req.body || Object.keys(req.body).length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Request body cannot be empty" 
+        });
+      }
+      
+      const validatedData = insertDepartmentSchema.partial().parse(req.body);
+      
+      if (Object.keys(validatedData).length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "At least one field must be provided for update" 
+        });
+      }
+      
+      const department = await storage.updateDepartment(id, validatedData);
+      
+      if (!department) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Department not found" 
+        });
+      }
+      
+      res.json(department);
+    } catch (error) {
+      console.error("PATCH /api/departments/:id error:", error);
+      
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          success: false, 
+          error: error.message 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Internal server error" 
+      });
+    }
+  });
+
   app.get("/api/teams/:departmentId", async (req, res) => {
     try {
       const { departmentId } = req.params;
