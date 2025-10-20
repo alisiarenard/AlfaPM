@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { AlertCircle, Settings, ChevronRight, ChevronDown } from "lucide-react";
+import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Department, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 
@@ -168,7 +169,27 @@ export default function HomePage() {
           </DialogHeader>
           <div className="flex flex-1 overflow-hidden">
             <div className="w-[30%] border-r border-border p-4 overflow-y-auto">
-              <h3 className="text-sm font-semibold text-foreground mb-3">Подразделения</h3>
+              <div className="flex items-center justify-end mb-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      data-testid="button-add-dropdown"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem data-testid="menu-item-block">
+                      Блок
+                    </DropdownMenuItem>
+                    <DropdownMenuItem data-testid="menu-item-team">
+                      Команда
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <div className="space-y-1">
                 {departments?.map((dept) => (
                   <DepartmentTreeItem
