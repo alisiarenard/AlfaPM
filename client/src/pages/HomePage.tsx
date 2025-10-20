@@ -171,11 +171,11 @@ export default function HomePage() {
       
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+          <DialogHeader className="px-6 pt-6 border-b border-border">
             <DialogTitle className="text-xl font-bold">Настройки</DialogTitle>
           </DialogHeader>
           <div className="flex flex-1 overflow-hidden">
-            <div className="w-[30%] border-r border-border p-4 overflow-y-auto">
+            <div className="w-[30%] border-r border-border px-4 pb-4 overflow-y-auto">
               <div className="flex items-center justify-end mb-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
