@@ -272,6 +272,16 @@ export default function HomePage() {
       const vcChanged = (valueCost ? parseInt(valueCost) : null) !== editingDepartment.plannedVc;
       return nameChanged || irChanged || vcChanged;
     }
+    if (rightPanelMode === "editTeam" && editingTeam) {
+      const nameChanged = teamName.trim() !== editingTeam.teamName;
+      const spaceIdChanged = (spaceId ? parseInt(spaceId) : editingTeam.spaceId) !== editingTeam.spaceId;
+      const sprintBoardIdChanged = (sprintBoardId ? parseInt(sprintBoardId) : editingTeam.sprintBoardId) !== editingTeam.sprintBoardId;
+      const initBoardIdChanged = (initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId) !== editingTeam.initBoardId;
+      const velocityChanged = (velocity ? parseInt(velocity) : editingTeam.vilocity) !== editingTeam.vilocity;
+      const sprintDurationChanged = (sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration) !== editingTeam.sprintDuration;
+      const spPriceChanged = (spPrice ? parseInt(spPrice) : editingTeam.spPrice) !== editingTeam.spPrice;
+      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged;
+    }
     return false;
   };
 
@@ -597,31 +607,33 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="p-4 flex justify-end">
-                    <Button
-                      disabled={!teamName.trim() || updateTeamMutation.isPending}
-                      style={{ backgroundColor: '#cd253d' }}
-                      className="hover:opacity-90 border-0"
-                      data-testid="button-save-team"
-                      onClick={() => {
-                        if (editingTeam) {
-                          updateTeamMutation.mutate({
-                            teamId: editingTeam.teamId,
-                            teamName: teamName.trim(),
-                            spaceId: spaceId ? parseInt(spaceId) : editingTeam.spaceId,
-                            sprintBoardId: sprintBoardId ? parseInt(sprintBoardId) : editingTeam.sprintBoardId,
-                            initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
-                            vilocity: velocity ? parseInt(velocity) : editingTeam.vilocity,
-                            sprintDuration: sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration,
-                            spPrice: spPrice ? parseInt(spPrice) : editingTeam.spPrice,
-                            departmentId: editingTeam.departmentId
-                          });
-                        }
-                      }}
-                    >
-                      {updateTeamMutation.isPending ? "Сохранение..." : "Сохранить"}
-                    </Button>
-                  </div>
+                  {hasFormChanged() && (
+                    <div className="p-4 flex justify-end">
+                      <Button
+                        disabled={!teamName.trim() || updateTeamMutation.isPending}
+                        style={{ backgroundColor: '#cd253d' }}
+                        className="hover:opacity-90 border-0"
+                        data-testid="button-save-team"
+                        onClick={() => {
+                          if (editingTeam) {
+                            updateTeamMutation.mutate({
+                              teamId: editingTeam.teamId,
+                              teamName: teamName.trim(),
+                              spaceId: spaceId ? parseInt(spaceId) : editingTeam.spaceId,
+                              sprintBoardId: sprintBoardId ? parseInt(sprintBoardId) : editingTeam.sprintBoardId,
+                              initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
+                              vilocity: velocity ? parseInt(velocity) : editingTeam.vilocity,
+                              sprintDuration: sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration,
+                              spPrice: spPrice ? parseInt(spPrice) : editingTeam.spPrice,
+                              departmentId: editingTeam.departmentId
+                            });
+                          }
+                        }}
+                      >
+                        {updateTeamMutation.isPending ? "Сохранение..." : "Сохранить"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-4">
