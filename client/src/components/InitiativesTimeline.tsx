@@ -295,7 +295,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: getStatusColor(initiative) }}
                   />
-                  <span className="text-xs text-foreground font-semibold">
+                  <span className="text-sm text-foreground font-semibold">
                     {initiative.title}
                   </span>
                 </div>
