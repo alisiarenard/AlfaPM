@@ -237,10 +237,10 @@ export default function HomePage() {
               onValueChange={setSelectedDepartment}
               data-testid="select-department"
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[200px] bg-white">
                 <SelectValue placeholder="Выберите департамент" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white">
                 {departments?.map((dept) => (
                   <SelectItem 
                     key={dept.id} 
