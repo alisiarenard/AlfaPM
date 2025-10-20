@@ -8,6 +8,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getDepartments(): Promise<Department[]>;
+  createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department>;
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
   getAllInitiatives(): Promise<InitiativeRow[]>;
   getInitiativesByBoardId(initBoardId: number): Promise<InitiativeRow[]>;
@@ -76,6 +77,11 @@ export class MemStorage implements IStorage {
 
   async getDepartments(): Promise<Department[]> {
     return [];
+  }
+
+  async createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department> {
+    const id = randomUUID();
+    return { id, department: department.department, plannedIr: department.plannedIr || null, plannedVc: department.plannedVc || null };
   }
 
   async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {
@@ -229,6 +235,11 @@ export class DbStorage implements IStorage {
   async getDepartments(): Promise<Department[]> {
     const result = await db.select().from(departments);
     return result;
+  }
+
+  async createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department> {
+    const [newDepartment] = await db.insert(departments).values(department).returning();
+    return newDepartment;
   }
 
   async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {

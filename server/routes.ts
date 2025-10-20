@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInitiativeSchema, insertTaskSchema } from "@shared/schema";
+import { insertInitiativeSchema, insertTaskSchema, insertDepartmentSchema } from "@shared/schema";
 import { kaitenClient } from "./kaiten";
 import { log } from "./vite";
 
@@ -15,6 +15,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve departments" 
+      });
+    }
+  });
+
+  app.post("/api/departments", async (req, res) => {
+    try {
+      const validatedData = insertDepartmentSchema.parse(req.body);
+      const department = await storage.createDepartment(validatedData);
+      res.status(201).json(department);
+    } catch (error) {
+      console.error("POST /api/departments error:", error);
+      
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          success: false, 
+          error: error.message 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Internal server error" 
       });
     }
   });

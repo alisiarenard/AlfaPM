@@ -6,11 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Department, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 
@@ -68,6 +70,7 @@ export default function HomePage() {
   const [blockName, setBlockName] = useState("");
   const [innovationRate, setInnovationRate] = useState("");
   const [valueCost, setValueCost] = useState("");
+  const { toast } = useToast();
 
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
@@ -76,6 +79,31 @@ export default function HomePage() {
   const { data: departmentTeams } = useQuery<TeamRow[]>({
     queryKey: ["/api/teams", selectedDepartment],
     enabled: !!selectedDepartment,
+  });
+
+  const createDepartmentMutation = useMutation({
+    mutationFn: async (data: { department: string; plannedIr?: number | null; plannedVc?: number | null }) => {
+      const res = await apiRequest("POST", "/api/departments", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      toast({
+        title: "Успешно",
+        description: "Блок успешно создан",
+      });
+      setBlockName("");
+      setInnovationRate("");
+      setValueCost("");
+      setRightPanelMode(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось создать блок",
+        variant: "destructive",
+      });
+    },
   });
 
   useEffect(() => {
@@ -279,12 +307,19 @@ export default function HomePage() {
                   </div>
                   <div className="border-t border-border p-4 flex justify-end">
                     <Button
-                      disabled={!blockName.trim()}
+                      disabled={!blockName.trim() || createDepartmentMutation.isPending}
                       style={{ backgroundColor: '#cd253d' }}
                       className="hover:opacity-90"
                       data-testid="button-save-block"
+                      onClick={() => {
+                        createDepartmentMutation.mutate({
+                          department: blockName.trim(),
+                          plannedIr: innovationRate ? parseInt(innovationRate) : null,
+                          plannedVc: valueCost ? parseInt(valueCost) : null,
+                        });
+                      }}
                     >
-                      Сохранить
+                      {createDepartmentMutation.isPending ? "Сохранение..." : "Сохранить"}
                     </Button>
                   </div>
                 </div>
