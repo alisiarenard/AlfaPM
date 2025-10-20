@@ -6,15 +6,61 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { AlertCircle, Settings } from "lucide-react";
+import { AlertCircle, Settings, ChevronRight, ChevronDown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Department, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
+
+function DepartmentTreeItem({ 
+  department, 
+  isExpanded, 
+  onToggle 
+}: { 
+  department: Department; 
+  isExpanded: boolean; 
+  onToggle: () => void;
+}) {
+  const { data: teams } = useQuery<TeamRow[]>({
+    queryKey: ["/api/teams", department.id],
+    enabled: isExpanded,
+  });
+
+  return (
+    <div>
+      <div
+        className="flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-md hover-elevate cursor-pointer"
+        onClick={onToggle}
+        data-testid={`settings-department-${department.id}`}
+      >
+        {isExpanded ? (
+          <ChevronDown className="h-4 w-4 flex-shrink-0" />
+        ) : (
+          <ChevronRight className="h-4 w-4 flex-shrink-0" />
+        )}
+        <span className="font-medium">{department.department}</span>
+      </div>
+      {isExpanded && teams && teams.length > 0 && (
+        <div className="ml-6 mt-1 space-y-1">
+          {teams.map((team) => (
+            <div
+              key={team.teamId}
+              className="px-3 py-2 text-sm text-muted-foreground rounded-md hover-elevate cursor-pointer"
+              data-testid={`settings-team-${team.teamId}`}
+            >
+              {team.teamName}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function HomePage() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
 
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
@@ -125,13 +171,20 @@ export default function HomePage() {
               <h3 className="text-sm font-semibold text-foreground mb-3">Подразделения</h3>
               <div className="space-y-1">
                 {departments?.map((dept) => (
-                  <div
+                  <DepartmentTreeItem
                     key={dept.id}
-                    className="px-3 py-2 text-sm text-foreground rounded-md hover-elevate cursor-pointer"
-                    data-testid={`settings-department-${dept.id}`}
-                  >
-                    {dept.department}
-                  </div>
+                    department={dept}
+                    isExpanded={expandedDepartments.has(dept.id)}
+                    onToggle={() => {
+                      const newExpanded = new Set(expandedDepartments);
+                      if (newExpanded.has(dept.id)) {
+                        newExpanded.delete(dept.id);
+                      } else {
+                        newExpanded.add(dept.id);
+                      }
+                      setExpandedDepartments(newExpanded);
+                    }}
+                  />
                 ))}
               </div>
             </div>
