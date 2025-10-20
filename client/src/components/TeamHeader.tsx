@@ -38,7 +38,7 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
     <div className="px-6 py-4 border-b border-border bg-card">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10">
+          <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
             <Users className="h-5 w-5" style={{ color: '#cd253d' }} />
           </div>
           <div>
