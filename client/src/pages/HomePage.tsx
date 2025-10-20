@@ -233,10 +233,13 @@ export default function HomePage() {
       setSprintDuration(updatedTeam.sprintDuration.toString());
       setSpPrice(updatedTeam.spPrice.toString());
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      const errorMessage = error.message.includes(':') 
+        ? error.message.split(': ')[1] 
+        : error.message;
       toast({
         title: "Ошибка",
-        description: "Не удалось обновить команду",
+        description: errorMessage || "Не удалось обновить команду",
         variant: "destructive",
       });
     },

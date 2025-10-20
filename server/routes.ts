@@ -129,6 +129,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { teamId } = req.params;
       const updateData = req.body;
 
+      // Если изменяется initBoardId, проверяем его в Kaiten только если значение действительно изменилось
+      if (updateData.initBoardId !== undefined) {
+        // Получаем текущие данные команды
+        const currentTeam = await storage.getTeamById(teamId);
+        
+        // Валидируем только если ID доски действительно изменился
+        if (!currentTeam || currentTeam.initBoardId !== updateData.initBoardId) {
+          const validation = await kaitenClient.validateBoard(updateData.initBoardId);
+          if (!validation.valid) {
+            return res.status(400).json({ 
+              success: false, 
+              error: validation.error || "Доска не найдена в Kaiten"
+            });
+          }
+        }
+      }
+
       const team = await storage.updateTeam(teamId, updateData);
       
       if (!team) {

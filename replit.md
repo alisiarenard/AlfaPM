@@ -19,11 +19,19 @@ This project is a web-based application designed to visualize and track team ini
     - Form shows team name and department name in header
     - All team fields editable with localized labels (Russian)
     - "Сохранить" button appears only when changes detected
-    - Backend: PATCH /api/teams/:teamId endpoint
-    - Storage: updateTeam() method in DbStorage
+    - Backend: PATCH /api/teams/:teamId endpoint with Kaiten validation
+    - Storage: updateTeam() and getTeamById() methods in DbStorage
     - Team items highlight when selected
     - Success toast "Команда обновлена" after save
     - Auto-refreshes team data and invalidates cache
+  - **Kaiten Board Validation**:
+    - When initBoardId field is changed, backend validates board exists in Kaiten before saving
+    - Validation only runs if initBoardId value actually changed from database
+    - KaitenClient.validateBoard() method checks board via GET /api/latest/boards/:boardId
+    - Handles 403 Forbidden and 404 Not Found as "board not found"
+    - Shows error toast "Доска с таким ID не найдена в Kaiten" if validation fails
+    - Prevents saving invalid board IDs to database
+    - Frontend parses error messages to remove HTTP status codes before display
 
 ## Previous Changes (October 17, 2025)
 - Added `sprints` table to PostgreSQL database
