@@ -335,11 +335,11 @@ export default function HomePage() {
                       />
                     </div>
                   </div>
-                  <div className="border-t border-border p-4 flex justify-end">
+                  <div className="p-4 flex justify-end">
                     <Button
                       disabled={!blockName.trim() || createDepartmentMutation.isPending}
                       style={{ backgroundColor: '#cd253d' }}
-                      className="hover:opacity-90"
+                      className="hover:opacity-90 border-0"
                       data-testid="button-save-block"
                       onClick={() => {
                         createDepartmentMutation.mutate({
