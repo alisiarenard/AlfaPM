@@ -84,6 +84,13 @@ export default function HomePage() {
     }
   }, [departmentTeams]);
 
+  useEffect(() => {
+    if (departments && departments.length > 0) {
+      const allDepartmentIds = new Set(departments.map(dept => dept.id));
+      setExpandedDepartments(allDepartmentIds);
+    }
+  }, [departments]);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
