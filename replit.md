@@ -31,7 +31,12 @@ This project is a web-based application designed to visualize and track team ini
     - Handles 403 Forbidden and 404 Not Found as "board not found"
     - Shows error toast "Доска с таким ID не найдена в Kaiten" if validation fails
     - Prevents saving invalid board IDs to database
-    - Frontend parses error messages to remove HTTP status codes before display
+    - Frontend parses error messages to extract clean error text from JSON response
+  - **Toast Notifications**:
+    - Success toast: title "Успешно", description "Команда обновлена"
+    - Error toast: title "Ошибка", description extracted from backend error message
+    - Both toasts use same design (default variant, no destructive red styling)
+    - Error messages are parsed from backend JSON format: "400: {"success":false,"error":"..."}"
 
 ## Previous Changes (October 17, 2025)
 - Added `sprints` table to PostgreSQL database

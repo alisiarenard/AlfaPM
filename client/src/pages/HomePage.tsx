@@ -234,13 +234,26 @@ export default function HomePage() {
       setSpPrice(updatedTeam.spPrice.toString());
     },
     onError: (error: Error) => {
-      const errorMessage = error.message.includes(':') 
-        ? error.message.split(': ')[1] 
-        : error.message;
+      let errorMessage = "Не удалось обновить команду";
+      
+      // Парсим ошибку формата "400: {"success":false,"error":"текст ошибки"}"
+      if (error.message.includes(':')) {
+        const parts = error.message.split(': ');
+        const jsonPart = parts.slice(1).join(': ');
+        try {
+          const errorData = JSON.parse(jsonPart);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Если не JSON, используем текст как есть
+          errorMessage = jsonPart;
+        }
+      } else {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Ошибка",
-        description: errorMessage || "Не удалось обновить команду",
-        variant: "destructive",
+        description: errorMessage,
       });
     },
   });
