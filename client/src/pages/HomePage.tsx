@@ -274,6 +274,14 @@ export default function HomePage() {
                         data-testid="input-value-cost"
                       />
                     </div>
+                    <div className="flex justify-end pt-4">
+                      <Button
+                        disabled={!blockName.trim()}
+                        data-testid="button-save-block"
+                      >
+                        Сохранить
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : (

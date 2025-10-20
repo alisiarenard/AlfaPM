@@ -70,6 +70,8 @@ export type User = typeof users.$inferSelect;
 export const departments = pgTable("departments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   department: varchar("department").notNull(),
+  plannedIr: integer("planned_ir"),
+  plannedVc: integer("planned_vc"),
 });
 
 export const insertDepartmentSchema = createInsertSchema(departments).omit({ id: true });
