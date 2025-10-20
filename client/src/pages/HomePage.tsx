@@ -122,7 +122,18 @@ export default function HomePage() {
           </DialogHeader>
           <div className="flex flex-1 overflow-hidden">
             <div className="w-[30%] border-r border-border p-4 overflow-y-auto">
-              <p className="text-sm text-muted-foreground">Левая панель (30%)</p>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Подразделения</h3>
+              <div className="space-y-1">
+                {departments?.map((dept) => (
+                  <div
+                    key={dept.id}
+                    className="px-3 py-2 text-sm text-foreground rounded-md hover-elevate cursor-pointer"
+                    data-testid={`settings-department-${dept.id}`}
+                  >
+                    {dept.department}
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="w-[70%] p-4 overflow-y-auto">
               <p className="text-sm text-muted-foreground">Правая панель (70%)</p>
