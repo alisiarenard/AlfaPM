@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { Department, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
+import type { Department, DepartmentWithTeamCount, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 
 function DepartmentTreeItem({ 
@@ -23,10 +23,10 @@ function DepartmentTreeItem({
   onDepartmentClick,
   isSelected
 }: { 
-  department: Department; 
+  department: DepartmentWithTeamCount; 
   isExpanded: boolean; 
   onToggle: () => void;
-  onDepartmentClick: (dept: Department) => void;
+  onDepartmentClick: (dept: DepartmentWithTeamCount) => void;
   isSelected: boolean;
 }) {
   const { data: teams } = useQuery<TeamRow[]>({
@@ -34,22 +34,27 @@ function DepartmentTreeItem({
     enabled: isExpanded,
   });
 
+  const hasTeams = department.teamCount > 0;
+
   return (
     <div>
       <div
         className={`flex items-center gap-2 px-3 py-2 text-sm text-foreground rounded-md hover-elevate cursor-pointer ${isSelected ? 'bg-muted' : ''}`}
         data-testid={`settings-department-${department.id}`}
       >
-        <div onClick={onToggle} className="flex items-center">
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4 flex-shrink-0" />
-          ) : (
-            <ChevronRight className="h-4 w-4 flex-shrink-0" />
-          )}
-        </div>
+        {hasTeams && (
+          <div onClick={onToggle} className="flex items-center">
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4 flex-shrink-0" />
+            ) : (
+              <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            )}
+          </div>
+        )}
         <span 
           className="font-medium flex-1" 
           onClick={() => onDepartmentClick(department)}
+          style={{ marginLeft: hasTeams ? '0' : '24px' }}
         >
           {department.department}
         </span>
@@ -80,10 +85,10 @@ export default function HomePage() {
   const [blockName, setBlockName] = useState("");
   const [innovationRate, setInnovationRate] = useState("");
   const [valueCost, setValueCost] = useState("");
-  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
+  const [editingDepartment, setEditingDepartment] = useState<DepartmentWithTeamCount | null>(null);
   const { toast } = useToast();
 
-  const { data: departments } = useQuery<Department[]>({
+  const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
   });
 
@@ -103,11 +108,12 @@ export default function HomePage() {
         title: "Успешно",
         description: "Блок успешно создан",
       });
-      setEditingDepartment(newDepartment);
+      const departmentWithCount: DepartmentWithTeamCount = { ...newDepartment, teamCount: 0 };
+      setEditingDepartment(departmentWithCount);
       setRightPanelMode("editBlock");
-      setBlockName(newDepartment.department);
-      setInnovationRate(newDepartment.plannedIr?.toString() || "");
-      setValueCost(newDepartment.plannedVc?.toString() || "");
+      setBlockName(departmentWithCount.department);
+      setInnovationRate(departmentWithCount.plannedIr?.toString() || "");
+      setValueCost(departmentWithCount.plannedVc?.toString() || "");
     },
     onError: (error) => {
       toast({
@@ -130,10 +136,14 @@ export default function HomePage() {
         title: "Успешно",
         description: "Изменения сохранены",
       });
-      setEditingDepartment(updatedDepartment);
-      setBlockName(updatedDepartment.department);
-      setInnovationRate(updatedDepartment.plannedIr?.toString() || "");
-      setValueCost(updatedDepartment.plannedVc?.toString() || "");
+      const departmentWithCount: DepartmentWithTeamCount = { 
+        ...updatedDepartment, 
+        teamCount: editingDepartment?.teamCount ?? 0 
+      };
+      setEditingDepartment(departmentWithCount);
+      setBlockName(departmentWithCount.department);
+      setInnovationRate(departmentWithCount.plannedIr?.toString() || "");
+      setValueCost(departmentWithCount.plannedVc?.toString() || "");
     },
     onError: (error) => {
       toast({
@@ -175,7 +185,7 @@ export default function HomePage() {
     }
   }, [rightPanelMode, editingDepartment]);
 
-  const handleDepartmentClick = (dept: Department) => {
+  const handleDepartmentClick = (dept: DepartmentWithTeamCount) => {
     setEditingDepartment(dept);
     setRightPanelMode("editBlock");
   };
@@ -229,7 +239,12 @@ export default function HomePage() {
               </SelectTrigger>
               <SelectContent>
                 {departments?.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.id} data-testid={`option-department-${dept.id}`}>
+                  <SelectItem 
+                    key={dept.id} 
+                    value={dept.id} 
+                    data-testid={`option-department-${dept.id}`}
+                    disabled={dept.teamCount === 0}
+                  >
                     {dept.department}
                   </SelectItem>
                 ))}

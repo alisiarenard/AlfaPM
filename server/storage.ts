@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, users, departments, teams, initiatives, tasks, sprints } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, users, departments, teams, initiatives, tasks, sprints } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, sql, asc } from "drizzle-orm";
@@ -7,7 +7,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  getDepartments(): Promise<Department[]>;
+  getDepartments(): Promise<DepartmentWithTeamCount[]>;
   createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department>;
   updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined>;
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
@@ -76,7 +76,7 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async getDepartments(): Promise<Department[]> {
+  async getDepartments(): Promise<DepartmentWithTeamCount[]> {
     return [];
   }
 
@@ -237,8 +237,16 @@ export class DbStorage implements IStorage {
     return user;
   }
 
-  async getDepartments(): Promise<Department[]> {
-    const result = await db.select().from(departments);
+  async getDepartments(): Promise<DepartmentWithTeamCount[]> {
+    const result = await db
+      .select({
+        id: departments.id,
+        department: departments.department,
+        plannedIr: departments.plannedIr,
+        plannedVc: departments.plannedVc,
+        teamCount: sql<number>`(SELECT COUNT(*)::int FROM ${teams} WHERE ${teams.departmentId} = ${departments.id})`,
+      })
+      .from(departments);
     return result;
   }
 

@@ -77,6 +77,7 @@ export const departments = pgTable("departments", {
 export const insertDepartmentSchema = createInsertSchema(departments).omit({ id: true });
 export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 export type Department = typeof departments.$inferSelect;
+export type DepartmentWithTeamCount = Department & { teamCount: number };
 
 export const teams = pgTable("teams", {
   spaceId: integer("space_id").notNull(),
