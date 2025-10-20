@@ -116,15 +116,20 @@ export default function HomePage() {
       </div>
       
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[80vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6">
             <DialogTitle className="text-xl font-bold">Настройки</DialogTitle>
             <DialogDescription>
               Настройки приложения
             </DialogDescription>
           </DialogHeader>
-          <div className="py-6">
-            <p className="text-muted-foreground">Здесь будут настройки приложения</p>
+          <div className="flex h-[calc(80vh-120px)]">
+            <div className="w-[30%] border-r border-border p-4 overflow-y-auto">
+              <p className="text-sm text-muted-foreground">Левая панель (30%)</p>
+            </div>
+            <div className="w-[70%] p-4 overflow-y-auto">
+              <p className="text-sm text-muted-foreground">Правая панель (70%)</p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
