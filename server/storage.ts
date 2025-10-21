@@ -364,8 +364,8 @@ export class DbStorage implements IStorage {
     cardId: number, 
     boardId: number, 
     title: string, 
-    state: string, 
-    condition: string, 
+    state: "1-queued" | "2-inProgress" | "3-done", 
+    condition: "1-live" | "2-archived", 
     size: number
   ): Promise<InitiativeRow> {
     const existing = await this.getInitiativeByCardId(cardId);
