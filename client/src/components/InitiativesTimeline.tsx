@@ -224,6 +224,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return false;
     }
 
+    // Для "Поддержки бизнеса" показываем блоки только там, где есть фактические SP > 0
+    if (initiative.cardId === 0) {
+      const sp = getSprintSP(initiative, sprintId);
+      return sp > 0;
+    }
+
     // Находим спринты инициативы с их датами для правильного упорядочивания
     const initiativeSprintsWithDates = initiative.sprints
       .map(s => {
