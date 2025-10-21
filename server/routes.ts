@@ -778,6 +778,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
 
+        log(`[Kaiten Sync] Card ${card.id} "${card.title}" - type object:`, JSON.stringify(card.type));
+        log(`[Kaiten Sync] Card ${card.id} - type.name value: ${card.type?.name}`);
+
         const synced = await storage.syncInitiativeFromKaiten(
           card.id,
           boardId,

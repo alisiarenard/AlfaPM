@@ -97,6 +97,9 @@ export class KaitenClient {
     // Try different possible card locations in response
     if (response.cards && Array.isArray(response.cards)) {
       log(`[Kaiten API] Found ${response.cards.length} cards in response.cards`);
+      if (response.cards.length > 0) {
+        log(`[Kaiten API] Sample card (first card):`, JSON.stringify(response.cards[0], null, 2));
+      }
       return response.cards;
     }
     
