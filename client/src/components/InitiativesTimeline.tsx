@@ -322,7 +322,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               return (
                 <th
                   key={sprintId}
-                  className="px-2 py-3 text-center min-w-[140px]"
+                  className="px-2 py-3 text-center min-w-[100px]"
                   data-testid={`header-sprint-${sprintId}`}
                 >
                   <div className="flex flex-col gap-0.5">
@@ -406,7 +406,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   return (
                     <td
                       key={sprintId}
-                      className="p-0 min-w-[140px]"
+                      className="p-0 min-w-[100px]"
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
                       <div
