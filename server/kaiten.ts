@@ -90,27 +90,20 @@ export class KaitenClient {
     log(`[Kaiten API] Board response keys: ${Object.keys(response).join(', ')}`);
     log(`[Kaiten API] Raw response (first 800 chars): ${JSON.stringify(response).substring(0, 800)}`);
     
-    let cards: KaitenCard[] = [];
-    
     // Try different possible card locations in response
     if (response.cards && Array.isArray(response.cards)) {
       log(`[Kaiten API] Found ${response.cards.length} cards in response.cards`);
-      cards = response.cards;
-    }
-    // Check if response itself is an array
-    else if (Array.isArray(response)) {
-      log(`[Kaiten API] Response is array with ${response.length} items`);
-      cards = response as unknown as KaitenCard[];
-    }
-    else {
-      log(`[Kaiten API] No cards found in response`);
-      return [];
+      return response.cards;
     }
     
-    // Filter out archived cards
-    const activeCards = cards.filter(card => !card.archived);
-    log(`[Kaiten API] Filtered ${cards.length - activeCards.length} archived cards, returning ${activeCards.length} active cards`);
-    return activeCards;
+    // Check if response itself is an array
+    if (Array.isArray(response)) {
+      log(`[Kaiten API] Response is array with ${response.length} items`);
+      return response as unknown as KaitenCard[];
+    }
+    
+    log(`[Kaiten API] No cards found in response`);
+    return [];
   }
 
   async getSprint(sprintId: number): Promise<KaitenSprintResponse> {
