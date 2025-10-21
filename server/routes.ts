@@ -853,8 +853,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const syncedTasks = [];
       
       // Создаем записи в tasks для каждой карточки из спринта
-      for (const card of sprint.cards) {
+      for (const sprintCard of sprint.cards) {
+        // Получаем детальную информацию по карточке чтобы получить parents_ids
+        const card = await kaitenClient.getCard(sprintCard.id);
         log(`[Kaiten Sync Sprint] Syncing card ${card.id}: ${card.title}`);
+        
+        // Определяем init_card_id из parents_ids
+        let initCardId: number | null = null;
+        
+        if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+          const parentCardId = card.parents_ids[0]; // Первый родитель
+          log(`[Kaiten Sync Sprint]   Parent card_id: ${parentCardId}`);
+          
+          // Проверяем есть ли такая инициатива в базе
+          const parentInitiative = await storage.getInitiativeByCardId(parentCardId);
+          
+          if (parentInitiative) {
+            initCardId = parentCardId;
+            log(`[Kaiten Sync Sprint]   ✓ Parent found in initiatives, setting init_card_id=${initCardId}`);
+          } else {
+            initCardId = 0;
+            log(`[Kaiten Sync Sprint]   ✗ Parent NOT found in initiatives, setting init_card_id=0`);
+          }
+        } else {
+          initCardId = 0;
+          log(`[Kaiten Sync Sprint]   No parents_ids, setting init_card_id=0`);
+        }
         
         let state: "1-queued" | "2-inProgress" | "3-done";
         
@@ -876,10 +900,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           state,
           card.size || 0,
           condition,
-          null, // init_card_id оставляем пустым
+          initCardId,
           card.type_id?.toString(),
           card.completed_at ?? undefined,
-          sprintId // передаем sprint_id
+          sprintId
         );
         
         syncedTasks.push(synced);
