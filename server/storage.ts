@@ -27,7 +27,8 @@ export interface IStorage {
     title: string, 
     state: "1-queued" | "2-inProgress" | "3-done", 
     condition: "1-live" | "2-archived", 
-    size: number
+    size: number,
+    type?: string | null
   ): Promise<InitiativeRow>;
   getAllTasks(): Promise<TaskRow[]>;
   getTasksByBoardId(boardId: number): Promise<TaskRow[]>;
@@ -126,7 +127,7 @@ export class MemStorage implements IStorage {
 
   async createInitiative(initiative: InsertInitiative): Promise<InitiativeRow> {
     const id = randomUUID();
-    return { ...initiative, id };
+    return { ...initiative, id, type: initiative.type ?? null };
   }
 
   async updateInitiative(id: string, initiative: Partial<InsertInitiative>): Promise<InitiativeRow | undefined> {
@@ -143,10 +144,11 @@ export class MemStorage implements IStorage {
     title: string, 
     state: "1-queued" | "2-inProgress" | "3-done", 
     condition: "1-live" | "2-archived", 
-    size: number
+    size: number,
+    type?: string | null
   ): Promise<InitiativeRow> {
     const id = randomUUID();
-    return { id, cardId, title, state, condition, size, initBoardId: boardId };
+    return { id, cardId, title, state, condition, size, initBoardId: boardId, type: type ?? null };
   }
 
   async getAllTasks(): Promise<TaskRow[]> {
@@ -366,21 +368,22 @@ export class DbStorage implements IStorage {
     title: string, 
     state: "1-queued" | "2-inProgress" | "3-done", 
     condition: "1-live" | "2-archived", 
-    size: number
+    size: number,
+    type?: string | null
   ): Promise<InitiativeRow> {
     const existing = await this.getInitiativeByCardId(cardId);
     
     if (existing) {
       const [updated] = await db
         .update(initiatives)
-        .set({ title, state, condition, size, initBoardId: boardId })
+        .set({ title, state, condition, size, initBoardId: boardId, type: type || null })
         .where(eq(initiatives.cardId, cardId))
         .returning();
       return updated;
     } else {
       const [created] = await db
         .insert(initiatives)
-        .values({ cardId, title, state, condition, size, initBoardId: boardId })
+        .values({ cardId, title, state, condition, size, initBoardId: boardId, type: type || null })
         .returning();
       return created;
     }

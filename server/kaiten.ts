@@ -15,6 +15,10 @@ export interface KaitenCard {
   children?: KaitenCard[];
   created?: string;
   type_id?: number | null;
+  type?: {
+    id: number;
+    name: string;
+  } | null;
   completed_at?: string | null;
   parents_ids?: number[];
 }

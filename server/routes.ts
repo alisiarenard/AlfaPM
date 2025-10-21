@@ -158,7 +158,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.title,
               state,
               condition,
-              card.size || 0
+              card.size || 0,
+              card.type?.name
             );
           }
           
@@ -783,7 +784,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           card.title,
           state,
           condition,
-          card.size || 0
+          card.size || 0,
+          card.type?.name
         );
         
         syncedInitiatives.push(synced);
