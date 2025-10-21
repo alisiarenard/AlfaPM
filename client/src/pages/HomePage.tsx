@@ -858,6 +858,7 @@ export default function HomePage() {
 
 function TeamInitiativesTab({ team }: { team: TeamRow }) {
   const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const { toast } = useToast();
   
   const { data: initiativeRows, isLoading: initiativesLoading, error: initiativesError } = useQuery<Initiative[]>({
     queryKey: ["/api/initiatives/board", team.initBoardId],
@@ -866,6 +867,41 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
 
   const { data: sprints, isLoading: sprintsLoading } = useQuery<SprintRow[]>({
     queryKey: ["/api/sprints"],
+  });
+
+  const syncBoardMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/kaiten/sync-board/${team.initBoardId}`, {});
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", team.initBoardId] });
+      toast({
+        title: "Успешно",
+        description: `Синхронизировано ${data.count} инициатив из Kaiten`,
+      });
+    },
+    onError: (error: Error) => {
+      let errorMessage = "Не удалось синхронизировать данные";
+      
+      if (error.message && error.message.includes(':')) {
+        const parts = error.message.split(': ');
+        const jsonPart = parts.slice(1).join(': ');
+        try {
+          const errorData = JSON.parse(jsonPart);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = jsonPart;
+        }
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+      
+      toast({
+        title: "Ошибка",
+        description: errorMessage,
+      });
+    },
   });
 
   const isLoading = initiativesLoading || sprintsLoading;
@@ -914,6 +950,10 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     sprintDuration: team.sprintDuration
   };
 
+  const handleSync = () => {
+    syncBoardMutation.mutate();
+  };
+
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       <TeamHeader 
@@ -922,6 +962,8 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
         dbTeam={team} 
         showActiveOnly={showActiveOnly}
         onFilterChange={setShowActiveOnly}
+        onSync={handleSync}
+        isSyncing={syncBoardMutation.isPending}
       />
       <div className="px-4">
         <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />

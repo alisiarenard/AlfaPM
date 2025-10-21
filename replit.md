@@ -4,12 +4,24 @@
 This project is a web-based application designed to visualize and track team initiatives across sprint timelines. It enables users to upload team data, displaying initiatives with their associated story points, sprint allocations, and status information. The application supports multiple teams, each accessible via a separate tab, and features a clean, data-focused interface inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles. The core purpose is to provide a clear, scannable overview of project progress and team allocation. The application's business vision is to streamline project management and enhance team visibility, offering market potential in organizations seeking efficient, data-driven project tracking.
 
 ## Recent Changes (October 21, 2025)
-- **Team Header Update Button**: Added refresh/update button with RefreshCw icon next to team name in team header
-  - Component: TeamHeader.tsx
-  - Button: Small icon button (7x7 px) with ghost variant
-  - Position: Immediately after team name, before Innovation Rate
-  - Test ID: button-update-team
-  - Visual: Circular arrow icon (Material Design "Update" equivalent from lucide-react)
+- **Kaiten Sync Button in Team Header**: Added functional Update button to sync initiatives from Kaiten
+  - **Button Design**: RefreshCw icon (7x7 px) with ghost variant, positioned next to team name
+  - **Functionality**: 
+    - Triggers POST /api/kaiten/sync-board/:initBoardId endpoint
+    - Syncs all cards from team's Kaiten initiative board
+    - Shows loading state: spinning icon + disabled button during sync
+    - Success toast: "Синхронизировано X инициатив из Kaiten"
+    - Error toast: displays parsed error message
+    - Auto-refreshes initiatives table after successful sync
+  - **Implementation**:
+    - Component: TeamHeader.tsx (UI) + TeamInitiativesTab (logic)
+    - Mutation: syncBoardMutation with onSuccess/onError handlers
+    - Cache invalidation: queryClient.invalidateQueries for initiatives
+    - Test ID: button-update-team
+  - **Backend**: Existing /api/kaiten/sync-board/:boardId endpoint
+    - Fetches cards from Kaiten API
+    - Maps card states (1=queued, 2=inProgress, 3=done)
+    - Upserts initiatives via syncInitiativeFromKaiten()
 
 ## Previous Changes (October 20, 2025)
 - **Team Management Feature**: Added full team creation and editing functionality in settings modal

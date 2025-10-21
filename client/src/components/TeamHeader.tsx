@@ -10,9 +10,11 @@ interface TeamHeaderProps {
   dbTeam?: TeamRow;
   showActiveOnly: boolean;
   onFilterChange: (checked: boolean) => void;
+  onSync?: () => void;
+  isSyncing?: boolean;
 }
 
-export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilterChange }: TeamHeaderProps) {
+export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilterChange, onSync, isSyncing }: TeamHeaderProps) {
   const calculateInnovationRate = (): string => {
     let totalStoryPoints = 0;
     let innovationStoryPoints = 0;
@@ -52,8 +54,10 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
                 variant="ghost"
                 data-testid="button-update-team"
                 className="h-7 w-7"
+                onClick={onSync}
+                disabled={isSyncing || !onSync}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
