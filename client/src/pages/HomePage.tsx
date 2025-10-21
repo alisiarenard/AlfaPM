@@ -188,6 +188,7 @@ export default function HomePage() {
         title: "Успешно",
         description: "Команда создана и инициативы синхронизированы",
       });
+      setActiveTab(newTeam.teamId);
       setEditingTeam(newTeam);
       setRightPanelMode("editTeam");
     },
