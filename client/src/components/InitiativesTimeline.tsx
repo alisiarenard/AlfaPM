@@ -14,15 +14,19 @@ interface InitiativesTimelineProps {
   sprints: SprintRow[];
 }
 
-interface TasksModalData {
+interface InitiativeWithTasks {
   initiativeTitle: string;
-  sprintTitle: string;
   tasks: TaskInSprint[];
 }
 
+interface SprintModalData {
+  sprintTitle: string;
+  initiatives: InitiativeWithTasks[];
+}
+
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
-  const [tasksModalOpen, setTasksModalOpen] = useState(false);
-  const [tasksModalData, setTasksModalData] = useState<TasksModalData | null>(null);
+  const [sprintModalOpen, setSprintModalOpen] = useState(false);
+  const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
   // Отсортировать спринты по дате начала от более ранних до более поздних
   const sortedSprints = [...sprints].sort((a, b) => {
     const dateA = new Date(a.startDate).getTime();
@@ -124,18 +128,30 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return sprint?.tasks || [];
   };
 
-  // Обработчик клика на ячейку спринта
-  const handleSprintClick = (initiative: Initiative, sprintId: number) => {
-    const tasks = getSprintTasks(initiative, sprintId);
-    if (tasks.length === 0) return;
-
+  // Обработчик клика на заголовок спринта
+  const handleSprintHeaderClick = (sprintId: number) => {
     const sprintInfo = getSprintInfo(sprintId);
-    setTasksModalData({
-      initiativeTitle: initiative.title,
+    
+    // Собираем все инициативы с задачами для этого спринта
+    const initiativesWithTasks: InitiativeWithTasks[] = initiatives
+      .map(initiative => {
+        const tasks = getSprintTasks(initiative, sprintId);
+        if (tasks.length === 0) return null;
+        
+        return {
+          initiativeTitle: initiative.title,
+          tasks
+        };
+      })
+      .filter((item): item is InitiativeWithTasks => item !== null);
+    
+    if (initiativesWithTasks.length === 0) return;
+    
+    setSprintModalData({
       sprintTitle: sprintInfo?.title || `Спринт ${sprintId}`,
-      tasks
+      initiatives: initiativesWithTasks
     });
-    setTasksModalOpen(true);
+    setSprintModalOpen(true);
   };
 
   // Рассчитать общую сумму SP для инициативы (выполнено)
@@ -355,20 +371,41 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               const sprintInfo = getSprintInfo(sprintId);
               const isGenerated = isGeneratedSprint(sprintId);
               const isCurrent = isCurrentSprint(sprintId);
+              
+              // Проверяем, есть ли задачи в этом спринте
+              const hasTasksInSprint = initiatives.some(init => getSprintTasks(init, sprintId).length > 0);
+              
               return (
                 <th
                   key={sprintId}
                   className="px-2 py-3 text-center min-w-[100px]"
                   data-testid={`header-sprint-${sprintId}`}
                 >
-                  <div className="flex flex-col gap-0.5">
-                    <span className={`text-[11px] text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
-                      {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-normal">
-                      IR: {calculateSprintIR(sprintId)}
-                    </span>
-                  </div>
+                  {hasTasksInSprint ? (
+                    <button
+                      type="button"
+                      onClick={() => handleSprintHeaderClick(sprintId)}
+                      className="flex flex-col gap-0.5 w-full hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded-md"
+                      data-testid={`button-sprint-header-${sprintId}`}
+                      aria-label={`Показать задачи спринта ${sprintInfo?.title || sprintId}`}
+                    >
+                      <span className={`text-[11px] text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
+                        {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-normal">
+                        IR: {calculateSprintIR(sprintId)}
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="flex flex-col gap-0.5">
+                      <span className={`text-[11px] text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
+                        {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-normal">
+                        IR: {calculateSprintIR(sprintId)}
+                      </span>
+                    </div>
+                  )}
                 </th>
               );
             })}
@@ -421,11 +458,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
                 return allSprintIds.map((sprintId, idx) => {
                   const sp = getSprintSP(initiative, sprintId);
-                  const tasks = getSprintTasks(initiative, sprintId);
                   const showBlock = shouldShowColorBlock(initiative, sprintId);
                   const isFirst = idx === firstBlockIdx;
                   const isLast = idx === lastBlockIdx;
-                  const hasTasks = tasks.length > 0;
 
                   let roundedClass = '';
                   if (showBlock) {
@@ -444,33 +479,16 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       className="p-0 min-w-[100px]"
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
-                      {hasTasks ? (
-                        <button
-                          type="button"
-                          className={`h-[30px] w-full flex items-center justify-center ${roundedClass} hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1`}
-                          style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
-                          onClick={() => handleSprintClick(initiative, sprintId)}
-                          data-testid={`button-open-tasks-${initiative.id}-${sprintId}`}
-                          aria-label={`Открыть задачи: ${initiative.title}, ${getSprintInfo(sprintId)?.title || `Спринт ${sprintId}`}`}
-                        >
-                          {showBlock && sp > 0 && (
-                            <span className="text-xs font-semibold text-foreground">
-                              {sp}
-                            </span>
-                          )}
-                        </button>
-                      ) : (
-                        <div
-                          className={`h-[30px] w-full flex items-center justify-center ${roundedClass}`}
-                          style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
-                        >
-                          {showBlock && sp > 0 && (
-                            <span className="text-xs font-semibold text-foreground">
-                              {sp}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <div
+                        className={`h-[30px] w-full flex items-center justify-center ${roundedClass}`}
+                        style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
+                      >
+                        {showBlock && sp > 0 && (
+                          <span className="text-xs font-semibold text-foreground">
+                            {sp}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   );
                 });
@@ -480,47 +498,50 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         </tbody>
       </table>
 
-      <Dialog open={tasksModalOpen} onOpenChange={setTasksModalOpen}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
-              Задачи спринта
+              {sprintModalData?.sprintTitle || 'Задачи спринта'}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              {tasksModalData && (
-                <>
-                  <span className="font-medium text-foreground">{tasksModalData.initiativeTitle}</span>
-                  {' • '}
-                  <span>{tasksModalData.sprintTitle}</span>
-                </>
-              )}
+              Инициативы и задачи спринта
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-4 space-y-2" data-testid="tasks-list">
-            {tasksModalData?.tasks.map((task) => (
-              <div
-                key={task.id}
-                className="flex items-center gap-3 p-3 rounded-md bg-muted/50 hover:bg-muted transition-colors"
-                data-testid={`task-item-${task.id}`}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate" data-testid={`task-title-${task.id}`}>
-                    {task.title}
-                  </p>
-                  {task.type && (
-                    <p className="text-xs text-muted-foreground mt-0.5" data-testid={`task-type-${task.id}`}>
-                      {task.type}
-                    </p>
-                  )}
-                </div>
-                <div className="flex-shrink-0 flex items-center justify-center min-w-[40px]">
-                  <span className="text-sm font-semibold text-foreground" data-testid={`task-size-${task.id}`}>
-                    {task.size}
-                  </span>
+          <div className="mt-4 space-y-4" data-testid="sprint-initiatives-list">
+            {sprintModalData?.initiatives.map((initiativeData, idx) => (
+              <div key={idx} className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground" data-testid={`initiative-title-${idx}`}>
+                  {initiativeData.initiativeTitle}
+                </h3>
+                <div className="space-y-2 pl-4" data-testid={`tasks-list-${idx}`}>
+                  {initiativeData.tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center gap-3 p-3 rounded-md bg-muted/50 hover:bg-muted transition-colors"
+                      data-testid={`task-item-${task.id}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate" data-testid={`task-title-${task.id}`}>
+                          {task.title}
+                        </p>
+                        {task.type && (
+                          <p className="text-xs text-muted-foreground mt-0.5" data-testid={`task-type-${task.id}`}>
+                            {task.type}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 flex items-center justify-center min-w-[40px]">
+                        <span className="text-sm font-semibold text-foreground" data-testid={`task-size-${task.id}`}>
+                          {task.size}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
-            {(!tasksModalData || tasksModalData.tasks.length === 0) && (
+            {(!sprintModalData || sprintModalData.initiatives.length === 0) && (
               <p className="text-sm text-muted-foreground text-center py-4">
                 Нет задач
               </p>
