@@ -964,16 +964,10 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   const allInitiatives: Initiative[] = initiativeRows || [];
   
   // Фильтруем инициативы:
-  // 1. Инициативы в очереди показываем всегда
-  // 2. Если включен фильтр "Активные" - только inProgress (+ queued)
-  // 3. Если инициатива done или inProgress и выполнено 0 SP - не показываем
+  // 1. Если включен фильтр "Активные" - только inProgress (скрываем queued и done)
+  // 2. Если инициатива done или inProgress и выполнено 0 SP - не показываем
   const initiatives = allInitiatives.filter(init => {
-    // Инициативы в очереди показываем всегда
-    if (init.state === "1-queued") {
-      return true;
-    }
-    
-    // Фильтр "Активные" - для не-queued инициатив
+    // Фильтр "Активные" - показываем только inProgress
     if (showActiveOnly && init.state !== "2-inProgress") {
       return false;
     }
