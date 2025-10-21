@@ -129,18 +129,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { teamId } = req.params;
       const updateData = req.body;
 
+      // Получаем текущие данные команды для валидации
+      const currentTeam = updateData.initBoardId !== undefined || updateData.sprintBoardId !== undefined
+        ? await storage.getTeamById(teamId)
+        : null;
+
       // Если изменяется initBoardId, проверяем его в Kaiten только если значение действительно изменилось
       if (updateData.initBoardId !== undefined) {
-        // Получаем текущие данные команды
-        const currentTeam = await storage.getTeamById(teamId);
-        
         // Валидируем только если ID доски действительно изменился
         if (!currentTeam || currentTeam.initBoardId !== updateData.initBoardId) {
-          const validation = await kaitenClient.validateBoard(updateData.initBoardId);
+          const validation = await kaitenClient.validateBoard(updateData.initBoardId, 'initiatives');
           if (!validation.valid) {
             return res.status(400).json({ 
               success: false, 
               error: validation.error || "Доска инициатив не найдена в Kaiten"
+            });
+          }
+        }
+      }
+
+      // Если изменяется sprintBoardId, проверяем его в Kaiten только если значение действительно изменилось
+      if (updateData.sprintBoardId !== undefined) {
+        // Валидируем только если ID доски действительно изменился
+        if (!currentTeam || currentTeam.sprintBoardId !== updateData.sprintBoardId) {
+          const validation = await kaitenClient.validateBoard(updateData.sprintBoardId, 'sprints');
+          if (!validation.valid) {
+            return res.status(400).json({ 
+              success: false, 
+              error: validation.error || "Доска спринтов не найдена в Kaiten"
             });
           }
         }

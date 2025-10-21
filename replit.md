@@ -58,11 +58,14 @@ This project is a web-based application designed to visualize and track team ini
     - Success toast "Команда обновлена" after save
     - Auto-refreshes team data and invalidates cache
   - **Kaiten Board Validation**:
-    - When initBoardId field is changed, backend validates board exists in Kaiten before saving
-    - Validation only runs if initBoardId value actually changed from database
-    - KaitenClient.validateBoard() method checks board via GET /api/latest/boards/:boardId
+    - When initBoardId or sprintBoardId fields are changed, backend validates board exists in Kaiten before saving
+    - Validation only runs if board ID value actually changed from database
+    - KaitenClient.validateBoard(boardId, boardType) method checks board via GET /api/latest/boards/:boardId
+    - boardType: 'initiatives' | 'sprints' determines error message
     - Handles 403 Forbidden and 404 Not Found as "board not found"
-    - Shows error toast "Доска инициатив с таким ID не найдена в Kaiten" if validation fails
+    - Error messages:
+      - initBoardId: "Доска инициатив с таким ID не найдена в Kaiten"
+      - sprintBoardId: "Доска спринтов с таким ID не найдена в Kaiten"
     - Prevents saving invalid board IDs to database
     - Frontend parses error messages to extract clean error text from JSON response
   - **Unified Toast Notifications**:
