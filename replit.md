@@ -19,6 +19,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 **Key Features:**
 - **Multi-Team Support:** Departments and teams are fetched from the database and displayed in separate tabs using Shadcn Tabs. Each tab independently fetches and displays initiatives and team metrics.
 - **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details (name, start date, size, completed, involvement) and scrollable sprint columns with story points and colored status blocks.
+  - **Forecasted Color Blocks:** Blocks stretch across predicted sprint count using formula `ceil(Size / (Velocity × Involvement%))`, starting from first sprint with SP. Includes guards for zero/undefined velocity, involvement, and size values. Falls back to historical span when forecasting is impossible.
 - **Team Header:** Displays team name, board ID, Velocity, and Innovation Rate. Includes a button to manually sync initiatives from Kaiten.
 - **Team Management:** Full CRUD functionality for teams and departments, including Kaiten board validation during creation and editing.
 - **Initiative Filtering:** 
@@ -29,6 +30,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 - **Calculations:** 
   - **Involvement:** Calculated on backend as (initiative SP / total SP of all initiatives) * 100 for a specific period. Period starts from the first sprint with non-zero SP for the initiative and ends at: (a) nearest sprint to current date if initiative is inProgress, or (b) last sprint with SP if initiative is done. Uses sprint dates (not IDs) for correct chronological ordering.
   - **Sprint Header IR (Investment Ratio):** Percentage of SP excluding "Business Support" category
+  - **Forecasted Sprint Count:** `ceil(initiative size / (team velocity × involvement% / 100))` with validation for positive, finite values
   - Automatic sprint generation based on team velocity and sprint duration
 
 ### Backend Architecture
