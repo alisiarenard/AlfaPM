@@ -4,6 +4,19 @@
 This project is a web-based application designed to visualize and track team initiatives across sprint timelines. It enables users to upload team data, displaying initiatives with their associated story points, sprint allocations, and status information. The application supports multiple teams, each accessible via a separate tab, and features a clean, data-focused interface inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles. The core purpose is to provide a clear, scannable overview of project progress and team allocation. The application's business vision is to streamline project management and enhance team visibility, offering market potential in organizations seeking efficient, data-driven project tracking.
 
 ## Recent Changes (October 21, 2025)
+- **Initiative Filtering by Completed SP**: Added frontend filtering to hide empty initiatives in progress/done states
+  - **Filter Logic**:
+    - If initiative state is "2-inProgress" OR "3-done"
+    - AND total story points across all sprints = 0
+    - THEN hide initiative from timeline
+  - **Behavior**:
+    - Queued initiatives (state="1-queued") always shown regardless of SP
+    - InProgress/Done initiatives only shown if they have completed SP > 0
+    - Works in combination with "Активные" filter
+  - **Implementation**: TeamInitiativesTab in HomePage.tsx
+    - Calculates: `totalSp = init.sprints.reduce((sum, sprint) => sum + sprint.sp, 0)`
+    - Filters before rendering InitiativesTimeline component
+
 - **Kaiten Sync Button in Team Header**: Added functional Update button to sync initiatives from Kaiten
   - **Button Design**: RefreshCw icon (7x7 px) with ghost variant, positioned next to team name
   - **Functionality**: 

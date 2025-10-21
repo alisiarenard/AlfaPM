@@ -937,10 +937,28 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   // Данные уже приходят в правильном формате Initiative с сервера
   const allInitiatives: Initiative[] = initiativeRows || [];
   
-  // Фильтруем инициативы, если включен фильтр "Активные"
-  const initiatives = showActiveOnly 
-    ? allInitiatives.filter(init => init.state === "2-inProgress")
-    : allInitiatives;
+  // Фильтруем инициативы:
+  // 1. Если включен фильтр "Активные" - только inProgress
+  // 2. Если инициатива done или inProgress и выполнено 0 SP - не показываем
+  const initiatives = allInitiatives.filter(init => {
+    // Фильтр "Активные"
+    if (showActiveOnly && init.state !== "2-inProgress") {
+      return false;
+    }
+    
+    // Если инициатива в статусе done или inProgress
+    if (init.state === "2-inProgress" || init.state === "3-done") {
+      // Считаем общее количество выполненных SP
+      const totalSp = init.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
+      
+      // Не показываем если выполнено 0 SP
+      if (totalSp === 0) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   const teamData: Team = {
     boardId: team.initBoardId.toString(),
