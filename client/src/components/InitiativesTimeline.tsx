@@ -192,17 +192,79 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return "rgba(205, 37, 61, 0.2)";
   };
 
-  // Определить, нужно ли показывать цветной блок
+  // Рассчитать прогнозируемое количество спринтов для инициативы
+  const calculateForecastedSprints = (initiative: Initiative): number => {
+    // Проверяем корректность входных данных
+    if (!initiative.involvement || initiative.involvement === 0) {
+      return 0;
+    }
+    
+    if (!team.velocity || team.velocity === 0) {
+      return 0;
+    }
+    
+    if (initiative.size <= 0) {
+      return 0;
+    }
+    
+    // Формула: ceil(Размер инициативы / (velocity * involvement / 100))
+    const sprintsNeeded = initiative.size / (team.velocity * (initiative.involvement / 100));
+    
+    // Защита от некорректных результатов
+    if (!isFinite(sprintsNeeded) || sprintsNeeded <= 0) {
+      return 0;
+    }
+    
+    return Math.ceil(sprintsNeeded);
+  };
+
+  // Определить, нужно ли показывать цветной блок (прогнозируемый срок)
   const shouldShowColorBlock = (initiative: Initiative, sprintId: number): boolean => {
     if (initiative.sprints.length === 0) {
       return false;
     }
 
-    const initiativeSprintIds = initiative.sprints.map(s => s.sprint_id).sort((a, b) => a - b);
-    const minSprintId = initiativeSprintIds[0];
-    const maxSprintId = initiativeSprintIds[initiativeSprintIds.length - 1];
+    // Находим спринты инициативы с их датами для правильного упорядочивания
+    const initiativeSprintsWithDates = initiative.sprints
+      .map(s => {
+        const sprintInfo = getSprintInfo(s.sprint_id);
+        return {
+          sprintId: s.sprint_id,
+          startDate: sprintInfo ? new Date(sprintInfo.startDate) : null
+        };
+      })
+      .filter(s => s.startDate !== null)
+      .sort((a, b) => a.startDate!.getTime() - b.startDate!.getTime());
 
-    return sprintId >= minSprintId && sprintId <= maxSprintId;
+    if (initiativeSprintsWithDates.length === 0) {
+      return false;
+    }
+
+    // Первый спринт с SP (по дате)
+    const firstSprintId = initiativeSprintsWithDates[0].sprintId;
+    
+    // Находим индекс первого спринта в общем списке
+    const firstSprintIndex = allSprintIds.indexOf(firstSprintId);
+    if (firstSprintIndex === -1) {
+      return false;
+    }
+
+    // Рассчитываем прогнозируемое количество спринтов
+    const forecastedSprintCount = calculateForecastedSprints(initiative);
+    
+    // Если не можем рассчитать прогноз, используем фактические спринты
+    if (forecastedSprintCount === 0) {
+      const lastSprintId = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1].sprintId;
+      const lastSprintIndex = allSprintIds.indexOf(lastSprintId);
+      const currentSprintIndex = allSprintIds.indexOf(sprintId);
+      return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastSprintIndex;
+    }
+
+    // Индекс последнего прогнозируемого спринта
+    const lastForecastedIndex = firstSprintIndex + forecastedSprintCount - 1;
+    const currentSprintIndex = allSprintIds.indexOf(sprintId);
+
+    return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastForecastedIndex;
   };
 
   return (
