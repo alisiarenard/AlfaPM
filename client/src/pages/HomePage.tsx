@@ -885,7 +885,8 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   });
 
   const { data: sprints, isLoading: sprintsLoading } = useQuery<SprintRow[]>({
-    queryKey: ["/api/sprints"],
+    queryKey: ["/api/sprints/board", team.sprintBoardId],
+    enabled: !!team.sprintBoardId,
   });
 
   const syncBoardMutation = useMutation({
