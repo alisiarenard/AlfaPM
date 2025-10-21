@@ -21,7 +21,11 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 - **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details (name, start date, size, completed, involvement) and scrollable sprint columns with story points and colored status blocks.
 - **Team Header:** Displays team name, board ID, Velocity, and Innovation Rate. Includes a button to manually sync initiatives from Kaiten.
 - **Team Management:** Full CRUD functionality for teams and departments, including Kaiten board validation during creation and editing.
-- **Initiative Filtering:** Filters initiatives based on their state and completed story points.
+- **Initiative Filtering:** 
+  - Initiatives in queue (state: "1-queued") are **always displayed**, regardless of whether they have tasks in team sprints
+  - "Show Active Only" filter displays only in-progress initiatives (plus queued initiatives)
+  - Initiatives with 0 completed SP in done/inProgress state are hidden
+  - Backend filters initiatives to show only those with tasks in team sprints, plus queued initiatives and "Business Support" category
 - **Calculations:** Involvement (percentage of initiative's SP against all SP), Sprint Header IR (Investment Ratio), and automatic sprint generation.
 
 ### Backend Architecture
