@@ -127,33 +127,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return formatDate(earliestSprint.startDate);
   };
 
-  // Рассчитать вовлечённость (процент SP инициативы от всех SP в её спринтах)
-  const calculateInvolvement = (initiative: Initiative): string => {
-    if (initiative.sprints.length === 0) {
+  // Форматировать вовлечённость (используем precomputed значение из API)
+  const formatInvolvement = (involvement: number | null): string => {
+    if (involvement === null) {
       return '0%';
     }
-
-    // Найти все спринты, в которых есть эта инициатива
-    const initiativeSprintIds = new Set(initiative.sprints.map(s => s.sprint_id));
-    
-    // Сумма SP текущей инициативы в её спринтах
-    const initiativeTotal = getTotalSP(initiative);
-    
-    // Сумма всех SP всех инициатив в тех же спринтах
-    let totalAllInitiatives = 0;
-    initiatives.forEach(init => {
-      init.sprints.forEach(sprint => {
-        if (initiativeSprintIds.has(sprint.sprint_id)) {
-          totalAllInitiatives += sprint.sp;
-        }
-      });
-    });
-    
-    if (totalAllInitiatives === 0) {
-      return '0%';
-    }
-    
-    const involvement = Math.round((initiativeTotal / totalAllInitiatives) * 100);
     return `${involvement}%`;
   };
 
@@ -317,7 +295,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               </td>
               <td className="sticky left-[500px] z-[100] bg-background px-2 py-3 min-w-[120px] max-w-[120px]">
                 <span className="text-xs text-foreground">
-                  {calculateInvolvement(initiative)}
+                  {formatInvolvement(initiative.involvement)}
                 </span>
               </td>
               {(() => {

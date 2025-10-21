@@ -26,7 +26,10 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
   - "Show Active Only" filter displays only in-progress initiatives (plus queued initiatives)
   - Initiatives with 0 completed SP in done/inProgress state are hidden
   - Backend filters initiatives to show only those with tasks in team sprints, plus queued initiatives and "Business Support" category
-- **Calculations:** Involvement (percentage of initiative's SP against all SP), Sprint Header IR (Investment Ratio), and automatic sprint generation.
+- **Calculations:** 
+  - **Involvement:** Calculated on backend as (initiative SP / total SP of all initiatives) * 100 for a specific period. Period starts from the first sprint with non-zero SP for the initiative and ends at: (a) nearest sprint to current date if initiative is inProgress, or (b) last sprint with SP if initiative is done. Uses sprint dates (not IDs) for correct chronological ordering.
+  - **Sprint Header IR (Investment Ratio):** Percentage of SP excluding "Business Support" category
+  - Automatic sprint generation based on team velocity and sprint duration
 
 ### Backend Architecture
 The backend uses Express.js with TypeScript and an ESM module system, providing a RESTful API under the `/api` prefix.
