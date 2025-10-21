@@ -278,6 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const initiatives = await storage.getInitiativesByBoardId(initBoardId);
+      log(`[Initiatives Filter] Got ${initiatives.length} initiatives from DB for board ${initBoardId}`);
       
       // Если передан sprintBoardId, получаем sprint_id спринтов этой команды
       let teamSprintIds: Set<number> | null = null;
@@ -323,11 +324,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Если указан sprintBoardId - фильтруем только инициативы с задачами в спринтах команды
       // Инициативы в очереди показываем всегда
       const filteredInitiatives = teamSprintIds
-        ? initiativesWithSprints.filter(init => 
-            init.sprints.length > 0 || 
-            init.cardId === 0 || 
-            init.state === "1-queued"
-          )
+        ? initiativesWithSprints.filter(init => {
+            const hasSprints = init.sprints.length > 0;
+            const isSupport = init.cardId === 0;
+            const isQueued = init.state === "1-queued";
+            const pass = hasSprints || isSupport || isQueued;
+            
+            if (isQueued) {
+              log(`[Initiatives Filter] Init ${init.cardId} "${init.title}" state=${init.state} isQueued=${isQueued} pass=${pass}`);
+            }
+            
+            return pass;
+          })
         : initiativesWithSprints;
       
       res.json(filteredInitiatives);
