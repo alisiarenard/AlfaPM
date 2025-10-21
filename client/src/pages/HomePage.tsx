@@ -895,55 +895,36 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     enabled: !!team.sprintBoardId,
   });
 
-  const syncBoardMutation = useMutation({
+  const syncAllMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/kaiten/sync-board/${team.initBoardId}`, {});
-      return await res.json();
+      // Сначала синхронизируем инициативы
+      const initiativesRes = await apiRequest("POST", `/api/kaiten/sync-board/${team.initBoardId}`, {});
+      const initiativesData = await initiativesRes.json();
+      
+      // Затем синхронизируем задачи по всем спринтам, если указана доска спринтов
+      let sprintsData = null;
+      if (team.sprintBoardId) {
+        const sprintsRes = await apiRequest("POST", `/api/kaiten/sync-all-sprints/${team.sprintBoardId}`, {});
+        sprintsData = await sprintsRes.json();
+      }
+      
+      return { initiatives: initiativesData, sprints: sprintsData };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", team.initBoardId] });
+      
+      let description = `Синхронизировано ${data.initiatives.count} инициатив`;
+      if (data.sprints) {
+        description += ` и ${data.sprints.totalSynced} задач из ${data.sprints.sprintsProcessed} спринтов`;
+      }
+      
       toast({
         title: "Успешно",
-        description: `Синхронизировано ${data.count} инициатив из Kaiten`,
+        description,
       });
     },
     onError: (error: Error) => {
       let errorMessage = "Не удалось синхронизировать данные";
-      
-      if (error.message && error.message.includes(':')) {
-        const parts = error.message.split(': ');
-        const jsonPart = parts.slice(1).join(': ');
-        try {
-          const errorData = JSON.parse(jsonPart);
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          errorMessage = jsonPart;
-        }
-      } else {
-        errorMessage = error.message || errorMessage;
-      }
-      
-      toast({
-        title: "Ошибка",
-        description: errorMessage,
-      });
-    },
-  });
-
-  const syncAllSprintsMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/kaiten/sync-all-sprints/${team.sprintBoardId}`, {});
-      return await res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", team.initBoardId] });
-      toast({
-        title: "Успешно",
-        description: `Синхронизировано ${data.totalSynced} задач из ${data.sprintsProcessed} спринтов`,
-      });
-    },
-    onError: (error: Error) => {
-      let errorMessage = "Не удалось синхронизировать спринты";
       
       if (error.message && error.message.includes(':')) {
         const parts = error.message.split(': ');
@@ -1030,18 +1011,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   };
 
   const handleSync = () => {
-    syncBoardMutation.mutate();
-  };
-
-  const handleSyncAllSprints = () => {
-    if (!team.sprintBoardId) {
-      toast({
-        title: "Ошибка",
-        description: "У команды не указана доска спринтов",
-      });
-      return;
-    }
-    syncAllSprintsMutation.mutate();
+    syncAllMutation.mutate();
   };
 
   return (
@@ -1053,9 +1023,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
         showActiveOnly={showActiveOnly}
         onFilterChange={setShowActiveOnly}
         onSync={handleSync}
-        isSyncing={syncBoardMutation.isPending}
-        onSyncAllSprints={team.sprintBoardId ? handleSyncAllSprints : undefined}
-        isSyncingAllSprints={syncAllSprintsMutation.isPending}
+        isSyncing={syncAllMutation.isPending}
       />
       <div className="px-4">
         <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />

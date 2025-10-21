@@ -1,4 +1,4 @@
-import { Users, RefreshCw, Database } from "lucide-react";
+import { Users, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,9 @@ interface TeamHeaderProps {
   onFilterChange: (checked: boolean) => void;
   onSync?: () => void;
   isSyncing?: boolean;
-  onSyncAllSprints?: () => void;
-  isSyncingAllSprints?: boolean;
 }
 
-export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilterChange, onSync, isSyncing, onSyncAllSprints, isSyncingAllSprints }: TeamHeaderProps) {
+export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilterChange, onSync, isSyncing }: TeamHeaderProps) {
   const calculateInnovationRate = (): string => {
     let totalStoryPoints = 0;
     let innovationStoryPoints = 0;
@@ -58,20 +56,9 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
                 className="h-7 w-7"
                 onClick={onSync}
                 disabled={isSyncing || !onSync}
-                title="Синхронизировать инициативы"
+                title="Синхронизировать данные"
               >
                 <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                data-testid="button-sync-all-sprints"
-                className="h-7 w-7"
-                onClick={onSyncAllSprints}
-                disabled={isSyncingAllSprints || !onSyncAllSprints}
-                title="Синхронизировать все спринты"
-              >
-                <Database className={`h-4 w-4 ${isSyncingAllSprints ? 'animate-spin' : ''}`} />
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
