@@ -20,6 +20,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 - **Multi-Team Support:** Departments and teams are fetched from the database and displayed in separate tabs using Shadcn Tabs. Each tab independently fetches and displays initiatives and team metrics.
 - **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details (name, start date, size, completed, involvement) and scrollable sprint columns with story points and colored status blocks.
   - **Forecasted Color Blocks:** Blocks stretch across predicted sprint count using formula `ceil(Size / (Velocity × Involvement%))`, starting from first sprint with SP. Includes guards for zero/undefined velocity, involvement, and size values. Falls back to historical span when forecasting is impossible.
+  - **Business Support Special Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only in sprints with factual SP > 0, without forecasting.
 - **Team Header:** Displays team name, board ID, Velocity, and Innovation Rate. Includes a button to manually sync initiatives from Kaiten.
 - **Team Management:** Full CRUD functionality for teams and departments, including Kaiten board validation during creation and editing.
 - **Initiative Filtering:** 

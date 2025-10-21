@@ -84,6 +84,18 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return sprintId > maxDbSprintId;
   };
 
+  // Проверка, является ли спринт текущим (сегодняшняя дата попадает в диапазон спринта)
+  const isCurrentSprint = (sprintId: number): boolean => {
+    const sprintInfo = getSprintInfo(sprintId);
+    if (!sprintInfo) return false;
+
+    const now = new Date();
+    const start = new Date(sprintInfo.startDate);
+    const end = new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate);
+
+    return now >= start && now <= end;
+  };
+
   // Получить SP для конкретной инициативы в конкретном спринте
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
     const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
@@ -306,6 +318,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             {allSprintIds.map((sprintId) => {
               const sprintInfo = getSprintInfo(sprintId);
               const isGenerated = isGeneratedSprint(sprintId);
+              const isCurrent = isCurrentSprint(sprintId);
               return (
                 <th
                   key={sprintId}
@@ -313,7 +326,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   data-testid={`header-sprint-${sprintId}`}
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] text-foreground">
+                    <span className={`text-[11px] text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                       {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                     </span>
                     <span className="text-[10px] text-muted-foreground font-normal">
