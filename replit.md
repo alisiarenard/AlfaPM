@@ -48,6 +48,7 @@ The backend uses Express.js with TypeScript and an ESM module system, providing 
 
 **Kaiten Integration:**
 - Syncs initiatives and tasks from the Kaiten API (feature.kaiten.ru) to the database, mapping Kaiten card states to initiative states (queued, inProgress, done). Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN` environment variables. Includes sequential validation for `sprintBoardId` and `initBoardId` during team creation/update.
+- **Type Synchronization:** Initiative and task type values (`card.type.name` from Kaiten API) are automatically persisted to the database during both manual sync operations and team creation, enabling categorization and filtering by initiative type.
 
 ### Data Storage Solutions
 PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neon HTTP driver provides type-safe queries.
