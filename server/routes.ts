@@ -854,6 +854,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
 
+          log(`[Kaiten Sync Tasks] Task ${card.id} "${card.title}" - type.name value: ${card.type?.name}`);
+
           const synced = await storage.syncTaskFromKaiten(
             card.id,
             boardId,
@@ -863,7 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.size || 0,
             condition,
             initCardId, // parent card_id from parents_ids
-            card.type_id?.toString(),
+            card.type?.name,
             card.completed_at ?? undefined,
             card.sprint_id ?? null // sprint_id from Kaiten
           );
@@ -1021,6 +1023,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
 
+        log(`[Kaiten Sync Sprint] Task ${card.id} "${card.title}" - type.name value: ${card.type?.name}`);
+
         const synced = await storage.syncTaskFromKaiten(
           card.id,
           card.board_id,
@@ -1030,7 +1034,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           card.size || 0,
           condition,
           initCardId,
-          card.type_id?.toString(),
+          card.type?.name,
           card.completed_at ?? undefined,
           sprintId
         );
