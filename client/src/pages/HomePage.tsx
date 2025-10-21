@@ -706,7 +706,7 @@ export default function HomePage() {
                         <Folder className="h-5 w-5" style={{ color: '#cd253d' }} />
                       </div>
                       <h2 className="text-lg font-semibold text-foreground">
-                        Новая команда
+                        {teamName.trim() || "Новая команда"}
                       </h2>
                     </div>
                   </div>
