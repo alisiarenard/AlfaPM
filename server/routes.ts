@@ -268,19 +268,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/initiatives/board/:initBoardId", async (req, res) => {
     try {
       const initBoardId = parseInt(req.params.initBoardId);
+      const sprintBoardId = req.query.sprintBoardId ? parseInt(req.query.sprintBoardId as string) : null;
+      
       if (isNaN(initBoardId)) {
         return res.status(400).json({ 
           success: false, 
           error: "Invalid board ID" 
         });
       }
+      
       const initiatives = await storage.getInitiativesByBoardId(initBoardId);
+      
+      // Если передан sprintBoardId, получаем sprint_id спринтов этой команды
+      let teamSprintIds: Set<number> | null = null;
+      if (sprintBoardId !== null && !isNaN(sprintBoardId)) {
+        const teamSprints = await storage.getSprintsByBoardId(sprintBoardId);
+        teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
+        log(`[Initiatives Filter] Team sprint IDs for board ${sprintBoardId}: ${Array.from(teamSprintIds).join(', ')}`);
+      }
       
       // Добавляем массив sprints для каждой инициативы
       const initiativesWithSprints = await Promise.all(
         initiatives.map(async (initiative) => {
           // Получаем все таски для данной инициативы
-          const tasks = await storage.getTasksByInitCardId(initiative.cardId);
+          const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+          
+          // Если указан sprintBoardId - фильтруем только задачи из спринтов команды
+          const tasks = teamSprintIds 
+            ? allTasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId))
+            : allTasks;
           
           // Группируем по sprint_id и считаем сумму size
           const sprintsMap = new Map<number, number>();
@@ -304,7 +320,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      res.json(initiativesWithSprints);
+      // Если указан sprintBoardId - фильтруем только инициативы с задачами в спринтах команды
+      const filteredInitiatives = teamSprintIds
+        ? initiativesWithSprints.filter(init => init.sprints.length > 0 || init.cardId === 0)
+        : initiativesWithSprints;
+      
+      res.json(filteredInitiatives);
     } catch (error) {
       console.error("GET /api/initiatives/board/:initBoardId error:", error);
       res.status(500).json({ 

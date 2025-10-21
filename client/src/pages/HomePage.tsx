@@ -880,8 +880,14 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   const { toast } = useToast();
   
   const { data: initiativeRows, isLoading: initiativesLoading, error: initiativesError } = useQuery<Initiative[]>({
-    queryKey: ["/api/initiatives/board", team.initBoardId],
-    enabled: !!team.initBoardId,
+    queryKey: ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId],
+    queryFn: async () => {
+      const url = `/api/initiatives/board/${team.initBoardId}?sprintBoardId=${team.sprintBoardId}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch initiatives');
+      return response.json();
+    },
+    enabled: !!team.initBoardId && !!team.sprintBoardId,
   });
 
   const { data: sprints, isLoading: sprintsLoading } = useQuery<SprintRow[]>({
@@ -957,9 +963,6 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   // Данные уже приходят в правильном формате Initiative с сервера
   const allInitiatives: Initiative[] = initiativeRows || [];
   
-  console.log('[TeamInitiativesTab] Board ID:', team.initBoardId);
-  console.log('[TeamInitiativesTab] All initiatives:', allInitiatives);
-  
   // Фильтруем инициативы:
   // 1. Если включен фильтр "Активные" - только inProgress
   // 2. Если инициатива done или inProgress и выполнено 0 SP - не показываем
@@ -982,8 +985,6 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     
     return true;
   });
-  
-  console.log('[TeamInitiativesTab] Filtered initiatives:', initiatives);
 
   const teamData: Team = {
     boardId: team.initBoardId.toString(),
