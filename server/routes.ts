@@ -1059,6 +1059,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/kaiten/sync-all-sprints/:boardId", async (req, res) => {
+    try {
+      const boardId = parseInt(req.params.boardId);
+      if (isNaN(boardId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid board ID" 
+        });
+      }
+
+      log(`[Kaiten Sync All Sprints] Starting sync for all sprints on board ${boardId}`);
+      
+      // Получаем все спринты для этой доски
+      const sprints = await storage.getSprintsByBoardId(boardId);
+      log(`[Kaiten Sync All Sprints] Found ${sprints.length} sprints`);
+
+      let totalSynced = 0;
+      const results = [];
+
+      // Синхронизируем задачи для каждого спринта
+      for (const sprint of sprints) {
+        try {
+          log(`[Kaiten Sync All Sprints] Syncing sprint ${sprint.sprintId} (${sprint.title})`);
+          
+          // Получаем данные спринта из Kaiten
+          const kaitenSprint = await kaitenClient.getSprint(sprint.sprintId);
+          
+          if (!kaitenSprint.cards || !Array.isArray(kaitenSprint.cards)) {
+            log(`[Kaiten Sync All Sprints] No cards in sprint ${sprint.sprintId}`);
+            results.push({ sprintId: sprint.sprintId, synced: 0 });
+            continue;
+          }
+
+          let sprintSynced = 0;
+          
+          // Синхронизируем каждую карточку из спринта
+          for (const sprintCard of kaitenSprint.cards) {
+            const card = await kaitenClient.getCard(sprintCard.id);
+            
+            // Определяем init_card_id из parents_ids
+            let initCardId: number | null = null;
+            
+            if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+              const parentCardId = card.parents_ids[0];
+              const parentInitiative = await storage.getInitiativeByCardId(parentCardId);
+              
+              if (parentInitiative) {
+                initCardId = parentCardId;
+              } else {
+                initCardId = 0;
+              }
+            } else {
+              initCardId = 0;
+            }
+            
+            let state: "1-queued" | "2-inProgress" | "3-done";
+            
+            if (card.state === 3) {
+              state = "3-done";
+            } else if (card.state === 2) {
+              state = "2-inProgress";
+            } else {
+              state = "1-queued";
+            }
+            
+            const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+            await storage.syncTaskFromKaiten(
+              card.id,
+              card.board_id,
+              card.title,
+              card.created || new Date().toISOString(),
+              state,
+              card.size || 0,
+              condition,
+              initCardId,
+              card.type?.name,
+              card.completed_at ?? undefined,
+              sprint.sprintId
+            );
+            
+            sprintSynced++;
+            totalSynced++;
+          }
+          
+          log(`[Kaiten Sync All Sprints] Sprint ${sprint.sprintId}: synced ${sprintSynced} tasks`);
+          results.push({ sprintId: sprint.sprintId, synced: sprintSynced });
+          
+        } catch (sprintError: unknown) {
+          const errorMessage = sprintError instanceof Error ? sprintError.message : 'Unknown error';
+          log(`[Kaiten Sync All Sprints] Error syncing sprint ${sprint.sprintId}:`, errorMessage);
+          results.push({ sprintId: sprint.sprintId, error: errorMessage });
+        }
+      }
+
+      log(`[Kaiten Sync All Sprints] Completed. Total synced: ${totalSynced} tasks`);
+      
+      res.json({
+        success: true,
+        totalSynced,
+        sprintsProcessed: sprints.length,
+        results
+      });
+    } catch (error) {
+      console.error("POST /api/kaiten/sync-all-sprints/:boardId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to sync all sprints" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/test", async (req, res) => {
     try {
       const isConnected = await kaitenClient.testConnection();

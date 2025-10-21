@@ -45,6 +45,8 @@ The backend uses Express.js with TypeScript and an ESM module system, providing 
 - `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten.
 - `/api/kaiten/sync-tasks/:boardId`: Sync tasks (children cards) from Kaiten.
 - `/api/kaiten/update-sprint/:sprintId`: Fetch sprint data from Kaiten and update task sprint_ids.
+- `/api/kaiten/sync-sprint/:sprintId`: Sync tasks from a specific sprint.
+- `/api/kaiten/sync-all-sprints/:boardId`: Sync tasks from all sprints for a board.
 
 **Kaiten Integration:**
 - Syncs initiatives and tasks from the Kaiten API (feature.kaiten.ru) to the database, mapping Kaiten card states to initiative states (queued, inProgress, done). Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN` environment variables. Includes sequential validation for `sprintBoardId` and `initBoardId` during team creation/update.

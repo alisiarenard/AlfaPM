@@ -930,6 +930,41 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     },
   });
 
+  const syncAllSprintsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/kaiten/sync-all-sprints/${team.sprintBoardId}`, {});
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", team.initBoardId] });
+      toast({
+        title: "Успешно",
+        description: `Синхронизировано ${data.totalSynced} задач из ${data.sprintsProcessed} спринтов`,
+      });
+    },
+    onError: (error: Error) => {
+      let errorMessage = "Не удалось синхронизировать спринты";
+      
+      if (error.message && error.message.includes(':')) {
+        const parts = error.message.split(': ');
+        const jsonPart = parts.slice(1).join(': ');
+        try {
+          const errorData = JSON.parse(jsonPart);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = jsonPart;
+        }
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+      
+      toast({
+        title: "Ошибка",
+        description: errorMessage,
+      });
+    },
+  });
+
   const isLoading = initiativesLoading || sprintsLoading;
 
   if (isLoading) {
@@ -998,6 +1033,17 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     syncBoardMutation.mutate();
   };
 
+  const handleSyncAllSprints = () => {
+    if (!team.sprintBoardId) {
+      toast({
+        title: "Ошибка",
+        description: "У команды не указана доска спринтов",
+      });
+      return;
+    }
+    syncAllSprintsMutation.mutate();
+  };
+
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       <TeamHeader 
@@ -1008,6 +1054,8 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
         onFilterChange={setShowActiveOnly}
         onSync={handleSync}
         isSyncing={syncBoardMutation.isPending}
+        onSyncAllSprints={team.sprintBoardId ? handleSyncAllSprints : undefined}
+        isSyncingAllSprints={syncAllSprintsMutation.isPending}
       />
       <div className="px-4">
         <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
