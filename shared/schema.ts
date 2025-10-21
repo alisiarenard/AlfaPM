@@ -109,6 +109,7 @@ export interface Initiative {
   size: number;
   initBoardId: number;
   sprints: SprintAllocation[];
+  involvement: number | null;
 }
 
 export interface Team {

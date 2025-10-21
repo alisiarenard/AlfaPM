@@ -282,8 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Если передан sprintBoardId, получаем sprint_id спринтов этой команды
       let teamSprintIds: Set<number> | null = null;
+      let teamSprints: any[] = [];
       if (sprintBoardId !== null && !isNaN(sprintBoardId)) {
-        const teamSprints = await storage.getSprintsByBoardId(sprintBoardId);
+        teamSprints = await storage.getSprintsByBoardId(sprintBoardId);
         teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
         log(`[Initiatives Filter] Team sprint IDs for board ${sprintBoardId}: ${Array.from(teamSprintIds).join(', ')}`);
       }
@@ -338,7 +339,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
         : initiativesWithSprints;
       
-      res.json(filteredInitiatives);
+      // Рассчитываем involvement для каждой инициативы
+      const initiativesWithInvolvement = filteredInitiatives.map(initiative => {
+        // Если нет спринтов - involvement = null
+        if (initiative.sprints.length === 0) {
+          return {
+            ...initiative,
+            involvement: null
+          };
+        }
+        
+        // Создаем map спринтов с датами для быстрого доступа
+        const sprintDataMap = new Map(
+          teamSprints.map(s => [s.sprintId, { 
+            startDate: new Date(s.startDate),
+            finishDate: new Date(s.finishDate)
+          }])
+        );
+        
+        // Получаем спринты инициативы с датами
+        const initiativeSprintsWithDates = initiative.sprints
+          .map(s => ({
+            ...s,
+            startDate: sprintDataMap.get(s.sprint_id)?.startDate,
+            finishDate: sprintDataMap.get(s.sprint_id)?.finishDate
+          }))
+          .filter(s => s.startDate !== undefined);
+        
+        if (initiativeSprintsWithDates.length === 0) {
+          return {
+            ...initiative,
+            involvement: null
+          };
+        }
+        
+        // Определяем период для расчета involvement
+        // Начало: первый спринт с ненулевыми SP (минимальная дата начала)
+        const firstSprintDate = new Date(Math.min(...initiativeSprintsWithDates.map(s => s.startDate!.getTime())));
+        
+        // Конец: зависит от статуса
+        let lastSprintDate: Date;
+        if (initiative.state === "2-inProgress") {
+          // Для inProgress - ближайший спринт к текущей дате
+          const now = new Date();
+          const sortedSprints = teamSprints
+            .map(s => ({
+              ...s,
+              startDate: new Date(s.startDate),
+              distance: Math.abs(new Date(s.startDate).getTime() - now.getTime())
+            }))
+            .sort((a, b) => a.distance - b.distance);
+          
+          lastSprintDate = sortedSprints.length > 0 
+            ? sortedSprints[0].startDate 
+            : new Date(Math.max(...initiativeSprintsWithDates.map(s => s.startDate!.getTime())));
+        } else {
+          // Для done - последний спринт с ненулевыми SP (максимальная дата начала)
+          lastSprintDate = new Date(Math.max(...initiativeSprintsWithDates.map(s => s.startDate!.getTime())));
+        }
+        
+        // Получаем все спринты в период [firstSprintDate, lastSprintDate]
+        const periodSprintIds = teamSprints
+          .filter(s => {
+            const sprintStart = new Date(s.startDate);
+            return sprintStart >= firstSprintDate && sprintStart <= lastSprintDate;
+          })
+          .map(s => s.sprintId);
+        
+        // Считаем сумму SP данной инициативы за период
+        const initiativeSp = initiative.sprints
+          .filter(s => periodSprintIds.includes(s.sprint_id))
+          .reduce((sum, s) => sum + s.sp, 0);
+        
+        // Считаем сумму SP всех инициатив за период
+        const totalSp = filteredInitiatives.reduce((sum, init) => {
+          const initSpInPeriod = init.sprints
+            .filter(s => periodSprintIds.includes(s.sprint_id))
+            .reduce((s, sprint) => s + sprint.sp, 0);
+          return sum + initSpInPeriod;
+        }, 0);
+        
+        // Рассчитываем involvement (%)
+        const involvement = totalSp > 0 ? Math.round((initiativeSp / totalSp) * 100) : null;
+        
+        return {
+          ...initiative,
+          involvement
+        };
+      });
+      
+      res.json(initiativesWithInvolvement);
     } catch (error) {
       console.error("GET /api/initiatives/board/:initBoardId error:", error);
       res.status(500).json({ 
