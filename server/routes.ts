@@ -321,8 +321,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Если указан sprintBoardId - фильтруем только инициативы с задачами в спринтах команды
+      // Инициативы в очереди показываем всегда
       const filteredInitiatives = teamSprintIds
-        ? initiativesWithSprints.filter(init => init.sprints.length > 0 || init.cardId === 0)
+        ? initiativesWithSprints.filter(init => 
+            init.sprints.length > 0 || 
+            init.cardId === 0 || 
+            init.state === "1-queued"
+          )
         : initiativesWithSprints;
       
       res.json(filteredInitiatives);
