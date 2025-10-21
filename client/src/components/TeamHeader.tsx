@@ -1,6 +1,7 @@
-import { Users } from "lucide-react";
+import { Users, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import type { Team, Initiative, TeamRow } from "@shared/schema";
 
 interface TeamHeaderProps {
@@ -42,9 +43,19 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
             <Users className="h-5 w-5" style={{ color: '#cd253d' }} />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-foreground" data-testid="text-team-name">
-              {team.name}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold text-foreground" data-testid="text-team-name">
+                {team.name}
+              </h1>
+              <Button
+                size="icon"
+                variant="ghost"
+                data-testid="button-update-team"
+                className="h-7 w-7"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground">
               Innovation Rate: <span data-testid="text-innovation-rate">{calculateInnovationRate()}</span>
             </p>

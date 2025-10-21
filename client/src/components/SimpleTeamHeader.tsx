@@ -1,4 +1,6 @@
 import type { TeamRow } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface SimpleTeamHeaderProps {
   team: TeamRow;
@@ -9,8 +11,16 @@ export function SimpleTeamHeader({ team, initiativesCount }: SimpleTeamHeaderPro
   return (
     <div className="bg-card border border-border rounded-md p-4 mb-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold" data-testid="text-team-name">{team.teamName}</h3>
+          <Button
+            size="icon"
+            variant="ghost"
+            data-testid="button-update-team"
+            className="h-7 w-7"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
           <p className="text-sm text-muted-foreground" data-testid="text-board-id">
             Board ID: {team.initBoardId}
           </p>
