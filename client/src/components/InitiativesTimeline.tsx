@@ -259,17 +259,32 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
   // Получить иконку статуса инициативы
   const getStatusIcon = (initiative: Initiative) => {
-    const iconClass = "w-4 h-4 flex-shrink-0";
+    const iconClass = "w-5 h-5 flex-shrink-0";
     
+    // Поддержка бизнеса - серый
+    if (initiative.cardId === 0) {
+      switch (initiative.state) {
+        case "2-inProgress":
+          return <MdPlayCircleOutline className={iconClass} style={{ color: "hsl(220 8% 55%)" }} data-testid="icon-in-progress" />;
+        case "3-done":
+          return <MdCheckCircleOutline className={iconClass} style={{ color: "hsl(220 8% 55%)" }} data-testid="icon-done" />;
+        case "1-queued":
+          return <MdPauseCircleOutline className={iconClass} style={{ color: "hsl(220 8% 55%)" }} data-testid="icon-queued" />;
+        default:
+          return <MdPauseCircleOutline className={iconClass} style={{ color: "hsl(220 8% 55%)" }} data-testid="icon-default" />;
+      }
+    }
+    
+    // Остальные инициативы
     switch (initiative.state) {
       case "2-inProgress":
         return <MdPlayCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-in-progress" />;
       case "3-done":
-        return <MdCheckCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-done" />;
+        return <MdCheckCircleOutline className={iconClass} style={{ color: "#22c55e" }} data-testid="icon-done" />;
       case "1-queued":
-        return <MdPauseCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-queued" />;
+        return <MdPauseCircleOutline className={iconClass} style={{ color: "#d1d5db" }} data-testid="icon-queued" />;
       default:
-        return <MdPauseCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-default" />;
+        return <MdPauseCircleOutline className={iconClass} style={{ color: "#d1d5db" }} data-testid="icon-default" />;
     }
   };
 
