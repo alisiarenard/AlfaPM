@@ -183,17 +183,35 @@ export default function HomePage() {
     onSuccess: (newTeam: TeamRow) => {
       queryClient.invalidateQueries({ queryKey: ["/api/teams", newTeam.departmentId] });
       queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", newTeam.initBoardId] });
       toast({
         title: "Успешно",
-        description: "Команда создана",
+        description: "Команда создана и инициативы синхронизированы",
       });
       setEditingTeam(newTeam);
       setRightPanelMode("editTeam");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      let errorMessage = "Не удалось создать команду";
+      
+      // Парсим ошибку формата "400: {"success":false,"error":"текст ошибки"}"
+      if (error.message && error.message.includes(':')) {
+        const parts = error.message.split(': ');
+        const jsonPart = parts.slice(1).join(': ');
+        try {
+          const errorData = JSON.parse(jsonPart);
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Если не JSON, используем текст как есть
+          errorMessage = jsonPart;
+        }
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+      
       toast({
         title: "Ошибка",
-        description: "Не удалось создать команду",
+        description: errorMessage,
       });
     },
   });

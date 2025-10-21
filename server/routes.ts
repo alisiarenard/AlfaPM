@@ -105,7 +105,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/teams", async (req, res) => {
     try {
       const teamData = req.body;
+      
+      // Валидация sprintBoardId через Kaiten API
+      if (teamData.sprintBoardId) {
+        const sprintBoardValidation = await kaitenClient.validateBoard(teamData.sprintBoardId, 'sprints');
+        if (!sprintBoardValidation.valid) {
+          return res.status(400).json({ 
+            success: false, 
+            error: sprintBoardValidation.error || "Доска спринтов не найдена в Kaiten"
+          });
+        }
+      }
+      
+      // Валидация initBoardId через Kaiten API
+      if (teamData.initBoardId) {
+        const initBoardValidation = await kaitenClient.validateBoard(teamData.initBoardId, 'initiatives');
+        if (!initBoardValidation.valid) {
+          return res.status(400).json({ 
+            success: false, 
+            error: initBoardValidation.error || "Доска инициатив не найдена в Kaiten"
+          });
+        }
+      }
+      
+      // Создаем команду в БД
       const team = await storage.createTeam(teamData);
+      
+      // Автоматическая синхронизация инициатив с Kaiten
+      if (teamData.initBoardId) {
+        try {
+          log(`[Team Creation] Starting automatic sync for board ${teamData.initBoardId}`);
+          
+          const cards = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
+          log(`[Team Creation] Found ${cards.length} cards to sync`);
+          
+          for (const card of cards) {
+            let state: "1-queued" | "2-inProgress" | "3-done";
+            
+            if (card.state === 3) {
+              state = "3-done";
+            } else if (card.state === 2) {
+              state = "2-inProgress";
+            } else {
+              state = "1-queued";
+            }
+            
+            const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+            
+            await storage.syncInitiativeFromKaiten(
+              card.id,
+              teamData.initBoardId,
+              card.title,
+              state,
+              condition,
+              card.size || 0
+            );
+          }
+          
+          log(`[Team Creation] Successfully synced ${cards.length} initiatives`);
+        } catch (syncError) {
+          // Логируем ошибку синхронизации, но не блокируем создание команды
+          console.error("[Team Creation] Initiative sync error:", syncError);
+        }
+      }
+      
       res.json(team);
     } catch (error) {
       console.error("POST /api/teams error:", error);

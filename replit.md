@@ -3,105 +3,6 @@
 ## Overview
 This project is a web-based application designed to visualize and track team initiatives across sprint timelines. It enables users to upload team data, displaying initiatives with their associated story points, sprint allocations, and status information. The application supports multiple teams, each accessible via a separate tab, and features a clean, data-focused interface inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles. The core purpose is to provide a clear, scannable overview of project progress and team allocation. The application's business vision is to streamline project management and enhance team visibility, offering market potential in organizations seeking efficient, data-driven project tracking.
 
-## Recent Changes (October 21, 2025)
-- **Initiative Filtering by Completed SP**: Added frontend filtering to hide empty initiatives in progress/done states
-  - **Filter Logic**:
-    - If initiative state is "2-inProgress" OR "3-done"
-    - AND total story points across all sprints = 0
-    - THEN hide initiative from timeline
-  - **Behavior**:
-    - Queued initiatives (state="1-queued") always shown regardless of SP
-    - InProgress/Done initiatives only shown if they have completed SP > 0
-    - Works in combination with "Активные" filter
-  - **Implementation**: TeamInitiativesTab in HomePage.tsx
-    - Calculates: `totalSp = init.sprints.reduce((sum, sprint) => sum + sprint.sp, 0)`
-    - Filters before rendering InitiativesTimeline component
-
-- **Kaiten Sync Button in Team Header**: Added functional Update button to sync initiatives from Kaiten
-  - **Button Design**: RefreshCw icon (7x7 px) with ghost variant, positioned next to team name
-  - **Functionality**: 
-    - Triggers POST /api/kaiten/sync-board/:initBoardId endpoint
-    - Syncs all cards from team's Kaiten initiative board
-    - Shows loading state: spinning icon + disabled button during sync
-    - Success toast: "Синхронизировано X инициатив из Kaiten"
-    - Error toast: displays parsed error message
-    - Auto-refreshes initiatives table after successful sync
-  - **Implementation**:
-    - Component: TeamHeader.tsx (UI) + TeamInitiativesTab (logic)
-    - Mutation: syncBoardMutation with onSuccess/onError handlers
-    - Cache invalidation: queryClient.invalidateQueries for initiatives
-    - Test ID: button-update-team
-  - **Backend**: Existing /api/kaiten/sync-board/:boardId endpoint
-    - Fetches cards from Kaiten API
-    - Maps card states (1=queued, 2=inProgress, 3=done)
-    - Upserts initiatives via syncInitiativeFromKaiten()
-
-## Previous Changes (October 20, 2025)
-- **Team Management Feature**: Added full team creation and editing functionality in settings modal
-  - **Team Creation**: 
-    - Click "+" button and select "Команда" to open team creation form
-    - Form includes department selector and all team fields
-    - Required fields: teamName, spaceId, sprintBoardId, initBoardId, velocity, sprintDuration
-    - Optional field: spPrice (defaults to 0)
-    - "Добавить" button disabled until all required fields filled
-    - After creation, form switches to edit mode
-    - Backend: POST /api/teams endpoint
-    - Storage: createTeam() method in DbStorage
-  - **Team Editing**:
-    - Clicking on team in left panel opens editing form in right panel
-    - Form shows team name and department name in header
-    - All team fields editable with localized labels (Russian)
-    - "Сохранить" button appears only when changes detected
-    - Backend: PATCH /api/teams/:teamId endpoint with Kaiten validation
-    - Storage: updateTeam() and getTeamById() methods in DbStorage
-    - Team items highlight when selected
-    - Success toast "Команда обновлена" after save
-    - Auto-refreshes team data and invalidates cache
-  - **Kaiten Board Validation**:
-    - When initBoardId or sprintBoardId fields are changed, backend validates board exists in Kaiten before saving
-    - Validation only runs if board ID value actually changed from database
-    - KaitenClient.validateBoard(boardId, boardType) method checks board via GET /api/latest/boards/:boardId
-    - boardType: 'initiatives' | 'sprints' determines error message
-    - Handles 403 Forbidden and 404 Not Found as "board not found"
-    - Error messages:
-      - initBoardId: "Доска инициатив с таким ID не найдена в Kaiten"
-      - sprintBoardId: "Доска спринтов с таким ID не найдена в Kaiten"
-    - Prevents saving invalid board IDs to database
-    - Frontend parses error messages to extract clean error text from JSON response
-  - **Unified Toast Notifications**:
-    - All toasts use consistent default variant design (no destructive red styling)
-    - Success toast: title "Успешно", description varies by action
-    - Error toast: title "Ошибка", description extracted from backend error message
-    - Error messages parsed from backend JSON format: "400: {"success":false,"error":"..."}"
-    - Clean error text extracted and displayed to user without HTTP codes or JSON structure
-    - Toast notifications are ephemeral by design (auto-dismiss after brief display)
-
-## Previous Changes (October 17, 2025)
-- Added `sprints` table to PostgreSQL database
-- Sprints table includes fields: sprint_id (PK), board_id, title, velocity, start_date, finish_date, actual_finish_date (nullable)
-- Populated sprints table with sprint data: 40895 (Sprint 1), 40896 (Sprint 2), 40897 (Sprint 3), 40909 (sprint 4)
-- Added automatic sprint generation in frontend: fills gaps between existing sprints and generates future sprints until end of year
-- Tasks with null init_card_id now default to 0 (linked to "Поддержка бизнеса" initiative)
-- Updated UI: removed "SP" text from all table cells, showing only numbers
-- Updated "Поддержка бизнеса" to always show fixed start date: 01.01.{current_year}
-- Backend sorting: "Поддержка бизнеса" (card_id=0) always first, then by state (3-done, 2-inProgress, 1-queued)
-- Replaced status badges with colored circles (green=active, blue=planned, gray=completed)
-
-## Previous Changes (October 16, 2025)
-- Added `tasks` table to PostgreSQL database with full CRUD API support
-- Created task management endpoints: GET/POST/PATCH/DELETE `/api/tasks` and `/api/tasks/board/:boardId`
-- Tasks table includes fields: id, card_id, title, created, state, size, condition, board_id, sprint_id (nullable), type (nullable), completed_at (nullable), init_card_id (nullable)
-- Tasks reuse initiative_state and initiative_condition ENUMs for consistency
-- Implemented storage layer methods for tasks: getAllTasks, getTasksByBoardId, createTask, updateTask, deleteTask, syncTaskFromKaiten
-- Added Kaiten tasks synchronization endpoint: POST `/api/kaiten/sync-tasks/:boardId`
-- Tasks sync processes ALL children cards from Kaiten board where state=3 (done), regardless of sprint_id value
-- Parent card_id is stored in init_card_id field to link tasks to their parent initiatives
-- Kaiten API limitation: children data only available via individual card fetch (/cards/{cardId}), not board fetch (/boards/{boardId})
-- Sync implementation: fetches each parent card individually to retrieve children array, then filters and syncs children with state=3
-- Added sprint_id field to tasks table for sprint association
-- Created endpoint POST `/api/kaiten/update-sprint/:sprintId` to fetch sprint data from Kaiten and update sprint_id for tasks where card_id matches cards in the sprint
-- Added getSprint() method to KaitenClient for fetching sprint data from `/api/latest/sprints/{sprintId}`
-
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
@@ -118,30 +19,25 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 **Key Features:**
 - **Multi-Team Support:** Departments and teams are fetched from the database and displayed in separate tabs using Shadcn Tabs. Each tab independently fetches and displays initiatives and team metrics.
 - **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details (name, start date, size, completed, involvement) and scrollable sprint columns with story points and colored status blocks.
-- **Team Header:** Displays team name, board ID, Velocity, and Innovation Rate (percentage of Epic story points vs total story points).
-- **Calculations:**
-    - **Involvement:** Automatically calculated as the percentage of an initiative's story points against all story points within its time period.
-    - **Sprint Header IR:** Displays Investment Ratio (Epic story points / Total sprint story points) in sprint headers.
-    - **Sprint Auto-Generation:** Sprints are automatically generated from the current date to the end of the year based on `sprintDuration` (if provided), filling gaps and preserving existing sprints.
+- **Team Header:** Displays team name, board ID, Velocity, and Innovation Rate. Includes a button to manually sync initiatives from Kaiten.
+- **Team Management:** Full CRUD functionality for teams and departments, including Kaiten board validation during creation and editing.
+- **Initiative Filtering:** Filters initiatives based on their state and completed story points.
+- **Calculations:** Involvement (percentage of initiative's SP against all SP), Sprint Header IR (Investment Ratio), and automatic sprint generation.
 
 ### Backend Architecture
-The backend uses Express.js with TypeScript and an ESM module system. It provides a RESTful API under the `/api` prefix.
+The backend uses Express.js with TypeScript and an ESM module system, providing a RESTful API under the `/api` prefix.
 
 **API Endpoints:**
-- `/api/departments` (GET, POST, PATCH): Manage departments.
-- `/api/teams/:departmentId` (GET): Retrieve teams for a department.
-- `/api/teams` (POST): Create a new team.
-- `/api/teams/:teamId` (PATCH): Update team details.
-- `/api/initiatives` (GET, POST, PATCH, DELETE): Manage initiatives.
-- `/api/initiatives/board/:initBoardId`: Retrieve initiatives for a specific board.
-- `/api/tasks` (GET, POST, PATCH, DELETE): Manage tasks.
-- `/api/tasks/board/:boardId`: Retrieve tasks for a specific board.
+- `/api/departments`: Manage departments (GET, POST, PATCH).
+- `/api/teams`: Manage teams (GET teams by department, POST create team, PATCH update team).
+- `/api/initiatives`: Manage initiatives (GET, POST, PATCH, DELETE, GET by board ID).
+- `/api/tasks`: Manage tasks (GET, POST, PATCH, DELETE, GET by board ID).
 - `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten.
 - `/api/kaiten/sync-tasks/:boardId`: Sync tasks (children cards) from Kaiten.
-- `/api/kaiten/update-sprint/:sprintId`: Fetch sprint from Kaiten and update sprint_id for tasks where card_id matches.
+- `/api/kaiten/update-sprint/:sprintId`: Fetch sprint data from Kaiten and update task sprint_ids.
 
 **Kaiten Integration:**
-- Syncs initiatives from the Kaiten API (feature.kaiten.ru) to the database, mapping Kaiten card states to initiative states (queued, inProgress, done). Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN` environment variables.
+- Syncs initiatives and tasks from the Kaiten API (feature.kaiten.ru) to the database, mapping Kaiten card states to initiative states (queued, inProgress, done). Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN` environment variables. Includes sequential validation for `sprintBoardId` and `initBoardId` during team creation/update.
 
 ### Data Storage Solutions
 PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neon HTTP driver provides type-safe queries.
@@ -153,8 +49,7 @@ PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neo
 - `initiatives`: Initiative details (ID, card ID, title, state, condition, size, board ID).
 - `tasks`: Task details (ID, card ID, title, created, state, size, condition, board ID, sprint_id, type, completed_at, init_card_id).
 - `sprints`: Sprint details (sprint_id (PK), board_id, title, velocity, start_date, finish_date, actual_finish_date).
-- Schema is defined in `shared/schema.ts` for type safety.
-- Drizzle-kit manages migrations.
+- Schema is defined in `shared/schema.ts` for type safety. Drizzle-kit manages migrations.
 
 ## External Dependencies
 
@@ -181,5 +76,3 @@ PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neo
 - `typescript`
 - `tsx`
 - `undici` (for HTTP requests, e.g., Kaiten integration)
-- `connect-pg-simple` (for future session storage)
-- `drizzle-zod` (for schema validation)
