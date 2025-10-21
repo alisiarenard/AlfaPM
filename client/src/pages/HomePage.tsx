@@ -728,7 +728,7 @@ export default function HomePage() {
                           <SelectTrigger id="team-department" data-testid="select-department">
                             <SelectValue placeholder="Выберите подразделение" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             {departments?.map((dept) => (
                               <SelectItem key={dept.id} value={dept.id}>
                                 {dept.department}
