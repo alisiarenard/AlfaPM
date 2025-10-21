@@ -14,6 +14,7 @@ export const initiatives = pgTable("initiatives", {
   condition: initiativeConditionEnum("condition").notNull(),
   size: integer("size").notNull(),
   initBoardId: integer("init_board_id").notNull(),
+  type: varchar("type"),
 });
 
 export const insertInitiativeSchema = createInsertSchema(initiatives).omit({ id: true });
@@ -108,6 +109,7 @@ export interface Initiative {
   condition: string;
   size: number;
   initBoardId: number;
+  type: string | null;
   sprints: SprintAllocation[];
   involvement: number | null;
 }
