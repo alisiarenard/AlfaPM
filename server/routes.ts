@@ -301,19 +301,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? allTasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId))
             : allTasks;
           
-          // Группируем по sprint_id и считаем сумму size
-          const sprintsMap = new Map<number, number>();
+          // Группируем по sprint_id и собираем задачи
+          const sprintsMap = new Map<number, { sp: number; tasks: any[] }>();
           tasks.forEach(task => {
             if (task.sprintId !== null) {
-              const currentSp = sprintsMap.get(task.sprintId) || 0;
-              sprintsMap.set(task.sprintId, currentSp + task.size);
+              const current = sprintsMap.get(task.sprintId) || { sp: 0, tasks: [] };
+              current.sp += task.size;
+              current.tasks.push({
+                id: task.id,
+                cardId: task.cardId,
+                title: task.title,
+                type: task.type,
+                size: task.size
+              });
+              sprintsMap.set(task.sprintId, current);
             }
           });
           
-          // Преобразуем в массив объектов {sprint_id, sp}
-          const sprints = Array.from(sprintsMap.entries()).map(([sprint_id, sp]) => ({
+          // Преобразуем в массив объектов {sprint_id, sp, tasks}
+          const sprints = Array.from(sprintsMap.entries()).map(([sprint_id, data]) => ({
             sprint_id,
-            sp
+            sp: data.sp,
+            tasks: data.tasks
           }));
           
           return {

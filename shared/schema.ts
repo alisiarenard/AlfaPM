@@ -96,9 +96,18 @@ export const insertTeamSchema = createInsertSchema(teams).omit({ teamId: true })
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type TeamRow = typeof teams.$inferSelect;
 
+export interface TaskInSprint {
+  id: string;
+  cardId: number;
+  title: string;
+  type: string | null;
+  size: number;
+}
+
 export interface SprintAllocation {
   sprint_id: number;
   sp: number;
+  tasks: TaskInSprint[];
 }
 
 export interface Initiative {
