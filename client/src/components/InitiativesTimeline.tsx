@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
 
 interface InitiativesTimelineProps {
   initiatives: Initiative[];
@@ -256,6 +257,22 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return "rgba(205, 37, 61, 0.2)";
   };
 
+  // Получить иконку статуса инициативы
+  const getStatusIcon = (initiative: Initiative) => {
+    const iconClass = "w-4 h-4 flex-shrink-0";
+    
+    switch (initiative.state) {
+      case "2-inProgress":
+        return <MdPlayCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-in-progress" />;
+      case "3-done":
+        return <MdCheckCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-done" />;
+      case "1-queued":
+        return <MdPauseCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-queued" />;
+      default:
+        return <MdPauseCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-default" />;
+    }
+  };
+
   // Рассчитать прогнозируемое количество спринтов для инициативы
   const calculateForecastedSprints = (initiative: Initiative): number => {
     // Проверяем корректность входных данных
@@ -420,10 +437,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             >
               <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]">
                 <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: getStatusColor(initiative) }}
-                  />
+                  {getStatusIcon(initiative)}
                   <span className="text-sm text-foreground font-semibold">
                     {initiative.title}
                   </span>
