@@ -404,7 +404,7 @@ export default function HomePage() {
   // Получаем Innovation Rate для выбранных команд
   const teamIdsArray = Array.from(selectedTeams);
   const teamIdsParam = teamIdsArray.sort().join(',');
-  const { data: innovationRateData } = useQuery<{
+  const { data: innovationRateData, isFetching: isIRFetching } = useQuery<{
     success: boolean;
     actualIR: number;
     plannedIR: number;
@@ -468,7 +468,10 @@ export default function HomePage() {
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex gap-4 mb-6">
-                <div className="w-[40%] h-[110px] border border-border rounded-lg flex relative">
+                <div 
+                  className="w-[40%] h-[110px] border border-border rounded-lg flex relative transition-opacity duration-300"
+                  style={{ opacity: isIRFetching ? 0.5 : 1 }}
+                >
                   <div className="w-1/2 px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
                     <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
