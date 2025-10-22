@@ -512,39 +512,39 @@ export default function HomePage() {
                     <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
                     <div className="flex gap-2 items-end flex-1">
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Epic</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Compliance</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Enabler</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Security</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Service Desk</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Postmortem</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Tech debt</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Bug</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px]">
-                        <div className="w-full h-12 bg-muted rounded"></div>
+                        <div className="text-sm font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground">Др. доработки</div>
                       </div>
                     </div>
