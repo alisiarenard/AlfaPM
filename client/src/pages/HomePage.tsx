@@ -554,10 +554,16 @@ export default function HomePage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="absolute top-1 right-1 h-7 w-7"
+                        className="absolute top-1 right-1 h-7 w-7 relative"
                         data-testid="button-menu"
                       >
                         <MoreVertical className="h-4 w-4" />
+                        {departmentTeams && selectedTeams.size < departmentTeams.length && (
+                          <span 
+                            className="absolute top-0 right-0 w-2 h-2 rounded-full"
+                            style={{ backgroundColor: '#cd253d' }}
+                          />
+                        )}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56 bg-white">
