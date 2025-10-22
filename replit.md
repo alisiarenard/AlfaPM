@@ -33,6 +33,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
   - Initiatives with 0 completed SP in done/inProgress state are hidden
   - Backend filters initiatives to show only those with tasks in team sprints, plus queued initiatives and "Business Support" category
 - **Calculations:** 
+  - **Innovation Rate (IR):** Calculated dynamically for selected teams via `/api/metrics/innovation-rate` endpoint. Formula: `(innovationSP / totalSP) * 100` where innovationSP is the sum of story points from tasks with parent initiatives (initCardId !== null && initCardId !== 0), and totalSP is the sum of all task story points from selected teams' sprints. Returns actualIR, plannedIR (from department), and diffFromPlanned (actualIR - plannedIR). Frontend displays actualIR as percentage with color-coded difference (green if positive, red if negative).
   - **Involvement:** Calculated on backend as (initiative SP / total SP of all initiatives) * 100 for a specific period. Period starts from the first sprint with non-zero SP for the initiative and ends at: (a) nearest sprint to current date if initiative is inProgress, or (b) last sprint with SP if initiative is done. Uses sprint dates (not IDs) for correct chronological ordering.
   - **Sprint Header IR (Investment Ratio):** Percentage of SP excluding "Business Support" category
   - **Forecasted Sprint Count:** `ceil(initiative size / (team velocity × involvement% / 100))` with validation for positive, finite values
@@ -46,6 +47,7 @@ The backend uses Express.js with TypeScript and an ESM module system, providing 
 - `/api/teams`: Manage teams (GET teams by department, POST create team, PATCH update team).
 - `/api/initiatives`: Manage initiatives (GET, POST, PATCH, DELETE, GET by board ID).
 - `/api/tasks`: Manage tasks (GET, POST, PATCH, DELETE, GET by board ID).
+- `/api/metrics/innovation-rate`: Calculate Innovation Rate for selected teams (GET with teamIds query param). Returns actualIR, plannedIR, diffFromPlanned, totalSP, and innovationSP.
 - `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten.
 - `/api/kaiten/sync-tasks/:boardId`: Sync tasks (children cards) from Kaiten.
 - `/api/kaiten/update-sprint/:sprintId`: Fetch sprint data from Kaiten and update task sprint_ids.
