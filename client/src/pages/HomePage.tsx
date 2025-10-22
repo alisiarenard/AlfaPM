@@ -512,39 +512,39 @@ export default function HomePage() {
                     <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
                     <div className="flex gap-2 items-end flex-1">
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Epic</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Compliance</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Enabler</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Security</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Bug</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px]">
-                        <div className="text-xl font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
                       </div>
                     </div>
