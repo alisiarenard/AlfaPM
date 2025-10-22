@@ -389,8 +389,10 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    setSelectedTeams(new Set());
-  }, [selectedDepartment]);
+    if (departmentTeams) {
+      setSelectedTeams(new Set(departmentTeams.map(team => team.teamId)));
+    }
+  }, [selectedDepartment, departmentTeams]);
 
   const handleDownloadReport = () => {
     toast({
@@ -437,51 +439,6 @@ export default function HomePage() {
             >
               <Settings className="h-5 w-5" />
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  data-testid="button-menu"
-                >
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {departmentTeams && departmentTeams.length > 0 ? (
-                  <>
-                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                      Команды
-                    </div>
-                    {departmentTeams.map((team) => (
-                      <DropdownMenuCheckboxItem
-                        key={team.teamId}
-                        checked={selectedTeams.has(team.teamId)}
-                        onCheckedChange={() => handleTeamToggle(team.teamId)}
-                        data-testid={`menu-team-${team.teamId}`}
-                      >
-                        {team.teamName}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="flex items-center gap-2 cursor-pointer"
-                      onSelect={handleDownloadReport}
-                      role="menuitem"
-                      aria-label="Скачать отчет по выбранным командам"
-                      data-testid="menu-download-report"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span>Скачать отчет</span>
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    Нет команд
-                  </div>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
         
@@ -489,7 +446,7 @@ export default function HomePage() {
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex gap-4 mb-6">
-                <div className="w-[40%] h-[110px] border border-border rounded-lg flex">
+                <div className="w-[40%] h-[110px] border border-border rounded-lg flex relative">
                   <div className="w-1/2 px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
                     <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">43%</div>
@@ -501,6 +458,52 @@ export default function HomePage() {
                     <div className="text-3xl font-semibold" data-testid="metric-value-cost">4,7</div>
                     <div className="text-xs text-muted-foreground"><span className="font-semibold text-green-600">+1,7</span> от планового значения</div>
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute top-1 right-1 h-7 w-7"
+                        data-testid="button-menu"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 bg-white">
+                      {departmentTeams && departmentTeams.length > 0 ? (
+                        <>
+                          <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                            Команды
+                          </div>
+                          {departmentTeams.map((team) => (
+                            <DropdownMenuCheckboxItem
+                              key={team.teamId}
+                              checked={selectedTeams.has(team.teamId)}
+                              onCheckedChange={() => handleTeamToggle(team.teamId)}
+                              data-testid={`menu-team-${team.teamId}`}
+                            >
+                              {team.teamName}
+                            </DropdownMenuCheckboxItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="flex items-center gap-2 cursor-pointer"
+                            onSelect={handleDownloadReport}
+                            role="menuitem"
+                            aria-label="Скачать отчет по выбранным командам"
+                            data-testid="menu-download-report"
+                          >
+                            <Download className="h-4 w-4" />
+                            <span>Скачать отчет</span>
+                          </DropdownMenuItem>
+                        </>
+                      ) : (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          Нет команд
+                        </div>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div className="w-[60%] h-[110px] border border-border rounded-lg"></div>
               </div>
