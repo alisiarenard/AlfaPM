@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder } from "lucide-react";
+import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder, MoreVertical, Download } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Department, DepartmentWithTeamCount, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
@@ -85,6 +85,7 @@ export default function HomePage() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
   const [rightPanelMode, setRightPanelMode] = useState<null | "addBlock" | "addTeam" | "editBlock" | "editTeam">(null);
   const [blockName, setBlockName] = useState("");
@@ -377,6 +378,27 @@ export default function HomePage() {
     }
   };
 
+  const handleTeamToggle = (teamId: string) => {
+    const newSelectedTeams = new Set(selectedTeams);
+    if (newSelectedTeams.has(teamId)) {
+      newSelectedTeams.delete(teamId);
+    } else {
+      newSelectedTeams.add(teamId);
+    }
+    setSelectedTeams(newSelectedTeams);
+  };
+
+  useEffect(() => {
+    setSelectedTeams(new Set());
+  }, [selectedDepartment]);
+
+  const handleDownloadReport = () => {
+    toast({
+      title: "Скачивание отчета",
+      description: "Функция скачивания отчета будет реализована позже",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
@@ -415,6 +437,51 @@ export default function HomePage() {
             >
               <Settings className="h-5 w-5" />
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  data-testid="button-menu"
+                >
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {departmentTeams && departmentTeams.length > 0 ? (
+                  <>
+                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                      Команды
+                    </div>
+                    {departmentTeams.map((team) => (
+                      <DropdownMenuCheckboxItem
+                        key={team.teamId}
+                        checked={selectedTeams.has(team.teamId)}
+                        onCheckedChange={() => handleTeamToggle(team.teamId)}
+                        data-testid={`menu-team-${team.teamId}`}
+                      >
+                        {team.teamName}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 cursor-pointer"
+                      onSelect={handleDownloadReport}
+                      role="menuitem"
+                      aria-label="Скачать отчет по выбранным командам"
+                      data-testid="menu-download-report"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>Скачать отчет</span>
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    Нет команд
+                  </div>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         

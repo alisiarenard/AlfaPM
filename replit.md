@@ -18,6 +18,8 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 
 **Key Features:**
 - **Multi-Team Support:** Departments and teams are fetched from the database and displayed in separate tabs using Shadcn Tabs. Each tab independently fetches and displays initiatives and team metrics.
+- **Team Selection Menu:** Dropdown menu (triggered by three-dot button in header) displays all teams from selected department with checkboxes for multi-selection. Includes "Скачать отчет" (Download Report) option separated by horizontal divider. State automatically resets when department changes. Uses DropdownMenuCheckboxItem for full accessibility (keyboard navigation, screen reader support, aria attributes).
+- **Metrics Card:** Unified card (40% width) displays Innovation Rate and Value/Cost metrics side-by-side, separated by vertical border with top/bottom margins (my-3) for visual spacing.
 - **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details (name with status icon, start date, size, completed, involvement) and scrollable sprint columns with story points and colored status blocks.
   - **Status Icons:** Material Design outline icons indicate initiative status: Play Circle (in-progress, red), Check Circle (completed, green), Pause Circle (queued, light gray). "Поддержка бизнеса" initiatives display gray icons for all statuses.
   - **Forecasted Color Blocks:** Blocks stretch across predicted sprint count using formula `ceil(Size / (Velocity × Involvement%))`, starting from first sprint with SP. Includes guards for zero/undefined velocity, involvement, and size values. Falls back to historical span when forecasting is impossible.
