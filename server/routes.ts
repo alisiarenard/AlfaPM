@@ -1180,6 +1180,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/metrics/innovation-rate", async (req, res) => {
+    try {
+      const teamIdsParam = req.query.teamIds as string;
+      
+      if (!teamIdsParam) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "teamIds parameter is required" 
+        });
+      }
+
+      const teamIds = teamIdsParam.split(',').map(id => id.trim()).filter(id => id);
+      
+      if (teamIds.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "At least one team ID is required" 
+        });
+      }
+
+      log(`[Innovation Rate] Calculating for teams: ${teamIds.join(', ')}`);
+
+      // Получаем команды и департамент
+      const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
+      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      
+      if (validTeams.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "No valid teams found" 
+        });
+      }
+
+      // Получаем департамент (все команды должны быть из одного департамента)
+      const departmentId = validTeams[0].departmentId;
+      const departments = await storage.getDepartments();
+      const department = departments.find(d => d.id === departmentId);
+      
+      if (!department) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Department not found" 
+        });
+      }
+
+      // Получаем все спринты для выбранных команд
+      const allSprints = await Promise.all(
+        validTeams.map(team => storage.getSprintsByBoardId(team.sprintBoardId))
+      );
+      const sprintIds = new Set(allSprints.flat().map(s => s.sprintId));
+      
+      log(`[Innovation Rate] Found ${sprintIds.size} unique sprints`);
+
+      // Получаем все таски из этих спринтов
+      const allTasks = await storage.getAllTasks();
+      const relevantTasks = allTasks.filter(task => 
+        task.sprintId !== null && sprintIds.has(task.sprintId)
+      );
+      
+      log(`[Innovation Rate] Found ${relevantTasks.length} tasks in selected sprints`);
+
+      // Подсчитываем SP
+      let totalSP = 0;
+      let innovationSP = 0;
+
+      for (const task of relevantTasks) {
+        const taskSize = task.size || 0;
+        totalSP += taskSize;
+
+        // Таск относится к инновациям, если у него есть родительская инициатива (init_card_id !== null и !== 0)
+        if (task.initCardId !== null && task.initCardId !== 0) {
+          innovationSP += taskSize;
+        }
+      }
+
+      log(`[Innovation Rate] Total SP: ${totalSP}, Innovation SP: ${innovationSP}`);
+
+      // Расчитываем фактический IR
+      const actualIR = totalSP > 0 ? Math.round((innovationSP / totalSP) * 100) : 0;
+      
+      // Расчитываем разницу с плановым IR
+      const plannedIR = department.plannedIr || 0;
+      const diffFromPlanned = actualIR - plannedIR;
+
+      log(`[Innovation Rate] Actual IR: ${actualIR}%, Planned IR: ${plannedIR}%, Diff: ${diffFromPlanned}%`);
+
+      res.json({
+        success: true,
+        actualIR,
+        plannedIR,
+        diffFromPlanned,
+        totalSP,
+        innovationSP
+      });
+    } catch (error) {
+      console.error("GET /api/metrics/innovation-rate error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to calculate innovation rate" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/test", async (req, res) => {
     try {
       const isConnected = await kaitenClient.testConnection();

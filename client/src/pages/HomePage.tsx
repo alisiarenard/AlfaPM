@@ -401,6 +401,28 @@ export default function HomePage() {
     });
   };
 
+  // Получаем Innovation Rate для выбранных команд
+  const teamIdsArray = Array.from(selectedTeams);
+  const teamIdsParam = teamIdsArray.sort().join(',');
+  const { data: innovationRateData } = useQuery<{
+    success: boolean;
+    actualIR: number;
+    plannedIR: number;
+    diffFromPlanned: number;
+    totalSP: number;
+    innovationSP: number;
+  }>({
+    queryKey: ['/api/metrics/innovation-rate', { teamIds: teamIdsParam }],
+    queryFn: async () => {
+      const response = await fetch(`/api/metrics/innovation-rate?teamIds=${teamIdsParam}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch innovation rate');
+      }
+      return response.json();
+    },
+    enabled: teamIdsArray.length > 0,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
@@ -449,8 +471,20 @@ export default function HomePage() {
                 <div className="w-[40%] h-[110px] border border-border rounded-lg flex relative">
                   <div className="w-1/2 px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
-                    <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">43%</div>
-                    <div className="text-xs text-muted-foreground"><span className="font-semibold" style={{ color: '#cd253d' }}>-11%</span> от планового значения</div>
+                    <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
+                      {innovationRateData ? `${innovationRateData.actualIR}%` : '-'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {innovationRateData && (
+                        <span 
+                          className="font-semibold" 
+                          style={{ color: innovationRateData.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
+                        >
+                          {innovationRateData.diffFromPlanned >= 0 ? '+' : ''}{innovationRateData.diffFromPlanned}%
+                        </span>
+                      )}
+                      {innovationRateData && ' от планового значения'}
+                    </div>
                   </div>
                   <div className="border-l border-border my-3"></div>
                   <div className="w-1/2 px-4 py-3 flex flex-col justify-between">
