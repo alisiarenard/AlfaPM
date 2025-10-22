@@ -560,7 +560,7 @@ export default function HomePage() {
                         <MoreVertical className="h-4 w-4" />
                         {departmentTeams && selectedTeams.size < departmentTeams.length && (
                           <span 
-                            className="absolute top-0 right-0 w-2 h-2 rounded-full"
+                            className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full"
                             style={{ backgroundColor: '#cd253d' }}
                           />
                         )}
