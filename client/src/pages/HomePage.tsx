@@ -489,7 +489,7 @@ export default function HomePage() {
                     <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
                       {displayIR ? `${displayIR.actualIR}%` : '-'}
                     </div>
-                    <div className="text-[0.70rem] text-muted-foreground">
+                    <div className="text-[0.8rem] text-muted-foreground">
                       {displayIR && (
                         <span 
                           className="font-semibold" 
@@ -507,11 +507,11 @@ export default function HomePage() {
                     <div className="flex justify-between items-end w-full">
                       <div className="flex flex-col items-center gap-1">
                         <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">4,7</div>
-                        <div className="text-[0.70rem] text-muted-foreground">плановый</div>
+                        <div className="text-[0.8rem] text-muted-foreground">плановый</div>
                       </div>
                       <div className="flex flex-col items-center gap-1">
                         <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">0</div>
-                        <div className="text-[0.70rem] text-muted-foreground">фактический</div>
+                        <div className="text-[0.8rem] text-muted-foreground">фактический</div>
                       </div>
                     </div>
                     <div></div>
@@ -522,39 +522,39 @@ export default function HomePage() {
                     <div className="flex gap-2 items-end flex-1">
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Epic</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Epic</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Compliance</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Compliance</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Enabler</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Enabler</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Security</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Security</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Bug</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Bug</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px]">
                         <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
-                        <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
+                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
                       </div>
                     </div>
                   </div>
