@@ -428,7 +428,7 @@ export default function HomePage() {
                     <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">43%</div>
                     <div className="text-xs text-muted-foreground"><span className="font-semibold" style={{ color: '#cd253d' }}>-11%</span> от планового значения</div>
                   </div>
-                  <div className="border-l border-border"></div>
+                  <div className="border-l border-border my-3"></div>
                   <div className="w-1/2 px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
                     <div className="text-3xl font-semibold" data-testid="metric-value-cost">4,7</div>
