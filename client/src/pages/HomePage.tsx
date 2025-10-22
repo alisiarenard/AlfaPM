@@ -422,15 +422,18 @@ export default function HomePage() {
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex gap-4 mb-6">
-                <div className="w-[20%] h-[110px] border border-border rounded-lg px-4 py-3 flex flex-col justify-between">
-                  <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
-                  <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">43%</div>
-                  <div className="text-xs text-muted-foreground"><span className="font-semibold" style={{ color: '#cd253d' }}>-11%</span> от планового значения</div>
-                </div>
-                <div className="w-[20%] h-[110px] border border-border rounded-lg px-4 py-3 flex flex-col justify-between">
-                  <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
-                  <div className="text-3xl font-semibold" data-testid="metric-value-cost">4,7</div>
-                  <div className="text-xs text-muted-foreground"><span className="font-semibold text-green-600">+1,7</span> от планового значения</div>
+                <div className="w-[40%] h-[110px] border border-border rounded-lg flex">
+                  <div className="w-1/2 px-4 py-3 flex flex-col justify-between">
+                    <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
+                    <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">43%</div>
+                    <div className="text-xs text-muted-foreground"><span className="font-semibold" style={{ color: '#cd253d' }}>-11%</span> от планового значения</div>
+                  </div>
+                  <div className="border-l border-border"></div>
+                  <div className="w-1/2 px-4 py-3 flex flex-col justify-between">
+                    <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
+                    <div className="text-3xl font-semibold" data-testid="metric-value-cost">4,7</div>
+                    <div className="text-xs text-muted-foreground"><span className="font-semibold text-green-600">+1,7</span> от планового значения</div>
+                  </div>
                 </div>
                 <div className="w-[60%] h-[110px] border border-border rounded-lg"></div>
               </div>
