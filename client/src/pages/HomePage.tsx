@@ -509,6 +509,7 @@ export default function HomePage() {
                   </div>
                   <div className="border-l border-border my-3"></div>
                   <div className="w-3/5 px-4 py-3 flex flex-col justify-between">
+                    <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
