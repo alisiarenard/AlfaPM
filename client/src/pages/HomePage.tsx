@@ -543,7 +543,7 @@ export default function HomePage() {
                         <div className="w-full h-12 bg-muted rounded"></div>
                         <div className="text-xs text-muted-foreground">Bug</div>
                       </div>
-                      <div className="flex flex-col items-center gap-1 flex-1">
+                      <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px]">
                         <div className="w-full h-12 bg-muted rounded"></div>
                         <div className="text-xs text-muted-foreground">Др. доработки</div>
                       </div>
