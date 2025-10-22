@@ -524,27 +524,27 @@ export default function HomePage() {
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Enabler</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Security</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Bug</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px]">
-                        <div className="text-[1rem] font-semibold">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
                         <div className="text-[0.70rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
                       </div>
                     </div>
