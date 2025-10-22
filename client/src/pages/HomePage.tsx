@@ -504,8 +504,17 @@ export default function HomePage() {
                   <div className="border-l border-border my-3"></div>
                   <div className="w-1/5 px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
-                    <div className="text-3xl font-semibold" data-testid="metric-value-cost">4,7</div>
-                    <div className="text-[0.70rem] text-muted-foreground"><span className="font-semibold text-green-600">+1,7</span> от планового значения</div>
+                    <div className="flex gap-6 items-end">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">4,7</div>
+                        <div className="text-[0.70rem] text-muted-foreground">план</div>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">0</div>
+                        <div className="text-[0.70rem] text-muted-foreground">факт</div>
+                      </div>
+                    </div>
+                    <div></div>
                   </div>
                   <div className="border-l border-border my-3"></div>
                   <div className="w-3/5 pl-4 py-3 flex flex-col justify-between">
