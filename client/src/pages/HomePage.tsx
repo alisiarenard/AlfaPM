@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder, MoreVertical, Download } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
@@ -421,7 +421,19 @@ export default function HomePage() {
       return response.json();
     },
     enabled: teamIdsArray.length > 0,
+    placeholderData: (previousData) => previousData,
   });
+
+  // Используем ref для хранения последнего успешного значения
+  const lastSuccessfulDataRef = useRef<typeof innovationRateData | null>(null);
+  
+  // Обновляем ref когда получаем новые данные
+  if (innovationRateData && !isIRFetching) {
+    lastSuccessfulDataRef.current = innovationRateData;
+  }
+
+  // Показываем последнее успешное значение во время загрузки
+  const displayIR = innovationRateData || lastSuccessfulDataRef.current;
 
   return (
     <div className="min-h-screen bg-background">
@@ -475,18 +487,18 @@ export default function HomePage() {
                   <div className="w-1/2 px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
                     <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
-                      {innovationRateData ? `${innovationRateData.actualIR}%` : '-'}
+                      {displayIR ? `${displayIR.actualIR}%` : '-'}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {innovationRateData && (
+                      {displayIR && (
                         <span 
                           className="font-semibold" 
-                          style={{ color: innovationRateData.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
+                          style={{ color: displayIR.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
                         >
-                          {innovationRateData.diffFromPlanned >= 0 ? '+' : ''}{innovationRateData.diffFromPlanned}%
+                          {displayIR.diffFromPlanned >= 0 ? '+' : ''}{displayIR.diffFromPlanned}%
                         </span>
                       )}
-                      {innovationRateData && ' от планового значения'}
+                      {displayIR && ' от планового значения'}
                     </div>
                   </div>
                   <div className="border-l border-border my-3"></div>
