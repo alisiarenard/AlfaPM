@@ -489,7 +489,7 @@ export default function HomePage() {
                     <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
                       {displayIR ? `${displayIR.actualIR}%` : '-'}
                     </div>
-                    <div className="text-[0.8rem] text-muted-foreground">
+                    <div className="text-[0.8rem] text-muted-foreground truncate">
                       {displayIR && (
                         <span 
                           className="font-semibold" 
