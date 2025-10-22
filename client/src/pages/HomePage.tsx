@@ -508,7 +508,7 @@ export default function HomePage() {
                     <div className="text-xs text-muted-foreground"><span className="font-semibold text-green-600">+1,7</span> от планового значения</div>
                   </div>
                   <div className="border-l border-border my-3"></div>
-                  <div className="w-3/5 px-4 py-3 flex flex-col justify-between">
+                  <div className="w-3/5 pl-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
                     <div className="flex gap-2 items-end flex-1">
                       <div className="flex flex-col items-center gap-1 flex-1">
