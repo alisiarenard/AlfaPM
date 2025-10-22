@@ -489,7 +489,7 @@ export default function HomePage() {
                     <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
                       {displayIR ? `${displayIR.actualIR}%` : '-'}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-[0.70rem] text-muted-foreground">
                       {displayIR && (
                         <span 
                           className="font-semibold" 
@@ -505,7 +505,7 @@ export default function HomePage() {
                   <div className="w-1/5 px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
                     <div className="text-3xl font-semibold" data-testid="metric-value-cost">4,7</div>
-                    <div className="text-xs text-muted-foreground"><span className="font-semibold text-green-600">+1,7</span> от планового значения</div>
+                    <div className="text-[0.70rem] text-muted-foreground"><span className="font-semibold text-green-600">+1,7</span> от планового значения</div>
                   </div>
                   <div className="border-l border-border my-3"></div>
                   <div className="w-3/5 pl-4 py-3 flex flex-col justify-between">
@@ -513,39 +513,39 @@ export default function HomePage() {
                     <div className="flex gap-2 items-end flex-1">
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Epic</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Epic</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Compliance</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Compliance</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Enabler</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Enabler</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Security</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Security</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Service Desk</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Service Desk</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Postmortem</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Postmortem</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Tech debt</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Tech debt</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Bug</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Bug</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px]">
                         <div className="w-full h-12 bg-muted rounded"></div>
-                        <div className="text-xs text-muted-foreground">Др. доработки</div>
+                        <div className="text-[0.70rem] text-muted-foreground">Др. доработки</div>
                       </div>
                     </div>
                   </div>
