@@ -484,7 +484,7 @@ export default function HomePage() {
                   className="w-full h-[110px] border border-border rounded-lg flex relative transition-opacity duration-300"
                   style={{ opacity: isIRFetching ? 0.5 : 1 }}
                 >
-                  <div className="w-1/5 px-4 py-3 flex flex-col justify-between">
+                  <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
                     <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
                       {displayIR ? `${displayIR.actualIR}%` : '-'}
@@ -502,7 +502,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="border-l border-border my-3"></div>
-                  <div className="w-1/5 px-4 py-3 flex flex-col justify-between">
+                  <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
                     <div className="flex justify-between items-end w-full">
                       <div className="flex flex-col items-center gap-1">
@@ -517,7 +517,7 @@ export default function HomePage() {
                     <div></div>
                   </div>
                   <div className="border-l border-border my-3"></div>
-                  <div className="w-3/5 pl-4 py-3 flex flex-col justify-between">
+                  <div className="w-[66%] pl-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
                     <div className="flex gap-2 items-end flex-1">
                       <div className="flex flex-col items-center gap-1 flex-1">
