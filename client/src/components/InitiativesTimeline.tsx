@@ -444,10 +444,10 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           </tr>
         </thead>
         <tbody>
-          {initiatives.map((initiative) => (
+          {initiatives.map((initiative, index) => (
             <tr
               key={initiative.id}
-              className="border-b border-border hover:bg-muted/50 transition-colors"
+              className={`${index !== initiatives.length - 1 ? 'border-b border-border' : ''} hover:bg-muted/50 transition-colors`}
               data-testid={`row-initiative-${initiative.id}`}
             >
               <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]">
