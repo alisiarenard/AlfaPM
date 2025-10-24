@@ -1283,6 +1283,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/kaiten/sprint-raw/:sprintId", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid sprint ID" 
+        });
+      }
+
+      log(`[Kaiten Raw Sprint] Fetching sprint ${sprintId} from Kaiten`);
+      
+      const sprint = await kaitenClient.getSprint(sprintId);
+      
+      log(`[Kaiten Raw Sprint] Sprint response keys: ${Object.keys(sprint).join(', ')}`);
+      log(`[Kaiten Raw Sprint] Full response:`, JSON.stringify(sprint, null, 2));
+      
+      res.json(sprint);
+    } catch (error) {
+      console.error("GET /api/kaiten/sprint-raw/:sprintId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to fetch sprint from Kaiten" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/test", async (req, res) => {
     try {
       const isConnected = await kaitenClient.testConnection();
