@@ -570,7 +570,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       </table>
 
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
-        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
               Спринт {sprintModalData?.sprintDates || ''}
