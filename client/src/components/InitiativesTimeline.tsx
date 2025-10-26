@@ -651,8 +651,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               })()}
             </div>
             
-            {/* Правый блок - 70% ширины - Инициативы с прогресс-барами */}
-            <div className="w-[70%] flex-shrink-0">
+            {/* Правый блок - Инициативы с прогресс-барами */}
+            <div className="flex-1">
               <div className="space-y-4" data-testid="sprint-initiatives-list">
                 {sprintModalData?.initiatives.map((initiative, idx) => (
                   <div key={idx} className="space-y-2">
