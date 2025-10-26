@@ -661,21 +661,15 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         {initiative.title}
                       </h4>
                       <span className="text-xs text-muted-foreground">
-                        {initiative.sp} SP ({initiative.percent}%)
+                        {initiative.percent}%
                       </span>
                     </div>
-                    <div className="relative w-full h-6 bg-muted rounded-md overflow-hidden">
+                    <div className="relative w-full h-[5px] bg-muted rounded-md overflow-hidden">
                       <div 
-                        className="absolute inset-y-0 left-0 bg-primary transition-all duration-300 rounded-md flex items-center justify-center"
+                        className="absolute inset-y-0 left-0 bg-primary transition-all duration-300 rounded-md"
                         style={{ width: `${initiative.percent}%` }}
                         data-testid={`progress-bar-${idx}`}
-                      >
-                        {initiative.percent > 10 && (
-                          <span className="text-xs font-semibold text-primary-foreground">
-                            {initiative.percent}%
-                          </span>
-                        )}
-                      </div>
+                      />
                     </div>
                   </div>
                 ))}
