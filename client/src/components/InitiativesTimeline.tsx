@@ -576,7 +576,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               Спринт {sprintModalData?.sprintDates || ''}
             </DialogTitle>
           </DialogHeader>
-          <div className="mt-4 flex gap-6">
+          <div className="flex gap-6">
             {/* Левый блок - 30% ширины - Круговая диаграмма */}
             <div className="w-[30%] flex-shrink-0">
               {(() => {
@@ -634,18 +634,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-2 mt-2">
-                      {data.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2 text-xs">
-                          <div 
-                            className="w-3 h-3 rounded-sm flex-shrink-0" 
-                            style={{ backgroundColor: COLORS[index] }}
-                          />
-                          <span className="text-foreground">{item.name}</span>
-                          <span className="text-muted-foreground ml-auto">{item.value} SP</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 );
               })()}
@@ -669,7 +657,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         className="absolute inset-y-0 left-0 transition-all duration-300 rounded-md"
                         style={{ 
                           width: `${initiative.percent}%`,
-                          backgroundColor: '#cd253d'
+                          backgroundColor: initiative.title === 'Поддержка бизнеса' ? 'rgb(131, 137, 149)' : '#cd253d'
                         }}
                         data-testid={`progress-bar-${idx}`}
                       />
