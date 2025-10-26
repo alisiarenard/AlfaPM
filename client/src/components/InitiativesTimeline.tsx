@@ -7,6 +7,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
@@ -25,6 +31,7 @@ interface InitiativeProgress {
   title: string;
   sp: number;
   percent: number;
+  tasks: TaskInSprint[];
 }
 
 interface SprintModalData {
@@ -158,18 +165,20 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       }
     });
     
-    // Собираем инициативы с их SP и процентами
+    // Собираем инициативы с их SP, процентами и задачами
     const initiativesProgress: InitiativeProgress[] = initiatives
       .map(initiative => {
         const sp = getSprintSP(initiative, sprintId);
         if (sp === 0) return null;
         
         const percent = totalSP > 0 ? Math.round((sp / totalSP) * 100) : 0;
+        const tasks = getSprintTasks(initiative, sprintId);
         
         return {
           title: initiative.title,
           sp,
-          percent
+          percent,
+          tasks
         };
       })
       .filter((item): item is InitiativeProgress => item !== null);
@@ -641,35 +650,53 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             
             {/* Правый блок - Инициативы с прогресс-барами */}
             <div className="flex-1">
-              <div className="space-y-4" data-testid="sprint-initiatives-list">
-                {sprintModalData?.initiatives.map((initiative, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-semibold text-foreground" data-testid={`initiative-title-${idx}`}>
-                        {initiative.title}
-                      </h4>
-                      <span className="text-xs text-muted-foreground">
-                        {initiative.percent}%
-                      </span>
-                    </div>
-                    <div className="relative w-full h-[5px] bg-muted rounded-md overflow-hidden">
-                      <div 
-                        className="absolute inset-y-0 left-0 transition-all duration-300 rounded-md"
-                        style={{ 
-                          width: `${initiative.percent}%`,
-                          backgroundColor: initiative.title === 'Поддержка бизнеса' ? 'rgb(131, 137, 149)' : '#cd253d'
-                        }}
-                        data-testid={`progress-bar-${idx}`}
-                      />
-                    </div>
-                  </div>
-                ))}
-                {(!sprintModalData || sprintModalData.initiatives.length === 0) && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Нет данных
-                  </p>
-                )}
-              </div>
+              {sprintModalData && sprintModalData.initiatives.length > 0 ? (
+                <Accordion type="multiple" className="w-full" data-testid="sprint-initiatives-list">
+                  {sprintModalData.initiatives.map((initiative, idx) => (
+                    <AccordionItem key={idx} value={`initiative-${idx}`} className="border-b">
+                      <AccordionTrigger className="hover:no-underline py-3" data-testid={`initiative-accordion-${idx}`}>
+                        <div className="flex-1 space-y-2 pr-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-semibold text-foreground text-left" data-testid={`initiative-title-${idx}`}>
+                              {initiative.title}
+                            </h4>
+                            <span className="text-xs text-muted-foreground">
+                              {initiative.percent}%
+                            </span>
+                          </div>
+                          <div className="relative w-full h-[5px] bg-muted rounded-md overflow-hidden">
+                            <div 
+                              className="absolute inset-y-0 left-0 transition-all duration-300 rounded-md"
+                              style={{ 
+                                width: `${initiative.percent}%`,
+                                backgroundColor: initiative.title === 'Поддержка бизнеса' ? 'rgb(131, 137, 149)' : '#cd253d'
+                              }}
+                              data-testid={`progress-bar-${idx}`}
+                            />
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="space-y-2 pl-4">
+                          {initiative.tasks.map((task, taskIdx) => (
+                            <div key={taskIdx} className="flex items-center justify-between text-sm" data-testid={`task-${idx}-${taskIdx}`}>
+                              <span className="text-foreground">{task.title}</span>
+                              <span className="text-muted-foreground ml-4">{task.size} SP</span>
+                            </div>
+                          ))}
+                          {initiative.tasks.length === 0 && (
+                            <p className="text-xs text-muted-foreground">Нет задач</p>
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Нет данных
+                </p>
+              )}
             </div>
           </div>
         </DialogContent>
