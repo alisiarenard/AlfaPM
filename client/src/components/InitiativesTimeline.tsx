@@ -608,15 +608,15 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 return (
                   <div>
                     <div className="relative">
-                      <ResponsiveContainer width="100%" height={200}>
+                      <ResponsiveContainer width="100%" height={160}>
                         <PieChart>
                           <Pie
                             data={data}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            innerRadius={60}
-                            outerRadius={80}
+                            innerRadius={45}
+                            outerRadius={60}
                             fill="#8884d8"
                             dataKey="value"
                           >
@@ -666,8 +666,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     </div>
                     <div className="relative w-full h-[5px] bg-muted rounded-md overflow-hidden">
                       <div 
-                        className="absolute inset-y-0 left-0 bg-primary transition-all duration-300 rounded-md"
-                        style={{ width: `${initiative.percent}%` }}
+                        className="absolute inset-y-0 left-0 transition-all duration-300 rounded-md"
+                        style={{ 
+                          width: `${initiative.percent}%`,
+                          backgroundColor: '#cd253d'
+                        }}
                         data-testid={`progress-bar-${idx}`}
                       />
                     </div>
