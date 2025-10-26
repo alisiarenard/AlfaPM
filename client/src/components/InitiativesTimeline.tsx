@@ -646,7 +646,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                           <TooltipTrigger asChild>
                             {blockContent}
                           </TooltipTrigger>
-                          <TooltipContent>
+                          <TooltipContent className="z-[200] bg-white dark:bg-white text-foreground">
                             <p className="text-xs">{tooltipText}</p>
                           </TooltipContent>
                         </Tooltip>
