@@ -590,15 +590,15 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     
                     return (
                       <>
-                        <div className="w-6 h-6 flex-shrink-0">
+                        <div className="w-4 h-4 flex-shrink-0">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
                                 data={donutData}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={8}
-                                outerRadius={12}
+                                innerRadius={5}
+                                outerRadius={8}
                                 dataKey="value"
                                 startAngle={90}
                                 endAngle={-270}
@@ -609,7 +609,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
-                        <span className="text-xs text-foreground">
+                        <span className="text-[11px] text-muted-foreground">
                           {formatCompleted(initiative)}
                         </span>
                       </>
