@@ -8,6 +8,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 interface InitiativesTimelineProps {
   initiatives: Initiative[];
@@ -22,7 +23,10 @@ interface InitiativeWithTasks {
 
 interface SprintModalData {
   sprintTitle: string;
+  sprintDates: string;
   initiatives: InitiativeWithTasks[];
+  businessSupportSP: number;
+  otherInitiativesSP: number;
 }
 
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
@@ -133,6 +137,19 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const handleSprintHeaderClick = (sprintId: number) => {
     const sprintInfo = getSprintInfo(sprintId);
     
+    // Рассчитываем распределение SP
+    let businessSupportSP = 0;
+    let otherInitiativesSP = 0;
+    
+    initiatives.forEach(initiative => {
+      const sp = getSprintSP(initiative, sprintId);
+      if (initiative.cardId === 0) {
+        businessSupportSP += sp;
+      } else {
+        otherInitiativesSP += sp;
+      }
+    });
+    
     // Собираем все инициативы с задачами для этого спринта
     const initiativesWithTasks: InitiativeWithTasks[] = initiatives
       .map(initiative => {
@@ -148,9 +165,17 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     
     if (initiativesWithTasks.length === 0) return;
     
+    // Форматируем даты спринта
+    const sprintDates = sprintInfo 
+      ? `${formatDate(sprintInfo.startDate)} - ${formatDate(sprintInfo.actualFinishDate || sprintInfo.finishDate)}`
+      : '';
+    
     setSprintModalData({
       sprintTitle: sprintInfo?.title || `Спринт ${sprintId}`,
-      initiatives: initiativesWithTasks
+      sprintDates,
+      initiatives: initiativesWithTasks,
+      businessSupportSP,
+      otherInitiativesSP
     });
     setSprintModalOpen(true);
   };
@@ -534,53 +559,126 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       </table>
 
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
-              {sprintModalData?.sprintTitle || 'Задачи спринта'}
+              Спринт
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Инициативы и задачи спринта
+              {sprintModalData?.sprintDates || ''}
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-4 space-y-4" data-testid="sprint-initiatives-list">
-            {sprintModalData?.initiatives.map((initiativeData, idx) => (
-              <div key={idx} className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground" data-testid={`initiative-title-${idx}`}>
-                  {initiativeData.initiativeTitle}
-                </h3>
-                <div className="space-y-2 pl-4" data-testid={`tasks-list-${idx}`}>
-                  {initiativeData.tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center gap-3 p-3 rounded-md bg-muted/50 hover:bg-muted transition-colors"
-                      data-testid={`task-item-${task.id}`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate" data-testid={`task-title-${task.id}`}>
-                          {task.title}
-                        </p>
-                        {task.type && (
-                          <p className="text-xs text-muted-foreground mt-0.5" data-testid={`task-type-${task.id}`}>
-                            {task.type}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex-shrink-0 flex items-center justify-center min-w-[40px]">
-                        <span className="text-sm font-semibold text-foreground" data-testid={`task-size-${task.id}`}>
-                          {task.size}
-                        </span>
-                      </div>
+          <div className="mt-4 flex gap-6">
+            {/* Левый блок - 30% ширины - Круговая диаграмма */}
+            <div className="w-[30%] flex-shrink-0">
+              <h3 className="text-sm font-semibold text-foreground mb-4">
+                Распределение SP
+              </h3>
+              {(() => {
+                const businessSP = sprintModalData?.businessSupportSP || 0;
+                const otherSP = sprintModalData?.otherInitiativesSP || 0;
+                const totalSP = businessSP + otherSP;
+                
+                if (totalSP === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Нет данных
+                    </p>
+                  );
+                }
+                
+                const businessPercent = Math.round((businessSP / totalSP) * 100);
+                const otherPercent = Math.round((otherSP / totalSP) * 100);
+                
+                const data = [
+                  { name: 'Поддержка бизнеса', value: businessSP, percent: businessPercent },
+                  { name: 'Остальные инициативы', value: otherSP, percent: otherPercent }
+                ];
+                
+                const COLORS = ['#94a3b8', '#3b82f6'];
+                
+                return (
+                  <div>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={data}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ percent }) => `${percent}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-2 mt-2">
+                      {data.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2 text-xs">
+                          <div 
+                            className="w-3 h-3 rounded-sm flex-shrink-0" 
+                            style={{ backgroundColor: COLORS[index] }}
+                          />
+                          <span className="text-foreground">{item.name}</span>
+                          <span className="text-muted-foreground ml-auto">{item.value} SP</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                );
+              })()}
+            </div>
+            
+            {/* Правый блок - 70% ширины - Список инициатив */}
+            <div className="w-[70%] flex-shrink-0">
+              <h3 className="text-sm font-semibold text-foreground mb-4">
+                Инициативы и задачи
+              </h3>
+              <div className="space-y-4" data-testid="sprint-initiatives-list">
+                {sprintModalData?.initiatives.map((initiativeData, idx) => (
+                  <div key={idx} className="space-y-2">
+                    <h4 className="text-sm font-semibold text-foreground" data-testid={`initiative-title-${idx}`}>
+                      {initiativeData.initiativeTitle}
+                    </h4>
+                    <div className="space-y-2 pl-4" data-testid={`tasks-list-${idx}`}>
+                      {initiativeData.tasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center gap-3 p-3 rounded-md bg-muted/50 hover:bg-muted transition-colors"
+                          data-testid={`task-item-${task.id}`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate" data-testid={`task-title-${task.id}`}>
+                              {task.title}
+                            </p>
+                            {task.type && (
+                              <p className="text-xs text-muted-foreground mt-0.5" data-testid={`task-type-${task.id}`}>
+                                {task.type}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0 flex items-center justify-center min-w-[40px]">
+                            <span className="text-sm font-semibold text-foreground" data-testid={`task-size-${task.id}`}>
+                              {task.size}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {(!sprintModalData || sprintModalData.initiatives.length === 0) && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Нет задач
+                  </p>
+                )}
               </div>
-            ))}
-            {(!sprintModalData || sprintModalData.initiatives.length === 0) && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Нет задач
-              </p>
-            )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
