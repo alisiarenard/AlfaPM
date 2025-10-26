@@ -560,7 +560,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
                       <div
-                        className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${showBlock ? 'hover:opacity-50 transition-opacity duration-200' : ''}`}
+                        className={`h-[30px] w-full flex items-center justify-center ${roundedClass}`}
                         style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
                       >
                         {showBlock && sp > 0 && (
