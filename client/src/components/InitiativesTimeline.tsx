@@ -160,6 +160,22 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return initiative.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
   };
 
+  // Форматировать колонку "Выполнено"
+  const formatCompleted = (initiative: Initiative): string => {
+    const completed = getTotalSP(initiative);
+    const size = initiative.size || 0;
+    
+    if (completed === 0 && size === 0) {
+      return '—';
+    }
+    
+    if (size > 0) {
+      return `${completed} из ${size}`;
+    }
+    
+    return `${completed}`;
+  };
+
   // Получить дату начала инициативы (дата начала первого спринта)
   const getStartSprint = (initiative: Initiative): string => {
     // Для "Поддержка бизнеса" всегда первый день текущего года
@@ -384,17 +400,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 Дата начала
               </span>
             </th>
-            <th className="sticky left-[320px] z-[120] bg-background px-2 py-3 text-left min-w-[80px] max-w-[80px]">
-              <span className="text-xs font-normal tracking-wide text-muted-foreground">
-                Размер
-              </span>
-            </th>
-            <th className="sticky left-[400px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[320px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Выполнено
               </span>
             </th>
-            <th className="sticky left-[500px] z-[120] bg-background px-2 py-3 text-left min-w-[120px] max-w-[120px]">
+            <th className="sticky left-[420px] z-[120] bg-background px-2 py-3 text-left min-w-[120px] max-w-[120px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Вовлечённость
               </span>
@@ -463,17 +474,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   {getStartSprint(initiative)}
                 </span>
               </td>
-              <td className="sticky left-[320px] z-[100] bg-background px-2 py-3 min-w-[80px] max-w-[80px]">
+              <td className="sticky left-[320px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-xs text-foreground">
-                  {initiative.size}
+                  {formatCompleted(initiative)}
                 </span>
               </td>
-              <td className="sticky left-[400px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
-                <span className="text-xs text-foreground">
-                  {getTotalSP(initiative)}
-                </span>
-              </td>
-              <td className="sticky left-[500px] z-[100] bg-background px-2 py-3 min-w-[120px] max-w-[120px]">
+              <td className="sticky left-[420px] z-[100] bg-background px-2 py-3 min-w-[120px] max-w-[120px]">
                 <span className="text-xs text-foreground">
                   {formatInvolvement(initiative.involvement)}
                 </span>
