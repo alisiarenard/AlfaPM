@@ -584,6 +584,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 const businessPercent = Math.round((businessSP / totalSP) * 100);
                 const otherPercent = Math.round((otherSP / totalSP) * 100);
                 
+                // IR - процент инициатив (не включая поддержку бизнеса)
+                const ir = otherPercent;
+                
                 const data = [
                   { name: 'Поддержка бизнеса', value: businessSP, percent: businessPercent },
                   { name: 'Остальные инициативы', value: otherSP, percent: otherPercent }
@@ -593,24 +596,33 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 
                 return (
                   <div>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={data}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ percent }) => `${percent}%`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <div className="relative">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={data}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            innerRadius={60}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {data.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-sm font-semibold text-foreground">
+                            IR - {ir}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     <div className="space-y-2 mt-2">
                       {data.map((item, index) => (
                         <div key={index} className="flex items-center gap-2 text-xs">
