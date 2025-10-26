@@ -679,9 +679,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       <AccordionContent className="pb-4">
                         <div className="space-y-2 pl-8">
                           {initiative.tasks.map((task, taskIdx) => (
-                            <div key={taskIdx} className="flex items-center justify-between text-xs" data-testid={`task-${idx}-${taskIdx}`}>
-                              <span className="text-foreground">{task.title}</span>
-                              <span className="text-muted-foreground ml-4">{task.size} SP</span>
+                            <div key={taskIdx} className="flex items-center justify-between" data-testid={`task-${idx}-${taskIdx}`}>
+                              <span className="text-xs text-foreground">{task.title}</span>
+                              <span className="text-[10px] text-muted-foreground ml-4">{task.size} sp</span>
                             </div>
                           ))}
                           {initiative.tasks.length === 0 && (
