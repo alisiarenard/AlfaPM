@@ -21,10 +21,16 @@ interface InitiativeWithTasks {
   tasks: TaskInSprint[];
 }
 
+interface InitiativeProgress {
+  title: string;
+  sp: number;
+  percent: number;
+}
+
 interface SprintModalData {
   sprintTitle: string;
   sprintDates: string;
-  initiatives: InitiativeWithTasks[];
+  initiatives: InitiativeProgress[];
   businessSupportSP: number;
   otherInitiativesSP: number;
 }
@@ -140,9 +146,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     // Рассчитываем распределение SP
     let businessSupportSP = 0;
     let otherInitiativesSP = 0;
+    let totalSP = 0;
     
     initiatives.forEach(initiative => {
       const sp = getSprintSP(initiative, sprintId);
+      totalSP += sp;
       if (initiative.cardId === 0) {
         businessSupportSP += sp;
       } else {
@@ -150,20 +158,23 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       }
     });
     
-    // Собираем все инициативы с задачами для этого спринта
-    const initiativesWithTasks: InitiativeWithTasks[] = initiatives
+    // Собираем инициативы с их SP и процентами
+    const initiativesProgress: InitiativeProgress[] = initiatives
       .map(initiative => {
-        const tasks = getSprintTasks(initiative, sprintId);
-        if (tasks.length === 0) return null;
+        const sp = getSprintSP(initiative, sprintId);
+        if (sp === 0) return null;
+        
+        const percent = totalSP > 0 ? Math.round((sp / totalSP) * 100) : 0;
         
         return {
-          initiativeTitle: initiative.title,
-          tasks
+          title: initiative.title,
+          sp,
+          percent
         };
       })
-      .filter((item): item is InitiativeWithTasks => item !== null);
+      .filter((item): item is InitiativeProgress => item !== null);
     
-    if (initiativesWithTasks.length === 0) return;
+    if (initiativesProgress.length === 0) return;
     
     // Форматируем даты спринта
     const sprintDates = sprintInfo 
@@ -173,7 +184,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     setSprintModalData({
       sprintTitle: sprintInfo?.title || `Спринт ${sprintId}`,
       sprintDates,
-      initiatives: initiativesWithTasks,
+      initiatives: initiativesProgress,
       businessSupportSP,
       otherInitiativesSP
     });
@@ -640,44 +651,37 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               })()}
             </div>
             
-            {/* Правый блок - 70% ширины - Список инициатив */}
+            {/* Правый блок - 70% ширины - Инициативы с прогресс-барами */}
             <div className="w-[70%] flex-shrink-0">
               <div className="space-y-4" data-testid="sprint-initiatives-list">
-                {sprintModalData?.initiatives.map((initiativeData, idx) => (
+                {sprintModalData?.initiatives.map((initiative, idx) => (
                   <div key={idx} className="space-y-2">
-                    <h4 className="text-sm font-semibold text-foreground" data-testid={`initiative-title-${idx}`}>
-                      {initiativeData.initiativeTitle}
-                    </h4>
-                    <div className="space-y-2 pl-4" data-testid={`tasks-list-${idx}`}>
-                      {initiativeData.tasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="flex items-center gap-3 p-3 rounded-md bg-muted/50 hover:bg-muted transition-colors"
-                          data-testid={`task-item-${task.id}`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate" data-testid={`task-title-${task.id}`}>
-                              {task.title}
-                            </p>
-                            {task.type && (
-                              <p className="text-xs text-muted-foreground mt-0.5" data-testid={`task-type-${task.id}`}>
-                                {task.type}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex-shrink-0 flex items-center justify-center min-w-[40px]">
-                            <span className="text-sm font-semibold text-foreground" data-testid={`task-size-${task.id}`}>
-                              {task.size}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-foreground" data-testid={`initiative-title-${idx}`}>
+                        {initiative.title}
+                      </h4>
+                      <span className="text-xs text-muted-foreground">
+                        {initiative.sp} SP ({initiative.percent}%)
+                      </span>
+                    </div>
+                    <div className="relative w-full h-6 bg-muted rounded-md overflow-hidden">
+                      <div 
+                        className="absolute inset-y-0 left-0 bg-primary transition-all duration-300 rounded-md flex items-center justify-center"
+                        style={{ width: `${initiative.percent}%` }}
+                        data-testid={`progress-bar-${idx}`}
+                      >
+                        {initiative.percent > 10 && (
+                          <span className="text-xs font-semibold text-primary-foreground">
+                            {initiative.percent}%
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
                 {(!sprintModalData || sprintModalData.initiatives.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Нет задач
+                    Нет данных
                   </p>
                 )}
               </div>
