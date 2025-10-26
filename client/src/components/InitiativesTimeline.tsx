@@ -562,18 +562,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
-              Спринт
+              Спринт {sprintModalData?.sprintDates || ''}
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              {sprintModalData?.sprintDates || ''}
-            </DialogDescription>
           </DialogHeader>
           <div className="mt-4 flex gap-6">
             {/* Левый блок - 30% ширины - Круговая диаграмма */}
             <div className="w-[30%] flex-shrink-0">
-              <h3 className="text-sm font-semibold text-foreground mb-4">
-                Распределение SP
-              </h3>
               {(() => {
                 const businessSP = sprintModalData?.businessSupportSP || 0;
                 const otherSP = sprintModalData?.otherInitiativesSP || 0;
@@ -636,9 +630,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             
             {/* Правый блок - 70% ширины - Список инициатив */}
             <div className="w-[70%] flex-shrink-0">
-              <h3 className="text-sm font-semibold text-foreground mb-4">
-                Инициативы и задачи
-              </h3>
               <div className="space-y-4" data-testid="sprint-initiatives-list">
                 {sprintModalData?.initiatives.map((initiativeData, idx) => (
                   <div key={idx} className="space-y-2">
