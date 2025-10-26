@@ -503,7 +503,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           {initiatives.map((initiative, index) => (
             <tr
               key={initiative.id}
-              className={`${index !== initiatives.length - 1 ? 'border-b border-border' : ''} hover:bg-muted/50 transition-colors`}
+              className={`${index !== initiatives.length - 1 ? 'border-b border-border' : ''}`}
               data-testid={`row-initiative-${initiative.id}`}
             >
               <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]">
@@ -560,7 +560,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
                       <div
-                        className={`h-[30px] w-full flex items-center justify-center ${roundedClass}`}
+                        className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${showBlock ? 'hover:opacity-50 transition-opacity duration-200' : ''}`}
                         style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
                       >
                         {showBlock && sp > 0 && (
