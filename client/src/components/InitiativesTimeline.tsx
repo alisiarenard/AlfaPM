@@ -13,6 +13,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
@@ -375,6 +381,66 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return Math.ceil(sprintsNeeded);
   };
 
+  // Получить информацию о датах инициативы для тултипа
+  const getInitiativeTooltip = (initiative: Initiative): string | null => {
+    if (initiative.sprints.length === 0) {
+      return null;
+    }
+
+    // Находим спринты инициативы с их датами для правильного упорядочивания
+    const initiativeSprintsWithDates = initiative.sprints
+      .map(s => {
+        const sprintInfo = getSprintInfo(s.sprint_id);
+        return {
+          sprintId: s.sprint_id,
+          startDate: sprintInfo ? new Date(sprintInfo.startDate) : null,
+          finishDate: sprintInfo ? new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate) : null
+        };
+      })
+      .filter(s => s.startDate !== null)
+      .sort((a, b) => a.startDate!.getTime() - b.startDate!.getTime());
+
+    if (initiativeSprintsWithDates.length === 0) {
+      return null;
+    }
+
+    // Первый спринт с SP (по дате)
+    const firstSprintId = initiativeSprintsWithDates[0].sprintId;
+    const firstSprintIndex = allSprintIds.indexOf(firstSprintId);
+    
+    if (firstSprintIndex === -1) {
+      return null;
+    }
+
+    // Дата начала - дата начала первого спринта
+    const startDate = initiativeSprintsWithDates[0].startDate;
+
+    // Рассчитываем прогнозируемое количество спринтов
+    const forecastedSprintCount = calculateForecastedSprints(initiative);
+    
+    let endDate: Date | null = null;
+    
+    // Если не можем рассчитать прогноз, используем фактические спринты
+    if (forecastedSprintCount === 0) {
+      const lastSprint = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1];
+      endDate = lastSprint.finishDate;
+    } else {
+      // Индекс последнего прогнозируемого спринта
+      const lastForecastedIndex = firstSprintIndex + forecastedSprintCount - 1;
+      if (lastForecastedIndex >= 0 && lastForecastedIndex < allSprintIds.length) {
+        const lastSprintId = allSprintIds[lastForecastedIndex];
+        const lastSprintInfo = getSprintInfo(lastSprintId);
+        endDate = lastSprintInfo ? new Date(lastSprintInfo.actualFinishDate || lastSprintInfo.finishDate) : null;
+      }
+    }
+
+    if (!startDate || !endDate) {
+      return null;
+    }
+
+    return `Дата начала: ${formatDate(startDate.toISOString())}; Дата окончания (с учетом текущей вовлеченности): ${formatDate(endDate.toISOString())}`;
+  };
+
   // Определить, нужно ли показывать цветной блок (прогнозируемый срок)
   const shouldShowColorBlock = (initiative: Initiative, sprintId: number): boolean => {
     if (initiative.sprints.length === 0) {
@@ -431,8 +497,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   };
 
   return (
-    <div className="w-full overflow-x-auto max-w-full custom-scrollbar">
-      <table className="w-full border-collapse">
+    <TooltipProvider>
+      <div className="w-full overflow-x-auto max-w-full custom-scrollbar">
+        <table className="w-full border-collapse">
         <thead className="sticky top-0 z-[110] bg-background">
           <tr className="border-b border-border">
             <th className="sticky left-0 z-[120] bg-background px-2 py-3 text-left min-w-[220px] max-w-[220px]">
@@ -536,6 +603,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 const firstBlockIdx = shownBlocks.length > 0 ? shownBlocks[0].idx : -1;
                 const lastBlockIdx = shownBlocks.length > 0 ? shownBlocks[shownBlocks.length - 1].idx : -1;
 
+                const tooltipText = getInitiativeTooltip(initiative);
+                
                 return allSprintIds.map((sprintId, idx) => {
                   const sp = getSprintSP(initiative, sprintId);
                   const showBlock = shouldShowColorBlock(initiative, sprintId);
@@ -553,22 +622,37 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     }
                   }
 
+                  const blockContent = (
+                    <div
+                      className={`h-[30px] w-full flex items-center justify-center ${roundedClass}`}
+                      style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
+                    >
+                      {showBlock && sp > 0 && (
+                        <span className="text-xs font-semibold text-foreground">
+                          {sp}
+                        </span>
+                      )}
+                    </div>
+                  );
+
                   return (
                     <td
                       key={sprintId}
                       className="p-0 min-w-[100px]"
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
-                      <div
-                        className={`h-[30px] w-full flex items-center justify-center ${roundedClass}`}
-                        style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
-                      >
-                        {showBlock && sp > 0 && (
-                          <span className="text-xs font-semibold text-foreground">
-                            {sp}
-                          </span>
-                        )}
-                      </div>
+                      {showBlock && tooltipText ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {blockContent}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">{tooltipText}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        blockContent
+                      )}
                     </td>
                   );
                 });
@@ -701,6 +785,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
