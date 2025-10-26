@@ -603,7 +603,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   { name: 'Остальные инициативы', value: otherSP, percent: otherPercent }
                 ];
                 
-                const COLORS = ['#94a3b8', '#3b82f6'];
+                const COLORS = ['rgb(131, 137, 149)', '#cd253d'];
                 
                 return (
                   <div>
