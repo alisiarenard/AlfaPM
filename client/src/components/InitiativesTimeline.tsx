@@ -641,7 +641,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       className="p-0 min-w-[100px]"
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
-                      {showBlock && tooltipText ? (
+                      {showBlock && tooltipText && initiative.cardId !== 0 ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             {blockContent}
