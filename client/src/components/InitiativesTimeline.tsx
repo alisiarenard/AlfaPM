@@ -577,9 +577,45 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 </div>
               </td>
               <td className="sticky left-[220px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
-                <span className="text-xs text-foreground">
-                  {formatCompleted(initiative)}
-                </span>
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const completed = getTotalSP(initiative);
+                    const size = initiative.size || 0;
+                    const percentage = size > 0 ? Math.round((completed / size) * 100) : 0;
+                    
+                    const donutData = [
+                      { value: percentage },
+                      { value: 100 - percentage }
+                    ];
+                    
+                    return (
+                      <>
+                        <div className="w-6 h-6 flex-shrink-0">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={donutData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={8}
+                                outerRadius={12}
+                                dataKey="value"
+                                startAngle={90}
+                                endAngle={-270}
+                              >
+                                <Cell fill="#cd253d" />
+                                <Cell fill="hsl(var(--muted))" />
+                              </Pie>
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <span className="text-xs text-foreground">
+                          {formatCompleted(initiative)}
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
               </td>
               <td className="sticky left-[320px] z-[100] bg-background px-2 py-3 min-w-[120px] max-w-[120px]">
                 <span className="text-xs text-foreground">
