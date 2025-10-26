@@ -653,9 +653,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               {sprintModalData && sprintModalData.initiatives.length > 0 ? (
                 <Accordion type="multiple" className="w-full" data-testid="sprint-initiatives-list">
                   {sprintModalData.initiatives.map((initiative, idx) => (
-                    <AccordionItem key={idx} value={`initiative-${idx}`} className="border-b">
-                      <AccordionTrigger className="hover:no-underline py-3" data-testid={`initiative-accordion-${idx}`}>
-                        <div className="flex-1 space-y-2 pr-4">
+                    <AccordionItem key={idx} value={`initiative-${idx}`} className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-3 flex-row-reverse justify-end gap-3" data-testid={`initiative-accordion-${idx}`}>
+                        <div className="flex-1 space-y-2">
                           <div className="flex items-center justify-between">
                             <h4 className="text-sm font-semibold text-foreground text-left" data-testid={`initiative-title-${idx}`}>
                               {initiative.title}
@@ -677,9 +677,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="pb-4">
-                        <div className="space-y-2 pl-4">
+                        <div className="space-y-2 pl-8">
                           {initiative.tasks.map((task, taskIdx) => (
-                            <div key={taskIdx} className="flex items-center justify-between text-sm" data-testid={`task-${idx}-${taskIdx}`}>
+                            <div key={taskIdx} className="flex items-center justify-between text-xs" data-testid={`task-${idx}-${taskIdx}`}>
                               <span className="text-foreground">{task.title}</span>
                               <span className="text-muted-foreground ml-4">{task.size} SP</span>
                             </div>
