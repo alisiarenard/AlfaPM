@@ -240,6 +240,26 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+
+  /* Убираем синий бордер при фокусе */
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus,
+  [role="button"]:focus,
+  [role="combobox"]:focus,
+  [role="listbox"]:focus,
+  [role="option"]:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    ring: none !important;
+  }
 }
 
 /**
