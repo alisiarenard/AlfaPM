@@ -381,6 +381,88 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return Math.ceil(sprintsNeeded);
   };
 
+  // Рассчитать плановое количество спринтов для инициативы
+  const calculatePlannedSprints = (initiative: Initiative): number => {
+    // Проверяем корректность входных данных
+    if (!initiative.plannedInvolvement || initiative.plannedInvolvement === 0) {
+      return 0;
+    }
+    
+    if (!team.velocity || team.velocity === 0) {
+      return 0;
+    }
+    
+    if (initiative.size <= 0) {
+      return 0;
+    }
+    
+    // Формула: ceil(Размер инициативы / (velocity * plannedInvolvement / 100))
+    const sprintsNeeded = initiative.size / (team.velocity * (initiative.plannedInvolvement / 100));
+    
+    // Защита от некорректных результатов
+    if (!isFinite(sprintsNeeded) || sprintsNeeded <= 0) {
+      return 0;
+    }
+    
+    return Math.ceil(sprintsNeeded);
+  };
+
+  // Определить, должен ли спринт иметь верхний/нижний border (плановая длительность)
+  const getPlannedBorders = (initiative: Initiative, sprintId: number): { top: boolean; bottom: boolean } => {
+    // Для "Поддержки бизнеса" и инициатив в очереди без спринтов - нет borders
+    if (initiative.cardId === 0 || initiative.sprints.length === 0) {
+      return { top: false, bottom: false };
+    }
+
+    // Находим спринты инициативы с их датами для правильного упорядочивания
+    const initiativeSprintsWithDates = initiative.sprints
+      .map(s => {
+        const sprintInfo = getSprintInfo(s.sprint_id);
+        return {
+          sprintId: s.sprint_id,
+          startDate: sprintInfo ? new Date(sprintInfo.startDate) : null
+        };
+      })
+      .filter(s => s.startDate !== null)
+      .sort((a, b) => a.startDate!.getTime() - b.startDate!.getTime());
+
+    if (initiativeSprintsWithDates.length === 0) {
+      return { top: false, bottom: false };
+    }
+
+    // Первый спринт с SP (по дате)
+    const firstSprintId = initiativeSprintsWithDates[0].sprintId;
+    
+    // Находим индекс первого спринта в общем списке
+    const firstSprintIndex = allSprintIds.indexOf(firstSprintId);
+    if (firstSprintIndex === -1) {
+      return { top: false, bottom: false };
+    }
+
+    // Рассчитываем плановое количество спринтов
+    const plannedSprintCount = calculatePlannedSprints(initiative);
+    
+    // Если не можем рассчитать план, нет borders
+    if (plannedSprintCount === 0) {
+      return { top: false, bottom: false };
+    }
+
+    // Индекс последнего планового спринта
+    const lastPlannedIndex = firstSprintIndex + plannedSprintCount - 1;
+    const currentSprintIndex = allSprintIds.indexOf(sprintId);
+
+    // Проверяем, находится ли текущий спринт в плановом диапазоне
+    const isInPlannedRange = currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastPlannedIndex;
+    
+    if (!isInPlannedRange) {
+      return { top: false, bottom: false };
+    }
+
+    // Верхний border - для всех спринтов в плановом диапазоне
+    // Нижний border - для всех спринтов в плановом диапазоне
+    return { top: true, bottom: true };
+  };
+
   // Получить информацию о датах инициативы для тултипа
   const getInitiativeTooltip = (initiative: Initiative): string | null => {
     if (initiative.sprints.length === 0) {
@@ -646,6 +728,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   const showBlock = shouldShowColorBlock(initiative, sprintId);
                   const isFirst = idx === firstBlockIdx;
                   const isLast = idx === lastBlockIdx;
+                  const plannedBorders = getPlannedBorders(initiative, sprintId);
 
                   let roundedClass = '';
                   if (showBlock) {
@@ -658,9 +741,18 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     }
                   }
 
+                  // Стили для плановых borders
+                  let borderClasses = '';
+                  if (showBlock && plannedBorders.top) {
+                    borderClasses += 'border-t-2 border-t-primary ';
+                  }
+                  if (showBlock && plannedBorders.bottom) {
+                    borderClasses += 'border-b-2 border-b-primary';
+                  }
+
                   const blockContent = (
                     <div
-                      className={`h-[30px] w-full flex items-center justify-center ${roundedClass}`}
+                      className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${borderClasses}`}
                       style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
                     >
                       {showBlock && sp > 0 && (
