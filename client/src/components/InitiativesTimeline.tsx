@@ -407,11 +407,18 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return Math.ceil(sprintsNeeded);
   };
 
-  // Определить, должен ли спринт иметь верхний/нижний border (плановая длительность)
-  const getPlannedBorders = (initiative: Initiative, sprintId: number): { top: boolean; bottom: boolean } => {
+  // Определить, должен ли спринт иметь плановые borders
+  const getPlannedBorders = (initiative: Initiative, sprintId: number): { 
+    top: boolean; 
+    bottom: boolean; 
+    left: boolean; 
+    right: boolean;
+    isFirst: boolean;
+    isLast: boolean;
+  } => {
     // Для "Поддержки бизнеса" и инициатив в очереди без спринтов - нет borders
     if (initiative.cardId === 0 || initiative.sprints.length === 0) {
-      return { top: false, bottom: false };
+      return { top: false, bottom: false, left: false, right: false, isFirst: false, isLast: false };
     }
 
     // Находим спринты инициативы с их датами для правильного упорядочивания
@@ -427,7 +434,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       .sort((a, b) => a.startDate!.getTime() - b.startDate!.getTime());
 
     if (initiativeSprintsWithDates.length === 0) {
-      return { top: false, bottom: false };
+      return { top: false, bottom: false, left: false, right: false, isFirst: false, isLast: false };
     }
 
     // Первый спринт с SP (по дате)
@@ -436,7 +443,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     // Находим индекс первого спринта в общем списке
     const firstSprintIndex = allSprintIds.indexOf(firstSprintId);
     if (firstSprintIndex === -1) {
-      return { top: false, bottom: false };
+      return { top: false, bottom: false, left: false, right: false, isFirst: false, isLast: false };
     }
 
     // Рассчитываем плановое количество спринтов
@@ -444,7 +451,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     
     // Если не можем рассчитать план, нет borders
     if (plannedSprintCount === 0) {
-      return { top: false, bottom: false };
+      return { top: false, bottom: false, left: false, right: false, isFirst: false, isLast: false };
     }
 
     // Индекс последнего планового спринта
@@ -455,12 +462,23 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     const isInPlannedRange = currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastPlannedIndex;
     
     if (!isInPlannedRange) {
-      return { top: false, bottom: false };
+      return { top: false, bottom: false, left: false, right: false, isFirst: false, isLast: false };
     }
 
-    // Верхний border - для всех спринтов в плановом диапазоне
-    // Нижний border - для всех спринтов в плановом диапазоне
-    return { top: true, bottom: true };
+    const isFirst = currentSprintIndex === firstSprintIndex;
+    const isLast = currentSprintIndex === lastPlannedIndex;
+
+    // Все спринты в диапазоне имеют верхний и нижний borders
+    // Левый border только у первого
+    // Правый border только у последнего
+    return { 
+      top: true, 
+      bottom: true, 
+      left: isFirst, 
+      right: isLast,
+      isFirst,
+      isLast
+    };
   };
 
   // Получить информацию о датах инициативы для тултипа
@@ -742,18 +760,33 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   }
 
                   // Стили для плановых borders
-                  let borderClasses = '';
-                  if (showBlock && plannedBorders.top) {
-                    borderClasses += 'border-t-2 border-t-primary ';
+                  let plannedBorderClasses = '';
+                  if (showBlock && (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right)) {
+                    if (plannedBorders.top) plannedBorderClasses += 'border-t ';
+                    if (plannedBorders.bottom) plannedBorderClasses += 'border-b ';
+                    if (plannedBorders.left) plannedBorderClasses += 'border-l ';
+                    if (plannedBorders.right) plannedBorderClasses += 'border-r ';
                   }
-                  if (showBlock && plannedBorders.bottom) {
-                    borderClasses += 'border-b-2 border-b-primary';
+
+                  // Радиус для плановых borders
+                  let plannedRadiusClass = '';
+                  if (showBlock && (plannedBorders.isFirst || plannedBorders.isLast)) {
+                    if (plannedBorders.isFirst && plannedBorders.isLast) {
+                      plannedRadiusClass = 'rounded-[6px]';
+                    } else if (plannedBorders.isFirst) {
+                      plannedRadiusClass = 'rounded-l-[6px]';
+                    } else if (plannedBorders.isLast) {
+                      plannedRadiusClass = 'rounded-r-[6px]';
+                    }
                   }
 
                   const blockContent = (
                     <div
-                      className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${borderClasses}`}
-                      style={{ backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent' }}
+                      className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${plannedBorderClasses} ${plannedRadiusClass}`}
+                      style={{ 
+                        backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent',
+                        borderColor: (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right) ? '#cd253d' : undefined
+                      }}
                     >
                       {showBlock && sp > 0 && (
                         <span className="text-xs font-semibold text-foreground">
