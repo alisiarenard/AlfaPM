@@ -514,7 +514,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             </th>
             <th className="sticky left-[320px] z-[120] bg-background px-2 py-3 text-left min-w-[120px] max-w-[120px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
-                Вовлечённость
+                Фокус (факт)
               </span>
             </th>
             {allSprintIds.map((sprintId) => {
