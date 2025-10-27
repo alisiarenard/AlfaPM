@@ -768,16 +768,10 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     if (plannedBorders.right) plannedBorderClasses += 'border-r ';
                   }
 
-                  // Радиус для плановых borders
+                  // Радиус для плановых borders (только слева)
                   let plannedRadiusClass = '';
-                  if (showBlock && (plannedBorders.isFirst || plannedBorders.isLast)) {
-                    if (plannedBorders.isFirst && plannedBorders.isLast) {
-                      plannedRadiusClass = 'rounded-[6px]';
-                    } else if (plannedBorders.isFirst) {
-                      plannedRadiusClass = 'rounded-l-[6px]';
-                    } else if (plannedBorders.isLast) {
-                      plannedRadiusClass = 'rounded-r-[6px]';
-                    }
+                  if (showBlock && plannedBorders.isFirst) {
+                    plannedRadiusClass = 'rounded-l-[6px]';
                   }
 
                   const blockContent = (
