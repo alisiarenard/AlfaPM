@@ -482,7 +482,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   };
 
   // Получить информацию о датах инициативы для тултипа
-  const getInitiativeTooltip = (initiative: Initiative): string | null => {
+  const getInitiativeTooltip = (initiative: Initiative): { startDate: string; plannedEndDate: string; actualEndDate: string } | null => {
     if (initiative.sprints.length === 0) {
       return null;
     }
@@ -515,30 +515,47 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     // Дата начала - дата начала первого спринта
     const startDate = initiativeSprintsWithDates[0].startDate;
 
-    // Рассчитываем прогнозируемое количество спринтов
-    const forecastedSprintCount = calculateForecastedSprints(initiative);
+    // Рассчитываем плановое количество спринтов
+    const plannedSprintCount = calculatePlannedSprints(initiative);
+    let plannedEndDate: Date | null = null;
     
-    let endDate: Date | null = null;
+    if (plannedSprintCount > 0) {
+      // Индекс последнего планового спринта
+      const lastPlannedIndex = firstSprintIndex + plannedSprintCount - 1;
+      if (lastPlannedIndex >= 0 && lastPlannedIndex < allSprintIds.length) {
+        const lastPlannedSprintId = allSprintIds[lastPlannedIndex];
+        const lastPlannedSprintInfo = getSprintInfo(lastPlannedSprintId);
+        plannedEndDate = lastPlannedSprintInfo ? new Date(lastPlannedSprintInfo.actualFinishDate || lastPlannedSprintInfo.finishDate) : null;
+      }
+    }
+
+    // Рассчитываем прогнозируемое количество спринтов (фактическая дата)
+    const forecastedSprintCount = calculateForecastedSprints(initiative);
+    let actualEndDate: Date | null = null;
     
     // Если не можем рассчитать прогноз, используем фактические спринты
     if (forecastedSprintCount === 0) {
       const lastSprint = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1];
-      endDate = lastSprint.finishDate;
+      actualEndDate = lastSprint.finishDate;
     } else {
       // Индекс последнего прогнозируемого спринта
       const lastForecastedIndex = firstSprintIndex + forecastedSprintCount - 1;
       if (lastForecastedIndex >= 0 && lastForecastedIndex < allSprintIds.length) {
         const lastSprintId = allSprintIds[lastForecastedIndex];
         const lastSprintInfo = getSprintInfo(lastSprintId);
-        endDate = lastSprintInfo ? new Date(lastSprintInfo.actualFinishDate || lastSprintInfo.finishDate) : null;
+        actualEndDate = lastSprintInfo ? new Date(lastSprintInfo.actualFinishDate || lastSprintInfo.finishDate) : null;
       }
     }
 
-    if (!startDate || !endDate) {
+    if (!startDate || !actualEndDate) {
       return null;
     }
 
-    return `Дата начала: ${formatDate(startDate.toISOString())}; Дата окончания (с учетом текущей вовлеченности): ${formatDate(endDate.toISOString())}`;
+    return {
+      startDate: formatDate(startDate.toISOString()),
+      plannedEndDate: plannedEndDate ? formatDate(plannedEndDate.toISOString()) : '—',
+      actualEndDate: formatDate(actualEndDate.toISOString())
+    };
   };
 
   // Определить, нужно ли показывать цветной блок (прогнозируемый срок)
@@ -739,7 +756,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 const firstBlockIdx = shownBlocks.length > 0 ? shownBlocks[0].idx : -1;
                 const lastBlockIdx = shownBlocks.length > 0 ? shownBlocks[shownBlocks.length - 1].idx : -1;
 
-                const tooltipText = getInitiativeTooltip(initiative);
+                const tooltipData = getInitiativeTooltip(initiative);
                 
                 return allSprintIds.map((sprintId, idx) => {
                   const sp = getSprintSP(initiative, sprintId);
@@ -796,13 +813,17 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       className="p-0 min-w-[100px]"
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
-                      {showBlock && tooltipText && initiative.cardId !== 0 ? (
+                      {showBlock && tooltipData && initiative.cardId !== 0 ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             {blockContent}
                           </TooltipTrigger>
                           <TooltipContent className="z-[200] bg-white dark:bg-white text-foreground">
-                            <p className="text-xs">{tooltipText}</p>
+                            <div className="text-xs space-y-1">
+                              <div>Дата начала: {tooltipData.startDate}</div>
+                              <div>Дата окончания(план): {tooltipData.plannedEndDate}</div>
+                              <div>Дата окончания(факт): {tooltipData.actualEndDate}</div>
+                            </div>
                           </TooltipContent>
                         </Tooltip>
                       ) : (
