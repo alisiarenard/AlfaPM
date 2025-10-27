@@ -514,6 +514,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             </th>
             <th className="sticky left-[320px] z-[120] bg-background px-2 py-3 text-left min-w-[120px] max-w-[120px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
+                Фокус(план)
+              </span>
+            </th>
+            <th className="sticky left-[440px] z-[120] bg-background px-2 py-3 text-left min-w-[120px] max-w-[120px]">
+              <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Фокус (факт)
               </span>
             </th>
@@ -618,6 +623,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 </div>
               </td>
               <td className="sticky left-[320px] z-[100] bg-background px-2 py-3 min-w-[120px] max-w-[120px]">
+                <span className="text-xs text-foreground">
+                  {formatInvolvement(initiative.plannedInvolvement)}
+                </span>
+              </td>
+              <td className="sticky left-[440px] z-[100] bg-background px-2 py-3 min-w-[120px] max-w-[120px]">
                 <span className="text-xs text-foreground">
                   {formatInvolvement(initiative.involvement)}
                 </span>

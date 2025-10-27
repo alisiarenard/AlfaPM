@@ -20,7 +20,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 - **Multi-Team Support:** Departments and teams are fetched from the database and displayed in separate tabs using Shadcn Tabs. Each tab independently fetches and displays initiatives and team metrics.
 - **Team Selection Menu:** Dropdown menu (triggered by three-dot button in top-right corner of metrics card) displays all teams from selected department with checkboxes for multi-selection. All teams are checked by default. Menu has white background (bg-white). Includes "Скачать отчет" (Download Report) option separated by horizontal divider. State automatically resets to all-checked when department changes. Uses DropdownMenuCheckboxItem for full accessibility (keyboard navigation, screen reader support, aria attributes).
 - **Metrics Card:** Unified full-width card displays three metric sections: Innovation Rate (20% width), Value/Cost (20% width), and reserved section (60% width), separated by vertical borders with top/bottom margins (my-3) for visual spacing. Contains team selection menu button (three dots) in top-right corner (position: absolute). During metric recalculation, card smoothly transitions to 50% opacity (300ms) while preserving previous metric values (using useRef to store last successful data), providing clear loading feedback without content shift or value disappearance.
-- **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details (name with status icon, start date, size, completed, involvement) and scrollable sprint columns with story points and colored status blocks.
+- **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details (name with status icon, completed with progress donut, planned focus, actual focus) and scrollable sprint columns with story points and colored status blocks.
   - **Status Icons:** Material Design outline icons indicate initiative status: Play Circle (in-progress, red), Check Circle (completed, green), Pause Circle (queued, light gray). "Поддержка бизнеса" initiatives display gray icons for all statuses.
   - **Forecasted Color Blocks:** Blocks stretch across predicted sprint count using formula `ceil(Size / (Velocity × Involvement%))`, starting from first sprint with SP. Includes guards for zero/undefined velocity, involvement, and size values. Falls back to historical span when forecasting is impossible.
   - **Business Support Special Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only in sprints with factual SP > 0, without forecasting.
@@ -68,7 +68,7 @@ PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neo
 - `users`: For future authentication.
 - `departments`: Department names.
 - `teams`: Team metadata (ID, name, velocity, sprint duration, department ID, board IDs).
-- `initiatives`: Initiative details (ID, card ID, title, state, condition, size, board ID).
+- `initiatives`: Initiative details (ID, card ID, title, state, condition, size, board ID, planned_involvement).
 - `tasks`: Task details (ID, card ID, title, created, state, size, condition, board ID, sprint_id, type, completed_at, init_card_id).
 - `sprints`: Sprint details (sprint_id (PK), board_id, title, velocity, start_date, finish_date, actual_finish_date).
 - Schema is defined in `shared/schema.ts` for type safety. Drizzle-kit manages migrations.

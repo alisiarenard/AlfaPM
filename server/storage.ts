@@ -127,7 +127,7 @@ export class MemStorage implements IStorage {
 
   async createInitiative(initiative: InsertInitiative): Promise<InitiativeRow> {
     const id = randomUUID();
-    return { ...initiative, id, type: initiative.type ?? null };
+    return { ...initiative, id, type: initiative.type ?? null, plannedInvolvement: initiative.plannedInvolvement ?? null };
   }
 
   async updateInitiative(id: string, initiative: Partial<InsertInitiative>): Promise<InitiativeRow | undefined> {
@@ -148,7 +148,7 @@ export class MemStorage implements IStorage {
     type?: string | null
   ): Promise<InitiativeRow> {
     const id = randomUUID();
-    return { id, cardId, title, state, condition, size, initBoardId: boardId, type: type ?? null };
+    return { id, cardId, title, state, condition, size, initBoardId: boardId, type: type ?? null, plannedInvolvement: null };
   }
 
   async getAllTasks(): Promise<TaskRow[]> {

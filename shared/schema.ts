@@ -15,6 +15,7 @@ export const initiatives = pgTable("initiatives", {
   size: integer("size").notNull(),
   initBoardId: integer("init_board_id").notNull(),
   type: varchar("type"),
+  plannedInvolvement: integer("planned_involvement"),
 });
 
 export const insertInitiativeSchema = createInsertSchema(initiatives).omit({ id: true });
@@ -121,6 +122,7 @@ export interface Initiative {
   type: string | null;
   sprints: SprintAllocation[];
   involvement: number | null;
+  plannedInvolvement: number | null;
 }
 
 export interface Team {
