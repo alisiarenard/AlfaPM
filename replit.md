@@ -39,7 +39,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
   - **Involvement:** Calculated on backend as (initiative SP / total SP of all initiatives) * 100 for a specific period. Period starts from the first sprint with non-zero SP for the initiative and ends at: (a) nearest sprint to current date if initiative is inProgress, or (b) last sprint with SP if initiative is done. Uses sprint dates (not IDs) for correct chronological ordering.
   - **Sprint Header IR (Investment Ratio):** Percentage of SP excluding "Business Support" category
   - **Forecasted Sprint Count:** `ceil(initiative size / (team velocity × involvement% / 100))` with validation for positive, finite values
-  - Automatic sprint generation based on team velocity and sprint duration
+  - **Automatic Sprint Generation:** Sprints are automatically generated for 6 months forward from the current sprint's start date. If no current sprint exists, generates from today's date. Uses team velocity and sprint duration for calculation.
 
 ### Backend Architecture
 The backend uses Express.js with TypeScript and an ESM module system, providing a RESTful API under the `/api` prefix.

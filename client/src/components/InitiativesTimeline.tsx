@@ -58,14 +58,35 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return dateA - dateB;
   });
   
-  // Автогенерация спринтов до конца года
+  // Автогенерация спринтов на 6 месяцев вперед от текущего спринта
   const generateSprintsUntilEndOfYear = (): SprintRow[] => {
     if (!team.sprintDuration || sortedSprints.length === 0) {
       return sortedSprints;
     }
 
-    const currentYear = new Date().getFullYear();
-    const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999); // 31 декабря текущего года
+    const now = new Date();
+    
+    // Найти текущий спринт (спринт, который содержит сегодняшнюю дату)
+    const currentSprint = sortedSprints.find(sprint => {
+      const start = new Date(sprint.startDate);
+      const end = new Date(sprint.actualFinishDate || sprint.finishDate);
+      return now >= start && now <= end;
+    });
+    
+    // Определяем точку отсчета для 6 месяцев вперед
+    let referenceDate: Date;
+    if (currentSprint) {
+      // Если нашли текущий спринт, берем его дату начала
+      referenceDate = new Date(currentSprint.startDate);
+    } else {
+      // Если текущего спринта нет, берем текущую дату
+      referenceDate = now;
+    }
+    
+    // Вычисляем дату 6 месяцев вперед
+    const sixMonthsLater = new Date(referenceDate);
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+    sixMonthsLater.setHours(23, 59, 59, 999);
     
     const allSprints = [...sortedSprints];
     const lastSprint = sortedSprints[sortedSprints.length - 1];
@@ -77,15 +98,15 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     let sprintCounter = maxExistingId + 1;
     let generatedCounter = 1;
     
-    // Генерируем спринты до конца года
-    while (nextStartDate < endOfYear) {
+    // Генерируем спринты на 6 месяцев вперед от текущего спринта
+    while (nextStartDate < sixMonthsLater) {
       const finishDate = new Date(nextStartDate);
       finishDate.setDate(finishDate.getDate() + team.sprintDuration - 1);
       finishDate.setHours(23, 59, 59, 999);
       
-      // Если финиш спринта выходит за пределы года, обрезаем до конца года
-      if (finishDate > endOfYear) {
-        finishDate.setTime(endOfYear.getTime());
+      // Если финиш спринта выходит за пределы 6 месяцев, обрезаем
+      if (finishDate > sixMonthsLater) {
+        finishDate.setTime(sixMonthsLater.getTime());
       }
       
       allSprints.push({
