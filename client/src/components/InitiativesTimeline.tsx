@@ -338,11 +338,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const getStatusColor = (initiative: Initiative): string => {
     // Поддержка бизнеса - серый
     if (initiative.cardId === 0) {
-      return "hsl(220 8% 55% / 0.2)";
+      return "hsl(220 8% 55% / 0.1)";
     }
     
-    // Остальные инициативы - красный #cd253d с 20% прозрачности
-    return "rgba(205, 37, 61, 0.2)";
+    // Остальные инициативы - красный #cd253d с 10% прозрачности
+    return "rgba(205, 37, 61, 0.1)";
   };
 
   // Получить иконку статуса инициативы
