@@ -75,11 +75,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       // Сбрасываем состояние редактирования после успешного сохранения
       setEditingInitiativeId(null);
       setEditValue("");
-      setSavingInitiativeId(null);
       // Инвалидируем кэш, используя тот же queryKey, что и в HomePage
       queryClient.invalidateQueries({ 
         queryKey: ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId] 
       });
+      // Сбрасываем opacity с задержкой, чтобы новые данные успели загрузиться
+      setTimeout(() => {
+        setSavingInitiativeId(null);
+      }, 500);
     },
   });
 
