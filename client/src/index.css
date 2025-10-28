@@ -408,3 +408,15 @@
 .custom-scrollbar::-webkit-scrollbar-button {
   display: none;
 }
+
+/* Remove arrows from number inputs */
+.no-arrows::-webkit-inner-spin-button,
+.no-arrows::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-arrows[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

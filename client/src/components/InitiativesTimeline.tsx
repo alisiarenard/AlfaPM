@@ -829,7 +829,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 data-testid={`cell-planned-involvement-${initiative.id}`}
               >
                 <div 
-                  className="px-2 py-3 cursor-pointer hover-elevate"
+                  className="px-2 py-3 cursor-pointer"
                   onClick={() => editingInitiativeId !== initiative.id && startEditing(initiative.id, initiative.plannedInvolvement)}
                 >
                   {editingInitiativeId === initiative.id ? (
@@ -849,7 +849,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                           cancelEdit();
                         }
                       }}
-                      className="w-full text-xs text-foreground bg-transparent border-none p-0 m-0"
+                      className="w-full text-xs text-foreground bg-transparent border-none p-0 m-0 no-arrows"
                       style={{ outline: 'none' }}
                       data-testid={`input-planned-involvement-${initiative.id}`}
                     />
