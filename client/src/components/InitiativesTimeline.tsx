@@ -345,17 +345,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return "rgba(205, 37, 61, 0.2)";
   };
 
-  // Получить цвет границы для цветного блока
-  const getBorderColor = (initiative: Initiative): string => {
-    // Поддержка бизнеса - серый
-    if (initiative.cardId === 0) {
-      return "hsl(220 8% 55%)";
-    }
-    
-    // Остальные инициативы - красный #cd253d
-    return "#cd253d";
-  };
-
   // Получить иконку статуса инициативы
   const getStatusIcon = (initiative: Initiative) => {
     const iconClass = "w-5 h-5 flex-shrink-0";
@@ -808,13 +797,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     }
                   }
 
-                  // Стили для плановых borders
+                  // Стили для плановых borders (2px с opacity 0.5)
                   let plannedBorderClasses = '';
                   if (showBlock && (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right)) {
-                    if (plannedBorders.top) plannedBorderClasses += 'border-t ';
-                    if (plannedBorders.bottom) plannedBorderClasses += 'border-b ';
-                    if (plannedBorders.left) plannedBorderClasses += 'border-l ';
-                    if (plannedBorders.right) plannedBorderClasses += 'border-r ';
+                    if (plannedBorders.top) plannedBorderClasses += 'border-t-2 ';
+                    if (plannedBorders.bottom) plannedBorderClasses += 'border-b-2 ';
+                    if (plannedBorders.left) plannedBorderClasses += 'border-l-2 ';
+                    if (plannedBorders.right) plannedBorderClasses += 'border-r-2 ';
                   }
 
                   // Радиус для плановых borders (только слева)
@@ -822,21 +811,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   if (showBlock && plannedBorders.isFirst) {
                     plannedRadiusClass = 'rounded-l-[6px]';
                   }
-
-                  // Определяем, какие бордеры нужны
-                  const borderColor = getBorderColor(initiative);
-                  const hasBorder = showBlock && !(plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right);
                   
                   const blockContent = (
                     <div
                       className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${plannedBorderClasses} ${plannedRadiusClass}`}
                       style={{ 
                         backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent',
-                        borderTop: showBlock && hasBorder ? `2px solid ${borderColor}` : undefined,
-                        borderBottom: showBlock && hasBorder ? `2px solid ${borderColor}` : undefined,
-                        borderLeft: showBlock && hasBorder && isFirst ? `2px solid ${borderColor}` : undefined,
-                        borderRight: showBlock && hasBorder && isLast ? `2px solid ${borderColor}` : undefined,
-                        borderColor: (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right) ? '#cd253d' : undefined
+                        borderColor: (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right) ? 'rgba(205, 37, 61, 0.5)' : undefined
                       }}
                     >
                       {showBlock && sp > 0 && (
