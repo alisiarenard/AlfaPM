@@ -866,7 +866,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   ) : (
                     <span className="text-xs text-foreground">
                       {savingInitiativeId === initiative.id && pendingValue 
-                        ? `${parseFloat(pendingValue).toFixed(1)}%`
+                        ? `${Math.round(parseFloat(pendingValue))}%`
                         : formatInvolvement(initiative.plannedInvolvement)
                       }
                     </span>
