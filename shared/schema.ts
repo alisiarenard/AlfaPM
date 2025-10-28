@@ -131,6 +131,8 @@ export interface Team {
   name: string;
   velocity: number;
   sprintDuration?: number;
+  initBoardId: number;
+  sprintBoardId: number;
 }
 
 export interface TeamData {
