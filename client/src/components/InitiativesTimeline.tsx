@@ -345,6 +345,17 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return "rgba(205, 37, 61, 0.2)";
   };
 
+  // Получить цвет границы для цветного блока (тот же цвет, но с opacity 0.5)
+  const getBorderColor = (initiative: Initiative): string => {
+    // Поддержка бизнеса - серый с opacity 0.5
+    if (initiative.cardId === 0) {
+      return "hsl(220 8% 55% / 0.5)";
+    }
+    
+    // Остальные инициативы - красный #cd253d с opacity 0.5
+    return "rgba(205, 37, 61, 0.5)";
+  };
+
   // Получить иконку статуса инициативы
   const getStatusIcon = (initiative: Initiative) => {
     const iconClass = "w-5 h-5 flex-shrink-0";
@@ -817,7 +828,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${plannedBorderClasses} ${plannedRadiusClass}`}
                       style={{ 
                         backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent',
-                        borderColor: (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right) ? '#cd253d' : undefined
+                        borderWidth: showBlock ? '2px' : undefined,
+                        borderStyle: showBlock ? 'solid' : undefined,
+                        borderColor: showBlock 
+                          ? (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right) 
+                            ? '#cd253d' 
+                            : getBorderColor(initiative)
+                          : undefined
                       }}
                     >
                       {showBlock && sp > 0 && (
