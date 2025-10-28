@@ -55,6 +55,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
   const [editingInitiativeId, setEditingInitiativeId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  const [savingInitiativeId, setSavingInitiativeId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Mutation для обновления planned_involvement
@@ -74,6 +75,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       // Сбрасываем состояние редактирования после успешного сохранения
       setEditingInitiativeId(null);
       setEditValue("");
+      setSavingInitiativeId(null);
       // Инвалидируем кэш, используя тот же queryKey, что и в HomePage
       queryClient.invalidateQueries({ 
         queryKey: ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId] 
@@ -99,6 +101,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const saveEdit = (initiativeId: string) => {
     const numValue = parseFloat(editValue);
     if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+      setSavingInitiativeId(initiativeId);
       updatePlannedInvolvementMutation.mutate({
         id: initiativeId,
         plannedInvolvement: numValue,
@@ -829,8 +832,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 data-testid={`cell-planned-involvement-${initiative.id}`}
               >
                 <div 
-                  className="px-2 py-3 cursor-pointer"
-                  onClick={() => editingInitiativeId !== initiative.id && startEditing(initiative.id, initiative.plannedInvolvement)}
+                  className="px-2 py-3 cursor-pointer transition-opacity duration-300"
+                  style={{ opacity: savingInitiativeId === initiative.id ? 0.4 : 1 }}
+                  onClick={() => editingInitiativeId !== initiative.id && savingInitiativeId !== initiative.id && startEditing(initiative.id, initiative.plannedInvolvement)}
                 >
                   {editingInitiativeId === initiative.id ? (
                     <input
