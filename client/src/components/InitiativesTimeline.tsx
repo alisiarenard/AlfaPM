@@ -818,36 +818,40 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 </div>
               </td>
               <td 
-                className="sticky left-[320px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px] cursor-pointer hover-elevate"
-                onClick={() => editingInitiativeId !== initiative.id && startEditing(initiative.id, initiative.plannedInvolvement)}
+                className="sticky left-[320px] z-[100] bg-background min-w-[100px] max-w-[100px]"
                 data-testid={`cell-planned-involvement-${initiative.id}`}
               >
-                {editingInitiativeId === initiative.id ? (
-                  <input
-                    ref={inputRef}
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onBlur={() => saveEdit(initiative.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        saveEdit(initiative.id);
-                      } else if (e.key === 'Escape') {
-                        cancelEdit();
-                      }
-                    }}
-                    className="w-full text-xs text-foreground bg-transparent border-none p-0 m-0"
-                    style={{ outline: 'none' }}
-                    data-testid={`input-planned-involvement-${initiative.id}`}
-                  />
-                ) : (
-                  <span className="text-xs text-foreground">
-                    {formatInvolvement(initiative.plannedInvolvement)}
-                  </span>
-                )}
+                <div 
+                  className="px-2 py-3 cursor-pointer hover-elevate"
+                  onClick={() => editingInitiativeId !== initiative.id && startEditing(initiative.id, initiative.plannedInvolvement)}
+                >
+                  {editingInitiativeId === initiative.id ? (
+                    <input
+                      ref={inputRef}
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={() => saveEdit(initiative.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          saveEdit(initiative.id);
+                        } else if (e.key === 'Escape') {
+                          cancelEdit();
+                        }
+                      }}
+                      className="w-full text-xs text-foreground bg-transparent border-none p-0 m-0"
+                      style={{ outline: 'none' }}
+                      data-testid={`input-planned-involvement-${initiative.id}`}
+                    />
+                  ) : (
+                    <span className="text-xs text-foreground">
+                      {formatInvolvement(initiative.plannedInvolvement)}
+                    </span>
+                  )}
+                </div>
               </td>
               <td className="sticky left-[420px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-xs text-foreground">
