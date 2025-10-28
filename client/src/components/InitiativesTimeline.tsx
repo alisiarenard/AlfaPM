@@ -56,6 +56,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const [editingInitiativeId, setEditingInitiativeId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const [savingInitiativeId, setSavingInitiativeId] = useState<string | null>(null);
+  const [pendingValue, setPendingValue] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Mutation для обновления planned_involvement
@@ -79,9 +80,10 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       queryClient.invalidateQueries({ 
         queryKey: ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId] 
       });
-      // Сбрасываем opacity с задержкой, чтобы новые данные успели загрузиться
+      // Сбрасываем opacity и pendingValue с задержкой, чтобы новые данные успели загрузиться
       setTimeout(() => {
         setSavingInitiativeId(null);
+        setPendingValue("");
       }, 500);
     },
   });
@@ -105,6 +107,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     const numValue = parseFloat(editValue);
     if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
       setSavingInitiativeId(initiativeId);
+      setPendingValue(editValue); // Сохраняем введенное значение
       updatePlannedInvolvementMutation.mutate({
         id: initiativeId,
         plannedInvolvement: numValue,
@@ -862,7 +865,10 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     />
                   ) : (
                     <span className="text-xs text-foreground">
-                      {formatInvolvement(initiative.plannedInvolvement)}
+                      {savingInitiativeId === initiative.id && pendingValue 
+                        ? `${parseFloat(pendingValue).toFixed(1)}%`
+                        : formatInvolvement(initiative.plannedInvolvement)
+                      }
                     </span>
                   )}
                 </div>
