@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Initiative, Team, SprintRow, TaskInSprint } from "@shared/schema";
 import {
   Dialog,
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 
 interface InitiativesTimelineProps {
   initiatives: Initiative[];
@@ -51,6 +53,61 @@ interface SprintModalData {
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
+  const [editingInitiativeId, setEditingInitiativeId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Mutation для обновления planned_involvement
+  const updatePlannedInvolvementMutation = useMutation({
+    mutationFn: async ({ id, plannedInvolvement }: { id: string; plannedInvolvement: number }) => {
+      const response = await fetch(`/api/initiatives/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plannedInvolvement }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update planned involvement');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Инвалидируем кэш, чтобы таймлайн пересчитался
+      queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", team.boardId] });
+    },
+  });
+
+  // Автофокус на input при начале редактирования
+  useEffect(() => {
+    if (editingInitiativeId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingInitiativeId]);
+
+  // Начать редактирование
+  const startEditing = (initiativeId: string, currentValue: number | null) => {
+    setEditingInitiativeId(initiativeId);
+    setEditValue(currentValue !== null ? currentValue.toString() : "0");
+  };
+
+  // Сохранить изменения
+  const saveEdit = (initiativeId: string) => {
+    const numValue = parseFloat(editValue);
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+      updatePlannedInvolvementMutation.mutate({
+        id: initiativeId,
+        plannedInvolvement: numValue,
+      });
+    }
+    setEditingInitiativeId(null);
+    setEditValue("");
+  };
+
+  // Отменить редактирование
+  const cancelEdit = () => {
+    setEditingInitiativeId(null);
+    setEditValue("");
+  };
   // Отсортировать спринты по дате начала от более ранних до более поздних
   const sortedSprints = [...sprints].sort((a, b) => {
     const dateA = new Date(a.startDate).getTime();
@@ -760,10 +817,37 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   })()}
                 </div>
               </td>
-              <td className="sticky left-[320px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
-                <span className="text-xs text-foreground">
-                  {formatInvolvement(initiative.plannedInvolvement)}
-                </span>
+              <td 
+                className="sticky left-[320px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px] cursor-pointer hover-elevate"
+                onClick={() => editingInitiativeId !== initiative.id && startEditing(initiative.id, initiative.plannedInvolvement)}
+                data-testid={`cell-planned-involvement-${initiative.id}`}
+              >
+                {editingInitiativeId === initiative.id ? (
+                  <input
+                    ref={inputRef}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={() => saveEdit(initiative.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        saveEdit(initiative.id);
+                      } else if (e.key === 'Escape') {
+                        cancelEdit();
+                      }
+                    }}
+                    className="w-full text-xs text-foreground bg-transparent border-none p-0 m-0"
+                    style={{ outline: 'none' }}
+                    data-testid={`input-planned-involvement-${initiative.id}`}
+                  />
+                ) : (
+                  <span className="text-xs text-foreground">
+                    {formatInvolvement(initiative.plannedInvolvement)}
+                  </span>
+                )}
               </td>
               <td className="sticky left-[420px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
                 <span className="text-xs text-foreground">
