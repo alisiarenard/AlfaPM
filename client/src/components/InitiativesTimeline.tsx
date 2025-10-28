@@ -797,7 +797,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     }
                   }
 
-                  // Стили для плановых borders (2px с opacity 0.5)
+                  // Стили для плановых borders (2px с opacity 0.3)
                   let plannedBorderClasses = '';
                   if (showBlock && (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right)) {
                     if (plannedBorders.top) plannedBorderClasses += 'border-t-2 ';
@@ -817,7 +817,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${plannedBorderClasses} ${plannedRadiusClass}`}
                       style={{ 
                         backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent',
-                        borderColor: (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right) ? 'rgba(205, 37, 61, 0.5)' : undefined
+                        borderColor: (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right) ? 'rgba(205, 37, 61, 0.3)' : undefined
                       }}
                     >
                       {showBlock && sp > 0 && (
