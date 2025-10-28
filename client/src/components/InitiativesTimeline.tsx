@@ -71,6 +71,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return response.json();
     },
     onSuccess: () => {
+      // Сбрасываем состояние редактирования после успешного сохранения
+      setEditingInitiativeId(null);
+      setEditValue("");
       // Инвалидируем кэш, чтобы таймлайн пересчитался
       queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", team.boardId] });
     },
@@ -98,9 +101,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         id: initiativeId,
         plannedInvolvement: numValue,
       });
+      // Сброс состояния теперь происходит в onSuccess колбэке мутации
+    } else {
+      // Если значение некорректное, просто отменяем редактирование
+      cancelEdit();
     }
-    setEditingInitiativeId(null);
-    setEditValue("");
   };
 
   // Отменить редактирование
