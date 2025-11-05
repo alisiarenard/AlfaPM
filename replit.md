@@ -71,7 +71,7 @@ PostgreSQL (via Neon) is the primary data store, with Drizzle ORM for type-safe 
 - `users`: (For future authentication)
 - `departments`: Department names.
 - `teams`: Team metadata (name, velocity, sprint duration, board IDs).
-- `initiatives`: Initiative details (ID, title, state, size, planned_involvement, planned_value_id, planned_value, fact_value_id, fact_value).
+- `initiatives`: Initiative details (ID, title, state, size, planned_involvement, planned_value_id, planned_value, fact_value_id, fact_value, due_date).
 - `tasks`: Task details (ID, title, state, size, type, sprint_id, init_card_id, archived).
 - `sprints`: Sprint details (ID, board_id, title, velocity, dates).
 - Schema defined in `shared/schema.ts`, migrations managed by Drizzle-kit.
