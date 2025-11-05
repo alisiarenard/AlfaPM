@@ -1595,13 +1595,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalActualCost += actualSize * (team.spPrice || 0);
         }
         
-        // Получаем plannedValue и factValue из первой инициативы
-        const plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
-          ? parseFloat(firstInit.plannedValue) 
-          : 0;
-        const factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
-          ? parseFloat(firstInit.factValue) 
-          : 0;
+        // Для Compliance и Enabler эффект = затратам
+        let plannedValue: number;
+        let factValue: number;
+        
+        if (firstInit.type === 'Compliance' || firstInit.type === 'Enabler') {
+          plannedValue = totalPlannedCost;
+          factValue = totalActualCost;
+        } else {
+          // Для остальных типов получаем plannedValue и factValue из первой инициативы
+          plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
+            ? parseFloat(firstInit.plannedValue) 
+            : 0;
+          factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
+            ? parseFloat(firstInit.factValue) 
+            : 0;
+        }
         
         // Добавляем к суммам
         sumPlannedValue += plannedValue;

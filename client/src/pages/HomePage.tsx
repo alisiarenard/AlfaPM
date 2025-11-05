@@ -529,13 +529,22 @@ export default function HomePage() {
           totalActualCost += actualSize * team.spPrice;
         });
 
-        // Преобразуем plannedValue и factValue из строки в число
-        const plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
-          ? parseFloat(firstInit.plannedValue) 
-          : null;
-        const factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
-          ? parseFloat(firstInit.factValue) 
-          : null;
+        // Для Compliance и Enabler эффект = затратам
+        let plannedValue: number | null;
+        let factValue: number | null;
+        
+        if (firstInit.type === 'Compliance' || firstInit.type === 'Enabler') {
+          plannedValue = totalPlannedCost;
+          factValue = totalActualCost;
+        } else {
+          // Для остальных типов преобразуем plannedValue и factValue из строки в число
+          plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
+            ? parseFloat(firstInit.plannedValue) 
+            : null;
+          factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
+            ? parseFloat(firstInit.factValue) 
+            : null;
+        }
 
         // Рассчитываем value/cost
         const plannedValueCost = plannedValue !== null && totalPlannedCost > 0
