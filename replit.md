@@ -60,6 +60,7 @@ Express.js with TypeScript and ESM provides a RESTful API under `/api`.
 - Syncs initiatives and tasks from Kaiten API, mapping states. Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN`.
 - **Type Synchronization:** Persists initiative and task types (`card.type.name`) from Kaiten during sync operations.
 - **Archived Status:** Syncs `card.archived` status for tasks from Kaiten.
+- **Custom Field Synchronization:** Syncs custom field values from Kaiten card properties. All initiatives have `planned_value_id = "id_451379"` by default, and the corresponding `planned_value` is read from `card.properties[planned_value_id]` during sync. Extraction logic handles falsy values correctly (including 0 and empty strings).
 
 ### Data Storage Solutions
 PostgreSQL (via Neon) is the primary data store, with Drizzle ORM for type-safe queries.
@@ -68,7 +69,7 @@ PostgreSQL (via Neon) is the primary data store, with Drizzle ORM for type-safe 
 - `users`: (For future authentication)
 - `departments`: Department names.
 - `teams`: Team metadata (name, velocity, sprint duration, board IDs).
-- `initiatives`: Initiative details (ID, title, state, size, planned_involvement).
+- `initiatives`: Initiative details (ID, title, state, size, planned_involvement, planned_value_id, planned_value).
 - `tasks`: Task details (ID, title, state, size, type, sprint_id, init_card_id, archived).
 - `sprints`: Sprint details (ID, board_id, title, velocity, dates).
 - Schema defined in `shared/schema.ts`, migrations managed by Drizzle-kit.
