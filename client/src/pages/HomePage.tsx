@@ -433,10 +433,14 @@ export default function HomePage() {
       const developmentPercent = epicPercent + compliancePercent + enablerPercent;
       const supportPercent = 100 - developmentPercent;
 
+      // Получаем названия команд
+      const teamNames = data.teams.map((t: { name: string }) => t.name).join(', ');
+
       // Подготавливаем данные для Excel в новом формате
       const worksheetData: any[][] = [
         ['Год', data.year],
         ['Блок', departmentName],
+        ['Команды', teamNames],
         [''],
         ['Развитие', `${developmentPercent}%`],
         ['Epic', `${epicPercent}%`],
