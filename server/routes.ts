@@ -800,11 +800,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         log(`[Kaiten Sync] Card ${card.id} "${card.title}" - type object:`, JSON.stringify(card.type));
         log(`[Kaiten Sync] Card ${card.id} - type.name value: ${card.type?.name}`);
         
+        // Логируем всю структуру properties для диагностики
+        log(`[Kaiten Sync] Card ${card.id} - all properties:`, JSON.stringify(card.properties));
+        log(`[Kaiten Sync] Card ${card.id} - properties keys:`, card.properties ? Object.keys(card.properties).join(', ') : 'no properties');
+        
         // Получаем plannedValue из properties по ключу plannedValueId
         const raw = card.properties?.[plannedValueId];
         const plannedValue = raw == null ? undefined : String(raw);
         
-        log(`[Kaiten Sync] Card ${card.id} - plannedValue from properties[${plannedValueId}]:`, plannedValue);
+        log(`[Kaiten Sync] Card ${card.id} - raw value from properties[${plannedValueId}]:`, raw);
+        log(`[Kaiten Sync] Card ${card.id} - plannedValue (converted to string):`, plannedValue);
 
         const synced = await storage.syncInitiativeFromKaiten(
           card.id,
