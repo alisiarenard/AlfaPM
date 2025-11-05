@@ -127,6 +127,8 @@ export interface Initiative {
   sprints: SprintAllocation[];
   involvement: number | null;
   plannedInvolvement: number | null;
+  plannedValueId: string | null;
+  plannedValue: string | null;
 }
 
 export interface Team {

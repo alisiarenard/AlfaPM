@@ -58,6 +58,8 @@ interface InitiativeDetailsData {
   actualSize: number;
   plannedCost: number;
   actualCost: number;
+  plannedValue: number | null;
+  valueCost: number | null;
 }
 
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
@@ -315,17 +317,34 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
   // Обработчик клика на название инициативы
   const handleInitiativeTitleClick = (initiative: Initiative) => {
+    if (!initiative) {
+      console.error("Initiative is null or undefined");
+      return;
+    }
+    
     const actualSize = getTotalSP(initiative);
     const plannedSize = initiative.size || 0;
     const plannedCost = plannedSize * team.spPrice;
     const actualCost = actualSize * team.spPrice;
+    
+    // Преобразуем plannedValue из строки в число
+    const plannedValue = initiative.plannedValue && initiative.plannedValue.trim() !== '' 
+      ? parseFloat(initiative.plannedValue) 
+      : null;
+    
+    // Рассчитываем value/cost (плановый value / плановый cost)
+    const valueCost = plannedValue !== null && plannedCost > 0
+      ? Math.round((plannedValue / plannedCost) * 10) / 10
+      : null;
     
     setInitiativeDetailsData({
       title: initiative.title,
       plannedSize,
       actualSize,
       plannedCost,
-      actualCost
+      actualCost,
+      plannedValue,
+      valueCost
     });
     setInitiativeDetailsOpen(true);
   };
@@ -1038,6 +1057,27 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   <p className="text-sm text-muted-foreground mb-1">Фактический cost</p>
                   <p className="text-xl font-bold text-primary" data-testid="text-actual-cost">
                     {initiativeDetailsData?.actualCost.toLocaleString('ru-RU')} ₽
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="border-t border-border pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Плановый value</p>
+                  <p className="text-xl font-bold text-primary" data-testid="text-planned-value">
+                    {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
+                      ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
+                      : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Value/cost</p>
+                  <p className="text-xl font-bold text-primary" data-testid="text-value-cost">
+                    {initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined
+                      ? initiativeDetailsData.valueCost.toFixed(1)
+                      : '—'}
                   </p>
                 </div>
               </div>
