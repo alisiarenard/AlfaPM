@@ -730,6 +730,39 @@ export default function HomePage() {
   // Показываем последнее успешное значение во время загрузки
   const displayCostStructure = costStructureData || lastSuccessfulCostStructureRef.current;
 
+  // Получаем Value/Cost для выбранных команд
+  const { data: valueCostData, isFetching: isValueCostFetching } = useQuery<{
+    success: boolean;
+    plannedValueCost: number;
+    factValueCost: number;
+    sumPlannedValue: number;
+    sumPlannedCost: number;
+    sumFactValue: number;
+    sumFactCost: number;
+  }>({
+    queryKey: ['/api/metrics/value-cost', { teamIds: teamIdsParam }],
+    queryFn: async () => {
+      const response = await fetch(`/api/metrics/value-cost?teamIds=${teamIdsParam}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch value/cost');
+      }
+      return response.json();
+    },
+    enabled: teamIdsArray.length > 0,
+    placeholderData: (previousData) => previousData,
+  });
+
+  // Используем ref для хранения последнего успешного значения
+  const lastSuccessfulValueCostRef = useRef<typeof valueCostData | null>(null);
+  
+  // Обновляем ref когда получаем новые данные
+  if (valueCostData && !isValueCostFetching) {
+    lastSuccessfulValueCostRef.current = valueCostData;
+  }
+
+  // Показываем последнее успешное значение во время загрузки
+  const displayValueCost = valueCostData || lastSuccessfulValueCostRef.current;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
@@ -794,7 +827,7 @@ export default function HomePage() {
               <div className="mb-6">
                 <div 
                   className="w-full h-[110px] border border-border rounded-lg flex relative transition-opacity duration-300"
-                  style={{ opacity: isIRFetching || isCostStructureFetching ? 0.5 : 1 }}
+                  style={{ opacity: isIRFetching || isCostStructureFetching || isValueCostFetching ? 0.5 : 1 }}
                 >
                   <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
@@ -818,11 +851,15 @@ export default function HomePage() {
                     <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
                     <div className="flex justify-between items-end w-full">
                       <div className="flex flex-col items-center gap-1">
-                        <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">4,7</div>
+                        <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">
+                          {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '-'}
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground">плановый</div>
                       </div>
                       <div className="flex flex-col items-center gap-1">
-                        <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">0</div>
+                        <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">
+                          {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '-'}
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground">фактический</div>
                       </div>
                     </div>

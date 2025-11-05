@@ -23,7 +23,7 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
 - **Excel Report Download:** Generates a client-side Excel file with two sheets using `xlsx`:
     - **Структура затрат** (Cost Structure): Shows year, department, teams, and breakdown by Development/Support categories with percentages
     - **Инициативы** (Initiatives): Lists all initiatives for selected teams with columns: Тип, Название, Срок (план), Срок (прод), Срок (эффект), Затраты (план), Затраты (факт), Эффект (план), Эффект (факт), Value/Cost (план), Value/Cost (факт). Initiatives are grouped by cardId to avoid duplication - if multiple teams work on the same initiative, it appears once with summed costs. Dates are formatted as "dd.MM" (e.g., "30.10"). Report structure: all Epic initiatives first, then "Всего" row with totals, then Compliance initiatives with "Всего" row, then Enabler initiatives with "Всего" row, then all other initiative types. "Всего" rows show summed costs, summed values, and calculated value/cost ratios (sum of values ÷ sum of costs)
-- **Metrics Card:** Displays Innovation Rate and Value/Cost metrics. Smoothly transitions opacity during recalculation to indicate loading without content shift.
+- **Metrics Card:** Displays Innovation Rate and Value/Cost metrics. Value/Cost shows planned (sum of all initiative planned values ÷ sum of all initiative planned costs) and actual (sum of all initiative actual values ÷ sum of all initiative actual costs) ratios for the selected department. Smoothly transitions opacity during recalculation to indicate loading without content shift.
 - **Initiatives Timeline:** Core visualization with sticky columns for initiative details and scrollable sprint columns.
     - **Status Icons:** Material Design icons indicate initiative status (in-progress, completed, queued).
     - **Forecasted Color Blocks:** Visualizes forecasted sprint duration based on `ceil(Size / (Velocity × Involvement%))` with guards for invalid values.
@@ -40,6 +40,7 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
 - **Initiative Filtering:** Displays queued initiatives always; "Show Active Only" filter shows in-progress and queued; hides initiatives with 0 completed SP in done/inProgress state. Backend filters ensure relevance.
 - **Calculations:**
     - **Innovation Rate (IR):** `(innovationSP / totalSP) * 100` dynamically calculated, displayed with color-coded difference from planned.
+    - **Value/Cost:** Calculated at department level as `(sum of all initiative values) ÷ (sum of all initiative costs)`. Planned ratio uses planned values/costs, actual ratio uses actual values/costs. Initiatives are deduplicated by cardId when calculating across multiple teams.
     - **Cost Structure:** Dynamically calculated percentage distribution of SP by initiative/task types, categorized by Epic, Compliance, Enabler, and various support types.
     - **Involvement:** Calculated as `(initiative SP / total SP of all initiatives) * 100` for a specific period based on sprint dates.
     - **Sprint Header IR:** Percentage of SP excluding "Business Support."
@@ -54,8 +55,9 @@ Express.js with TypeScript and ESM provides a RESTful API under `/api`.
 - `/api/teams`: CRUD for teams.
 - `/api/initiatives`: CRUD for initiatives.
 - `/api/tasks`: CRUD for tasks.
-- `/api/metrics/innovation-rate`: Calculates Innovation Rate.
-- `/api/metrics/cost-structure`: Calculates cost structure.
+- `/api/metrics/innovation-rate`: Calculates Innovation Rate for selected teams.
+- `/api/metrics/cost-structure`: Calculates cost structure breakdown by initiative/task types for selected teams and year.
+- `/api/metrics/value-cost`: Calculates Value/Cost metrics (planned and actual) for selected teams. Returns: plannedValueCost (sum of planned values ÷ sum of planned costs), factValueCost (sum of actual values ÷ sum of actual costs), and component sums.
 - `/api/kaiten/*`: Endpoints for syncing initiatives, tasks, and sprints from Kaiten.
 
 **Kaiten Integration:**

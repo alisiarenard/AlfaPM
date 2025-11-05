@@ -1517,6 +1517,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/metrics/value-cost", async (req, res) => {
+    try {
+      const teamIdsParam = req.query.teamIds as string;
+      
+      if (!teamIdsParam) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "teamIds parameter is required" 
+        });
+      }
+
+      const teamIds = teamIdsParam.split(',').map(id => id.trim()).filter(id => id);
+      
+      if (teamIds.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "At least one team ID is required" 
+        });
+      }
+
+      log(`[Value/Cost] Calculating for teams: ${teamIds.join(', ')}`);
+
+      // Получаем команды
+      const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
+      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      
+      if (validTeams.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "No valid teams found" 
+        });
+      }
+
+      // Получаем все инициативы для выбранных команд
+      const allInitiatives = await Promise.all(
+        validTeams.map(team => storage.getInitiativesByBoardId(team.initBoardId))
+      );
+      const initiatives = allInitiatives.flat();
+      
+      // Группируем инициативы по cardId для исключения дубликатов
+      const initiativesByCardId = new Map<number, typeof initiatives>();
+      initiatives.forEach((initiative) => {
+        // Пропускаем "Поддержку бизнеса"
+        if (initiative.cardId === 0) return;
+        
+        if (!initiativesByCardId.has(initiative.cardId)) {
+          initiativesByCardId.set(initiative.cardId, []);
+        }
+        initiativesByCardId.get(initiative.cardId)!.push(initiative);
+      });
+
+      log(`[Value/Cost] Found ${initiativesByCardId.size} unique initiatives`);
+
+      // Рассчитываем суммарные значения
+      let sumPlannedValue = 0;
+      let sumPlannedCost = 0;
+      let sumFactValue = 0;
+      let sumFactCost = 0;
+
+      for (const [cardId, relatedInitiatives] of Array.from(initiativesByCardId.entries())) {
+        const firstInit = relatedInitiatives[0];
+        
+        // Суммируем затраты по всем командам, работающим с этой инициативой
+        let totalPlannedCost = 0;
+        let totalActualCost = 0;
+        
+        for (const initiative of relatedInitiatives) {
+          const team = validTeams.find(t => t.initBoardId === initiative.initBoardId);
+          if (!team) continue;
+          
+          const tasks = await storage.getTasksByInitCardId(initiative.cardId);
+          const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
+          const plannedSize = initiative.size || 0;
+          
+          totalPlannedCost += plannedSize * (team.spPrice || 0);
+          totalActualCost += actualSize * (team.spPrice || 0);
+        }
+        
+        // Получаем plannedValue и factValue из первой инициативы
+        const plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
+          ? parseFloat(firstInit.plannedValue) 
+          : 0;
+        const factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
+          ? parseFloat(firstInit.factValue) 
+          : 0;
+        
+        // Добавляем к суммам
+        sumPlannedValue += plannedValue;
+        sumPlannedCost += totalPlannedCost;
+        sumFactValue += factValue;
+        sumFactCost += totalActualCost;
+      }
+
+      // Рассчитываем коэффициенты Value/Cost
+      const plannedValueCost = sumPlannedCost > 0 
+        ? Math.round((sumPlannedValue / sumPlannedCost) * 10) / 10
+        : 0;
+      const factValueCost = sumFactCost > 0 
+        ? Math.round((sumFactValue / sumFactCost) * 10) / 10
+        : 0;
+
+      log(`[Value/Cost] Planned: ${plannedValueCost} (${sumPlannedValue}/${sumPlannedCost}), Fact: ${factValueCost} (${sumFactValue}/${sumFactCost})`);
+
+      res.json({
+        success: true,
+        plannedValueCost,
+        factValueCost,
+        sumPlannedValue,
+        sumPlannedCost,
+        sumFactValue,
+        sumFactCost
+      });
+    } catch (error) {
+      console.error("GET /api/metrics/value-cost error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to calculate value/cost" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/sprint-raw/:sprintId", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);
