@@ -16,6 +16,8 @@ export const initiatives = pgTable("initiatives", {
   initBoardId: integer("init_board_id").notNull(),
   type: varchar("type"),
   plannedInvolvement: integer("planned_involvement"),
+  plannedValueId: varchar("planned_value_id"),
+  plannedValue: varchar("planned_value"),
 });
 
 export const insertInitiativeSchema = createInsertSchema(initiatives).omit({ id: true });

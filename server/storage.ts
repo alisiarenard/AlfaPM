@@ -28,7 +28,9 @@ export interface IStorage {
     state: "1-queued" | "2-inProgress" | "3-done", 
     condition: "1-live" | "2-archived", 
     size: number,
-    type?: string | null
+    type?: string | null,
+    plannedValueId?: string | null,
+    plannedValue?: string | null
   ): Promise<InitiativeRow>;
   getAllTasks(): Promise<TaskRow[]>;
   getTasksByBoardId(boardId: number): Promise<TaskRow[]>;
@@ -146,10 +148,24 @@ export class MemStorage implements IStorage {
     state: "1-queued" | "2-inProgress" | "3-done", 
     condition: "1-live" | "2-archived", 
     size: number,
-    type?: string | null
+    type?: string | null,
+    plannedValueId?: string | null,
+    plannedValue?: string | null
   ): Promise<InitiativeRow> {
     const id = randomUUID();
-    return { id, cardId, title, state, condition, size, initBoardId: boardId, type: type ?? null, plannedInvolvement: null };
+    return { 
+      id, 
+      cardId, 
+      title, 
+      state, 
+      condition, 
+      size, 
+      initBoardId: boardId, 
+      type: type || null, 
+      plannedInvolvement: null,
+      plannedValueId: plannedValueId || null,
+      plannedValue: plannedValue || null
+    };
   }
 
   async getAllTasks(): Promise<TaskRow[]> {
@@ -373,21 +389,42 @@ export class DbStorage implements IStorage {
     state: "1-queued" | "2-inProgress" | "3-done", 
     condition: "1-live" | "2-archived", 
     size: number,
-    type?: string | null
+    type?: string | null,
+    plannedValueId?: string | null,
+    plannedValue?: string | null
   ): Promise<InitiativeRow> {
     const existing = await this.getInitiativeByCardId(cardId);
     
     if (existing) {
       const [updated] = await db
         .update(initiatives)
-        .set({ title, state, condition, size, initBoardId: boardId, type: type || null })
+        .set({ 
+          title, 
+          state, 
+          condition, 
+          size, 
+          initBoardId: boardId, 
+          type: type || null,
+          plannedValueId: plannedValueId || null,
+          plannedValue: plannedValue || null
+        })
         .where(eq(initiatives.cardId, cardId))
         .returning();
       return updated;
     } else {
       const [created] = await db
         .insert(initiatives)
-        .values({ cardId, title, state, condition, size, initBoardId: boardId, type: type || null })
+        .values({ 
+          cardId, 
+          title, 
+          state, 
+          condition, 
+          size, 
+          initBoardId: boardId, 
+          type: type || null,
+          plannedValueId: plannedValueId || null,
+          plannedValue: plannedValue || null
+        })
         .returning();
       return created;
     }
