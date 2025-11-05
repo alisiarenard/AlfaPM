@@ -1050,18 +1050,23 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Размер</p>
-                <p className="text-lg font-semibold" data-testid="text-planned-size">
-                  {initiativeDetailsData?.plannedSize} SP
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-sm text-muted-foreground">Размер</p>
+                <p className="text-sm font-medium" data-testid="text-size-progress">
+                  {initiativeDetailsData?.actualSize} / {initiativeDetailsData?.plannedSize || '—'} SP
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Размер фактический</p>
-                <p className="text-lg font-semibold" data-testid="text-actual-size">
-                  {initiativeDetailsData?.actualSize} SP
-                </p>
+              <div className="relative w-full h-[5px] bg-gray-300 rounded-full overflow-hidden">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-red-500 transition-all"
+                  style={{ 
+                    width: initiativeDetailsData?.plannedSize 
+                      ? `${Math.min((initiativeDetailsData.actualSize / initiativeDetailsData.plannedSize) * 100, 100)}%` 
+                      : '0%' 
+                  }}
+                  data-testid="progress-size"
+                />
               </div>
             </div>
             
