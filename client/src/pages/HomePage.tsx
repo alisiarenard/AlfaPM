@@ -499,41 +499,59 @@ export default function HomePage() {
         }
       };
 
-      // Добавляем данные по инициативам
+      // Группируем инициативы по cardId для исключения дубликатов
+      const initiativesByCardId = new Map<number, any[]>();
       allInitiatives.forEach((initiative: any) => {
         // Пропускаем "Поддержку бизнеса"
         if (initiative.cardId === 0) return;
+        
+        if (!initiativesByCardId.has(initiative.cardId)) {
+          initiativesByCardId.set(initiative.cardId, []);
+        }
+        initiativesByCardId.get(initiative.cardId)!.push(initiative);
+      });
 
-        const team = initiative.team;
-        const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
-        const plannedSize = initiative.size || 0;
-        const plannedCost = plannedSize * team.spPrice;
-        const actualCost = actualSize * team.spPrice;
+      // Добавляем данные по уникальным инициативам
+      initiativesByCardId.forEach((initiatives) => {
+        // Используем данные из первой инициативы для общих полей
+        const firstInit = initiatives[0];
+        
+        // Суммируем затраты по всем командам
+        let totalPlannedCost = 0;
+        let totalActualCost = 0;
+        
+        initiatives.forEach((initiative: any) => {
+          const team = initiative.team;
+          const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
+          const plannedSize = initiative.size || 0;
+          totalPlannedCost += plannedSize * team.spPrice;
+          totalActualCost += actualSize * team.spPrice;
+        });
 
         // Преобразуем plannedValue и factValue из строки в число
-        const plannedValue = initiative.plannedValue && initiative.plannedValue.trim() !== '' 
-          ? parseFloat(initiative.plannedValue) 
+        const plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
+          ? parseFloat(firstInit.plannedValue) 
           : null;
-        const factValue = initiative.factValue && initiative.factValue.trim() !== '' 
-          ? parseFloat(initiative.factValue) 
+        const factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
+          ? parseFloat(firstInit.factValue) 
           : null;
 
         // Рассчитываем value/cost
-        const plannedValueCost = plannedValue !== null && plannedCost > 0
-          ? Math.round((plannedValue / plannedCost) * 10) / 10
+        const plannedValueCost = plannedValue !== null && totalPlannedCost > 0
+          ? Math.round((plannedValue / totalPlannedCost) * 10) / 10
           : null;
-        const factValueCost = factValue !== null && actualCost > 0
-          ? Math.round((factValue / actualCost) * 10) / 10
+        const factValueCost = factValue !== null && totalActualCost > 0
+          ? Math.round((factValue / totalActualCost) * 10) / 10
           : null;
 
         initiativesData.push([
-          initiative.type || '—',
-          initiative.title,
-          formatDate(initiative.dueDate),
-          formatDate(initiative.doneDate),
+          firstInit.type || '—',
+          firstInit.title,
+          formatDate(firstInit.dueDate),
+          formatDate(firstInit.doneDate),
           '—', // Срок (эффект) - пока не определено
-          plannedCost,
-          actualCost,
+          totalPlannedCost,
+          totalActualCost,
           plannedValue ?? '—',
           factValue ?? '—',
           plannedValueCost ?? '—',
