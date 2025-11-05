@@ -20,6 +20,7 @@ export const initiatives = pgTable("initiatives", {
   plannedValue: varchar("planned_value"),
   factValueId: varchar("fact_value_id"),
   factValue: varchar("fact_value"),
+  dueDate: varchar("due_date"),
 });
 
 export const insertInitiativeSchema = createInsertSchema(initiatives).omit({ id: true });
@@ -133,6 +134,7 @@ export interface Initiative {
   plannedValue: string | null;
   factValueId: string | null;
   factValue: string | null;
+  dueDate: string | null;
 }
 
 export interface Team {
