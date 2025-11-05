@@ -1,7 +1,7 @@
 # Initiatives Timeline - Project Management Application
 
 ## Overview
-This project is a web-based application designed to visualize and track team initiatives across sprint timelines. It enables users to upload team data, displaying initiatives with their associated story points, sprint allocations, and status information. The application supports multiple teams, each accessible via a separate tab, and features a clean, data-focused interface inspired by Linear's minimalist aesthetics and Carbon Design's data visualization principles. The core purpose is to provide a clear, scannable overview of project progress and team allocation. The application's business vision is to streamline project management and enhance team visibility, offering market potential in organizations seeking efficient, data-driven project tracking.
+This project is a web-based application for visualizing and tracking team initiatives across sprint timelines. It allows users to upload team data, displaying initiatives with story points, sprint allocations, and status. The application supports multiple teams via separate tabs and features a clean, data-focused interface inspired by Linear and Carbon Design. Its core purpose is to provide a clear, scannable overview of project progress and team allocation, aiming to streamline project management and enhance team visibility for efficient, data-driven tracking.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -9,105 +9,76 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Frontend Architecture
-The frontend is built with React 18+ and TypeScript, utilizing Vite for development and bundling. Wouter handles client-side routing, and React Query manages server state with infinite stale time and disabled refetching.
+Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Query for server state management.
 
 **UI/UX Decisions:**
-- **Layout:** Responsive design with a main content container, max-width 1200px on smaller viewports, expanding to 80% of viewport width on larger screens, centered with `mx-auto`. Timeline tables allow horizontal scrolling.
-- **Component System:** Shadcn/ui components (built on Radix UI) are styled with Tailwind CSS, custom design tokens, and CSS variables for theming (dark mode primary, light mode supported).
-- **Design System:** Inter font for UI, JetBrains Mono for monospace data. Custom border radius scales and a status color system (Active, Planned, Completed, At Risk) are implemented. Hover and active states use an elevation system.
+- **Layout:** Responsive, centered layout with horizontal scrolling for timeline tables.
+- **Component System:** Shadcn/ui components (Radix UI base) styled with Tailwind CSS, custom design tokens, and CSS variables for theming (dark mode primary).
+- **Design System:** Inter font for UI, JetBrains Mono for code. Custom border radius, status color system (Active, Planned, Completed, At Risk), and elevation system for hover/active states.
 
 **Key Features:**
-- **Multi-Team Support:** Departments and teams are fetched from the database and displayed in separate tabs using Shadcn Tabs. Each tab independently fetches and displays initiatives and team metrics.
-- **Year Selection:** Dropdown in header next to department selector displays current year (2025) and next year (2026) for filtering data by year. Used for Excel report generation and future metric filtering.
-- **Team Selection Menu:** Dropdown menu (triggered by three-dot button in top-right corner of metrics card) displays all teams from selected department with checkboxes for multi-selection. All teams are checked by default. Menu has white background (bg-white). Includes "Скачать отчет" (Download Report) option separated by horizontal divider. State automatically resets to all-checked when department changes. Uses DropdownMenuCheckboxItem for full accessibility (keyboard navigation, screen reader support, aria attributes).
-- **Excel Report Download:** Clicking "Скачать отчет" generates and downloads an Excel file with cost structure data for selected teams and year. Uses xlsx library for client-side Excel generation. Report format:
-  - Row 1: "Год" | year value
-  - Row 2: "Блок" | department name
-  - Row 3: "Команды" | comma-separated team names
-  - Row 4: Empty
-  - Row 5: "Развитие" | percentage sum (Epic + Compliance + Enabler)
-  - Row 6: "Epic" | Epic percentage
-  - Row 7: "Compliance" | Compliance percentage
-  - Row 8: "Enabler" | Enabler percentage
-  - Row 9: Empty
-  - Row 10: "Поддержка" | percentage (100% - Развитие%)
-  - Row 11+: Support type names (Service Desk, Bug, Security, Tech debt, Postmortem, Др. доработки) with percentages
-  - Filename format: `Cost_Structure_YYYY_DATE.xlsx`.
-- **Metrics Card:** Unified full-width card displays three metric sections: Innovation Rate (20% width), Value/Cost (20% width), and reserved section (60% width), separated by vertical borders with top/bottom margins (my-3) for visual spacing. Contains team selection menu button (three dots) in top-right corner (position: absolute). During metric recalculation, card smoothly transitions to 50% opacity (300ms) while preserving previous metric values (using useRef to store last successful data), providing clear loading feedback without content shift or value disappearance.
-- **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details: "Инициатива" (220px, left-0), "Выполнено" (100px, left-220px), "Фокус(план)" (100px, left-320px, editable on click), "Фокус (факт)" (100px, left-420px), and scrollable sprint columns (100px each) with story points and colored status blocks.
-  - **Status Icons:** Material Design outline icons indicate initiative status: Play Circle (in-progress, red), Check Circle (completed, green), Pause Circle (queued, light gray). "Поддержка бизнеса" initiatives display gray icons for all statuses.
-  - **Forecasted Color Blocks:** Blocks stretch across predicted sprint count using formula `ceil(Size / (Velocity × Involvement%))`, starting from first sprint with SP. Includes guards for zero/undefined velocity, involvement, and size values. Falls back to historical span when forecasting is impossible. Color blocks display without borders with 10% opacity (red for regular initiatives, gray for "Поддержка бизнеса").
-  - **Planned Duration Borders:** Color blocks display borders (2px, red #cd253d with 0.3 opacity) on all four sides to indicate planned duration range, calculated using formula `ceil(Size / (Velocity × PlannedInvolvement%))`. Borders span from first sprint with SP to last planned sprint, with left corners rounded (6px radius) only on the first sprint. Not applied to "Поддержка бизнеса" initiatives or queued initiatives without sprints.
-  - **Editable Planned Involvement:** The "Фокус(план)" column is editable - clicking on any cell opens an inline input field. Changes are saved to the database on blur (clicking outside) or pressing Enter, and the timeline automatically recalculates planned duration borders with the new value. Press Escape to cancel editing. Input validates values between 0-100.
-  - **Business Support Special Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only in sprints with factual SP > 0, without forecasting.
-  - **Sprint Tasks Modal:** Sprint headers (with tasks) are implemented as semantic `<button>` elements with full keyboard accessibility. Clicking (or pressing Enter/Space) on a sprint header opens a modal window displaying all initiatives and their tasks for that sprint. Each initiative shows: initiative title, followed by a list of tasks with title, type (if present), and size. Buttons include aria-labels and focus rings for accessibility. Modal uses Shadcn Dialog component with proper data-testid attributes for testing.
-  - **Timeline Block Tooltips:** Hovering over timeline color blocks displays a tooltip with three dates on separate lines: "Дата начала" (start date from first sprint), "Дата окончания(план)" (planned end date calculated from planned_involvement), and "Дата окончания(факт)" (forecasted end date based on actual involvement).
-- **Team Header:** Displays team name, board ID, Velocity, and Innovation Rate. Includes a button to manually sync initiatives from Kaiten.
-- **Team Management:** Full CRUD functionality for teams and departments, including Kaiten board validation during creation and editing.
-- **Initiative Filtering:** 
-  - Initiatives in queue (state: "1-queued") are **always displayed**, regardless of whether they have tasks in team sprints
-  - "Show Active Only" filter displays only in-progress initiatives (plus queued initiatives)
-  - Initiatives with 0 completed SP in done/inProgress state are hidden
-  - Backend filters initiatives to show only those with tasks in team sprints, plus queued initiatives and "Business Support" category
-- **Calculations:** 
-  - **Innovation Rate (IR):** Calculated dynamically for selected teams via `/api/metrics/innovation-rate` endpoint. Formula: `(innovationSP / totalSP) * 100` where innovationSP is the sum of story points from tasks with parent initiatives (initCardId !== null && initCardId !== 0), and totalSP is the sum of all task story points from selected teams' sprints. Returns actualIR, plannedIR (from department), and diffFromPlanned (actualIR - plannedIR). Frontend displays actualIR as percentage with color-coded difference (green if positive, red if negative).
-  - **Cost Structure:** Calculated dynamically for selected teams and year via `/api/metrics/cost-structure` endpoint. Displays percentage distribution of SP by initiative/task types. Calculation logic:
-    - **Tasks linked to initiatives** (initCardId !== null && !== 0): SP attributed to initiative type (Epic, Compliance, Enabler)
-    - **Tasks NOT linked to initiatives** (initCardId === null || === 0): SP attributed to task type with mapping:
-      - Omni → Service Desk
-      - Technical Debt / Tech Debt / Tech Task → Tech debt
-      - Known types (Security, Service Desk, Postmortem, Tech debt, Bug) → shown separately
-      - Unknown types → "Др. доработки"
-    - Displays Epic, Compliance, Enabler (red color #cd253d) and Security, Service Desk, Postmortem, Tech debt, Bug, Др. доработки (gray). Updates automatically when teams or year selection changes.
-  - **Involvement:** Calculated on backend as (initiative SP / total SP of all initiatives) * 100 for a specific period. Period starts from the first sprint with non-zero SP for the initiative and ends at: (a) nearest sprint to current date if initiative is inProgress, or (b) last sprint with SP if initiative is done. Uses sprint dates (not IDs) for correct chronological ordering.
-  - **Sprint Header IR (Investment Ratio):** Percentage of SP excluding "Business Support" category
-  - **Forecasted Sprint Count:** `ceil(initiative size / (team velocity × involvement% / 100))` with validation for positive, finite values
-  - **Automatic Sprint Generation:** Sprints are automatically generated for 6 months forward from the current sprint's start date. If no current sprint exists, generates from today's date. Uses team velocity and sprint duration for calculation.
+- **Multi-Team Support:** Departments and teams displayed in Shadcn Tabs, each independently fetching data.
+- **Year Selection:** Header dropdown for filtering data by year (2025, 2026).
+- **Team Selection Menu:** Dropdown for multi-selecting teams within a department, includes an Excel report download option.
+- **Excel Report Download:** Generates a client-side Excel file with cost structure data for selected teams and year using `xlsx`.
+- **Metrics Card:** Displays Innovation Rate and Value/Cost metrics. Smoothly transitions opacity during recalculation to indicate loading without content shift.
+- **Initiatives Timeline:** Core visualization with sticky columns for initiative details and scrollable sprint columns.
+    - **Status Icons:** Material Design icons indicate initiative status (in-progress, completed, queued).
+    - **Forecasted Color Blocks:** Visualizes forecasted sprint duration based on `ceil(Size / (Velocity × Involvement%))` with guards for invalid values.
+    - **Planned Duration Borders:** 2px borders indicate planned duration range based on `ceil(Size / (Velocity × PlannedInvolvement%))`.
+    - **Editable Planned Involvement:** "Фокус(план)" column is inline editable, saving changes to the database and recalculating borders on blur or Enter.
+    - **Business Support Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only for sprints with factual SP > 0, without forecasting.
+    - **Sprint Tasks Modal:** Clicking sprint headers opens a modal displaying initiatives and their tasks for that sprint.
+    - **Timeline Block Tooltips:** Displays start, planned end, and actual end dates on hover.
+- **Team Header:** Displays team name, board ID, Velocity, Innovation Rate, and a button to sync initiatives from Kaiten.
+- **Team Management:** Full CRUD for teams and departments with Kaiten board validation.
+- **Initiative Filtering:** Displays queued initiatives always; "Show Active Only" filter shows in-progress and queued; hides initiatives with 0 completed SP in done/inProgress state. Backend filters ensure relevance.
+- **Calculations:**
+    - **Innovation Rate (IR):** `(innovationSP / totalSP) * 100` dynamically calculated, displayed with color-coded difference from planned.
+    - **Cost Structure:** Dynamically calculated percentage distribution of SP by initiative/task types, categorized by Epic, Compliance, Enabler, and various support types.
+    - **Involvement:** Calculated as `(initiative SP / total SP of all initiatives) * 100` for a specific period based on sprint dates.
+    - **Sprint Header IR:** Percentage of SP excluding "Business Support."
+    - **Forecasted Sprint Count:** `ceil(initiative size / (team velocity × involvement% / 100))`.
+    - **Automatic Sprint Generation:** Generates 6 months of sprints forward from the current sprint.
 
 ### Backend Architecture
-The backend uses Express.js with TypeScript and an ESM module system, providing a RESTful API under the `/api` prefix.
+Express.js with TypeScript and ESM provides a RESTful API under `/api`.
 
 **API Endpoints:**
-- `/api/departments`: Manage departments (GET, POST, PATCH).
-- `/api/teams`: Manage teams (GET teams by department, POST create team, PATCH update team).
-- `/api/initiatives`: Manage initiatives (GET, POST, PATCH, DELETE, GET by board ID).
-- `/api/tasks`: Manage tasks (GET, POST, PATCH, DELETE, GET by board ID).
-- `/api/metrics/innovation-rate`: Calculate Innovation Rate for selected teams (GET with teamIds query param). Returns actualIR, plannedIR, diffFromPlanned, totalSP, and innovationSP.
-- `/api/metrics/cost-structure`: Calculate cost structure (task type distribution) for selected teams and year (GET with teamIds and optional year query params). Returns typeStats (SP per type), typePercentages, totalSP, year, and team list. Filters sprints by year and calculates SP distribution across task types.
-- `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten.
-- `/api/kaiten/sync-tasks/:boardId`: Sync tasks (children cards) from Kaiten.
-- `/api/kaiten/update-sprint/:sprintId`: Fetch sprint data from Kaiten and update task sprint_ids.
-- `/api/kaiten/sync-sprint/:sprintId`: Sync tasks from a specific sprint.
-- `/api/kaiten/sync-all-sprints/:boardId`: Sync tasks from all sprints for a board.
+- `/api/departments`: CRUD for departments.
+- `/api/teams`: CRUD for teams.
+- `/api/initiatives`: CRUD for initiatives.
+- `/api/tasks`: CRUD for tasks.
+- `/api/metrics/innovation-rate`: Calculates Innovation Rate.
+- `/api/metrics/cost-structure`: Calculates cost structure.
+- `/api/kaiten/*`: Endpoints for syncing initiatives, tasks, and sprints from Kaiten.
 
 **Kaiten Integration:**
-- Syncs initiatives and tasks from the Kaiten API (feature.kaiten.ru) to the database, mapping Kaiten card states to initiative states (queued, inProgress, done). Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN` environment variables. Includes sequential validation for `sprintBoardId` and `initBoardId` during team creation/update.
-- **Type Synchronization:** Initiative and task type values (`card.type.name` from Kaiten API) are automatically persisted to the database during sync operations:
-  - Initiatives: Synced during manual board sync and team creation
-  - Tasks: Synced during task board sync (`/api/kaiten/sync-tasks/:boardId`) and sprint sync (`/api/kaiten/update-sprint/:sprintId`)
-  - Enables categorization and filtering by initiative/task type
+- Syncs initiatives and tasks from Kaiten API, mapping states. Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN`.
+- **Type Synchronization:** Persists initiative and task types (`card.type.name`) from Kaiten during sync operations.
+- **Archived Status:** Syncs `card.archived` status for tasks from Kaiten.
 
 ### Data Storage Solutions
-PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neon HTTP driver provides type-safe queries.
+PostgreSQL (via Neon) is the primary data store, with Drizzle ORM for type-safe queries.
 
 **Database Schema:**
-- `users`: For future authentication.
+- `users`: (For future authentication)
 - `departments`: Department names.
-- `teams`: Team metadata (ID, name, velocity, sprint duration, department ID, board IDs).
-- `initiatives`: Initiative details (ID, card ID, title, state, condition, size, board ID, planned_involvement).
-- `tasks`: Task details (ID, card ID, title, created, state, size, condition, board ID, sprint_id, type, completed_at, init_card_id).
-- `sprints`: Sprint details (sprint_id (PK), board_id, title, velocity, start_date, finish_date, actual_finish_date).
-- Schema is defined in `shared/schema.ts` for type safety. Drizzle-kit manages migrations.
+- `teams`: Team metadata (name, velocity, sprint duration, board IDs).
+- `initiatives`: Initiative details (ID, title, state, size, planned_involvement).
+- `tasks`: Task details (ID, title, state, size, type, sprint_id, init_card_id, archived).
+- `sprints`: Sprint details (ID, board_id, title, velocity, dates).
+- Schema defined in `shared/schema.ts`, migrations managed by Drizzle-kit.
 
 ## External Dependencies
 
 **Database:**
-- `@neondatabase/serverless` (Neon HTTP driver)
+- `@neondatabase/serverless`
 - `drizzle-orm`
 
 **UI Libraries:**
-- Radix UI (various components)
-- `lucide-react` (icons)
+- Radix UI
+- `lucide-react`
 - `embla-carousel-react`
 - `date-fns`
 
@@ -116,7 +87,7 @@ PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neo
 - `clsx`, `tailwind-merge`
 - `cmdk`
 - `react-hook-form`
-- `xlsx` (SheetJS for Excel file generation)
+- `xlsx` (SheetJS)
 
 **Build & Development Tools:**
 - `vite`
@@ -124,4 +95,4 @@ PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neo
 - `postcss`, `tailwindcss`, `autoprefixer`
 - `typescript`
 - `tsx`
-- `undici` (for HTTP requests, e.g., Kaiten integration)
+- `undici`
