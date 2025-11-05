@@ -174,7 +174,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               plannedValueId,
               plannedValue,
               factValueId,
-              factValue
+              factValue,
+              card.due_date || null,
+              card.last_moved_to_done_at || null
             );
           }
           
@@ -838,7 +840,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           plannedValue,
           factValueId,
           factValue,
-          card.due_date || null
+          card.due_date || null,
+          card.last_moved_to_done_at || null
         );
         
         syncedInitiatives.push(synced);
