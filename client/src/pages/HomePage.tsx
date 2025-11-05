@@ -483,7 +483,7 @@ export default function HomePage() {
 
       // Готовим данные для листа с инициативами
       const initiativesData: any[][] = [
-        ['Название', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 'Затраты (план)', 'Затраты (факт)', 'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)']
+        ['Тип', 'Название', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 'Затраты (план)', 'Затраты (факт)', 'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)']
       ];
 
       // Добавляем данные по инициативам
@@ -514,8 +514,8 @@ export default function HomePage() {
           : null;
 
         initiativesData.push([
+          initiative.type || '—',
           initiative.title,
-          team.name,
           plannedSize,
           actualSize,
           plannedCost,
@@ -533,6 +533,7 @@ export default function HomePage() {
 
       // Устанавливаем ширину колонок для листа инициатив
       initiativesWorksheet['!cols'] = [
+        { wch: 15 }, // Тип
         { wch: 40 }, // Название
         { wch: 15 }, // Срок (план)
         { wch: 15 }, // Срок (прод)
