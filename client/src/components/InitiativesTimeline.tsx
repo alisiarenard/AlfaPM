@@ -1050,6 +1050,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
+            {/* Размер */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm text-muted-foreground">Размер</p>
@@ -1057,9 +1058,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   {initiativeDetailsData?.actualSize} / {initiativeDetailsData?.plannedSize || '—'} SP
                 </p>
               </div>
-              <div className="relative w-full h-[5px] bg-gray-300 rounded-full overflow-hidden">
+              <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="absolute top-0 left-0 h-full bg-red-500 transition-all"
+                  className="absolute top-0 left-0 h-full bg-destructive transition-all"
                   style={{ 
                     width: initiativeDetailsData?.plannedSize 
                       ? `${Math.min((initiativeDetailsData.actualSize / initiativeDetailsData.plannedSize) * 100, 100)}%` 
@@ -1070,62 +1071,74 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               </div>
             </div>
             
-            <div className="border-t border-border pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Плановый cost</p>
-                  <p className="text-xl font-bold text-primary" data-testid="text-planned-cost">
-                    {initiativeDetailsData?.plannedCost.toLocaleString('ru-RU')} ₽
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Фактический cost</p>
-                  <p className="text-xl font-bold text-primary" data-testid="text-actual-cost">
-                    {initiativeDetailsData?.actualCost.toLocaleString('ru-RU')} ₽
-                  </p>
-                </div>
+            {/* Затраты */}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-sm text-muted-foreground">Затраты</p>
+                <p className="text-sm font-medium" data-testid="text-cost-progress">
+                  {initiativeDetailsData?.actualCost.toLocaleString('ru-RU')} / {initiativeDetailsData?.plannedCost.toLocaleString('ru-RU')} ₽
+                </p>
+              </div>
+              <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-destructive transition-all"
+                  style={{ 
+                    width: initiativeDetailsData?.plannedCost 
+                      ? `${Math.min((initiativeDetailsData.actualCost / initiativeDetailsData.plannedCost) * 100, 100)}%` 
+                      : '0%' 
+                  }}
+                  data-testid="progress-cost"
+                />
               </div>
             </div>
             
-            <div className="border-t border-border pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Плановый value</p>
-                  <p className="text-xl font-bold text-primary" data-testid="text-planned-value">
-                    {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
-                      ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
-                      : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Фактический value</p>
-                  <p className="text-xl font-bold text-primary" data-testid="text-fact-value">
-                    {initiativeDetailsData?.factValue !== null && initiativeDetailsData?.factValue !== undefined
-                      ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
-                      : '—'}
-                  </p>
-                </div>
+            {/* Эффект */}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-sm text-muted-foreground">Эффект</p>
+                <p className="text-sm font-medium" data-testid="text-value-progress">
+                  {initiativeDetailsData?.factValue !== null && initiativeDetailsData?.factValue !== undefined
+                    ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
+                    : '—'} / {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
+                    ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
+                    : '—'} ₽
+                </p>
+              </div>
+              <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-destructive transition-all"
+                  style={{ 
+                    width: (initiativeDetailsData?.plannedValue && initiativeDetailsData?.plannedValue > 0)
+                      ? `${Math.min(((initiativeDetailsData?.factValue || 0) / initiativeDetailsData.plannedValue) * 100, 100)}%` 
+                      : '0%' 
+                  }}
+                  data-testid="progress-value"
+                />
               </div>
             </div>
             
-            <div className="border-t border-border pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Плановый value/cost</p>
-                  <p className="text-xl font-bold text-primary" data-testid="text-value-cost">
-                    {initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined
-                      ? initiativeDetailsData.valueCost.toFixed(1)
-                      : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Фактический value/cost</p>
-                  <p className="text-xl font-bold text-primary" data-testid="text-fact-value-cost">
-                    {initiativeDetailsData?.factValueCost !== null && initiativeDetailsData?.factValueCost !== undefined
-                      ? initiativeDetailsData.factValueCost.toFixed(1)
-                      : '—'}
-                  </p>
-                </div>
+            {/* Value/Cost */}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-sm text-muted-foreground">Value/Cost</p>
+                <p className="text-sm font-medium" data-testid="text-valuecost-progress">
+                  {initiativeDetailsData?.factValueCost !== null && initiativeDetailsData?.factValueCost !== undefined
+                    ? initiativeDetailsData.factValueCost.toFixed(1)
+                    : '—'} / {initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined
+                    ? initiativeDetailsData.valueCost.toFixed(1)
+                    : '—'}
+                </p>
+              </div>
+              <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-destructive transition-all"
+                  style={{ 
+                    width: (initiativeDetailsData?.valueCost && initiativeDetailsData?.valueCost > 0)
+                      ? `${Math.min(((initiativeDetailsData?.factValueCost || 0) / initiativeDetailsData.valueCost) * 100, 100)}%` 
+                      : '0%' 
+                  }}
+                  data-testid="progress-valuecost"
+                />
               </div>
             </div>
           </div>
