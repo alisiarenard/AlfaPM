@@ -138,7 +138,9 @@ export class MemStorage implements IStorage {
       type: initiative.type ?? null, 
       plannedInvolvement: initiative.plannedInvolvement ?? null,
       plannedValueId: initiative.plannedValueId ?? null,
-      plannedValue: initiative.plannedValue ?? null
+      plannedValue: initiative.plannedValue ?? null,
+      factValueId: initiative.factValueId ?? null,
+      factValue: initiative.factValue ?? null
     };
   }
 
@@ -172,12 +174,12 @@ export class MemStorage implements IStorage {
       condition, 
       size, 
       initBoardId: boardId, 
-      type: type || null, 
+      type: type ?? null, 
       plannedInvolvement: null,
-      plannedValueId: plannedValueId || null,
-      plannedValue: plannedValue || null,
-      factValueId: factValueId || null,
-      factValue: factValue || null
+      plannedValueId: plannedValueId ?? null,
+      plannedValue: plannedValue ?? null,
+      factValueId: factValueId ?? null,
+      factValue: factValue ?? null
     };
   }
 

@@ -60,6 +60,7 @@ interface InitiativeDetailsData {
   actualCost: number;
   plannedValue: number | null;
   valueCost: number | null;
+  factValue: number | null;
 }
 
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
@@ -332,6 +333,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       ? parseFloat(initiative.plannedValue) 
       : null;
     
+    // Преобразуем factValue из строки в число
+    const factValue = initiative.factValue && initiative.factValue.trim() !== '' 
+      ? parseFloat(initiative.factValue) 
+      : null;
+    
     // Рассчитываем value/cost (плановый value / плановый cost)
     const valueCost = plannedValue !== null && plannedCost > 0
       ? Math.round((plannedValue / plannedCost) * 10) / 10
@@ -344,7 +350,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       plannedCost,
       actualCost,
       plannedValue,
-      valueCost
+      valueCost,
+      factValue
     });
     setInitiativeDetailsOpen(true);
   };
@@ -1072,6 +1079,19 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       : '—'}
                   </p>
                 </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Фактический value</p>
+                  <p className="text-xl font-bold text-primary" data-testid="text-fact-value">
+                    {initiativeDetailsData?.factValue !== null && initiativeDetailsData?.factValue !== undefined
+                      ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="border-t border-border pt-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Value/cost</p>
                   <p className="text-xl font-bold text-primary" data-testid="text-value-cost">
