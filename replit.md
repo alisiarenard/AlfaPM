@@ -31,13 +31,13 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
     - **Editable Planned Involvement:** "Фокус(план)" column is inline editable, saving changes to the database and recalculating borders on blur or Enter.
     - **Business Support Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only for sprints with factual SP > 0, without forecasting.
     - **Initiative Details Modal:** Clicking initiative title opens a modal showing initiative name, type, and four progress bars (5px height, bg-muted background, #cd253d fill color rgb(205, 37, 61)). Modal structure:
-        - **Header**: Initiative name and type (displayed below title in muted text)
+        - **Header**: Initiative name and type (displayed below title in smaller, darker text-xs text-foreground)
         - **Progress bars**:
           - **Размер, SP**: actual / planned (without SP in values)
           - **Затраты, ₽**: actual / planned cost in rubles with thousand separators (without ₽ in values)
           - **Эффект, ₽**: actual / planned value in rubles with thousand separators (without ₽ in values)
           - **Value/Cost**: actual / planned ratio with one decimal place
-        - **Legend**: Color indicators below progress bars with border-top separator
+        - **Legend**: Color indicators centered below progress bars with increased spacing (pt-6), no top border
           - Grey circle (bg-muted): "Плановые значения" (Planned values)
           - Red circle (#cd253d): "Фактические значения" (Actual values)
       For Compliance and Enabler initiative types, planned value equals planned cost and actual value equals actual cost (Value/Cost = 1.0).

@@ -1069,7 +1069,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               {initiativeDetailsData?.title}
             </DialogTitle>
             {initiativeDetailsData?.type && (
-              <p className="text-sm text-muted-foreground mt-1" data-testid="text-initiative-type">
+              <p className="text-xs text-foreground mt-1" data-testid="text-initiative-type">
                 {initiativeDetailsData.type}
               </p>
             )}
@@ -1173,7 +1173,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             </div>
             
             {/* Легенда */}
-            <div className="flex items-center gap-4 pt-2 border-t" data-testid="legend-container">
+            <div className="flex items-center justify-center gap-4 pt-6 border-t-0" data-testid="legend-container">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-muted" data-testid="legend-planned-indicator"></div>
                 <span className="text-xs text-muted-foreground">Плановые значения</span>
