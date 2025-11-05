@@ -1274,7 +1274,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       data-testid="input-planned-size"
                       disabled={savingField === 'plannedSize'}
                     />
-                  ) : initiativeDetailsData?.type === 'Эпик' ? (
+                  ) : initiativeDetailsData?.type === 'Epic' ? (
                     <button
                       onClick={() => startFieldEditing('plannedSize', initiativeDetailsData?.plannedSize || 0)}
                       className="transition-colors cursor-pointer"
@@ -1348,7 +1348,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       data-testid="input-fact-value"
                       disabled={savingField === 'factValue'}
                     />
-                  ) : initiativeDetailsData?.type === 'Эпик' ? (
+                  ) : initiativeDetailsData?.type === 'Epic' ? (
                     <button
                       onClick={() => startFieldEditing('factValue', initiativeDetailsData?.factValue || 0)}
                       className="transition-colors cursor-pointer"
@@ -1382,7 +1382,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       data-testid="input-planned-value"
                       disabled={savingField === 'plannedValue'}
                     />
-                  ) : initiativeDetailsData?.type === 'Эпик' ? (
+                  ) : initiativeDetailsData?.type === 'Epic' ? (
                     <button
                       onClick={() => startFieldEditing('plannedValue', initiativeDetailsData?.plannedValue || 0)}
                       className="transition-colors cursor-pointer"
