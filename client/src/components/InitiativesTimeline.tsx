@@ -1079,11 +1079,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="absolute top-0 left-0 h-full bg-destructive transition-all"
+                  className="absolute top-0 left-0 h-full transition-all"
                   style={{ 
                     width: initiativeDetailsData?.plannedSize 
                       ? `${Math.min((initiativeDetailsData.actualSize / initiativeDetailsData.plannedSize) * 100, 100)}%` 
-                      : '0%' 
+                      : '0%',
+                    backgroundColor: '#cd253d'
                   }}
                   data-testid="progress-size"
                 />
@@ -1100,11 +1101,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="absolute top-0 left-0 h-full bg-destructive transition-all"
+                  className="absolute top-0 left-0 h-full transition-all"
                   style={{ 
                     width: initiativeDetailsData?.plannedCost 
                       ? `${Math.min((initiativeDetailsData.actualCost / initiativeDetailsData.plannedCost) * 100, 100)}%` 
-                      : '0%' 
+                      : '0%',
+                    backgroundColor: '#cd253d'
                   }}
                   data-testid="progress-cost"
                 />
@@ -1125,11 +1127,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="absolute top-0 left-0 h-full bg-destructive transition-all"
+                  className="absolute top-0 left-0 h-full transition-all"
                   style={{ 
                     width: (initiativeDetailsData?.plannedValue && initiativeDetailsData?.plannedValue > 0)
                       ? `${Math.min(((initiativeDetailsData?.factValue || 0) / initiativeDetailsData.plannedValue) * 100, 100)}%` 
-                      : '0%' 
+                      : '0%',
+                    backgroundColor: '#cd253d'
                   }}
                   data-testid="progress-value"
                 />
@@ -1150,11 +1153,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
                 <div 
-                  className="absolute top-0 left-0 h-full bg-destructive transition-all"
+                  className="absolute top-0 left-0 h-full transition-all"
                   style={{ 
                     width: (initiativeDetailsData?.valueCost && initiativeDetailsData?.valueCost > 0)
                       ? `${Math.min(((initiativeDetailsData?.factValueCost || 0) / initiativeDetailsData.valueCost) * 100, 100)}%` 
-                      : '0%' 
+                      : '0%',
+                    backgroundColor: '#cd253d'
                   }}
                   data-testid="progress-valuecost"
                 />

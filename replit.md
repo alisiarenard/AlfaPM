@@ -30,7 +30,7 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
     - **Planned Duration Borders:** 2px borders indicate planned duration range based on `ceil(Size / (Velocity × PlannedInvolvement%))`.
     - **Editable Planned Involvement:** "Фокус(план)" column is inline editable, saving changes to the database and recalculating borders on blur or Enter.
     - **Business Support Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only for sprints with factual SP > 0, without forecasting.
-    - **Initiative Details Modal:** Clicking initiative title opens a modal showing initiative name and four progress bars (5px height, bg-muted background, bg-destructive fill). Units of measurement are displayed in progress bar titles:
+    - **Initiative Details Modal:** Clicking initiative title opens a modal showing initiative name and four progress bars (5px height, bg-muted background, #cd253d fill color rgb(205, 37, 61)). Units of measurement are displayed in progress bar titles:
         - **Размер, SP**: actual / planned (without SP in values)
         - **Затраты, ₽**: actual / planned cost in rubles with thousand separators (without ₽ in values)
         - **Эффект, ₽**: actual / planned value in rubles with thousand separators (without ₽ in values)
