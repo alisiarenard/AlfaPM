@@ -1110,6 +1110,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const sprintCard of kaitenSprint.cards) {
             const card = await kaitenClient.getCard(sprintCard.id);
             
+            // Логирование для отладки
+            if (card.id === 56806578 || card.id === 56806579) {
+              log(`[Kaiten Sync Debug] Card ${card.id} "${card.title}": size from Kaiten = ${card.size}, will save as ${card.size || 0}`);
+            }
+            
             // Определяем init_card_id из parents_ids
             let initCardId: number | null = null;
             
