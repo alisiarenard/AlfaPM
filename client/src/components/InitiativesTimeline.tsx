@@ -1041,7 +1041,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       return (
                         <button
                           onClick={() => handleInitiativeTitleClick(initiative)}
-                          className="text-sm text-foreground font-semibold hover:text-primary hover:underline transition-colors text-left"
+                          className="text-sm text-foreground font-semibold transition-colors text-left"
                           data-testid={`button-initiative-${initiative.id}`}
                         >
                           {initiative.title}
@@ -1270,19 +1270,21 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         if (e.key === 'Enter') saveFieldEdit();
                         if (e.key === 'Escape') cancelFieldEdit();
                       }}
-                      className="w-16 px-1 py-0.5 text-sm border rounded"
+                      className="w-16 px-1 py-0.5 text-sm border rounded no-arrows"
                       data-testid="input-planned-size"
                       disabled={savingField === 'plannedSize'}
                     />
-                  ) : (
+                  ) : initiativeDetailsData?.type === 'Эпик' ? (
                     <button
                       onClick={() => startFieldEditing('plannedSize', initiativeDetailsData?.plannedSize || 0)}
-                      className="hover:text-primary transition-colors cursor-pointer"
+                      className="transition-colors cursor-pointer"
                       data-testid="button-edit-planned-size"
                       disabled={savingField !== null}
                     >
                       {initiativeDetailsData?.plannedSize || '—'}
                     </button>
+                  ) : (
+                    <span>{initiativeDetailsData?.plannedSize || '—'}</span>
                   )}
                 </div>
               </div>
@@ -1342,14 +1344,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         if (e.key === 'Enter') saveFieldEdit();
                         if (e.key === 'Escape') cancelFieldEdit();
                       }}
-                      className="w-24 px-1 py-0.5 text-sm border rounded"
+                      className="w-24 px-1 py-0.5 text-sm border rounded no-arrows"
                       data-testid="input-fact-value"
                       disabled={savingField === 'factValue'}
                     />
-                  ) : (
+                  ) : initiativeDetailsData?.type === 'Эпик' ? (
                     <button
                       onClick={() => startFieldEditing('factValue', initiativeDetailsData?.factValue || 0)}
-                      className="hover:text-primary transition-colors cursor-pointer"
+                      className="transition-colors cursor-pointer"
                       data-testid="button-edit-fact-value"
                       disabled={savingField !== null}
                     >
@@ -1357,6 +1359,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
                         : '—'}
                     </button>
+                  ) : (
+                    <span>
+                      {initiativeDetailsData?.factValue !== null && initiativeDetailsData?.factValue !== undefined
+                        ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
+                        : '—'}
+                    </span>
                   )}
                   <span>{' / '}</span>
                   {editingField === 'plannedValue' ? (
@@ -1370,14 +1378,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         if (e.key === 'Enter') saveFieldEdit();
                         if (e.key === 'Escape') cancelFieldEdit();
                       }}
-                      className="w-24 px-1 py-0.5 text-sm border rounded"
+                      className="w-24 px-1 py-0.5 text-sm border rounded no-arrows"
                       data-testid="input-planned-value"
                       disabled={savingField === 'plannedValue'}
                     />
-                  ) : (
+                  ) : initiativeDetailsData?.type === 'Эпик' ? (
                     <button
                       onClick={() => startFieldEditing('plannedValue', initiativeDetailsData?.plannedValue || 0)}
-                      className="hover:text-primary transition-colors cursor-pointer"
+                      className="transition-colors cursor-pointer"
                       data-testid="button-edit-planned-value"
                       disabled={savingField !== null}
                     >
@@ -1385,6 +1393,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
                         : '—'}
                     </button>
+                  ) : (
+                    <span>
+                      {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
+                        ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
+                        : '—'}
+                    </span>
                   )}
                 </div>
               </div>
@@ -1413,9 +1427,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       : '—'}
                   </span>
                   {' / '}
-                  {initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined
-                    ? initiativeDetailsData.valueCost.toFixed(1)
-                    : '—'}
+                  <span className={initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined && initiativeDetailsData.valueCost < 1 ? "text-[#cd253d]" : ""}>
+                    {initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined
+                      ? initiativeDetailsData.valueCost.toFixed(1)
+                      : '—'}
+                  </span>
                 </p>
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
