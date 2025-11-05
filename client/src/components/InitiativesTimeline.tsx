@@ -54,6 +54,7 @@ interface SprintModalData {
 
 interface InitiativeDetailsData {
   title: string;
+  type: string | null;
   plannedSize: number;
   actualSize: number;
   plannedCost: number;
@@ -357,6 +358,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     
     setInitiativeDetailsData({
       title: initiative.title,
+      type: initiative.type,
       plannedSize,
       actualSize,
       plannedCost,
@@ -1066,6 +1068,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             <DialogTitle className="text-lg font-semibold">
               {initiativeDetailsData?.title}
             </DialogTitle>
+            {initiativeDetailsData?.type && (
+              <p className="text-sm text-muted-foreground mt-1" data-testid="text-initiative-type">
+                {initiativeDetailsData.type}
+              </p>
+            )}
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
@@ -1162,6 +1169,18 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   }}
                   data-testid="progress-valuecost"
                 />
+              </div>
+            </div>
+            
+            {/* Легенда */}
+            <div className="flex items-center gap-4 pt-2 border-t" data-testid="legend-container">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-muted" data-testid="legend-planned-indicator"></div>
+                <span className="text-xs text-muted-foreground">Плановые значения</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#cd253d' }} data-testid="legend-actual-indicator"></div>
+                <span className="text-xs text-muted-foreground">Фактические значения</span>
               </div>
             </div>
           </div>
