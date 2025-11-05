@@ -1374,8 +1374,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
             typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
           }
         } else {
-          // Таск не привязан к инициативе - в "Др. доработки"
-          typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
+          // Таск не привязан к инициативе - используем тип задачи
+          if (task.type) {
+            // Маппинг типов задач к категориям структуры затрат
+            let displayType = task.type;
+            
+            // Маппинг различных вариантов написания типов
+            const typeMapping: Record<string, string> = {
+              'Omni': 'Service Desk',
+              'Technical Debt': 'Tech debt',
+              'Tech Debt': 'Tech debt'
+            };
+            
+            // Применяем маппинг если есть
+            if (typeMapping[task.type]) {
+              displayType = typeMapping[task.type];
+            }
+            
+            // Известные типы из структуры затрат
+            const knownTypes = ['Security', 'Service Desk', 'Postmortem', 'Tech debt', 'Bug'];
+            
+            if (knownTypes.includes(displayType)) {
+              typeStats[displayType] = (typeStats[displayType] || 0) + taskSize;
+            } else {
+              // Неизвестный тип - в "Др. доработки"
+              typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
+            }
+          } else {
+            // Нет типа - в "Др. доработки"
+            typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
+          }
         }
       }
 

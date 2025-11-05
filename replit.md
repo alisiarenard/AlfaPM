@@ -39,7 +39,14 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
   - Backend filters initiatives to show only those with tasks in team sprints, plus queued initiatives and "Business Support" category
 - **Calculations:** 
   - **Innovation Rate (IR):** Calculated dynamically for selected teams via `/api/metrics/innovation-rate` endpoint. Formula: `(innovationSP / totalSP) * 100` where innovationSP is the sum of story points from tasks with parent initiatives (initCardId !== null && initCardId !== 0), and totalSP is the sum of all task story points from selected teams' sprints. Returns actualIR, plannedIR (from department), and diffFromPlanned (actualIR - plannedIR). Frontend displays actualIR as percentage with color-coded difference (green if positive, red if negative).
-  - **Cost Structure:** Calculated dynamically for selected teams and year via `/api/metrics/cost-structure` endpoint. Displays percentage distribution of SP by initiative type. For each task: if initCardId !== null && !== 0, SP is attributed to the parent initiative's type; otherwise, SP goes to "Др. доработки". Displays Epic, Compliance, Enabler (red color #cd253d) and Security, Service Desk, Postmortem, Tech debt, Bug, Др. доработки (gray). Updates automatically when teams or year selection changes.
+  - **Cost Structure:** Calculated dynamically for selected teams and year via `/api/metrics/cost-structure` endpoint. Displays percentage distribution of SP by initiative/task types. Calculation logic:
+    - **Tasks linked to initiatives** (initCardId !== null && !== 0): SP attributed to initiative type (Epic, Compliance, Enabler)
+    - **Tasks NOT linked to initiatives** (initCardId === null || === 0): SP attributed to task type with mapping:
+      - Omni → Service Desk
+      - Technical Debt / Tech Debt → Tech debt
+      - Known types (Security, Service Desk, Postmortem, Tech debt, Bug) → shown separately
+      - Unknown types → "Др. доработки"
+    - Displays Epic, Compliance, Enabler (red color #cd253d) and Security, Service Desk, Postmortem, Tech debt, Bug, Др. доработки (gray). Updates automatically when teams or year selection changes.
   - **Involvement:** Calculated on backend as (initiative SP / total SP of all initiatives) * 100 for a specific period. Period starts from the first sprint with non-zero SP for the initiative and ends at: (a) nearest sprint to current date if initiative is inProgress, or (b) last sprint with SP if initiative is done. Uses sprint dates (not IDs) for correct chronological ordering.
   - **Sprint Header IR (Investment Ratio):** Percentage of SP excluding "Business Support" category
   - **Forecasted Sprint Count:** `ceil(initiative size / (team velocity × involvement% / 100))` with validation for positive, finite values
