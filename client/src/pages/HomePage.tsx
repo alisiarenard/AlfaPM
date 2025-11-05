@@ -1342,7 +1342,8 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
     sprintDuration: team.sprintDuration,
     initBoardId: team.initBoardId,
     sprintBoardId: team.sprintBoardId,
-    spaceId: team.spaceId
+    spaceId: team.spaceId,
+    spPrice: team.spPrice
   };
 
   const handleSync = () => {

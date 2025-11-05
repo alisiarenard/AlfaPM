@@ -136,6 +136,7 @@ export interface Team {
   initBoardId: number;
   sprintBoardId: number;
   spaceId: number;
+  spPrice: number;
 }
 
 export interface TeamData {

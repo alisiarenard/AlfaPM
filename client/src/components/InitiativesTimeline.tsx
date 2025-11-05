@@ -52,9 +52,19 @@ interface SprintModalData {
   otherInitiativesSP: number;
 }
 
+interface InitiativeDetailsData {
+  title: string;
+  plannedSize: number;
+  actualSize: number;
+  plannedCost: number;
+  actualCost: number;
+}
+
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
+  const [initiativeDetailsOpen, setInitiativeDetailsOpen] = useState(false);
+  const [initiativeDetailsData, setInitiativeDetailsData] = useState<InitiativeDetailsData | null>(null);
   const [editingInitiativeId, setEditingInitiativeId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const [savingInitiativeId, setSavingInitiativeId] = useState<string | null>(null);
@@ -301,6 +311,23 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       otherInitiativesSP
     });
     setSprintModalOpen(true);
+  };
+
+  // Обработчик клика на название инициативы
+  const handleInitiativeTitleClick = (initiative: Initiative) => {
+    const actualSize = getTotalSP(initiative);
+    const plannedSize = initiative.size || 0;
+    const plannedCost = plannedSize * team.spPrice;
+    const actualCost = actualSize * team.spPrice;
+    
+    setInitiativeDetailsData({
+      title: initiative.title,
+      plannedSize,
+      actualSize,
+      plannedCost,
+      actualCost
+    });
+    setInitiativeDetailsOpen(true);
   };
 
   // Рассчитать общую сумму SP для инициативы (выполнено)
@@ -790,9 +817,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]">
                 <div className="flex items-center gap-2">
                   {getStatusIcon(initiative)}
-                  <span className="text-sm text-foreground font-semibold">
+                  <button
+                    onClick={() => handleInitiativeTitleClick(initiative)}
+                    className="text-sm text-foreground font-semibold hover:text-primary hover:underline transition-colors text-left"
+                    data-testid={`button-initiative-${initiative.id}`}
+                  >
                     {initiative.title}
-                  </span>
+                  </button>
                 </div>
               </td>
               <td className="sticky left-[220px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
@@ -969,6 +1000,51 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           ))}
         </tbody>
       </table>
+
+      {/* Initiative Details Modal */}
+      <Dialog open={initiativeDetailsOpen} onOpenChange={setInitiativeDetailsOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">
+              {initiativeDetailsData?.title}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Размер</p>
+                <p className="text-lg font-semibold" data-testid="text-planned-size">
+                  {initiativeDetailsData?.plannedSize} SP
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Размер фактический</p>
+                <p className="text-lg font-semibold" data-testid="text-actual-size">
+                  {initiativeDetailsData?.actualSize} SP
+                </p>
+              </div>
+            </div>
+            
+            <div className="border-t border-border pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Плановый cost</p>
+                  <p className="text-xl font-bold text-primary" data-testid="text-planned-cost">
+                    {initiativeDetailsData?.plannedCost.toLocaleString('ru-RU')} ₽
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Фактический cost</p>
+                  <p className="text-xl font-bold text-primary" data-testid="text-actual-cost">
+                    {initiativeDetailsData?.actualCost.toLocaleString('ru-RU')} ₽
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
