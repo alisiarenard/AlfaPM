@@ -516,8 +516,9 @@ export default function HomePage() {
         initiativesData.push([
           initiative.type || '—',
           initiative.title,
-          plannedSize,
-          actualSize,
+          initiative.dueDate || '—',
+          initiative.doneDate || '—',
+          '—', // Срок (эффект) - пока не определено
           plannedCost,
           actualCost,
           plannedValue ?? '—',
