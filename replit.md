@@ -63,6 +63,7 @@ Express.js with TypeScript and ESM provides a RESTful API under `/api`.
 - **Type Synchronization:** Persists initiative and task types (`card.type.name`) from Kaiten during sync operations.
 - **Archived Status:** Syncs `card.archived` status for tasks from Kaiten.
 - **Custom Field Synchronization:** Syncs custom field values from Kaiten card properties. All initiatives have `planned_value_id = "id_451379"` and `fact_value_id = "id_448119"` by default. During sync, both `planned_value` and `fact_value` are read from `card.properties[planned_value_id]` and `card.properties[fact_value_id]` respectively. Extraction logic handles falsy values correctly (including 0 and empty strings).
+- **Automatic Cost-Based Values for Compliance and Enabler:** After syncing initiatives, for types "Compliance" and "Enabler", the system automatically calculates and sets: `planned_value = size × team.spPrice` (planned cost) and `fact_value = actual_size × team.spPrice` (actual cost based on completed tasks). This ensures Value/Cost ratio equals 1.0 for these initiative types.
 - **Date Synchronization:** Syncs `due_date` from Kaiten's `due_date` field and `done_date` from Kaiten's `last_moved_to_done_at` field for initiatives.
 
 ### Data Storage Solutions

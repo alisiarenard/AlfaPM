@@ -10,6 +10,7 @@ export interface IStorage {
   getDepartments(): Promise<DepartmentWithTeamCount[]>;
   createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department>;
   updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined>;
+  getAllTeams(): Promise<TeamRow[]>;
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
   getTeamById(teamId: string): Promise<TeamRow | undefined>;
   createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow>;
@@ -100,6 +101,10 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
+  async getAllTeams(): Promise<TeamRow[]> {
+    return [];
+  }
+
   async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {
     return [];
   }
@@ -143,7 +148,8 @@ export class MemStorage implements IStorage {
       plannedValue: initiative.plannedValue ?? null,
       factValueId: initiative.factValueId ?? null,
       factValue: initiative.factValue ?? null,
-      dueDate: initiative.dueDate ?? null
+      dueDate: initiative.dueDate ?? null,
+      doneDate: initiative.doneDate ?? null
     };
   }
 
@@ -320,6 +326,11 @@ export class DbStorage implements IStorage {
       .where(eq(departments.id, id))
       .returning();
     return updated;
+  }
+
+  async getAllTeams(): Promise<TeamRow[]> {
+    const result = await db.select().from(teams);
+    return result;
   }
 
   async getTeamsByDepartment(departmentId: string): Promise<TeamRow[]> {

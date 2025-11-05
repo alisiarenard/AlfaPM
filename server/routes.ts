@@ -849,6 +849,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Kaiten Sync] Successfully synced ${syncedInitiatives.length} initiatives`);
       
+      // Для инициатив типа Compliance и Enabler автоматически проставляем planned_value = planned_cost и fact_value = fact_cost
+      const allTeams = await storage.getAllTeams();
+      const relevantTeams = allTeams.filter(team => team.initBoardId === boardId);
+      
+      if (relevantTeams.length > 0) {
+        // Используем первую команду для расчета cost (если несколько команд работают с одной доской)
+        const team = relevantTeams[0];
+        const spPrice = team.spPrice || 0;
+        
+        log(`[Kaiten Sync] Processing Compliance/Enabler initiatives for team "${team.teamName}" with spPrice=${spPrice}`);
+        
+        for (const initiative of syncedInitiatives) {
+          if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
+            // Рассчитываем planned_cost
+            const plannedCost = initiative.size * spPrice;
+            
+            // Получаем фактические задачи для расчета fact_cost
+            const tasks = await storage.getTasksByInitCardId(initiative.cardId);
+            const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
+            const factCost = actualSize * spPrice;
+            
+            log(`[Kaiten Sync] Updating initiative ${initiative.cardId} "${initiative.title}" (${initiative.type}): planned_cost=${plannedCost}, fact_cost=${factCost}`);
+            
+            // Обновляем planned_value и fact_value
+            await storage.updateInitiative(initiative.id, {
+              plannedValue: String(plannedCost),
+              factValue: String(factCost)
+            });
+          }
+        }
+      }
+      
       res.json({
         success: true,
         count: syncedInitiatives.length,
