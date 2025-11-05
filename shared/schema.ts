@@ -18,6 +18,8 @@ export const initiatives = pgTable("initiatives", {
   plannedInvolvement: integer("planned_involvement"),
   plannedValueId: varchar("planned_value_id"),
   plannedValue: varchar("planned_value"),
+  factValueId: varchar("fact_value_id"),
+  factValue: varchar("fact_value"),
 });
 
 export const insertInitiativeSchema = createInsertSchema(initiatives).omit({ id: true });
@@ -129,6 +131,8 @@ export interface Initiative {
   plannedInvolvement: number | null;
   plannedValueId: string | null;
   plannedValue: string | null;
+  factValueId: string | null;
+  factValue: string | null;
 }
 
 export interface Team {
