@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
-import { ExternalLink, CheckCircle } from "lucide-react";
+import { ExternalLink, Check } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -1109,7 +1109,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               data-testid={`row-initiative-${initiative.id}`}
             >
               <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]">
-                <div className="flex items-center gap-2">
+                <div className="flex items-start gap-2">
                   {getStatusIcon(initiative)}
                   {(() => {
                     // Проверяем, есть ли данные у инициативы
@@ -1119,7 +1119,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     
                     if (isClickable) {
                       return (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-start gap-1">
                           <button
                             onClick={() => handleInitiativeTitleClick(initiative)}
                             className="text-sm text-foreground font-semibold transition-colors text-left"
@@ -1128,16 +1128,23 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                             {initiative.title}
                           </button>
                           {isComplete && (
-                            <CheckCircle 
-                              className="w-3 h-3 flex-shrink-0 text-green-500" 
-                              data-testid={`icon-complete-${initiative.id}`}
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Check 
+                                  className="w-3 h-3 flex-shrink-0 text-green-500 mt-0.5" 
+                                  data-testid={`icon-complete-${initiative.id}`}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Все обязательные поля заполнены</p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       );
                     } else {
                       return (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-start gap-1">
                           <span
                             className="text-sm text-foreground font-semibold text-left"
                             data-testid={`text-initiative-${initiative.id}`}
@@ -1145,10 +1152,17 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                             {initiative.title}
                           </span>
                           {isComplete && (
-                            <CheckCircle 
-                              className="w-3 h-3 flex-shrink-0 text-green-500" 
-                              data-testid={`icon-complete-${initiative.id}`}
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Check 
+                                  className="w-3 h-3 flex-shrink-0 text-green-500 mt-0.5" 
+                                  data-testid={`icon-complete-${initiative.id}`}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Все обязательные поля заполнены</p>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       );
