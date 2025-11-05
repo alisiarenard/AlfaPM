@@ -30,12 +30,13 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
     - **Planned Duration Borders:** 2px borders indicate planned duration range based on `ceil(Size / (Velocity × PlannedInvolvement%))`.
     - **Editable Planned Involvement:** "Фокус(план)" column is inline editable, saving changes to the database and recalculating borders on blur or Enter.
     - **Business Support Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only for sprints with factual SP > 0, without forecasting.
-    - **Initiative Details Modal:** Clicking initiative title opens a modal showing initiative name and four progress bars (5px height, bg-muted background, bg-destructive fill):
-        - **Размер (Size)**: actual / planned SP with progress visualization
-        - **Затраты (Cost)**: actual / planned cost in rubles with thousand separators
-        - **Эффект (Value)**: actual / planned value in rubles with thousand separators
+    - **Initiative Details Modal:** Clicking initiative title opens a modal showing initiative name and four progress bars (5px height, bg-muted background, bg-destructive fill). Units of measurement are displayed in progress bar titles:
+        - **Размер, SP**: actual / planned (without SP in values)
+        - **Затраты, ₽**: actual / planned cost in rubles with thousand separators (without ₽ in values)
+        - **Эффект, ₽**: actual / planned value in rubles with thousand separators (without ₽ in values)
         - **Value/Cost**: actual / planned ratio with one decimal place
       For Compliance and Enabler initiative types, planned value equals planned cost and actual value equals actual cost (Value/Cost = 1.0).
+      Non-clickable initiatives: "Поддержка бизнеса" (Business Support, cardId=0) and initiatives without data (no planned size and no completed SP) are rendered as non-clickable text instead of buttons.
     - **Sprint Tasks Modal:** Clicking sprint headers opens a modal displaying initiatives and their tasks for that sprint. Accordions are expanded by default for all initiatives.
     - **Clickable Task Links:** Task titles in sprint modal are clickable links that open Kaiten cards in new tabs. Task titles use medium font size (text-sm) with ExternalLink icon (lucide-react) positioned to the right. URL structure uses spaceId from team settings and adapts based on archived status: non-archived tasks use `/boards/card/{cardId}`, archived tasks use `/archive/card/{cardId}`.
     - **Task SP Display:** Tasks with SP > 0 show "{size} sp" in gray. Tasks without SP (size = 0) display red text "нет оценки" with medium font weight for emphasis.

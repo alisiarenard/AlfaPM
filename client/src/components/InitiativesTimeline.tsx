@@ -856,13 +856,32 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]">
                 <div className="flex items-center gap-2">
                   {getStatusIcon(initiative)}
-                  <button
-                    onClick={() => handleInitiativeTitleClick(initiative)}
-                    className="text-sm text-foreground font-semibold hover:text-primary hover:underline transition-colors text-left"
-                    data-testid={`button-initiative-${initiative.id}`}
-                  >
-                    {initiative.title}
-                  </button>
+                  {(() => {
+                    // Проверяем, есть ли данные у инициативы
+                    const hasData = (initiative.size && initiative.size > 0) || getTotalSP(initiative) > 0;
+                    const isClickable = initiative.cardId !== 0 && hasData;
+                    
+                    if (isClickable) {
+                      return (
+                        <button
+                          onClick={() => handleInitiativeTitleClick(initiative)}
+                          className="text-sm text-foreground font-semibold hover:text-primary hover:underline transition-colors text-left"
+                          data-testid={`button-initiative-${initiative.id}`}
+                        >
+                          {initiative.title}
+                        </button>
+                      );
+                    } else {
+                      return (
+                        <span
+                          className="text-sm text-foreground font-semibold text-left"
+                          data-testid={`text-initiative-${initiative.id}`}
+                        >
+                          {initiative.title}
+                        </span>
+                      );
+                    }
+                  })()}
                 </div>
               </td>
               <td className="sticky left-[220px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
@@ -1053,9 +1072,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             {/* Размер */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-sm text-muted-foreground">Размер</p>
+                <p className="text-sm text-muted-foreground">Размер, SP</p>
                 <p className="text-sm font-medium" data-testid="text-size-progress">
-                  {initiativeDetailsData?.actualSize} / {initiativeDetailsData?.plannedSize || '—'} SP
+                  {initiativeDetailsData?.actualSize} / {initiativeDetailsData?.plannedSize || '—'}
                 </p>
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
@@ -1074,9 +1093,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             {/* Затраты */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-sm text-muted-foreground">Затраты</p>
+                <p className="text-sm text-muted-foreground">Затраты, ₽</p>
                 <p className="text-sm font-medium" data-testid="text-cost-progress">
-                  {initiativeDetailsData?.actualCost.toLocaleString('ru-RU')} / {initiativeDetailsData?.plannedCost.toLocaleString('ru-RU')} ₽
+                  {initiativeDetailsData?.actualCost.toLocaleString('ru-RU')} / {initiativeDetailsData?.plannedCost.toLocaleString('ru-RU')}
                 </p>
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
@@ -1095,13 +1114,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             {/* Эффект */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-sm text-muted-foreground">Эффект</p>
+                <p className="text-sm text-muted-foreground">Эффект, ₽</p>
                 <p className="text-sm font-medium" data-testid="text-value-progress">
                   {initiativeDetailsData?.factValue !== null && initiativeDetailsData?.factValue !== undefined
                     ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
                     : '—'} / {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
                     ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
-                    : '—'} ₽
+                    : '—'}
                 </p>
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
