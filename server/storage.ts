@@ -33,7 +33,8 @@ export interface IStorage {
     plannedValue?: string | null,
     factValueId?: string | null,
     factValue?: string | null,
-    dueDate?: string | null
+    dueDate?: string | null,
+    doneDate?: string | null
   ): Promise<InitiativeRow>;
   getAllTasks(): Promise<TaskRow[]>;
   getTasksByBoardId(boardId: number): Promise<TaskRow[]>;
@@ -166,7 +167,8 @@ export class MemStorage implements IStorage {
     plannedValue?: string | null,
     factValueId?: string | null,
     factValue?: string | null,
-    dueDate?: string | null
+    dueDate?: string | null,
+    doneDate?: string | null
   ): Promise<InitiativeRow> {
     const id = randomUUID();
     return { 
@@ -183,7 +185,8 @@ export class MemStorage implements IStorage {
       plannedValue: plannedValue ?? null,
       factValueId: factValueId ?? null,
       factValue: factValue ?? null,
-      dueDate: dueDate ?? null
+      dueDate: dueDate ?? null,
+      doneDate: doneDate ?? null
     };
   }
 
@@ -413,7 +416,8 @@ export class DbStorage implements IStorage {
     plannedValue?: string | null,
     factValueId?: string | null,
     factValue?: string | null,
-    dueDate?: string | null
+    dueDate?: string | null,
+    doneDate?: string | null
   ): Promise<InitiativeRow> {
     const existing = await this.getInitiativeByCardId(cardId);
     
@@ -431,7 +435,8 @@ export class DbStorage implements IStorage {
           plannedValue: plannedValue || null,
           factValueId: factValueId || null,
           factValue: factValue || null,
-          dueDate: dueDate || null
+          dueDate: dueDate || null,
+          doneDate: doneDate || null
         })
         .where(eq(initiatives.cardId, cardId))
         .returning();
@@ -451,7 +456,8 @@ export class DbStorage implements IStorage {
           plannedValue: plannedValue || null,
           factValueId: factValueId || null,
           factValue: factValue || null,
-          dueDate: dueDate || null
+          dueDate: dueDate || null,
+          doneDate: doneDate || null
         })
         .returning();
       return created;
