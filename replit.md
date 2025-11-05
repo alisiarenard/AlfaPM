@@ -33,10 +33,10 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
     - **Initiative Details Modal:** Clicking initiative title opens a modal showing initiative name, type, and four progress bars (5px height, bg-muted background, #cd253d fill color rgb(205, 37, 61)). Modal structure:
         - **Header**: Initiative name and type (displayed below title in smaller, darker text-xs text-foreground)
         - **Progress bars**:
-          - **Размер, SP**: actual / planned (without SP in values)
-          - **Затраты, ₽**: actual / planned cost in rubles with thousand separators (without ₽ in values)
+          - **Размер, SP**: actual / planned (without SP in values). Actual value displayed in red (#cd253d) if it exceeds planned.
+          - **Затраты, ₽**: actual / planned cost in rubles with thousand separators (without ₽ in values). Actual cost displayed in red (#cd253d) if it exceeds planned.
           - **Эффект, ₽**: actual / planned value in rubles with thousand separators (without ₽ in values)
-          - **Value/Cost**: actual / planned ratio with one decimal place
+          - **Value/Cost**: actual / planned ratio with one decimal place. Actual ratio displayed in red (#cd253d) if it is less than 1.0.
         - **Legend**: Color indicators centered below progress bars with increased spacing (pt-6), no top border
           - Grey circle (bg-muted): "Плановые значения" (Planned values)
           - Red circle (#cd253d): "Фактические значения" (Actual values)

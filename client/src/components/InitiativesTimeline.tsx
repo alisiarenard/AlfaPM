@@ -1081,7 +1081,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm text-muted-foreground">Размер, SP</p>
                 <p className="text-sm font-medium" data-testid="text-size-progress">
-                  {initiativeDetailsData?.actualSize} / {initiativeDetailsData?.plannedSize || '—'}
+                  <span className={initiativeDetailsData && initiativeDetailsData.actualSize > initiativeDetailsData.plannedSize ? "text-[#cd253d]" : ""}>
+                    {initiativeDetailsData?.actualSize}
+                  </span>
+                  {' / '}
+                  {initiativeDetailsData?.plannedSize || '—'}
                 </p>
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
@@ -1103,7 +1107,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm text-muted-foreground">Затраты, ₽</p>
                 <p className="text-sm font-medium" data-testid="text-cost-progress">
-                  {initiativeDetailsData?.actualCost.toLocaleString('ru-RU')} / {initiativeDetailsData?.plannedCost.toLocaleString('ru-RU')}
+                  <span className={initiativeDetailsData && initiativeDetailsData.actualCost > initiativeDetailsData.plannedCost ? "text-[#cd253d]" : ""}>
+                    {initiativeDetailsData?.actualCost.toLocaleString('ru-RU')}
+                  </span>
+                  {' / '}
+                  {initiativeDetailsData?.plannedCost.toLocaleString('ru-RU')}
                 </p>
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
@@ -1151,9 +1159,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm text-muted-foreground">Value/Cost</p>
                 <p className="text-sm font-medium" data-testid="text-valuecost-progress">
-                  {initiativeDetailsData?.factValueCost !== null && initiativeDetailsData?.factValueCost !== undefined
-                    ? initiativeDetailsData.factValueCost.toFixed(1)
-                    : '—'} / {initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined
+                  <span className={initiativeDetailsData?.factValueCost !== null && initiativeDetailsData?.factValueCost !== undefined && initiativeDetailsData.factValueCost < 1 ? "text-[#cd253d]" : ""}>
+                    {initiativeDetailsData?.factValueCost !== null && initiativeDetailsData?.factValueCost !== undefined
+                      ? initiativeDetailsData.factValueCost.toFixed(1)
+                      : '—'}
+                  </span>
+                  {' / '}
+                  {initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined
                     ? initiativeDetailsData.valueCost.toFixed(1)
                     : '—'}
                 </p>
