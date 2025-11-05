@@ -61,6 +61,7 @@ interface InitiativeDetailsData {
   plannedValue: number | null;
   valueCost: number | null;
   factValue: number | null;
+  factValueCost: number | null;
 }
 
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
@@ -343,6 +344,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       ? Math.round((plannedValue / plannedCost) * 10) / 10
       : null;
     
+    // Рассчитываем фактический value/cost (фактический value / фактический cost)
+    const factValueCost = factValue !== null && actualCost > 0
+      ? Math.round((factValue / actualCost) * 10) / 10
+      : null;
+    
     setInitiativeDetailsData({
       title: initiative.title,
       plannedSize,
@@ -351,7 +357,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       actualCost,
       plannedValue,
       valueCost,
-      factValue
+      factValue,
+      factValueCost
     });
     setInitiativeDetailsOpen(true);
   };
@@ -1093,10 +1100,18 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             <div className="border-t border-border pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Value/cost</p>
+                  <p className="text-sm text-muted-foreground mb-1">Плановый value/cost</p>
                   <p className="text-xl font-bold text-primary" data-testid="text-value-cost">
                     {initiativeDetailsData?.valueCost !== null && initiativeDetailsData?.valueCost !== undefined
                       ? initiativeDetailsData.valueCost.toFixed(1)
+                      : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Фактический value/cost</p>
+                  <p className="text-xl font-bold text-primary" data-testid="text-fact-value-cost">
+                    {initiativeDetailsData?.factValueCost !== null && initiativeDetailsData?.factValueCost !== undefined
+                      ? initiativeDetailsData.factValueCost.toFixed(1)
                       : '—'}
                   </p>
                 </div>
