@@ -30,6 +30,7 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
     - **Business Support Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only for sprints with factual SP > 0, without forecasting.
     - **Sprint Tasks Modal:** Clicking sprint headers opens a modal displaying initiatives and their tasks for that sprint. Accordions are expanded by default for all initiatives.
     - **Clickable Task Links:** Task titles in sprint modal are clickable links that open Kaiten cards in new tabs. Task titles use medium font size (text-sm) with ExternalLink icon (lucide-react) positioned to the right. URL structure uses spaceId from team settings and adapts based on archived status: non-archived tasks use `/boards/card/{cardId}`, archived tasks use `/archive/card/{cardId}`.
+    - **Task SP Display:** Tasks with SP > 0 show "{size} sp" in gray. Tasks without SP (size = 0) display red text "нет оценки" with medium font weight for emphasis.
     - **Timeline Block Tooltips:** Displays start, planned end, and actual end dates on hover.
 - **Team Header:** Displays team name, board ID, Velocity, Innovation Rate, and a button to sync initiatives from Kaiten.
 - **Team Management:** Full CRUD for teams and departments with Kaiten board validation.

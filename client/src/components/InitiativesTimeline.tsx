@@ -1086,7 +1086,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                                 <span className="group-hover:underline">{task.title}</span>
                                 <ExternalLink className="h-3 w-3 flex-shrink-0" />
                               </a>
-                              <span className="text-[10px] text-muted-foreground ml-4">{task.size} sp</span>
+                              {task.size === 0 ? (
+                                <span className="text-[10px] text-destructive ml-4 font-medium">нет оценки</span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground ml-4">{task.size} sp</span>
+                              )}
                             </div>
                           ))}
                           {initiative.tasks.length === 0 && (
