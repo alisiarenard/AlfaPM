@@ -22,7 +22,7 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
 - **Team Selection Menu:** Dropdown for multi-selecting teams within a department, includes an Excel report download option.
 - **Excel Report Download:** Generates a client-side Excel file with two sheets using `xlsx`:
     - **Структура затрат** (Cost Structure): Shows year, department, teams, and breakdown by Development/Support categories with percentages
-    - **Инициативы** (Initiatives): Lists all initiatives for selected teams with columns: title, team, planned size (SP), actual size (SP), planned cost, actual cost, planned value, actual value, planned value/cost ratio, and actual value/cost ratio
+    - **Инициативы** (Initiatives): Lists all initiatives for selected teams with columns: Название, Срок (план), Срок (прод), Срок (эффект), Затраты (план), Затраты (факт), Эффект (план), Эффект (факт), Value/Cost (план), Value/Cost (факт)
 - **Metrics Card:** Displays Innovation Rate and Value/Cost metrics. Smoothly transitions opacity during recalculation to indicate loading without content shift.
 - **Initiatives Timeline:** Core visualization with sticky columns for initiative details and scrollable sprint columns.
     - **Status Icons:** Material Design icons indicate initiative status (in-progress, completed, queued).
