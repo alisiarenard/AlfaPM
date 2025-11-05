@@ -26,6 +26,7 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
 - **Metrics Card:** Displays Innovation Rate and Value/Cost metrics. Value/Cost shows planned (sum of all initiative planned values ÷ sum of all initiative planned costs) and actual (sum of all initiative actual values ÷ sum of all initiative actual costs) ratios for the selected department. Smoothly transitions opacity during recalculation to indicate loading without content shift.
 - **Initiatives Timeline:** Core visualization with sticky columns for initiative details and scrollable sprint columns.
     - **Status Icons:** Material Design icons indicate initiative status. In-progress and completed initiatives use red color (#cd253d), queued initiatives use gray.
+    - **Completion Indicator:** Small green checkmark icon (CheckCircle from lucide-react, 3x3px) appears after initiative title when all required data is complete. For Epic initiatives: size > 0 and plannedValue filled. For Compliance/Enabler: size > 0 (values auto-calculated from costs).
     - **Forecasted Color Blocks:** Visualizes forecasted sprint duration based on `ceil(Size / (Velocity × Involvement%))` with guards for invalid values.
     - **Planned Duration Borders:** 2px borders indicate planned duration range based on `ceil(Size / (Velocity × PlannedInvolvement%))`.
     - **Editable Planned Involvement:** "Фокус(план)" column is inline editable, saving changes to the database and recalculating borders on blur or Enter.
