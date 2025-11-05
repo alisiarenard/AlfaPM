@@ -486,6 +486,19 @@ export default function HomePage() {
         ['Тип', 'Название', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 'Затраты (план)', 'Затраты (факт)', 'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)']
       ];
 
+      // Функция для форматирования даты в формат "dd.MM"
+      const formatDate = (dateString: string | null | undefined): string => {
+        if (!dateString) return '—';
+        try {
+          const date = new Date(dateString);
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          return `${day}.${month}`;
+        } catch {
+          return '—';
+        }
+      };
+
       // Добавляем данные по инициативам
       allInitiatives.forEach((initiative: any) => {
         // Пропускаем "Поддержку бизнеса"
@@ -516,8 +529,8 @@ export default function HomePage() {
         initiativesData.push([
           initiative.type || '—',
           initiative.title,
-          initiative.dueDate || '—',
-          initiative.doneDate || '—',
+          formatDate(initiative.dueDate),
+          formatDate(initiative.doneDate),
           '—', // Срок (эффект) - пока не определено
           plannedCost,
           actualCost,
