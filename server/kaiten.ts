@@ -21,6 +21,7 @@ export interface KaitenCard {
   } | null;
   completed_at?: string | null;
   parents_ids?: number[];
+  properties?: Record<string, any>;
 }
 
 export interface KaitenCardListResponse {

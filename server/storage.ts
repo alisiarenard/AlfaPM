@@ -130,7 +130,14 @@ export class MemStorage implements IStorage {
 
   async createInitiative(initiative: InsertInitiative): Promise<InitiativeRow> {
     const id = randomUUID();
-    return { ...initiative, id, type: initiative.type ?? null, plannedInvolvement: initiative.plannedInvolvement ?? null };
+    return { 
+      ...initiative, 
+      id, 
+      type: initiative.type ?? null, 
+      plannedInvolvement: initiative.plannedInvolvement ?? null,
+      plannedValueId: initiative.plannedValueId ?? null,
+      plannedValue: initiative.plannedValue ?? null
+    };
   }
 
   async updateInitiative(id: string, initiative: Partial<InsertInitiative>): Promise<InitiativeRow | undefined> {
