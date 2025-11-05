@@ -735,7 +735,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       case "2-inProgress":
         return <MdPlayCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-in-progress" />;
       case "3-done":
-        return <MdCheckCircleOutline className={iconClass} style={{ color: "#22c55e" }} data-testid="icon-done" />;
+        return <MdCheckCircleOutline className={iconClass} style={{ color: "rgba(205, 37, 61, 1)" }} data-testid="icon-done" />;
       case "1-queued":
         return <MdPauseCircleOutline className={iconClass} style={{ color: "#d1d5db" }} data-testid="icon-queued" />;
       default:
