@@ -420,6 +420,19 @@ export default function HomePage() {
 
       const data = await response.json();
 
+      // Получаем инициативы для всех выбранных команд
+      const selectedTeamsData = departmentTeams?.filter(t => selectedTeams.has(t.teamId)) || [];
+      const initiativesPromises = selectedTeamsData.map(async (team) => {
+        const url = `/api/initiatives/board/${team.initBoardId}?sprintBoardId=${team.sprintBoardId}`;
+        const response = await fetch(url);
+        if (!response.ok) return [];
+        const initiatives = await response.json();
+        return initiatives.map((init: any) => ({ ...init, team }));
+      });
+
+      const initiativesArrays = await Promise.all(initiativesPromises);
+      const allInitiatives = initiativesArrays.flat();
+
       // Динамически импортируем библиотеку xlsx
       const XLSX = await import('xlsx');
 
@@ -466,6 +479,70 @@ export default function HomePage() {
       worksheet['!cols'] = [
         { wch: 25 },
         { wch: 15 }
+      ];
+
+      // Готовим данные для листа с инициативами
+      const initiativesData: any[][] = [
+        ['Название', 'Команда', 'Размер (план)', 'Размер (факт)', 'Cost (план)', 'Cost (факт)', 'Value (план)', 'Value (факт)', 'Value/Cost (план)', 'Value/Cost (факт)']
+      ];
+
+      // Добавляем данные по инициативам
+      allInitiatives.forEach((initiative: any) => {
+        // Пропускаем "Поддержку бизнеса"
+        if (initiative.cardId === 0) return;
+
+        const team = initiative.team;
+        const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
+        const plannedSize = initiative.size || 0;
+        const plannedCost = plannedSize * team.spPrice;
+        const actualCost = actualSize * team.spPrice;
+
+        // Преобразуем plannedValue и factValue из строки в число
+        const plannedValue = initiative.plannedValue && initiative.plannedValue.trim() !== '' 
+          ? parseFloat(initiative.plannedValue) 
+          : null;
+        const factValue = initiative.factValue && initiative.factValue.trim() !== '' 
+          ? parseFloat(initiative.factValue) 
+          : null;
+
+        // Рассчитываем value/cost
+        const plannedValueCost = plannedValue !== null && plannedCost > 0
+          ? Math.round((plannedValue / plannedCost) * 10) / 10
+          : null;
+        const factValueCost = factValue !== null && actualCost > 0
+          ? Math.round((factValue / actualCost) * 10) / 10
+          : null;
+
+        initiativesData.push([
+          initiative.title,
+          team.name,
+          plannedSize,
+          actualSize,
+          plannedCost,
+          actualCost,
+          plannedValue ?? '—',
+          factValue ?? '—',
+          plannedValueCost ?? '—',
+          factValueCost ?? '—'
+        ]);
+      });
+
+      // Создаем лист с инициативами
+      const initiativesWorksheet = XLSX.utils.aoa_to_sheet(initiativesData);
+      XLSX.utils.book_append_sheet(workbook, initiativesWorksheet, 'Инициативы');
+
+      // Устанавливаем ширину колонок для листа инициатив
+      initiativesWorksheet['!cols'] = [
+        { wch: 40 }, // Название
+        { wch: 20 }, // Команда
+        { wch: 15 }, // Размер (план)
+        { wch: 15 }, // Размер (факт)
+        { wch: 15 }, // Cost (план)
+        { wch: 15 }, // Cost (факт)
+        { wch: 15 }, // Value (план)
+        { wch: 15 }, // Value (факт)
+        { wch: 18 }, // Value/Cost (план)
+        { wch: 18 }  // Value/Cost (факт)
       ];
 
       // Генерируем имя файла
