@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
+import { ExternalLink } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -1079,10 +1080,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                                 href={getKaitenCardUrl(team.spaceId, task.cardId, task.archived)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-foreground hover:text-primary hover:underline transition-colors"
+                                className="flex items-center gap-1 text-sm text-foreground hover:text-primary transition-colors group"
                                 data-testid={`task-link-${idx}-${taskIdx}`}
                               >
-                                {task.title}
+                                <span className="group-hover:underline">{task.title}</span>
+                                <ExternalLink className="h-3 w-3 flex-shrink-0" />
                               </a>
                               <span className="text-[10px] text-muted-foreground ml-4">{task.size} sp</span>
                             </div>
