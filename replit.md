@@ -20,7 +20,18 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 - **Multi-Team Support:** Departments and teams are fetched from the database and displayed in separate tabs using Shadcn Tabs. Each tab independently fetches and displays initiatives and team metrics.
 - **Year Selection:** Dropdown in header next to department selector displays current year (2025) and next year (2026) for filtering data by year. Used for Excel report generation and future metric filtering.
 - **Team Selection Menu:** Dropdown menu (triggered by three-dot button in top-right corner of metrics card) displays all teams from selected department with checkboxes for multi-selection. All teams are checked by default. Menu has white background (bg-white). Includes "Скачать отчет" (Download Report) option separated by horizontal divider. State automatically resets to all-checked when department changes. Uses DropdownMenuCheckboxItem for full accessibility (keyboard navigation, screen reader support, aria attributes).
-- **Excel Report Download:** Clicking "Скачать отчет" generates and downloads an Excel file with cost structure data for selected teams and year. Uses xlsx library for client-side Excel generation. Report includes: year, team names, task types with story points and percentages, sorted by SP in descending order. Filename format: `Cost_Structure_YYYY_DATE.xlsx`.
+- **Excel Report Download:** Clicking "Скачать отчет" generates and downloads an Excel file with cost structure data for selected teams and year. Uses xlsx library for client-side Excel generation. Report format:
+  - Row 1: "Год" | year value
+  - Row 2: "Блок" | department name
+  - Row 3: Empty
+  - Row 4: "Развитие" | percentage sum (Epic + Compliance + Enabler)
+  - Row 5: "Epic" | Epic percentage
+  - Row 6: "Compliance" | Compliance percentage
+  - Row 7: "Enabler" | Enabler percentage
+  - Row 8: Empty
+  - Row 9: "Поддержка" | percentage (100% - Развитие%)
+  - Row 10+: Support type names (Service Desk, Bug, Security, Tech debt, Postmortem, Др. доработки) with percentages
+  - Filename format: `Cost_Structure_YYYY_DATE.xlsx`.
 - **Metrics Card:** Unified full-width card displays three metric sections: Innovation Rate (20% width), Value/Cost (20% width), and reserved section (60% width), separated by vertical borders with top/bottom margins (my-3) for visual spacing. Contains team selection menu button (three dots) in top-right corner (position: absolute). During metric recalculation, card smoothly transitions to 50% opacity (300ms) while preserving previous metric values (using useRef to store last successful data), providing clear loading feedback without content shift or value disappearance.
 - **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details: "Инициатива" (220px, left-0), "Выполнено" (100px, left-220px), "Фокус(план)" (100px, left-320px, editable on click), "Фокус (факт)" (100px, left-420px), and scrollable sprint columns (100px each) with story points and colored status blocks.
   - **Status Icons:** Material Design outline icons indicate initiative status: Play Circle (in-progress, red), Check Circle (completed, green), Pause Circle (queued, light gray). "Поддержка бизнеса" initiatives display gray icons for all statuses.

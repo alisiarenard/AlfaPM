@@ -423,26 +423,35 @@ export default function HomePage() {
       // Динамически импортируем библиотеку xlsx
       const XLSX = await import('xlsx');
 
-      // Подготавливаем данные для Excel
-      const worksheetData = [
-        ['Структура затрат'],
-        ['Год:', data.year],
-        ['Команды:', data.teams.map((t: { name: string }) => t.name).join(', ')],
+      // Получаем название департамента
+      const departmentName = departments?.find(d => d.id === selectedDepartment)?.department || 'Не указан';
+
+      // Рассчитываем проценты для категорий
+      const epicPercent = data.typePercentages['Epic'] || 0;
+      const compliancePercent = data.typePercentages['Compliance'] || 0;
+      const enablerPercent = data.typePercentages['Enabler'] || 0;
+      const developmentPercent = epicPercent + compliancePercent + enablerPercent;
+      const supportPercent = 100 - developmentPercent;
+
+      // Подготавливаем данные для Excel в новом формате
+      const worksheetData: any[][] = [
+        ['Год', data.year],
+        ['Блок', departmentName],
         [''],
-        ['Тип задачи', 'Story Points', 'Процент'],
+        ['Развитие', `${developmentPercent}%`],
+        ['Epic', `${epicPercent}%`],
+        ['Compliance', `${compliancePercent}%`],
+        ['Enabler', `${enablerPercent}%`],
+        [''],
+        ['Поддержка', `${supportPercent}%`],
       ];
 
-      // Сортируем типы по убыванию SP
-      const sortedTypes = Object.entries(data.typeStats as Record<string, number>)
-        .sort(([, a], [, b]) => (b as number) - (a as number));
-
-      for (const [type, sp] of sortedTypes) {
+      // Добавляем остальные типы (кроме Epic, Compliance, Enabler)
+      const supportTypes = ['Service Desk', 'Bug', 'Security', 'Tech debt', 'Postmortem', 'Др. доработки'];
+      for (const type of supportTypes) {
         const percentage = data.typePercentages[type] || 0;
-        worksheetData.push([type, sp as number, `${percentage}%`]);
+        worksheetData.push([type, `${percentage}%`]);
       }
-
-      worksheetData.push(['']);
-      worksheetData.push(['Итого:', data.totalSP, '100%']);
 
       // Создаем рабочую книгу и лист
       const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -451,8 +460,7 @@ export default function HomePage() {
 
       // Устанавливаем ширину колонок
       worksheet['!cols'] = [
-        { wch: 30 },
-        { wch: 15 },
+        { wch: 25 },
         { wch: 15 }
       ];
 
