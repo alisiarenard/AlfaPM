@@ -28,7 +28,7 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
     - **Planned Duration Borders:** 2px borders indicate planned duration range based on `ceil(Size / (Velocity × PlannedInvolvement%))`.
     - **Editable Planned Involvement:** "Фокус(план)" column is inline editable, saving changes to the database and recalculating borders on blur or Enter.
     - **Business Support Handling:** "Поддержка бизнеса" (cardId === 0) displays grey blocks only for sprints with factual SP > 0, without forecasting.
-    - **Initiative Details Modal:** Clicking initiative title opens a modal showing: initiative name, planned size (SP), actual size (SP), planned cost (size × team sp_price), actual cost (actual size × team sp_price), planned value (from Kaiten custom field), and value/cost ratio (planned value ÷ planned cost, rounded to 1 decimal place). Costs are formatted in rubles with thousand separators.
+    - **Initiative Details Modal:** Clicking initiative title opens a modal showing: initiative name, planned size (SP), actual size (SP), planned cost (size × team sp_price), actual cost (actual size × team sp_price), planned value (from Kaiten custom field), actual value (from Kaiten custom field), and value/cost ratio (planned value ÷ planned cost, rounded to 1 decimal place). Costs and values are formatted in rubles with thousand separators.
     - **Sprint Tasks Modal:** Clicking sprint headers opens a modal displaying initiatives and their tasks for that sprint. Accordions are expanded by default for all initiatives.
     - **Clickable Task Links:** Task titles in sprint modal are clickable links that open Kaiten cards in new tabs. Task titles use medium font size (text-sm) with ExternalLink icon (lucide-react) positioned to the right. URL structure uses spaceId from team settings and adapts based on archived status: non-archived tasks use `/boards/card/{cardId}`, archived tasks use `/archive/card/{cardId}`.
     - **Task SP Display:** Tasks with SP > 0 show "{size} sp" in gray. Tasks without SP (size = 0) display red text "нет оценки" with medium font weight for emphasis.
@@ -60,7 +60,7 @@ Express.js with TypeScript and ESM provides a RESTful API under `/api`.
 - Syncs initiatives and tasks from Kaiten API, mapping states. Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN`.
 - **Type Synchronization:** Persists initiative and task types (`card.type.name`) from Kaiten during sync operations.
 - **Archived Status:** Syncs `card.archived` status for tasks from Kaiten.
-- **Custom Field Synchronization:** Syncs custom field values from Kaiten card properties. All initiatives have `planned_value_id = "id_451379"` by default, and the corresponding `planned_value` is read from `card.properties[planned_value_id]` during sync. Extraction logic handles falsy values correctly (including 0 and empty strings).
+- **Custom Field Synchronization:** Syncs custom field values from Kaiten card properties. All initiatives have `planned_value_id = "id_451379"` and `fact_value_id = "id_448119"` by default. During sync, both `planned_value` and `fact_value` are read from `card.properties[planned_value_id]` and `card.properties[fact_value_id]` respectively. Extraction logic handles falsy values correctly (including 0 and empty strings).
 
 ### Data Storage Solutions
 PostgreSQL (via Neon) is the primary data store, with Drizzle ORM for type-safe queries.
@@ -69,7 +69,7 @@ PostgreSQL (via Neon) is the primary data store, with Drizzle ORM for type-safe 
 - `users`: (For future authentication)
 - `departments`: Department names.
 - `teams`: Team metadata (name, velocity, sprint duration, board IDs).
-- `initiatives`: Initiative details (ID, title, state, size, planned_involvement, planned_value_id, planned_value).
+- `initiatives`: Initiative details (ID, title, state, size, planned_involvement, planned_value_id, planned_value, fact_value_id, fact_value).
 - `tasks`: Task details (ID, title, state, size, type, sprint_id, init_card_id, archived).
 - `sprints`: Sprint details (ID, board_id, title, velocity, dates).
 - Schema defined in `shared/schema.ts`, migrations managed by Drizzle-kit.
