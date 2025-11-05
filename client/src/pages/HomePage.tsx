@@ -82,7 +82,9 @@ function DepartmentTreeItem({
 }
 
 export default function HomePage() {
+  const currentYear = new Date().getFullYear();
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState<string>("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
@@ -463,6 +465,23 @@ export default function HomePage() {
                     {dept.department}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select 
+              value={selectedYear} 
+              onValueChange={setSelectedYear}
+              data-testid="select-year"
+            >
+              <SelectTrigger className="w-[120px] bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value={currentYear.toString()} data-testid={`option-year-${currentYear}`}>
+                  {currentYear}
+                </SelectItem>
+                <SelectItem value={(currentYear + 1).toString()} data-testid={`option-year-${currentYear + 1}`}>
+                  {currentYear + 1}
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button
