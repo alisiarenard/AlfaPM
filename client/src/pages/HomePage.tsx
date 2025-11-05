@@ -511,7 +511,8 @@ export default function HomePage() {
         initiativesByCardId.get(initiative.cardId)!.push(initiative);
       });
 
-      // Добавляем данные по уникальным инициативам
+      // Обрабатываем уникальные инициативы и собираем их данные
+      const processedInitiatives: any[] = [];
       initiativesByCardId.forEach((initiatives) => {
         // Используем данные из первой инициативы для общих полей
         const firstInit = initiatives[0];
@@ -544,20 +545,85 @@ export default function HomePage() {
           ? Math.round((factValue / totalActualCost) * 10) / 10
           : null;
 
-        initiativesData.push([
-          firstInit.type || '—',
-          firstInit.title,
-          formatDate(firstInit.dueDate),
-          formatDate(firstInit.doneDate),
-          '—', // Срок (эффект) - пока не определено
+        processedInitiatives.push({
+          type: firstInit.type || '—',
+          title: firstInit.title,
+          dueDate: firstInit.dueDate,
+          doneDate: firstInit.doneDate,
           totalPlannedCost,
           totalActualCost,
-          plannedValue ?? '—',
-          factValue ?? '—',
-          plannedValueCost ?? '—',
-          factValueCost ?? '—'
-        ]);
+          plannedValue,
+          factValue,
+          plannedValueCost,
+          factValueCost
+        });
       });
+
+      // Группируем по типам
+      const epicInitiatives = processedInitiatives.filter(i => i.type === 'Epic');
+      const complianceInitiatives = processedInitiatives.filter(i => i.type === 'Compliance');
+      const enablerInitiatives = processedInitiatives.filter(i => i.type === 'Enabler');
+      const otherInitiatives = processedInitiatives.filter(i => i.type !== 'Epic' && i.type !== 'Compliance' && i.type !== 'Enabler');
+
+      // Функция для добавления группы инициатив
+      const addInitiativesGroup = (initiatives: any[]) => {
+        let sumPlannedCost = 0;
+        let sumActualCost = 0;
+        let sumPlannedValue = 0;
+        let sumFactValue = 0;
+
+        initiatives.forEach((init) => {
+          initiativesData.push([
+            init.type,
+            init.title,
+            formatDate(init.dueDate),
+            formatDate(init.doneDate),
+            '—', // Срок (эффект) - пока не определено
+            init.totalPlannedCost,
+            init.totalActualCost,
+            init.plannedValue ?? '—',
+            init.factValue ?? '—',
+            init.plannedValueCost ?? '—',
+            init.factValueCost ?? '—'
+          ]);
+
+          // Суммируем для строки "Всего"
+          sumPlannedCost += init.totalPlannedCost;
+          sumActualCost += init.totalActualCost;
+          if (init.plannedValue !== null) sumPlannedValue += init.plannedValue;
+          if (init.factValue !== null) sumFactValue += init.factValue;
+        });
+
+        // Добавляем строку "Всего" если есть инициативы
+        if (initiatives.length > 0) {
+          const totalPlannedValueCost = sumPlannedValue > 0 && sumPlannedCost > 0
+            ? Math.round((sumPlannedValue / sumPlannedCost) * 10) / 10
+            : '—';
+          const totalFactValueCost = sumFactValue > 0 && sumActualCost > 0
+            ? Math.round((sumFactValue / sumActualCost) * 10) / 10
+            : '—';
+
+          initiativesData.push([
+            'Всего',
+            '',
+            '',
+            '',
+            '',
+            sumPlannedCost,
+            sumActualCost,
+            sumPlannedValue || '—',
+            sumFactValue || '—',
+            totalPlannedValueCost,
+            totalFactValueCost
+          ]);
+        }
+      };
+
+      // Добавляем группы в порядке: Epic, Compliance, Enabler, остальные
+      addInitiativesGroup(epicInitiatives);
+      addInitiativesGroup(complianceInitiatives);
+      addInitiativesGroup(enablerInitiatives);
+      addInitiativesGroup(otherInitiatives);
 
       // Создаем лист с инициативами
       const initiativesWorksheet = XLSX.utils.aoa_to_sheet(initiativesData);
