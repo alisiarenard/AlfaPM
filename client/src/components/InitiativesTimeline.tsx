@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, CheckCircle } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -712,6 +712,36 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return "rgba(205, 37, 61, 0.1)";
   };
 
+  // Проверить, заполнены ли все обязательные данные в инициативе
+  const isInitiativeDataComplete = (initiative: Initiative): boolean => {
+    // Поддержка бизнеса не проверяем
+    if (initiative.cardId === 0) {
+      return false;
+    }
+    
+    // Проверяем плановый размер
+    if (!initiative.size || initiative.size <= 0) {
+      return false;
+    }
+    
+    // Для типов Compliance и Enabler эффект рассчитывается автоматически
+    if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
+      return true;
+    }
+    
+    // Для остальных типов (включая Epic) проверяем плановый эффект
+    if (!initiative.plannedValue || initiative.plannedValue.trim() === '') {
+      return false;
+    }
+    
+    const plannedValueNum = parseFloat(initiative.plannedValue);
+    if (isNaN(plannedValueNum) || plannedValueNum <= 0) {
+      return false;
+    }
+    
+    return true;
+  };
+
   // Получить иконку статуса инициативы
   const getStatusIcon = (initiative: Initiative) => {
     const iconClass = "w-5 h-5 flex-shrink-0";
@@ -1085,25 +1115,42 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     // Проверяем, есть ли данные у инициативы
                     const hasData = (initiative.size && initiative.size > 0) || getTotalSP(initiative) > 0;
                     const isClickable = initiative.cardId !== 0 && hasData;
+                    const isComplete = isInitiativeDataComplete(initiative);
                     
                     if (isClickable) {
                       return (
-                        <button
-                          onClick={() => handleInitiativeTitleClick(initiative)}
-                          className="text-sm text-foreground font-semibold transition-colors text-left"
-                          data-testid={`button-initiative-${initiative.id}`}
-                        >
-                          {initiative.title}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleInitiativeTitleClick(initiative)}
+                            className="text-sm text-foreground font-semibold transition-colors text-left"
+                            data-testid={`button-initiative-${initiative.id}`}
+                          >
+                            {initiative.title}
+                          </button>
+                          {isComplete && (
+                            <CheckCircle 
+                              className="w-3 h-3 flex-shrink-0 text-green-500" 
+                              data-testid={`icon-complete-${initiative.id}`}
+                            />
+                          )}
+                        </div>
                       );
                     } else {
                       return (
-                        <span
-                          className="text-sm text-foreground font-semibold text-left"
-                          data-testid={`text-initiative-${initiative.id}`}
-                        >
-                          {initiative.title}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span
+                            className="text-sm text-foreground font-semibold text-left"
+                            data-testid={`text-initiative-${initiative.id}`}
+                          >
+                            {initiative.title}
+                          </span>
+                          {isComplete && (
+                            <CheckCircle 
+                              className="w-3 h-3 flex-shrink-0 text-green-500" 
+                              data-testid={`icon-complete-${initiative.id}`}
+                            />
+                          )}
+                        </div>
                       );
                     }
                   })()}
