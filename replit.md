@@ -63,6 +63,7 @@ Express.js with TypeScript and ESM provides a RESTful API under `/api`.
 - **Type Synchronization:** Persists initiative and task types (`card.type.name`) from Kaiten during sync operations.
 - **Archived Status:** Syncs `card.archived` status for tasks from Kaiten.
 - **Custom Field Synchronization:** Syncs custom field values from Kaiten card properties. All initiatives have `planned_value_id = "id_451379"` and `fact_value_id = "id_448119"` by default. During sync, both `planned_value` and `fact_value` are read from `card.properties[planned_value_id]` and `card.properties[fact_value_id]` respectively. Extraction logic handles falsy values correctly (including 0 and empty strings).
+- **Date Synchronization:** Syncs `due_date` from Kaiten's `due_date` field and `done_date` from Kaiten's `last_moved_to_done_at` field for initiatives.
 
 ### Data Storage Solutions
 PostgreSQL (via Neon) is the primary data store, with Drizzle ORM for type-safe queries.
@@ -71,7 +72,7 @@ PostgreSQL (via Neon) is the primary data store, with Drizzle ORM for type-safe 
 - `users`: (For future authentication)
 - `departments`: Department names.
 - `teams`: Team metadata (name, velocity, sprint duration, board IDs).
-- `initiatives`: Initiative details (ID, title, state, size, planned_involvement, planned_value_id, planned_value, fact_value_id, fact_value, due_date).
+- `initiatives`: Initiative details (ID, title, state, size, planned_involvement, planned_value_id, planned_value, fact_value_id, fact_value, due_date, done_date).
 - `tasks`: Task details (ID, title, state, size, type, sprint_id, init_card_id, archived).
 - `sprints`: Sprint details (ID, board_id, title, velocity, dates).
 - Schema defined in `shared/schema.ts`, migrations managed by Drizzle-kit.
