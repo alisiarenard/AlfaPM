@@ -23,6 +23,7 @@ export interface KaitenCard {
   parents_ids?: number[];
   properties?: Record<string, any>;
   due_date?: string | null;
+  last_moved_to_done_at?: string | null;
 }
 
 export interface KaitenCardListResponse {
