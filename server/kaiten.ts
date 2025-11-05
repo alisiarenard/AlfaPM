@@ -66,14 +66,19 @@ export class KaitenClient {
     this.apiKey = apiKey;
   }
 
-  private async makeRequest<T>(endpoint: string): Promise<T> {
+  private async makeRequest<T>(endpoint: string, options?: {
+    method?: string;
+    body?: any;
+  }): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
     const { statusCode, body } = await request(url, {
+      method: options?.method || 'GET',
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
       },
+      body: options?.body ? JSON.stringify(options.body) : undefined,
     });
 
     const responseText = await body.text();
@@ -148,6 +153,17 @@ export class KaitenClient {
       }
       return { valid: false, error: 'Ошибка при проверке доски в Kaiten' };
     }
+  }
+
+  async updateCard(cardId: number, updates: {
+    size?: number;
+    properties?: Record<string, any>;
+  }): Promise<KaitenCard> {
+    log(`[Kaiten API] Updating card ${cardId} with:`, JSON.stringify(updates));
+    return this.makeRequest<KaitenCard>(`/cards/${cardId}`, {
+      method: 'PATCH',
+      body: updates,
+    });
   }
 }
 

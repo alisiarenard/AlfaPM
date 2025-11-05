@@ -55,6 +55,7 @@ interface SprintModalData {
 interface InitiativeDetailsData {
   title: string;
   type: string | null;
+  cardId: number;
   plannedSize: number;
   actualSize: number;
   plannedCost: number;
@@ -64,6 +65,8 @@ interface InitiativeDetailsData {
   factValue: number | null;
   factValueCost: number | null;
 }
+
+type EditableField = 'plannedSize' | 'plannedValue' | 'factValue';
 
 export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
@@ -75,6 +78,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const [savingInitiativeId, setSavingInitiativeId] = useState<string | null>(null);
   const [pendingValue, setPendingValue] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Состояние для редактирования полей в модалке
+  const [editingField, setEditingField] = useState<EditableField | null>(null);
+  const [editingFieldValue, setEditingFieldValue] = useState<string>("");
+  const [savingField, setSavingField] = useState<EditableField | null>(null);
+  const fieldInputRef = useRef<HTMLInputElement>(null);
 
   // Mutation для обновления planned_involvement
   const updatePlannedInvolvementMutation = useMutation({
@@ -105,6 +114,58 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     },
   });
 
+  // Mutation для обновления инициативы в Kaiten и БД
+  const updateInitiativeFieldMutation = useMutation({
+    mutationFn: async ({ cardId, size, plannedValue, factValue }: { 
+      cardId: number;
+      size?: number;
+      plannedValue?: string | null;
+      factValue?: string | null;
+    }) => {
+      const response = await fetch(`/api/kaiten/update-initiative/${cardId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ size, plannedValue, factValue }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update initiative');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Сбрасываем состояние редактирования
+      setEditingField(null);
+      setEditingFieldValue("");
+      setSavingField(null);
+      
+      // Инвалидируем кэш
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId] 
+      });
+      
+      // Закрываем и переоткрываем модалку для обновления данных
+      if (initiativeDetailsData) {
+        const initiative = initiatives.find(i => i.cardId === initiativeDetailsData.cardId);
+        if (initiative) {
+          setTimeout(() => {
+            handleInitiativeTitleClick(initiative);
+          }, 300);
+        }
+      }
+    },
+    onError: (error: Error) => {
+      // Сбрасываем состояние редактирования
+      setEditingField(null);
+      setEditingFieldValue("");
+      setSavingField(null);
+      
+      // Показываем уведомление об ошибке
+      console.error('Failed to update initiative:', error);
+      alert(`Ошибка при сохранении: ${error.message}`);
+    },
+  });
+
   // Автофокус на input при начале редактирования
   useEffect(() => {
     if (editingInitiativeId && inputRef.current) {
@@ -112,6 +173,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       inputRef.current.select();
     }
   }, [editingInitiativeId]);
+
+  // Автофокус на input полей в модалке
+  useEffect(() => {
+    if (editingField && fieldInputRef.current) {
+      fieldInputRef.current.focus();
+      fieldInputRef.current.select();
+    }
+  }, [editingField]);
 
   // Начать редактирование
   const startEditing = (initiativeId: string, currentValue: number | null) => {
@@ -140,6 +209,110 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const cancelEdit = () => {
     setEditingInitiativeId(null);
     setEditValue("");
+  };
+
+  // Начать редактирование поля в модалке
+  const startFieldEditing = (field: EditableField, currentValue: number | string | null) => {
+    setEditingField(field);
+    if (currentValue === null || currentValue === '') {
+      setEditingFieldValue("0");
+    } else {
+      setEditingFieldValue(String(currentValue));
+    }
+  };
+
+  // Сохранить изменения поля в модалке
+  const saveFieldEdit = () => {
+    if (!editingField || !initiativeDetailsData) return;
+    
+    // Очищаем строку от всех видов пробелов и групповых разделителей
+    // Поддерживаем различные локализованные форматы:
+    // - "1 234 567,89" (ru-RU с пробелами)
+    // - "1.234.567,89" (de-DE с точками как разделители тысяч)
+    // - "1,234,567.89" (en-US с запятыми как разделители тысяч)
+    // - "1.234.567" (de-DE целые числа с точками)
+    // - "1,234,567" (en-US целые числа с запятыми)
+    let cleanedValue = editingFieldValue
+      .replace(/[\s\u00A0\u202F]/g, '') // Удаляем все виды пробелов (обычные, NBSP, узкие)
+      .replace(/\u2009/g, ''); // Удаляем thin space
+    
+    // Определяем десятичный разделитель (последняя запятая или точка)
+    const lastComma = cleanedValue.lastIndexOf(',');
+    const lastDot = cleanedValue.lastIndexOf('.');
+    const commaCount = (cleanedValue.match(/,/g) || []).length;
+    const dotCount = (cleanedValue.match(/\./g) || []).length;
+    
+    if (lastComma > -1 && lastDot > -1) {
+      // Оба разделителя присутствуют - используем тот, который идет последним как десятичный
+      if (lastComma > lastDot) {
+        // Запятая - десятичный разделитель (европейский формат: "1.234.567,89")
+        cleanedValue = cleanedValue.replace(/\./g, '').replace(',', '.');
+      } else {
+        // Точка - десятичный разделитель (американский формат: "1,234,567.89")
+        cleanedValue = cleanedValue.replace(/,/g, '');
+      }
+    } else if (lastComma > -1) {
+      // Только запятые
+      if (commaCount === 1) {
+        // Одна запятая - проверяем количество цифр после нее
+        const digitsAfterComma = cleanedValue.substring(lastComma + 1).length;
+        if (digitsAfterComma <= 2) {
+          // 1-2 цифры после запятой - десятичный разделитель (европейский формат: "123,45")
+          cleanedValue = cleanedValue.replace(',', '.');
+        } else {
+          // 3+ цифры после запятой - групповой разделитель (американский формат: "1,234")
+          cleanedValue = cleanedValue.replace(',', '');
+        }
+      } else {
+        // Несколько запятых - групповые разделители (американский формат: "1,234,567")
+        cleanedValue = cleanedValue.replace(/,/g, '');
+      }
+    } else if (lastDot > -1) {
+      // Только точки
+      if (dotCount === 1 && lastDot === cleanedValue.length - 3) {
+        // Одна точка в позиции десятичного разделителя (американский формат: "123.45")
+        // Оставляем как есть
+      } else {
+        // Несколько точек или одна точка не в конце - групповые разделители (европейский формат: "1.234.567")
+        cleanedValue = cleanedValue.replace(/\./g, '');
+      }
+    }
+    // Если нет разделителей - оставляем как есть
+    
+    const numValue = parseFloat(cleanedValue);
+    
+    if (isNaN(numValue) || numValue < 0) {
+      alert('Некорректное значение. Пожалуйста, введите положительное число.');
+      cancelFieldEdit();
+      return;
+    }
+
+    setSavingField(editingField);
+
+    const updateData: {
+      cardId: number;
+      size?: number;
+      plannedValue?: string | null;
+      factValue?: string | null;
+    } = {
+      cardId: initiativeDetailsData.cardId,
+    };
+
+    if (editingField === 'plannedSize') {
+      updateData.size = Math.round(numValue);
+    } else if (editingField === 'plannedValue') {
+      updateData.plannedValue = String(numValue);
+    } else if (editingField === 'factValue') {
+      updateData.factValue = String(numValue);
+    }
+
+    updateInitiativeFieldMutation.mutate(updateData);
+  };
+
+  // Отменить редактирование поля в модалке
+  const cancelFieldEdit = () => {
+    setEditingField(null);
+    setEditingFieldValue("");
   };
   // Отсортировать спринты по дате начала от более ранних до более поздних
   const sortedSprints = [...sprints].sort((a, b) => {
@@ -359,6 +532,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     setInitiativeDetailsData({
       title: initiative.title,
       type: initiative.type,
+      cardId: initiative.cardId,
       plannedSize,
       actualSize,
       plannedCost,
@@ -1080,13 +1254,37 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm text-muted-foreground">Размер, SP</p>
-                <p className="text-sm font-medium" data-testid="text-size-progress">
+                <div className="text-sm font-medium flex items-center gap-2" data-testid="text-size-progress">
                   <span className={initiativeDetailsData && initiativeDetailsData.actualSize > initiativeDetailsData.plannedSize ? "text-[#cd253d]" : ""}>
                     {initiativeDetailsData?.actualSize}
                   </span>
-                  {' / '}
-                  {initiativeDetailsData?.plannedSize || '—'}
-                </p>
+                  <span>{' / '}</span>
+                  {editingField === 'plannedSize' ? (
+                    <input
+                      ref={fieldInputRef}
+                      type="number"
+                      value={editingFieldValue}
+                      onChange={(e) => setEditingFieldValue(e.target.value)}
+                      onBlur={saveFieldEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveFieldEdit();
+                        if (e.key === 'Escape') cancelFieldEdit();
+                      }}
+                      className="w-16 px-1 py-0.5 text-sm border rounded"
+                      data-testid="input-planned-size"
+                      disabled={savingField === 'plannedSize'}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => startFieldEditing('plannedSize', initiativeDetailsData?.plannedSize || 0)}
+                      className="hover:text-primary transition-colors cursor-pointer"
+                      data-testid="button-edit-planned-size"
+                      disabled={savingField !== null}
+                    >
+                      {initiativeDetailsData?.plannedSize || '—'}
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
                 <div 
@@ -1132,13 +1330,63 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm text-muted-foreground">Эффект, ₽</p>
-                <p className="text-sm font-medium" data-testid="text-value-progress">
-                  {initiativeDetailsData?.factValue !== null && initiativeDetailsData?.factValue !== undefined
-                    ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
-                    : '—'} / {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
-                    ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
-                    : '—'}
-                </p>
+                <div className="text-sm font-medium flex items-center gap-2" data-testid="text-value-progress">
+                  {editingField === 'factValue' ? (
+                    <input
+                      ref={fieldInputRef}
+                      type="number"
+                      value={editingFieldValue}
+                      onChange={(e) => setEditingFieldValue(e.target.value)}
+                      onBlur={saveFieldEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveFieldEdit();
+                        if (e.key === 'Escape') cancelFieldEdit();
+                      }}
+                      className="w-24 px-1 py-0.5 text-sm border rounded"
+                      data-testid="input-fact-value"
+                      disabled={savingField === 'factValue'}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => startFieldEditing('factValue', initiativeDetailsData?.factValue || 0)}
+                      className="hover:text-primary transition-colors cursor-pointer"
+                      data-testid="button-edit-fact-value"
+                      disabled={savingField !== null}
+                    >
+                      {initiativeDetailsData?.factValue !== null && initiativeDetailsData?.factValue !== undefined
+                        ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
+                        : '—'}
+                    </button>
+                  )}
+                  <span>{' / '}</span>
+                  {editingField === 'plannedValue' ? (
+                    <input
+                      ref={fieldInputRef}
+                      type="number"
+                      value={editingFieldValue}
+                      onChange={(e) => setEditingFieldValue(e.target.value)}
+                      onBlur={saveFieldEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveFieldEdit();
+                        if (e.key === 'Escape') cancelFieldEdit();
+                      }}
+                      className="w-24 px-1 py-0.5 text-sm border rounded"
+                      data-testid="input-planned-value"
+                      disabled={savingField === 'plannedValue'}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => startFieldEditing('plannedValue', initiativeDetailsData?.plannedValue || 0)}
+                      className="hover:text-primary transition-colors cursor-pointer"
+                      data-testid="button-edit-planned-value"
+                      disabled={savingField !== null}
+                    >
+                      {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
+                        ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
+                        : '—'}
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="relative w-full h-[5px] bg-muted rounded-full overflow-hidden">
                 <div 

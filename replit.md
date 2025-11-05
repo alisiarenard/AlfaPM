@@ -33,10 +33,15 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
     - **Initiative Details Modal:** Clicking initiative title opens a modal showing initiative name, type, and four progress bars (5px height, bg-muted background, #cd253d fill color rgb(205, 37, 61)). Modal structure:
         - **Header**: Initiative name and type (displayed below title in smaller, darker text-xs text-foreground)
         - **Progress bars**:
-          - **Размер, SP**: actual / planned (without SP in values). Actual value displayed in red (#cd253d) if it exceeds planned.
-          - **Затраты, ₽**: actual / planned cost in rubles with thousand separators (without ₽ in values). Actual cost displayed in red (#cd253d) if it exceeds planned.
-          - **Эффект, ₽**: actual / planned value in rubles with thousand separators (without ₽ in values)
-          - **Value/Cost**: actual / planned ratio with one decimal place. Actual ratio displayed in red (#cd253d) if it is less than 1.0.
+          - **Размер, SP**: actual / planned (without SP in values). Actual value displayed in red (#cd253d) if it exceeds planned. **Planned size is inline-editable** - clicking the value shows an input field; changes are saved on Enter or blur and synced to both Kaiten and local database.
+          - **Затраты, ₽**: actual / planned cost in rubles with thousand separators (without ₽ in values). Actual cost displayed in red (#cd253d) if it exceeds planned. Costs are calculated automatically (not editable).
+          - **Эффект, ₽**: actual / planned value in rubles with thousand separators (without ₽ in values). **Both planned and actual values are inline-editable** - clicking either value shows an input field; changes are saved on Enter or blur and synced to both Kaiten and local database.
+          - **Value/Cost**: actual / planned ratio with one decimal place. Actual ratio displayed in red (#cd253d) if it is less than 1.0. Ratios are calculated automatically from values/costs.
+        - **Editable Fields**: Three fields support inline editing with instant Kaiten synchronization:
+          - **Planned Size (SP)**: Integer value updated via PATCH /api/kaiten/update-initiative/:cardId with `size` parameter
+          - **Planned Value (₽)**: Numeric value updated via PATCH /api/kaiten/update-initiative/:cardId with `plannedValue` parameter (stored as string in DB, sent as number to Kaiten API)
+          - **Actual Value (₽)**: Numeric value updated via PATCH /api/kaiten/update-initiative/:cardId with `factValue` parameter (stored as string in DB, sent as number to Kaiten API)
+        - **Editing Behavior**: Click a value to start editing → input field appears with current value selected → press Enter or blur to save, Escape to cancel → modal automatically reopens after 300ms to display updated values from server → changes persist to both Kaiten (custom properties id_451379 for planned value, id_448119 for actual value) and local database
         - **Legend**: Color indicators centered below progress bars with increased spacing (pt-6), no top border
           - Grey circle (bg-muted): "Плановые значения" (Planned values)
           - Red circle (#cd253d): "Фактические значения" (Actual values)
@@ -70,6 +75,7 @@ Express.js with TypeScript and ESM provides a RESTful API under `/api`.
 - `/api/metrics/cost-structure`: Calculates cost structure breakdown by initiative/task types for selected teams and year.
 - `/api/metrics/value-cost`: Calculates Value/Cost metrics (planned and actual) for selected teams. Returns: plannedValueCost (sum of planned values ÷ sum of planned costs), factValueCost (sum of actual values ÷ sum of actual costs), and component sums.
 - `/api/kaiten/*`: Endpoints for syncing initiatives, tasks, and sprints from Kaiten.
+- `PATCH /api/kaiten/update-initiative/:cardId`: Updates initiative fields in both Kaiten and local database. Accepts `size` (planned size in SP), `plannedValue` (planned effect value in ₽), and `factValue` (actual effect value in ₽). Values are converted to numbers for Kaiten API (custom properties id_451379 and id_448119) while stored as strings in the database.
 
 **Kaiten Integration:**
 - Syncs initiatives and tasks from Kaiten API, mapping states. Requires `KAITEN_API_KEY` and `KAITEN_DOMAIN`.

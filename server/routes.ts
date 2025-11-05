@@ -1041,6 +1041,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/kaiten/update-initiative/:cardId", async (req, res) => {
+    try {
+      const cardId = parseInt(req.params.cardId);
+      if (isNaN(cardId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid card ID" 
+        });
+      }
+
+      const { size, plannedValue, factValue } = req.body;
+      
+      log(`[Kaiten Update Initiative] Updating card ${cardId} with size=${size}, plannedValue=${plannedValue}, factValue=${factValue}`);
+      
+      // Подготовка обновлений для Kaiten
+      const kaitenUpdates: { size?: number; properties?: Record<string, any> } = {};
+      
+      if (size !== undefined) {
+        kaitenUpdates.size = parseInt(String(size));
+      }
+      
+      // Обновляем properties если есть plannedValue или factValue
+      if (plannedValue !== undefined || factValue !== undefined) {
+        kaitenUpdates.properties = {};
+        
+        const plannedValueId = "id_451379";
+        const factValueId = "id_448119";
+        
+        if (plannedValue !== undefined) {
+          // Kaiten expects numeric values for custom properties
+          kaitenUpdates.properties[plannedValueId] = plannedValue === null || plannedValue === '' ? null : parseFloat(String(plannedValue));
+        }
+        
+        if (factValue !== undefined) {
+          // Kaiten expects numeric values for custom properties
+          kaitenUpdates.properties[factValueId] = factValue === null || factValue === '' ? null : parseFloat(String(factValue));
+        }
+      }
+      
+      log(`[Kaiten Update Initiative] Kaiten updates:`, JSON.stringify(kaitenUpdates));
+      
+      // Обновляем в Kaiten
+      await kaitenClient.updateCard(cardId, kaitenUpdates);
+      
+      // Подготовка обновлений для БД
+      const dbUpdates: any = {};
+      
+      if (size !== undefined) {
+        dbUpdates.size = parseInt(String(size));
+      }
+      
+      if (plannedValue !== undefined) {
+        dbUpdates.plannedValue = plannedValue === null || plannedValue === '' ? null : String(plannedValue);
+      }
+      
+      if (factValue !== undefined) {
+        dbUpdates.factValue = factValue === null || factValue === '' ? null : String(factValue);
+      }
+      
+      log(`[Kaiten Update Initiative] DB updates:`, JSON.stringify(dbUpdates));
+      
+      // Находим инициативу в БД по cardId
+      const initiative = await storage.getInitiativeByCardId(cardId);
+      
+      if (!initiative) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Initiative not found in database" 
+        });
+      }
+      
+      // Обновляем в БД
+      const updated = await storage.updateInitiative(initiative.id, dbUpdates);
+      
+      log(`[Kaiten Update Initiative] Successfully updated card ${cardId}`);
+      
+      res.json({
+        success: true,
+        initiative: updated
+      });
+    } catch (error) {
+      console.error("PATCH /api/kaiten/update-initiative/:cardId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to update initiative" 
+      });
+    }
+  });
+
   app.post("/api/kaiten/sync-sprint/:sprintId", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);
