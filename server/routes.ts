@@ -1344,7 +1344,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       log(`[Cost Structure] Found ${relevantTasks.length} tasks in selected sprints`);
 
-      // Подсчитываем SP по типам
+      // Получаем все инициативы для выбранных команд
+      const allInitiatives = await Promise.all(
+        validTeams.map(team => storage.getInitiativesByBoardId(team.initBoardId))
+      );
+      const initiatives = allInitiatives.flat();
+      
+      // Создаем мапу инициатив по cardId для быстрого поиска
+      const initiativesMap = new Map(initiatives.map(init => [init.cardId, init]));
+      
+      log(`[Cost Structure] Found ${initiatives.length} initiatives`);
+
+      // Подсчитываем SP по типам инициатив
       const typeStats: Record<string, number> = {};
       let totalSP = 0;
 
@@ -1352,8 +1363,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const taskSize = task.size || 0;
         totalSP += taskSize;
 
-        const taskType = task.type || 'Др. доработки';
-        typeStats[taskType] = (typeStats[taskType] || 0) + taskSize;
+        // Проверяем, привязан ли таск к инициативе
+        if (task.initCardId !== null && task.initCardId !== 0) {
+          const initiative = initiativesMap.get(task.initCardId);
+          if (initiative && initiative.type) {
+            // Используем тип инициативы
+            typeStats[initiative.type] = (typeStats[initiative.type] || 0) + taskSize;
+          } else {
+            // Инициатива не найдена или нет типа - в "Др. доработки"
+            typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
+          }
+        } else {
+          // Таск не привязан к инициативе - в "Др. доработки"
+          typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
+        }
       }
 
       // Рассчитываем проценты

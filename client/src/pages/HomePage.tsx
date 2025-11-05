@@ -510,6 +510,38 @@ export default function HomePage() {
   // Показываем последнее успешное значение во время загрузки
   const displayIR = innovationRateData || lastSuccessfulDataRef.current;
 
+  // Получаем Cost Structure для выбранных команд и года
+  const { data: costStructureData, isFetching: isCostStructureFetching } = useQuery<{
+    success: boolean;
+    year: number;
+    totalSP: number;
+    typeStats: Record<string, number>;
+    typePercentages: Record<string, number>;
+    teams: Array<{ id: string; name: string }>;
+  }>({
+    queryKey: ['/api/metrics/cost-structure', { teamIds: teamIdsParam, year: selectedYear }],
+    queryFn: async () => {
+      const response = await fetch(`/api/metrics/cost-structure?teamIds=${teamIdsParam}&year=${selectedYear}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch cost structure');
+      }
+      return response.json();
+    },
+    enabled: teamIdsArray.length > 0,
+    placeholderData: (previousData) => previousData,
+  });
+
+  // Используем ref для хранения последнего успешного значения
+  const lastSuccessfulCostStructureRef = useRef<typeof costStructureData | null>(null);
+  
+  // Обновляем ref когда получаем новые данные
+  if (costStructureData && !isCostStructureFetching) {
+    lastSuccessfulCostStructureRef.current = costStructureData;
+  }
+
+  // Показываем последнее успешное значение во время загрузки
+  const displayCostStructure = costStructureData || lastSuccessfulCostStructureRef.current;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
@@ -574,7 +606,7 @@ export default function HomePage() {
               <div className="mb-6">
                 <div 
                   className="w-full h-[110px] border border-border rounded-lg flex relative transition-opacity duration-300"
-                  style={{ opacity: isIRFetching ? 0.5 : 1 }}
+                  style={{ opacity: isIRFetching || isCostStructureFetching ? 0.5 : 1 }}
                 >
                   <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
@@ -613,39 +645,57 @@ export default function HomePage() {
                     <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
                     <div className="flex gap-2 items-end flex-1">
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
+                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-epic">
+                          {displayCostStructure?.typePercentages?.['Epic'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Epic</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
+                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-compliance">
+                          {displayCostStructure?.typePercentages?.['Compliance'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Compliance</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }}>0%</div>
+                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-enabler">
+                          {displayCostStructure?.typePercentages?.['Enabler'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Enabler</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-security">
+                          {displayCostStructure?.typePercentages?.['Security'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Security</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-service-desk">
+                          {displayCostStructure?.typePercentages?.['Service Desk'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-postmortem">
+                          {displayCostStructure?.typePercentages?.['Postmortem'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-tech-debt">
+                          {displayCostStructure?.typePercentages?.['Tech debt'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-bug">
+                          {displayCostStructure?.typePercentages?.['Bug'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Bug</div>
                       </div>
                       <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px]">
-                        <div className="text-[1rem] font-semibold text-muted-foreground">0%</div>
+                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-other">
+                          {displayCostStructure?.typePercentages?.['Др. доработки'] || 0}%
+                        </div>
                         <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
                       </div>
                     </div>
