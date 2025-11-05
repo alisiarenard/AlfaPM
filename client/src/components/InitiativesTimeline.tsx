@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { Initiative, Team, SprintRow, TaskInSprint } from "@shared/schema";
+import { getKaitenCardUrl } from "@shared/kaiten.config";
 import {
   Dialog,
   DialogContent,
@@ -1040,7 +1041,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             {/* Правый блок - Инициативы с прогресс-барами */}
             <div className="flex-1">
               {sprintModalData && sprintModalData.initiatives.length > 0 ? (
-                <Accordion type="multiple" className="w-full" data-testid="sprint-initiatives-list">
+                <Accordion 
+                  type="multiple" 
+                  className="w-full" 
+                  defaultValue={sprintModalData.initiatives.map((_, idx) => `initiative-${idx}`)}
+                  data-testid="sprint-initiatives-list"
+                >
                   {sprintModalData.initiatives.map((initiative, idx) => (
                     <AccordionItem key={idx} value={`initiative-${idx}`} className="border-none">
                       <AccordionTrigger className="hover:no-underline py-3 flex-row-reverse justify-end gap-3" data-testid={`initiative-accordion-${idx}`}>
@@ -1069,7 +1075,15 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                         <div className="space-y-2 pl-8">
                           {initiative.tasks.map((task, taskIdx) => (
                             <div key={taskIdx} className="flex items-center justify-between" data-testid={`task-${idx}-${taskIdx}`}>
-                              <span className="text-xs text-foreground">{task.title}</span>
+                              <a 
+                                href={getKaitenCardUrl(team.spaceId, task.cardId, task.archived)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-foreground hover:text-primary hover:underline transition-colors"
+                                data-testid={`task-link-${idx}-${taskIdx}`}
+                              >
+                                {task.title}
+                              </a>
                               <span className="text-[10px] text-muted-foreground ml-4">{task.size} sp</span>
                             </div>
                           ))}

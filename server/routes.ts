@@ -312,7 +312,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 cardId: task.cardId,
                 title: task.title,
                 type: task.type,
-                size: task.size
+                size: task.size,
+                archived: task.archived
               });
               sprintsMap.set(task.sprintId, current);
             }

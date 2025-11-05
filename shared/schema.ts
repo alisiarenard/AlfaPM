@@ -104,6 +104,7 @@ export interface TaskInSprint {
   title: string;
   type: string | null;
   size: number;
+  archived: boolean;
 }
 
 export interface SprintAllocation {
@@ -134,6 +135,7 @@ export interface Team {
   sprintDuration?: number;
   initBoardId: number;
   sprintBoardId: number;
+  spaceId: number;
 }
 
 export interface TeamData {
