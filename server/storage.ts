@@ -32,7 +32,8 @@ export interface IStorage {
     plannedValueId?: string | null,
     plannedValue?: string | null,
     factValueId?: string | null,
-    factValue?: string | null
+    factValue?: string | null,
+    dueDate?: string | null
   ): Promise<InitiativeRow>;
   getAllTasks(): Promise<TaskRow[]>;
   getTasksByBoardId(boardId: number): Promise<TaskRow[]>;
@@ -140,7 +141,8 @@ export class MemStorage implements IStorage {
       plannedValueId: initiative.plannedValueId ?? null,
       plannedValue: initiative.plannedValue ?? null,
       factValueId: initiative.factValueId ?? null,
-      factValue: initiative.factValue ?? null
+      factValue: initiative.factValue ?? null,
+      dueDate: initiative.dueDate ?? null
     };
   }
 
@@ -163,7 +165,8 @@ export class MemStorage implements IStorage {
     plannedValueId?: string | null,
     plannedValue?: string | null,
     factValueId?: string | null,
-    factValue?: string | null
+    factValue?: string | null,
+    dueDate?: string | null
   ): Promise<InitiativeRow> {
     const id = randomUUID();
     return { 
@@ -179,7 +182,8 @@ export class MemStorage implements IStorage {
       plannedValueId: plannedValueId ?? null,
       plannedValue: plannedValue ?? null,
       factValueId: factValueId ?? null,
-      factValue: factValue ?? null
+      factValue: factValue ?? null,
+      dueDate: dueDate ?? null
     };
   }
 
@@ -408,7 +412,8 @@ export class DbStorage implements IStorage {
     plannedValueId?: string | null,
     plannedValue?: string | null,
     factValueId?: string | null,
-    factValue?: string | null
+    factValue?: string | null,
+    dueDate?: string | null
   ): Promise<InitiativeRow> {
     const existing = await this.getInitiativeByCardId(cardId);
     
@@ -425,7 +430,8 @@ export class DbStorage implements IStorage {
           plannedValueId: plannedValueId || null,
           plannedValue: plannedValue || null,
           factValueId: factValueId || null,
-          factValue: factValue || null
+          factValue: factValue || null,
+          dueDate: dueDate || null
         })
         .where(eq(initiatives.cardId, cardId))
         .returning();
@@ -444,7 +450,8 @@ export class DbStorage implements IStorage {
           plannedValueId: plannedValueId || null,
           plannedValue: plannedValue || null,
           factValueId: factValueId || null,
-          factValue: factValue || null
+          factValue: factValue || null,
+          dueDate: dueDate || null
         })
         .returning();
       return created;
