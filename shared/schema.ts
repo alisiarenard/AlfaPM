@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, jsonb, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, jsonb, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -35,6 +35,7 @@ export const tasks = pgTable("tasks", {
   completedAt: varchar("completed_at"),
   type: varchar("type"),
   initCardId: integer("init_card_id"),
+  archived: boolean("archived").notNull().default(false),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true });

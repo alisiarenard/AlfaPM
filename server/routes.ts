@@ -873,6 +873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             state,
             card.size || 0,
             condition,
+            card.archived || false, // archived status from Kaiten
             initCardId, // parent card_id from parents_ids
             card.type?.name,
             card.completed_at ?? undefined,
@@ -1042,6 +1043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           state,
           card.size || 0,
           condition,
+          card.archived || false,
           initCardId,
           card.type?.name,
           card.completed_at ?? undefined,
@@ -1143,6 +1145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               state,
               card.size || 0,
               condition,
+              card.archived || false,
               initCardId,
               card.type?.name,
               card.completed_at ?? undefined,
