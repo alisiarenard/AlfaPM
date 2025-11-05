@@ -1283,6 +1283,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/metrics/cost-structure", async (req, res) => {
+    try {
+      const teamIdsParam = req.query.teamIds as string;
+      const yearParam = req.query.year as string;
+      
+      if (!teamIdsParam) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "teamIds parameter is required" 
+        });
+      }
+
+      const teamIds = teamIdsParam.split(',').map(id => id.trim()).filter(id => id);
+      const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
+      
+      if (teamIds.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "At least one team ID is required" 
+        });
+      }
+
+      log(`[Cost Structure] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
+
+      // Получаем команды
+      const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
+      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      
+      if (validTeams.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "No valid teams found" 
+        });
+      }
+
+      // Получаем все спринты для выбранных команд
+      const allSprints = await Promise.all(
+        validTeams.map(team => storage.getSprintsByBoardId(team.sprintBoardId))
+      );
+      
+      // Фильтруем спринты по году
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+      
+      const yearSprints = allSprints.flat().filter(sprint => {
+        const sprintStart = new Date(sprint.startDate);
+        return sprintStart >= yearStart && sprintStart <= yearEnd;
+      });
+      
+      const sprintIds = new Set(yearSprints.map(s => s.sprintId));
+      
+      log(`[Cost Structure] Found ${sprintIds.size} sprints in year ${year}`);
+
+      // Получаем все таски из этих спринтов
+      const allTasks = await storage.getAllTasks();
+      const relevantTasks = allTasks.filter(task => 
+        task.sprintId !== null && sprintIds.has(task.sprintId)
+      );
+      
+      log(`[Cost Structure] Found ${relevantTasks.length} tasks in selected sprints`);
+
+      // Подсчитываем SP по типам
+      const typeStats: Record<string, number> = {};
+      let totalSP = 0;
+
+      for (const task of relevantTasks) {
+        const taskSize = task.size || 0;
+        totalSP += taskSize;
+
+        const taskType = task.type || 'Др. доработки';
+        typeStats[taskType] = (typeStats[taskType] || 0) + taskSize;
+      }
+
+      // Рассчитываем проценты
+      const typePercentages: Record<string, number> = {};
+      for (const [type, sp] of Object.entries(typeStats)) {
+        typePercentages[type] = totalSP > 0 ? Math.round((sp / totalSP) * 100) : 0;
+      }
+
+      log(`[Cost Structure] Total SP: ${totalSP}, Types: ${Object.keys(typeStats).length}`);
+
+      res.json({
+        success: true,
+        year,
+        totalSP,
+        typeStats,
+        typePercentages,
+        teams: validTeams.map(t => ({ id: t.teamId, name: t.teamName }))
+      });
+    } catch (error) {
+      console.error("GET /api/metrics/cost-structure error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to calculate cost structure" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/sprint-raw/:sprintId", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);

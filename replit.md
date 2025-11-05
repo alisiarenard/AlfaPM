@@ -18,7 +18,9 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
 
 **Key Features:**
 - **Multi-Team Support:** Departments and teams are fetched from the database and displayed in separate tabs using Shadcn Tabs. Each tab independently fetches and displays initiatives and team metrics.
+- **Year Selection:** Dropdown in header next to department selector displays current year (2025) and next year (2026) for filtering data by year. Used for Excel report generation and future metric filtering.
 - **Team Selection Menu:** Dropdown menu (triggered by three-dot button in top-right corner of metrics card) displays all teams from selected department with checkboxes for multi-selection. All teams are checked by default. Menu has white background (bg-white). Includes "Скачать отчет" (Download Report) option separated by horizontal divider. State automatically resets to all-checked when department changes. Uses DropdownMenuCheckboxItem for full accessibility (keyboard navigation, screen reader support, aria attributes).
+- **Excel Report Download:** Clicking "Скачать отчет" generates and downloads an Excel file with cost structure data for selected teams and year. Uses xlsx library for client-side Excel generation. Report includes: year, team names, task types with story points and percentages, sorted by SP in descending order. Filename format: `Cost_Structure_YYYY_DATE.xlsx`.
 - **Metrics Card:** Unified full-width card displays three metric sections: Innovation Rate (20% width), Value/Cost (20% width), and reserved section (60% width), separated by vertical borders with top/bottom margins (my-3) for visual spacing. Contains team selection menu button (three dots) in top-right corner (position: absolute). During metric recalculation, card smoothly transitions to 50% opacity (300ms) while preserving previous metric values (using useRef to store last successful data), providing clear loading feedback without content shift or value disappearance.
 - **Initiatives Timeline:** The core visualization, showing initiatives mapped to sprint timelines. It includes sticky columns for initiative details: "Инициатива" (220px, left-0), "Выполнено" (100px, left-220px), "Фокус(план)" (100px, left-320px, editable on click), "Фокус (факт)" (100px, left-420px), and scrollable sprint columns (100px each) with story points and colored status blocks.
   - **Status Icons:** Material Design outline icons indicate initiative status: Play Circle (in-progress, red), Check Circle (completed, green), Pause Circle (queued, light gray). "Поддержка бизнеса" initiatives display gray icons for all statuses.
@@ -51,6 +53,7 @@ The backend uses Express.js with TypeScript and an ESM module system, providing 
 - `/api/initiatives`: Manage initiatives (GET, POST, PATCH, DELETE, GET by board ID).
 - `/api/tasks`: Manage tasks (GET, POST, PATCH, DELETE, GET by board ID).
 - `/api/metrics/innovation-rate`: Calculate Innovation Rate for selected teams (GET with teamIds query param). Returns actualIR, plannedIR, diffFromPlanned, totalSP, and innovationSP.
+- `/api/metrics/cost-structure`: Calculate cost structure (task type distribution) for selected teams and year (GET with teamIds and optional year query params). Returns typeStats (SP per type), typePercentages, totalSP, year, and team list. Filters sprints by year and calculates SP distribution across task types.
 - `/api/kaiten/sync-board/:boardId`: Sync initiatives from Kaiten.
 - `/api/kaiten/sync-tasks/:boardId`: Sync tasks (children cards) from Kaiten.
 - `/api/kaiten/update-sprint/:sprintId`: Fetch sprint data from Kaiten and update task sprint_ids.
@@ -93,6 +96,7 @@ PostgreSQL, powered by Neon, is the primary data store. Drizzle ORM with the Neo
 - `clsx`, `tailwind-merge`
 - `cmdk`
 - `react-hook-form`
+- `xlsx` (SheetJS for Excel file generation)
 
 **Build & Development Tools:**
 - `vite`

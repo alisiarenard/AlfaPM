@@ -396,11 +396,84 @@ export default function HomePage() {
     }
   }, [selectedDepartment, departmentTeams]);
 
-  const handleDownloadReport = () => {
-    toast({
-      title: "Скачивание отчета",
-      description: "Функция скачивания отчета будет реализована позже",
-    });
+  const handleDownloadReport = async () => {
+    try {
+      if (teamIdsArray.length === 0) {
+        toast({
+          title: "Ошибка",
+          description: "Выберите хотя бы одну команду",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Формирование отчета",
+        description: "Пожалуйста, подождите...",
+      });
+
+      const response = await fetch(`/api/metrics/cost-structure?teamIds=${teamIdsParam}&year=${selectedYear}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch cost structure data');
+      }
+
+      const data = await response.json();
+
+      // Динамически импортируем библиотеку xlsx
+      const XLSX = await import('xlsx');
+
+      // Подготавливаем данные для Excel
+      const worksheetData = [
+        ['Структура затрат'],
+        ['Год:', data.year],
+        ['Команды:', data.teams.map((t: { name: string }) => t.name).join(', ')],
+        [''],
+        ['Тип задачи', 'Story Points', 'Процент'],
+      ];
+
+      // Сортируем типы по убыванию SP
+      const sortedTypes = Object.entries(data.typeStats as Record<string, number>)
+        .sort(([, a], [, b]) => (b as number) - (a as number));
+
+      for (const [type, sp] of sortedTypes) {
+        const percentage = data.typePercentages[type] || 0;
+        worksheetData.push([type, sp as number, `${percentage}%`]);
+      }
+
+      worksheetData.push(['']);
+      worksheetData.push(['Итого:', data.totalSP, '100%']);
+
+      // Создаем рабочую книгу и лист
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Структура затрат');
+
+      // Устанавливаем ширину колонок
+      worksheet['!cols'] = [
+        { wch: 30 },
+        { wch: 15 },
+        { wch: 15 }
+      ];
+
+      // Генерируем имя файла
+      const fileName = `Cost_Structure_${data.year}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+      // Скачиваем файл
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "Успешно",
+        description: "Отчет успешно скачан",
+      });
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сформировать отчет",
+        variant: "destructive",
+      });
+    }
   };
 
   // Получаем Innovation Rate для выбранных команд
