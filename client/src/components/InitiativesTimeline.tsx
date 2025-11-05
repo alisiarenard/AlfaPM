@@ -133,24 +133,73 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // Сбрасываем состояние редактирования
       setEditingField(null);
       setEditingFieldValue("");
       setSavingField(null);
       
       // Инвалидируем кэш
-      queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({ 
         queryKey: ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId] 
       });
       
-      // Закрываем и переоткрываем модалку для обновления данных
+      // Обновляем данные модалки сразу без переоткрытия
       if (initiativeDetailsData) {
-        const initiative = initiatives.find(i => i.cardId === initiativeDetailsData.cardId);
-        if (initiative) {
-          setTimeout(() => {
-            handleInitiativeTitleClick(initiative);
-          }, 300);
+        // Получаем свежие данные инициативы после инвалидации
+        const freshInitiatives = queryClient.getQueryData<Initiative[]>([
+          "/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId
+        ]);
+        
+        const freshInitiative = freshInitiatives?.find(i => i.cardId === initiativeDetailsData.cardId);
+        
+        if (freshInitiative) {
+          // Пересчитываем все данные аналогично handleInitiativeTitleClick
+          const actualSize = getTotalSP(freshInitiative);
+          const plannedSize = freshInitiative.size || 0;
+          const plannedCost = plannedSize * team.spPrice;
+          const actualCost = actualSize * team.spPrice;
+          
+          // Преобразуем plannedValue из строки в число
+          let plannedValue = freshInitiative.plannedValue && freshInitiative.plannedValue.trim() !== '' 
+            ? parseFloat(freshInitiative.plannedValue) 
+            : null;
+          
+          // Преобразуем factValue из строки в число
+          let factValue = freshInitiative.factValue && freshInitiative.factValue.trim() !== '' 
+            ? parseFloat(freshInitiative.factValue) 
+            : null;
+          
+          // Для типов Compliance и Enabler эффект всегда равен затратам
+          if (freshInitiative.type === 'Compliance' || freshInitiative.type === 'Enabler') {
+            plannedValue = plannedCost;
+            factValue = actualCost;
+          }
+          
+          // Рассчитываем value/cost (плановый value / плановый cost)
+          const valueCost = plannedValue !== null && plannedCost > 0
+            ? Math.round((plannedValue / plannedCost) * 10) / 10
+            : null;
+          
+          // Рассчитываем фактический value/cost (фактический value / фактический cost)
+          const factValueCost = factValue !== null && actualCost > 0
+            ? Math.round((factValue / actualCost) * 10) / 10
+            : null;
+          
+          // Обновляем состояние модалки с новыми данными
+          setInitiativeDetailsData({
+            title: freshInitiative.title,
+            type: freshInitiative.type,
+            cardId: freshInitiative.cardId,
+            plannedSize,
+            actualSize,
+            plannedCost,
+            actualCost,
+            plannedValue,
+            valueCost,
+            factValue,
+            factValueCost
+          });
         }
       }
     },
