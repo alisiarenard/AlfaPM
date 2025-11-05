@@ -1131,7 +1131,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Check 
-                                  className="w-3 h-3 flex-shrink-0 text-green-500 mt-0.5" 
+                                  className="w-3.5 h-3.5 flex-shrink-0 text-green-500" 
+                                  strokeWidth={3}
                                   data-testid={`icon-complete-${initiative.id}`}
                                 />
                               </TooltipTrigger>
@@ -1155,7 +1156,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Check 
-                                  className="w-3 h-3 flex-shrink-0 text-green-500 mt-0.5" 
+                                  className="w-3.5 h-3.5 flex-shrink-0 text-green-500" 
+                                  strokeWidth={3}
                                   data-testid={`icon-complete-${initiative.id}`}
                                 />
                               </TooltipTrigger>
