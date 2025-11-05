@@ -20,7 +20,9 @@ Built with React 18+ and TypeScript, using Vite, Wouter for routing, and React Q
 - **Multi-Team Support:** Departments and teams displayed in Shadcn Tabs, each independently fetching data.
 - **Year Selection:** Header dropdown for filtering data by year (2025, 2026).
 - **Team Selection Menu:** Dropdown for multi-selecting teams within a department, includes an Excel report download option.
-- **Excel Report Download:** Generates a client-side Excel file with cost structure data for selected teams and year using `xlsx`.
+- **Excel Report Download:** Generates a client-side Excel file with two sheets using `xlsx`:
+    - **Структура затрат** (Cost Structure): Shows year, department, teams, and breakdown by Development/Support categories with percentages
+    - **Инициативы** (Initiatives): Lists all initiatives for selected teams with columns: title, team, planned size (SP), actual size (SP), planned cost, actual cost, planned value, actual value, planned value/cost ratio, and actual value/cost ratio
 - **Metrics Card:** Displays Innovation Rate and Value/Cost metrics. Smoothly transitions opacity during recalculation to indicate loading without content shift.
 - **Initiatives Timeline:** Core visualization with sticky columns for initiative details and scrollable sprint columns.
     - **Status Icons:** Material Design icons indicate initiative status (in-progress, completed, queued).
