@@ -1383,7 +1383,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const typeMapping: Record<string, string> = {
               'Omni': 'Service Desk',
               'Technical Debt': 'Tech debt',
-              'Tech Debt': 'Tech debt'
+              'Tech Debt': 'Tech debt',
+              'Tech Task': 'Tech debt'
             };
             
             // Применяем маппинг если есть

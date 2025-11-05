@@ -43,7 +43,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for developm
     - **Tasks linked to initiatives** (initCardId !== null && !== 0): SP attributed to initiative type (Epic, Compliance, Enabler)
     - **Tasks NOT linked to initiatives** (initCardId === null || === 0): SP attributed to task type with mapping:
       - Omni → Service Desk
-      - Technical Debt / Tech Debt → Tech debt
+      - Technical Debt / Tech Debt / Tech Task → Tech debt
       - Known types (Security, Service Desk, Postmortem, Tech debt, Bug) → shown separately
       - Unknown types → "Др. доработки"
     - Displays Epic, Compliance, Enabler (red color #cd253d) and Security, Service Desk, Postmortem, Tech debt, Bug, Др. доработки (gray). Updates automatically when teams or year selection changes.
