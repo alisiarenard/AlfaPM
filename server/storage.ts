@@ -30,7 +30,9 @@ export interface IStorage {
     size: number,
     type?: string | null,
     plannedValueId?: string | null,
-    plannedValue?: string | null
+    plannedValue?: string | null,
+    factValueId?: string | null,
+    factValue?: string | null
   ): Promise<InitiativeRow>;
   getAllTasks(): Promise<TaskRow[]>;
   getTasksByBoardId(boardId: number): Promise<TaskRow[]>;
@@ -157,7 +159,9 @@ export class MemStorage implements IStorage {
     size: number,
     type?: string | null,
     plannedValueId?: string | null,
-    plannedValue?: string | null
+    plannedValue?: string | null,
+    factValueId?: string | null,
+    factValue?: string | null
   ): Promise<InitiativeRow> {
     const id = randomUUID();
     return { 
@@ -171,7 +175,9 @@ export class MemStorage implements IStorage {
       type: type || null, 
       plannedInvolvement: null,
       plannedValueId: plannedValueId || null,
-      plannedValue: plannedValue || null
+      plannedValue: plannedValue || null,
+      factValueId: factValueId || null,
+      factValue: factValue || null
     };
   }
 
@@ -398,7 +404,9 @@ export class DbStorage implements IStorage {
     size: number,
     type?: string | null,
     plannedValueId?: string | null,
-    plannedValue?: string | null
+    plannedValue?: string | null,
+    factValueId?: string | null,
+    factValue?: string | null
   ): Promise<InitiativeRow> {
     const existing = await this.getInitiativeByCardId(cardId);
     
@@ -413,7 +421,9 @@ export class DbStorage implements IStorage {
           initBoardId: boardId, 
           type: type || null,
           plannedValueId: plannedValueId || null,
-          plannedValue: plannedValue || null
+          plannedValue: plannedValue || null,
+          factValueId: factValueId || null,
+          factValue: factValue || null
         })
         .where(eq(initiatives.cardId, cardId))
         .returning();
@@ -430,7 +440,9 @@ export class DbStorage implements IStorage {
           initBoardId: boardId, 
           type: type || null,
           plannedValueId: plannedValueId || null,
-          plannedValue: plannedValue || null
+          plannedValue: plannedValue || null,
+          factValueId: factValueId || null,
+          factValue: factValue || null
         })
         .returning();
       return created;

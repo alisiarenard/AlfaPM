@@ -140,6 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           log(`[Team Creation] Found ${cards.length} cards to sync`);
           
           const plannedValueId = "id_451379";
+          const factValueId = "id_448119";
           
           for (const card of cards) {
             let state: "1-queued" | "2-inProgress" | "3-done";
@@ -155,8 +156,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
             
             // Получаем plannedValue из properties по ключу plannedValueId
-            const raw = card.properties?.[plannedValueId];
-            const plannedValue = raw == null ? undefined : String(raw);
+            const rawPlanned = card.properties?.[plannedValueId];
+            const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
+            
+            // Получаем factValue из properties по ключу factValueId
+            const rawFact = card.properties?.[factValueId];
+            const factValue = rawFact == null ? undefined : String(rawFact);
             
             await storage.syncInitiativeFromKaiten(
               card.id,
@@ -167,7 +172,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.size || 0,
               card.type?.name,
               plannedValueId,
-              plannedValue
+              plannedValue,
+              factValueId,
+              factValue
             );
           }
           
@@ -780,6 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const syncedInitiatives = [];
       const plannedValueId = "id_451379";
+      const factValueId = "id_448119";
       
       for (const card of cards) {
         let state: "1-queued" | "2-inProgress" | "3-done";
@@ -805,11 +813,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         log(`[Kaiten Sync] Card ${card.id} - properties keys:`, card.properties ? Object.keys(card.properties).join(', ') : 'no properties');
         
         // Получаем plannedValue из properties по ключу plannedValueId
-        const raw = card.properties?.[plannedValueId];
-        const plannedValue = raw == null ? undefined : String(raw);
+        const rawPlanned = card.properties?.[plannedValueId];
+        const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
         
-        log(`[Kaiten Sync] Card ${card.id} - raw value from properties[${plannedValueId}]:`, raw);
+        log(`[Kaiten Sync] Card ${card.id} - raw plannedValue from properties[${plannedValueId}]:`, rawPlanned);
         log(`[Kaiten Sync] Card ${card.id} - plannedValue (converted to string):`, plannedValue);
+        
+        // Получаем factValue из properties по ключу factValueId
+        const rawFact = card.properties?.[factValueId];
+        const factValue = rawFact == null ? undefined : String(rawFact);
+        
+        log(`[Kaiten Sync] Card ${card.id} - raw factValue from properties[${factValueId}]:`, rawFact);
+        log(`[Kaiten Sync] Card ${card.id} - factValue (converted to string):`, factValue);
 
         const synced = await storage.syncInitiativeFromKaiten(
           card.id,
@@ -820,7 +835,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           card.size || 0,
           card.type?.name,
           plannedValueId,
-          plannedValue
+          plannedValue,
+          factValueId,
+          factValue
         );
         
         syncedInitiatives.push(synced);
