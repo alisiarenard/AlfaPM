@@ -330,14 +330,20 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     const actualCost = actualSize * team.spPrice;
     
     // Преобразуем plannedValue из строки в число
-    const plannedValue = initiative.plannedValue && initiative.plannedValue.trim() !== '' 
+    let plannedValue = initiative.plannedValue && initiative.plannedValue.trim() !== '' 
       ? parseFloat(initiative.plannedValue) 
       : null;
     
     // Преобразуем factValue из строки в число
-    const factValue = initiative.factValue && initiative.factValue.trim() !== '' 
+    let factValue = initiative.factValue && initiative.factValue.trim() !== '' 
       ? parseFloat(initiative.factValue) 
       : null;
+    
+    // Для типов Compliance и Enabler эффект всегда равен затратам
+    if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
+      plannedValue = plannedCost;
+      factValue = actualCost;
+    }
     
     // Рассчитываем value/cost (плановый value / плановый cost)
     const valueCost = plannedValue !== null && plannedCost > 0
