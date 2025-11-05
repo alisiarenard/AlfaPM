@@ -270,11 +270,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     // Собираем инициативы с их SP, процентами и задачами
     const initiativesProgress: InitiativeProgress[] = initiatives
       .map(initiative => {
-        const sp = getSprintSP(initiative, sprintId);
-        if (sp === 0) return null;
-        
-        const percent = totalSP > 0 ? Math.round((sp / totalSP) * 100) : 0;
         const tasks = getSprintTasks(initiative, sprintId);
+        // Пропускаем инициативы без тасок в этом спринте
+        if (tasks.length === 0) return null;
+        
+        const sp = getSprintSP(initiative, sprintId);
+        const percent = totalSP > 0 ? Math.round((sp / totalSP) * 100) : 0;
         
         return {
           title: initiative.title,
