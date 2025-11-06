@@ -443,7 +443,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         velocity: lastSprint.velocity,
         startDate: nextStartDate.toISOString(),
         finishDate: finishDate.toISOString(),
-        actualFinishDate: null
+        actualFinishDate: null,
+        goal: null
       });
       
       // Переходим к следующему спринту

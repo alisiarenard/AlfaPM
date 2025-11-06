@@ -1262,6 +1262,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Получаем данные спринта из Kaiten
           const kaitenSprint = await kaitenClient.getSprint(sprint.sprintId);
           
+          // Обновляем информацию о спринте в БД (включая goal)
+          log(`[Kaiten Sync All Sprints] Updating sprint ${sprint.sprintId} metadata from Kaiten`);
+          await storage.syncSprintFromKaiten(
+            sprint.sprintId,
+            boardId,
+            kaitenSprint.title || sprint.title,
+            kaitenSprint.velocity || sprint.velocity,
+            kaitenSprint.start_date || sprint.startDate,
+            kaitenSprint.finish_date || sprint.finishDate,
+            kaitenSprint.actual_finish_date || sprint.actualFinishDate || null,
+            kaitenSprint.goal || null
+          );
+          log(`[Kaiten Sync All Sprints] Sprint ${sprint.sprintId} goal: ${kaitenSprint.goal || 'not set'}`);
+          
           if (!kaitenSprint.cards || !Array.isArray(kaitenSprint.cards)) {
             log(`[Kaiten Sync All Sprints] No cards in sprint ${sprint.sprintId}`);
             results.push({ sprintId: sprint.sprintId, synced: 0 });
