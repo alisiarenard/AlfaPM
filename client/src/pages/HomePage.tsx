@@ -384,6 +384,10 @@ export default function HomePage() {
   const handleTeamToggle = (teamId: string) => {
     const newSelectedTeams = new Set(selectedTeams);
     if (newSelectedTeams.has(teamId)) {
+      // Не позволяем снять последнюю оставшуюся команду
+      if (newSelectedTeams.size === 1) {
+        return;
+      }
       newSelectedTeams.delete(teamId);
     } else {
       newSelectedTeams.add(teamId);
