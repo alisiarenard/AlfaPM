@@ -117,17 +117,19 @@ export default function HomePage() {
       dept: searchParams.get('dept') || '',
       year: searchParams.get('year') || currentYear.toString(),
       teams: searchParams.get('teams')?.split(',').filter(Boolean) || [],
-      active: searchParams.get('active') === '1'
+      active: searchParams.get('active') === '1',
+      tab: searchParams.get('tab') || ''
     };
   };
 
   // Функция для обновления URL с текущими фильтрами
-  const updateUrl = (dept: string, year: string, teams: Set<string>, active: boolean) => {
+  const updateUrl = (dept: string, year: string, teams: Set<string>, active: boolean, tab?: string) => {
     const params = new URLSearchParams();
     if (dept) params.set('dept', dept);
     if (year) params.set('year', year);
     if (teams.size > 0) params.set('teams', Array.from(teams).join(','));
     if (active) params.set('active', '1');
+    if (tab) params.set('tab', tab);
     
     const newUrl = params.toString() ? `/?${params.toString()}` : '/';
     if (location !== newUrl) {
@@ -341,7 +343,14 @@ export default function HomePage() {
 
   useEffect(() => {
     if (departmentTeams && departmentTeams.length > 0) {
-      setActiveTab(departmentTeams[0].teamId);
+      const urlParams = parseUrlParams();
+      // Если в URL есть tab параметр и он валидный, используем его
+      if (urlParams.tab && departmentTeams.some(t => t.teamId === urlParams.tab)) {
+        setActiveTab(urlParams.tab);
+      } else {
+        // Иначе выбираем первую команду
+        setActiveTab(departmentTeams[0].teamId);
+      }
     }
   }, [departmentTeams]);
 
@@ -362,9 +371,9 @@ export default function HomePage() {
   // Синхронизация URL при изменении фильтров
   useEffect(() => {
     if (!isInitialLoad) {
-      updateUrl(selectedDepartment, selectedYear, selectedTeams, showActiveOnly);
+      updateUrl(selectedDepartment, selectedYear, selectedTeams, showActiveOnly, activeTab);
     }
-  }, [selectedDepartment, selectedYear, selectedTeams, showActiveOnly, isInitialLoad]);
+  }, [selectedDepartment, selectedYear, selectedTeams, showActiveOnly, activeTab, isInitialLoad]);
 
   // Синхронизация состояния при изменении URL через popstate (назад/вперед браузера)
   useEffect(() => {
@@ -409,6 +418,17 @@ export default function HomePage() {
             return new Set(teamsToSelect);
           }
           return currentTeams;
+        });
+        
+        // Обновляем активный таб если он изменился в URL
+        setActiveTab(currentTab => {
+          if (urlParams.tab && urlParams.tab !== currentTab && departmentTeams) {
+            const validTabIds = departmentTeams.map(t => t.teamId);
+            if (validTabIds.includes(urlParams.tab)) {
+              return urlParams.tab;
+            }
+          }
+          return currentTab;
         });
       }
     };
