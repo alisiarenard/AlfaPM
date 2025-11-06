@@ -967,6 +967,7 @@ export default function HomePage() {
                               key={team.teamId}
                               checked={selectedTeams.has(team.teamId)}
                               onCheckedChange={() => handleTeamToggle(team.teamId)}
+                              onSelect={(e) => e.preventDefault()}
                               data-testid={`menu-team-${team.teamId}`}
                             >
                               {team.teamName}
