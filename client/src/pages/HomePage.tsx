@@ -1598,8 +1598,10 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
         onSync={handleSync}
         isSyncing={syncAllMutation.isPending}
       />
-      <div className="px-4 overflow-auto custom-scrollbar" style={{ height: 'calc(100vh - 400px)' }}>
-        <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
+      <div className="overflow-auto custom-scrollbar" style={{ height: 'calc(100vh - 400px)' }}>
+        <div className="px-4">
+          <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
+        </div>
       </div>
     </div>
   );
