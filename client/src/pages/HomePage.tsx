@@ -1085,9 +1085,9 @@ export default function HomePage() {
                       </h2>
                     </div>
                   </div>
-                  <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                  <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                     <div className="space-y-2">
-                      <Label htmlFor="block-name">Название блока</Label>
+                      <Label htmlFor="block-name">Название блока <span className="text-destructive">*</span></Label>
                       <Input
                         id="block-name"
                         placeholder="Введите название блока"
@@ -1161,9 +1161,9 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                  <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                     <div className="space-y-2">
-                      <Label htmlFor="team-name">Название команды</Label>
+                      <Label htmlFor="team-name">Название команды <span className="text-destructive">*</span></Label>
                       <Input
                         id="team-name"
                         placeholder="Введите название команды"
@@ -1174,7 +1174,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="space-id">ID пространства</Label>
+                        <Label htmlFor="space-id">ID пространства <span className="text-destructive">*</span></Label>
                         <Input
                           id="space-id"
                           type="number"
@@ -1186,7 +1186,7 @@ export default function HomePage() {
                         />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="sprint-board-id">ID доски</Label>
+                        <Label htmlFor="sprint-board-id">ID доски <span className="text-destructive">*</span></Label>
                         <Input
                           id="sprint-board-id"
                           type="number"
@@ -1200,7 +1200,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="init-board-id">ID доски инициатив</Label>
+                        <Label htmlFor="init-board-id">ID доски инициатив <span className="text-destructive">*</span></Label>
                         <Input
                           id="init-board-id"
                           type="number"
@@ -1291,10 +1291,10 @@ export default function HomePage() {
                       </h2>
                     </div>
                   </div>
-                  <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                  <div className="flex-1 p-6 space-y-4 overflow-y-auto">
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="new-team-name">Название команды</Label>
+                        <Label htmlFor="new-team-name">Название команды <span className="text-destructive">*</span></Label>
                         <Input
                           id="new-team-name"
                           placeholder="Введите название команды"
@@ -1321,7 +1321,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="new-space-id">ID пространства</Label>
+                        <Label htmlFor="new-space-id">ID пространства <span className="text-destructive">*</span></Label>
                         <Input
                           id="new-space-id"
                           type="number"
@@ -1333,7 +1333,7 @@ export default function HomePage() {
                         />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="new-sprint-board-id">ID доски</Label>
+                        <Label htmlFor="new-sprint-board-id">ID доски <span className="text-destructive">*</span></Label>
                         <Input
                           id="new-sprint-board-id"
                           type="number"
@@ -1347,7 +1347,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="new-init-board-id">ID доски инициатив</Label>
+                        <Label htmlFor="new-init-board-id">ID доски инициатив <span className="text-destructive">*</span></Label>
                         <Input
                           id="new-init-board-id"
                           type="number"
