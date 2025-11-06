@@ -1866,21 +1866,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (firstInit.type === 'Compliance' || firstInit.type === 'Enabler') {
           plannedValue = totalPlannedCost;
           factValue = totalActualCost;
+          
+          // Добавляем к суммам
+          sumPlannedValue += plannedValue;
+          sumPlannedCost += totalPlannedCost;
+          sumFactValue += factValue;
+          sumFactCost += totalActualCost;
         } else {
-          // Для остальных типов получаем plannedValue и factValue из первой инициативы
+          // Для Epic и других типов получаем plannedValue и factValue из БД
           plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
             ? parseFloat(firstInit.plannedValue) 
             : 0;
           factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
             ? parseFloat(firstInit.factValue) 
             : 0;
+          
+          // Добавляем только если есть фактические затраты у выбранных команд
+          if (totalPlannedCost > 0 || totalActualCost > 0) {
+            sumPlannedValue += plannedValue;
+            sumPlannedCost += totalPlannedCost;
+            sumFactValue += factValue;
+            sumFactCost += totalActualCost;
+          }
         }
-        
-        // Добавляем к суммам
-        sumPlannedValue += plannedValue;
-        sumPlannedCost += totalPlannedCost;
-        sumFactValue += factValue;
-        sumFactCost += totalActualCost;
       }
 
       // Рассчитываем коэффициенты Value/Cost
