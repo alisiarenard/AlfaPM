@@ -1104,6 +1104,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       <span className={`text-[11px] text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
+                      {sprintInfo?.goal && (
+                        <span className="text-[10px] text-muted-foreground font-normal italic">
+                          {sprintInfo.goal}
+                        </span>
+                      )}
                       <span className="text-[10px] text-muted-foreground font-normal">
                         IR: {calculateSprintIR(sprintId)}
                       </span>
@@ -1113,6 +1118,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       <span className={`text-[11px] text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
+                      {sprintInfo?.goal && (
+                        <span className="text-[10px] text-muted-foreground font-normal italic">
+                          {sprintInfo.goal}
+                        </span>
+                      )}
                       <span className="text-[10px] text-muted-foreground font-normal">
                         IR: {calculateSprintIR(sprintId)}
                       </span>
