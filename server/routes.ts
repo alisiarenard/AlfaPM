@@ -1743,15 +1743,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Получаем все инициативы для выбранных команд
-      const allInitiatives = await Promise.all(
-        validTeams.map(team => storage.getInitiativesByBoardId(team.initBoardId))
+      // Получаем инициативы для каждой команды с фильтрацией по спринтам команды (как в Excel)
+      const initiativesWithSprints = await Promise.all(
+        validTeams.map(async (team) => {
+          // Получаем инициативы для этой команды
+          const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+          
+          // Получаем спринты этой команды
+          const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+          const teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
+          
+          // Для каждой инициативы получаем задачи, отфильтрованные по спринтам команды
+          return Promise.all(
+            initiatives.map(async (initiative) => {
+              const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+              
+              // Фильтруем только задачи из спринтов этой команды
+              const tasks = allTasks.filter(task => 
+                task.sprintId !== null && teamSprintIds.has(task.sprintId)
+              );
+              
+              // Группируем по sprint_id
+              const sprintsMap = new Map<number, { sp: number }>();
+              tasks.forEach(task => {
+                if (task.sprintId !== null) {
+                  const current = sprintsMap.get(task.sprintId) || { sp: 0 };
+                  current.sp += task.size;
+                  sprintsMap.set(task.sprintId, current);
+                }
+              });
+              
+              const sprints = Array.from(sprintsMap.entries()).map(([sprint_id, data]) => ({
+                sprint_id,
+                sp: data.sp,
+              }));
+              
+              return {
+                ...initiative,
+                team,
+                sprints
+              };
+            })
+          );
+        })
       );
-      const initiatives = allInitiatives.flat();
+      
+      const allInitiatives = initiativesWithSprints.flat();
       
       // Группируем инициативы по cardId для исключения дубликатов
-      const initiativesByCardId = new Map<number, typeof initiatives>();
-      initiatives.forEach((initiative) => {
+      const initiativesByCardId = new Map<number, any[]>();
+      allInitiatives.forEach((initiative) => {
         // Пропускаем "Поддержку бизнеса"
         if (initiative.cardId === 0) return;
         
@@ -1763,14 +1804,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Value/Cost] Found ${initiativesByCardId.size} unique initiatives`);
 
-      // Получаем все спринты для выбранных команд
-      const allSprints = await Promise.all(
-        validTeams.map(team => storage.getSprintsByBoardId(team.sprintBoardId))
-      );
-      const sprintIds = new Set(allSprints.flat().map(s => s.sprintId));
-      
-      log(`[Value/Cost] Found ${sprintIds.size} unique sprints from selected teams`);
-
       // Рассчитываем суммарные значения
       let sumPlannedValue = 0;
       let sumPlannedCost = 0;
@@ -1780,23 +1813,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const [cardId, relatedInitiatives] of Array.from(initiativesByCardId.entries())) {
         const firstInit = relatedInitiatives[0];
         
-        // Суммируем затраты по всем командам, работающим с этой инициативой
+        // Суммируем затраты по всем командам, работающим с этой инициативой (как в Excel)
         let totalPlannedCost = 0;
         let totalActualCost = 0;
         
         for (const initiative of relatedInitiatives) {
-          const team = validTeams.find(t => t.initBoardId === initiative.initBoardId);
-          if (!team) continue;
+          const team = initiative.team;
           
-          // Получаем задачи и фильтруем только по спринтам выбранных команд
-          const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
-          const tasks = allTasks.filter(task => 
-            task.sprintId !== null && sprintIds.has(task.sprintId)
-          );
-          const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
+          // Actual size уже рассчитан в initiative.sprints
+          const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
           const plannedSize = initiative.size || 0;
           
-          log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${team.spPrice}`);
+          log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type} team=${team.name}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${team.spPrice}`);
           
           totalPlannedCost += plannedSize * (team.spPrice || 0);
           totalActualCost += actualSize * (team.spPrice || 0);
