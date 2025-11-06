@@ -1588,7 +1588,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   };
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
+    <div className="border border-border rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 300px)' }}>
       <TeamHeader 
         team={teamData} 
         initiatives={allInitiatives} 
