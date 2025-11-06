@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
 import { ExternalLink, Check } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 
