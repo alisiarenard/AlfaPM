@@ -57,6 +57,7 @@ interface InitiativeDetailsData {
   title: string;
   type: string | null;
   cardId: number;
+  archived: boolean;
   plannedSize: number;
   actualSize: number;
   plannedCost: number;
@@ -193,6 +194,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             title: freshInitiative.title,
             type: freshInitiative.type,
             cardId: freshInitiative.cardId,
+            archived: freshInitiative.condition === "2-archived",
             plannedSize,
             actualSize,
             plannedCost,
@@ -600,6 +602,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       title: initiative.title,
       type: initiative.type,
       cardId: initiative.cardId,
+      archived: initiative.condition === "2-archived",
       plannedSize,
       actualSize,
       plannedCost,
@@ -1378,7 +1381,18 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
-              {initiativeDetailsData?.title}
+              {initiativeDetailsData && (
+                <a 
+                  href={getKaitenCardUrl(team.spaceId, initiativeDetailsData.cardId, initiativeDetailsData.archived)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-foreground hover:text-primary transition-colors group"
+                  data-testid="link-initiative-title"
+                >
+                  <span className="group-hover:underline">{initiativeDetailsData.title}</span>
+                  <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                </a>
+              )}
             </DialogTitle>
             {initiativeDetailsData?.type && (
               <p className="text-xs text-foreground mt-1" data-testid="text-initiative-type">
