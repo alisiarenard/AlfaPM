@@ -1068,7 +1068,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               return (
                 <th
                   key={sprintId}
-                  className={`px-2 py-3 text-center min-w-[100px] ${isCurrent ? 'bg-muted/30' : ''}`}
+                  className={`px-2 py-3 text-center min-w-[100px] ${isCurrent ? 'bg-muted/50' : ''}`}
                   data-testid={`header-sprint-${sprintId}`}
                 >
                   {hasTasksInSprint ? (
@@ -1321,7 +1321,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   return (
                     <td
                       key={sprintId}
-                      className={`p-0 min-w-[100px] ${isCurrent ? 'bg-muted/30' : ''}`}
+                      className={`p-0 min-w-[100px] ${isCurrent ? 'bg-muted/50' : ''}`}
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
                       {showBlock && tooltipData && initiative.cardId !== 0 ? (
