@@ -961,11 +961,15 @@ export default function HomePage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value={(currentYear - 1).toString()} data-testid={`option-year-${currentYear - 1}`}>
-                  {currentYear - 1}
+                <SelectItem value="2025" data-testid="option-year-2025">
+                  2025
                 </SelectItem>
-                <SelectItem value={currentYear.toString()} data-testid={`option-year-${currentYear}`}>
-                  {currentYear}
+                <SelectItem 
+                  value="2026" 
+                  data-testid="option-year-2026"
+                  disabled={currentYear < 2026}
+                >
+                  2026
                 </SelectItem>
               </SelectContent>
             </Select>
