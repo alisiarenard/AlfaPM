@@ -1598,7 +1598,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
         onSync={handleSync}
         isSyncing={syncAllMutation.isPending}
       />
-      <div className="px-4 overflow-auto" style={{ height: 'calc(100% - 60px)' }}>
+      <div className="px-4 overflow-auto custom-scrollbar" style={{ height: 'calc(100% - 60px)' }}>
         <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
       </div>
     </div>
