@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder, MoreVertical, Download, Users } from "lucide-react";
 import { MdAccountTree } from "react-icons/md";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -84,6 +85,8 @@ function DepartmentTreeItem({
 
 export default function HomePage() {
   const currentYear = new Date().getFullYear();
+  const [location, setLocation] = useLocation();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState<string>("");
@@ -104,7 +107,33 @@ export default function HomePage() {
   const [velocity, setVelocity] = useState("");
   const [sprintDuration, setSprintDuration] = useState("");
   const [spPrice, setSpPrice] = useState("");
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
   const { toast } = useToast();
+
+  // Функция для парсинга query параметров из URL
+  const parseUrlParams = () => {
+    const searchParams = new URLSearchParams(location.split('?')[1] || '');
+    return {
+      dept: searchParams.get('dept') || '',
+      year: searchParams.get('year') || currentYear.toString(),
+      teams: searchParams.get('teams')?.split(',').filter(Boolean) || [],
+      active: searchParams.get('active') === '1'
+    };
+  };
+
+  // Функция для обновления URL с текущими фильтрами
+  const updateUrl = (dept: string, year: string, teams: Set<string>, active: boolean) => {
+    const params = new URLSearchParams();
+    if (dept) params.set('dept', dept);
+    if (year) params.set('year', year);
+    if (teams.size > 0) params.set('teams', Array.from(teams).join(','));
+    if (active) params.set('active', '1');
+    
+    const newUrl = params.toString() ? `/?${params.toString()}` : '/';
+    if (location !== newUrl) {
+      setLocation(newUrl);
+    }
+  };
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
@@ -299,6 +328,89 @@ export default function HomePage() {
       setExpandedDepartments(allDepartmentIds);
     }
   }, [departments]);
+
+  // Восстановление состояния из URL при первой загрузке
+  useEffect(() => {
+    if (isInitialLoad && departments && departments.length > 0) {
+      const urlParams = parseUrlParams();
+      
+      // Восстанавливаем департамент
+      if (urlParams.dept && departments.some(d => d.id === urlParams.dept)) {
+        setSelectedDepartment(urlParams.dept);
+      }
+      
+      // Восстанавливаем год
+      setSelectedYear(urlParams.year);
+      
+      // Восстанавливаем фильтр "Активные"
+      setShowActiveOnly(urlParams.active);
+      
+      setIsInitialLoad(false);
+    }
+  }, [departments, isInitialLoad]);
+
+  // Восстановление выбранных команд после загрузки команд департамента
+  useEffect(() => {
+    if (!isInitialLoad && departmentTeams && departmentTeams.length > 0 && selectedDepartment) {
+      const urlParams = parseUrlParams();
+      if (urlParams.teams.length > 0) {
+        const validTeamIds = departmentTeams.map(t => t.teamId);
+        const teamsToSelect = urlParams.teams.filter(tid => validTeamIds.includes(tid));
+        if (teamsToSelect.length > 0) {
+          setSelectedTeams(new Set(teamsToSelect));
+        }
+      }
+    }
+  }, [departmentTeams, selectedDepartment, isInitialLoad]);
+
+  // Синхронизация URL при изменении фильтров
+  useEffect(() => {
+    if (!isInitialLoad) {
+      updateUrl(selectedDepartment, selectedYear, selectedTeams, showActiveOnly);
+    }
+  }, [selectedDepartment, selectedYear, selectedTeams, showActiveOnly, isInitialLoad]);
+
+  // Синхронизация состояния при изменении URL (назад/вперед браузера или ручное редактирование)
+  useEffect(() => {
+    if (!isInitialLoad && departments && departments.length > 0) {
+      const urlParams = parseUrlParams();
+      
+      // Обновляем департамент если он изменился в URL
+      if (urlParams.dept !== selectedDepartment) {
+        if (urlParams.dept && departments.some(d => d.id === urlParams.dept)) {
+          setSelectedDepartment(urlParams.dept);
+        } else if (!urlParams.dept && selectedDepartment) {
+          // Если параметр dept убрали из URL, выбираем первый доступный
+          const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
+          if (firstAvailableDepartment) {
+            setSelectedDepartment(firstAvailableDepartment.id);
+          }
+        }
+      }
+      
+      // Обновляем год если он изменился в URL
+      if (urlParams.year !== selectedYear) {
+        setSelectedYear(urlParams.year);
+      }
+      
+      // Обновляем фильтр "Активные" если он изменился в URL
+      if (urlParams.active !== showActiveOnly) {
+        setShowActiveOnly(urlParams.active);
+      }
+      
+      // Обновляем выбранные команды если они изменились в URL
+      const currentTeamsArray = Array.from(selectedTeams).sort();
+      const urlTeamsArray = urlParams.teams.sort();
+      const teamsChanged = currentTeamsArray.length !== urlTeamsArray.length ||
+        currentTeamsArray.some((t, i) => t !== urlTeamsArray[i]);
+      
+      if (teamsChanged && departmentTeams) {
+        const validTeamIds = departmentTeams.map(t => t.teamId);
+        const teamsToSelect = urlParams.teams.filter(tid => validTeamIds.includes(tid));
+        setSelectedTeams(new Set(teamsToSelect));
+      }
+    }
+  }, [location, isInitialLoad, departments, departmentTeams]);
 
   useEffect(() => {
     if (rightPanelMode === "editBlock" && editingDepartment) {
@@ -1016,7 +1128,7 @@ export default function HomePage() {
               
               {departmentTeams.map((team) => (
                 <TabsContent key={team.teamId} value={team.teamId}>
-                  <TeamInitiativesTab team={team} />
+                  <TeamInitiativesTab team={team} showActiveOnly={showActiveOnly} setShowActiveOnly={setShowActiveOnly} />
                 </TabsContent>
               ))}
             </Tabs>
@@ -1457,8 +1569,7 @@ export default function HomePage() {
   );
 }
 
-function TeamInitiativesTab({ team }: { team: TeamRow }) {
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
+function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void }) {
   const { toast } = useToast();
   
   const { data: initiativeRows, isLoading: initiativesLoading, error: initiativesError } = useQuery<Initiative[]>({
