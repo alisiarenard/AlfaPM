@@ -1072,10 +1072,15 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 Фокус (факт)
               </span>
             </th>
-            {allSprintIds.map((sprintId) => {
+            {allSprintIds.map((sprintId, index) => {
               const sprintInfo = getSprintInfo(sprintId);
               const isGenerated = isGeneratedSprint(sprintId);
               const isCurrent = isCurrentSprint(sprintId);
+              
+              // Находим индекс текущего спринта
+              const currentSprintIndex = allSprintIds.findIndex(id => isCurrentSprint(id));
+              // Предыдущий спринт - это спринт перед текущим
+              const isPreviousSprint = currentSprintIndex > 0 && index === currentSprintIndex - 1;
               
               // Проверяем, есть ли задачи в этом спринте
               const hasTasksInSprint = initiatives.some(init => getSprintTasks(init, sprintId).length > 0);
@@ -1083,7 +1088,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               return (
                 <th
                   key={sprintId}
-                  ref={isCurrent ? currentSprintRef : null}
+                  ref={isPreviousSprint ? currentSprintRef : null}
                   className={`px-2 py-3 text-center min-w-[100px] ${isCurrent ? 'bg-muted/50' : ''}`}
                   data-testid={`header-sprint-${sprintId}`}
                 >
