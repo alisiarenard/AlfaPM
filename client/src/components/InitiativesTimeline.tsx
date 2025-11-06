@@ -1033,9 +1033,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
   return (
     <TooltipProvider>
-      <div className="w-full overflow-x-auto max-w-full custom-scrollbar">
+      <div className="w-full max-w-full">
         <table className="w-full border-collapse">
-        <thead className="sticky top-0 z-[110] bg-background">
+        <thead className="sticky top-0 z-[110] bg-background border-b border-border">
           <tr className="border-b border-border">
             <th className="sticky left-0 z-[120] bg-background px-2 py-3 text-left min-w-[220px] max-w-[220px]">
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
