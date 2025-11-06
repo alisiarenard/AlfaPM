@@ -1846,6 +1846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (teamFilteredInitiatives.length === 0) continue;
         
         // Суммируем затраты только по выбранным командам
+        // Плановые затраты считаем только для команд с фактическими затратами
         let totalPlannedCost = 0;
         let totalActualCost = 0;
         
@@ -1856,7 +1857,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type} team=${initiative.teamName}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${initiative.spPrice}`);
           
-          totalPlannedCost += plannedSize * (initiative.spPrice || 0);
+          // Плановые затраты считаем только для команд с фактическими затратами
+          if (actualSize > 0) {
+            totalPlannedCost += plannedSize * (initiative.spPrice || 0);
+          }
           totalActualCost += actualSize * (initiative.spPrice || 0);
         }
         
