@@ -84,6 +84,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const [editingFieldValue, setEditingFieldValue] = useState<string>("");
   const [savingField, setSavingField] = useState<EditableField | null>(null);
   const fieldInputRef = useRef<HTMLInputElement>(null);
+  const currentSprintRef = useRef<HTMLTableCellElement>(null);
 
   // Mutation для обновления planned_involvement
   const updatePlannedInvolvementMutation = useMutation({
@@ -230,6 +231,20 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       fieldInputRef.current.select();
     }
   }, [editingField]);
+
+  // Автоскролл на текущий спринт после загрузки данных
+  useEffect(() => {
+    if (initiatives.length > 0 && sprints.length > 0 && currentSprintRef.current) {
+      // Небольшая задержка, чтобы таблица успела отрендериться
+      setTimeout(() => {
+        currentSprintRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }, 300);
+    }
+  }, [initiatives.length, sprints.length]);
 
   // Начать редактирование
   const startEditing = (initiativeId: string, currentValue: number | null) => {
@@ -1068,6 +1083,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               return (
                 <th
                   key={sprintId}
+                  ref={isCurrent ? currentSprintRef : null}
                   className={`px-2 py-3 text-center min-w-[100px] ${isCurrent ? 'bg-muted/50' : ''}`}
                   data-testid={`header-sprint-${sprintId}`}
                 >
