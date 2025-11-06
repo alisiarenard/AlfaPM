@@ -20,7 +20,7 @@ export async function initializeDatabase() {
       await db.insert(initiatives).values({
         cardId: 0,
         title: "Поддержка бизнеса",
-        state: "1-queued",
+        state: "2-inProgress",
         condition: "1-live",
         type: "Card",
         initBoardId: 0,
