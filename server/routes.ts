@@ -1796,9 +1796,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
           const plannedSize = initiative.size || 0;
           
+          log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${team.spPrice}`);
+          
           totalPlannedCost += plannedSize * (team.spPrice || 0);
           totalActualCost += actualSize * (team.spPrice || 0);
         }
+        
+        log(`[Value/Cost] Init ${cardId} total costs: planned=${totalPlannedCost}, actual=${totalActualCost}`);
         
         // Для Compliance и Enabler эффект = затратам
         let plannedValue: number;
