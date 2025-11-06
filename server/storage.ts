@@ -597,6 +597,51 @@ export class DbStorage implements IStorage {
     });
     return result;
   }
+
+  async syncSprintFromKaiten(
+    sprintId: number,
+    boardId: number,
+    title: string,
+    velocity: number,
+    startDate: string,
+    finishDate: string,
+    actualFinishDate: string | null,
+    goal: string | null
+  ): Promise<SprintRow> {
+    const existing = await this.getSprint(sprintId);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(sprints)
+        .set({ 
+          boardId,
+          title,
+          velocity,
+          startDate,
+          finishDate,
+          actualFinishDate: actualFinishDate || null,
+          goal: goal || null
+        })
+        .where(eq(sprints.sprintId, sprintId))
+        .returning();
+      return updated;
+    } else {
+      const [newSprint] = await db
+        .insert(sprints)
+        .values({
+          sprintId,
+          boardId,
+          title,
+          velocity,
+          startDate,
+          finishDate,
+          actualFinishDate: actualFinishDate || null,
+          goal: goal || null
+        })
+        .returning();
+      return newSprint;
+    }
+  }
 }
 
 export const storage = new DbStorage();

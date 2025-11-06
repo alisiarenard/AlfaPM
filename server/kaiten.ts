@@ -126,6 +126,19 @@ export class KaitenClient {
     return this.makeRequest<KaitenSprintResponse>(`/sprints/${sprintId}`);
   }
 
+  async getSprintsFromBoard(boardId: number): Promise<KaitenSprintResponse[]> {
+    log(`[Kaiten API] Fetching sprints for board ${boardId}`);
+    const response = await this.makeRequest<KaitenBoardResponse>(`/boards/${boardId}`);
+    
+    if (response.sprints && Array.isArray(response.sprints)) {
+      log(`[Kaiten API] Found ${response.sprints.length} sprints in board ${boardId}`);
+      return response.sprints;
+    }
+    
+    log(`[Kaiten API] No sprints found in board ${boardId}`);
+    return [];
+  }
+
   async testConnection(): Promise<boolean> {
     try {
       await this.makeRequest('/spaces');

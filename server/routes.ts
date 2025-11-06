@@ -1353,6 +1353,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/kaiten/sync-sprints/:boardId", async (req, res) => {
+    try {
+      const boardId = parseInt(req.params.boardId);
+      if (isNaN(boardId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid board ID" 
+        });
+      }
+
+      log(`[Kaiten Sync Sprints] Starting sync for sprints on board ${boardId}`);
+      
+      // Получаем все спринты с доски из Kaiten
+      const kaitenSprints = await kaitenClient.getSprintsFromBoard(boardId);
+      log(`[Kaiten Sync Sprints] Found ${kaitenSprints.length} sprints in Kaiten`);
+
+      const syncedSprints = [];
+      
+      for (const kaitenSprint of kaitenSprints) {
+        // Получаем детальную информацию о спринте
+        const sprintDetails = await kaitenClient.getSprint(kaitenSprint.id);
+        
+        log(`[Kaiten Sync Sprints] Syncing sprint ${sprintDetails.id}: "${sprintDetails.title}"`);
+        log(`[Kaiten Sync Sprints] Sprint details:`, JSON.stringify(sprintDetails, null, 2));
+        
+        // Синхронизируем спринт
+        const synced = await storage.syncSprintFromKaiten(
+          sprintDetails.id,
+          boardId,
+          sprintDetails.title || `Sprint ${sprintDetails.id}`,
+          sprintDetails.velocity || 0,
+          sprintDetails.start_date || new Date().toISOString(),
+          sprintDetails.finish_date || new Date().toISOString(),
+          sprintDetails.actual_finish_date || null,
+          sprintDetails.goal || null
+        );
+        
+        syncedSprints.push(synced);
+      }
+
+      log(`[Kaiten Sync Sprints] Successfully synced ${syncedSprints.length} sprints`);
+      
+      res.json({
+        success: true,
+        count: syncedSprints.length,
+        sprints: syncedSprints
+      });
+    } catch (error) {
+      console.error("POST /api/kaiten/sync-sprints/:boardId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to sync sprints from Kaiten" 
+      });
+    }
+  });
+
   app.get("/api/metrics/innovation-rate", async (req, res) => {
     try {
       const teamIdsParam = req.query.teamIds as string;

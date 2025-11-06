@@ -56,6 +56,7 @@ export const sprints = pgTable("sprints", {
   startDate: varchar("start_date").notNull(),
   finishDate: varchar("finish_date").notNull(),
   actualFinishDate: varchar("actual_finish_date"),
+  goal: varchar("goal"),
 });
 
 export const insertSprintSchema = createInsertSchema(sprints);
