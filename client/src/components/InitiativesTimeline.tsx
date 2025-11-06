@@ -1037,22 +1037,22 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         <table className="w-full border-collapse">
         <thead className="sticky top-0 z-[110] bg-background border-b border-border">
           <tr className="border-b border-border">
-            <th className="sticky left-0 z-[120] bg-background px-2 py-3 text-left min-w-[220px] max-w-[220px]">
+            <th className="sticky left-0 z-[120] bg-background px-2 py-3 text-left min-w-[220px] max-w-[220px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Инициатива
               </span>
             </th>
-            <th className="sticky left-[220px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[220px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Выполнено
               </span>
             </th>
-            <th className="sticky left-[320px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[320px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Фокус(план)
               </span>
             </th>
-            <th className="sticky left-[420px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]">
+            <th className="sticky left-[420px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Фокус (факт)
               </span>
@@ -1108,7 +1108,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               className={`${index !== initiatives.length - 1 ? 'border-b border-border' : ''}`}
               data-testid={`row-initiative-${initiative.id}`}
             >
-              <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]">
+              <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 <div className="flex items-start gap-2">
                   {getStatusIcon(initiative)}
                   {(() => {
@@ -1172,7 +1172,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   })()}
                 </div>
               </td>
-              <td className="sticky left-[220px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
+              <td className="sticky left-[220px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 <div className="flex items-center gap-2">
                   {(() => {
                     const completed = getTotalSP(initiative);
@@ -1215,6 +1215,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               </td>
               <td 
                 className="sticky left-[320px] z-[100] bg-background min-w-[100px] max-w-[100px]"
+                style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}
                 data-testid={`cell-planned-involvement-${initiative.id}`}
               >
                 <div 
@@ -1253,7 +1254,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   )}
                 </div>
               </td>
-              <td className="sticky left-[420px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]">
+              <td className="sticky left-[420px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 <span className="text-xs text-foreground">
                   {formatInvolvement(initiative.involvement)}
                 </span>
