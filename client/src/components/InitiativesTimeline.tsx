@@ -47,6 +47,7 @@ interface InitiativeProgress {
 interface SprintModalData {
   sprintTitle: string;
   sprintDates: string;
+  goal: string | null;
   initiatives: InitiativeProgress[];
   businessSupportSP: number;
   otherInitiativesSP: number;
@@ -549,6 +550,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     setSprintModalData({
       sprintTitle: sprintInfo?.title || `Спринт ${sprintId}`,
       sprintDates,
+      goal: sprintInfo?.goal || null,
       initiatives: initiativesProgress,
       businessSupportSP,
       otherInitiativesSP
@@ -1104,11 +1106,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       <span className={`text-[11px] text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
-                      {sprintInfo?.goal && (
-                        <span className="text-[10px] text-muted-foreground font-normal italic">
-                          {sprintInfo.goal}
-                        </span>
-                      )}
                       <span className="text-[10px] text-muted-foreground font-normal">
                         IR: {calculateSprintIR(sprintId)}
                       </span>
@@ -1118,11 +1115,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       <span className={`text-[11px] text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
-                      {sprintInfo?.goal && (
-                        <span className="text-[10px] text-muted-foreground font-normal italic">
-                          {sprintInfo.goal}
-                        </span>
-                      )}
                       <span className="text-[10px] text-muted-foreground font-normal">
                         IR: {calculateSprintIR(sprintId)}
                       </span>
@@ -1615,6 +1607,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             <DialogTitle className="text-lg font-semibold">
               Спринт {sprintModalData?.sprintDates || ''}
             </DialogTitle>
+            {sprintModalData?.goal && (
+              <p className="text-sm text-muted-foreground italic mt-1" data-testid="sprint-goal">
+                {sprintModalData.goal}
+              </p>
+            )}
           </DialogHeader>
           
           {/* Карточка с метриками */}
