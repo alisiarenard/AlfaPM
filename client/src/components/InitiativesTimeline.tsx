@@ -1037,7 +1037,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         <table className="w-full border-collapse">
         <thead className="sticky top-0 z-[110] bg-background border-b border-border">
           <tr className="border-b border-border">
-            <th className="sticky left-0 z-[120] bg-background px-2 py-3 text-left min-w-[220px] max-w-[220px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+            <th className="sticky left-0 z-[120] bg-background pl-4 pr-2 py-3 text-left min-w-[220px] max-w-[220px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Инициатива
               </span>
@@ -1108,7 +1108,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               className={`${index !== initiatives.length - 1 ? 'border-b border-border' : ''}`}
               data-testid={`row-initiative-${initiative.id}`}
             >
-              <td className="sticky left-0 z-[100] bg-background px-2 py-3 min-w-[220px] max-w-[220px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+              <td className="sticky left-0 z-[100] bg-background pl-4 pr-2 py-3 min-w-[220px] max-w-[220px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 <div className="flex items-start gap-2">
                   {getStatusIcon(initiative)}
                   {(() => {
