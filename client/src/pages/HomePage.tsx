@@ -899,9 +899,9 @@ export default function HomePage() {
     sumFactValue: number;
     sumFactCost: number;
   }>({
-    queryKey: ['/api/metrics/value-cost', { teamIds: teamIdsParam }],
+    queryKey: ['/api/metrics/value-cost', { teamIds: teamIdsParam, year: selectedYear }],
     queryFn: async () => {
-      const response = await fetch(`/api/metrics/value-cost?teamIds=${teamIdsParam}`);
+      const response = await fetch(`/api/metrics/value-cost?teamIds=${teamIdsParam}&year=${selectedYear}`);
       if (!response.ok) {
         throw new Error('Failed to fetch value/cost');
       }

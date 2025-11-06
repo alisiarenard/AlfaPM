@@ -1713,6 +1713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/metrics/value-cost", async (req, res) => {
     try {
       const teamIdsParam = req.query.teamIds as string;
+      const yearParam = req.query.year as string;
       
       if (!teamIdsParam) {
         return res.status(400).json({ 
@@ -1722,6 +1723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const teamIds = teamIdsParam.split(',').map(id => id.trim()).filter(id => id);
+      const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
       
       if (teamIds.length === 0) {
         return res.status(400).json({ 
@@ -1730,7 +1732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Value/Cost] Calculating for teams: ${teamIds.join(', ')}`);
+      log(`[Value/Cost] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
 
       // Получаем команды
       const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
@@ -1749,9 +1751,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Получаем инициативы для этой команды
           const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
           
-          // Получаем спринты этой команды
+          // Получаем спринты этой команды и фильтруем по году
           const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
-          const teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
+          const filteredSprints = teamSprints.filter(sprint => {
+            const sprintYear = new Date(sprint.startDate).getFullYear();
+            return sprintYear === year;
+          });
+          const teamSprintIds = new Set(filteredSprints.map(s => s.sprintId));
           
           // Для каждой инициативы получаем задачи, отфильтрованные по спринтам команды
           return Promise.all(
@@ -1778,7 +1784,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 sp: data.sp,
               }));
               
-              // Создаем новый объект с полями team и sprints
+              // Создаем новый объект с полями teamId, spPrice, teamName и sprints
               return {
                 id: initiative.id,
                 cardId: initiative.cardId,
@@ -1793,9 +1799,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 plannedValue: initiative.plannedValue,
                 factValueId: initiative.factValueId,
                 factValue: initiative.factValue,
-                dueDate: initiative.dueDate,
+                dueDate: initiative.doneDate,
                 doneDate: initiative.doneDate,
-                team: team,
+                teamId: team.teamId,
+                spPrice: team.spPrice,
+                teamName: team.teamName,
                 sprints: sprints
               };
             })
@@ -1833,16 +1841,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let totalActualCost = 0;
         
         for (const initiative of relatedInitiatives) {
-          const team = initiative.team;
-          
           // Actual size уже рассчитан в initiative.sprints
           const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
           const plannedSize = initiative.size || 0;
           
-          log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type} team=${team.name}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${team.spPrice}`);
+          log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type} team=${initiative.teamName}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${initiative.spPrice}`);
           
-          totalPlannedCost += plannedSize * (team.spPrice || 0);
-          totalActualCost += actualSize * (team.spPrice || 0);
+          totalPlannedCost += plannedSize * (initiative.spPrice || 0);
+          totalActualCost += actualSize * (initiative.spPrice || 0);
         }
         
         log(`[Value/Cost] Init ${cardId} total costs: planned=${totalPlannedCost}, actual=${totalActualCost}`);
