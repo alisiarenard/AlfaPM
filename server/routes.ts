@@ -1507,28 +1507,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       log(`[Innovation Rate] Found ${initiatives.length} initiatives`);
 
-      // Подсчитываем SP
+      // Подсчитываем SP по типам (как в Cost Structure)
+      const typeStats: Record<string, number> = {};
       let totalSP = 0;
-      let innovationSP = 0;
 
       for (const task of relevantTasks) {
         const taskSize = task.size || 0;
         totalSP += taskSize;
 
-        // Таск относится к инновациям, если у него есть родительская инициатива типа Epic, Compliance или Enabler
+        // Проверяем, привязан ли таск к инициативе
         if (task.initCardId !== null && task.initCardId !== 0) {
           const initiative = initiativesMap.get(task.initCardId);
-          if (initiative && (initiative.type === 'Epic' || initiative.type === 'Compliance' || initiative.type === 'Enabler')) {
-            innovationSP += taskSize;
+          if (initiative && initiative.type) {
+            typeStats[initiative.type] = (typeStats[initiative.type] || 0) + taskSize;
           }
         }
       }
 
-      log(`[Innovation Rate] Total SP: ${totalSP}, Innovation SP: ${innovationSP}`);
-      log(`[Innovation Rate] Calculation: ${innovationSP} / ${totalSP} = ${totalSP > 0 ? (innovationSP / totalSP) * 100 : 0}%`);
+      // Рассчитываем проценты для каждого типа (с округлением, как в Cost Structure)
+      const epicPercent = totalSP > 0 ? Math.round(((typeStats['Epic'] || 0) / totalSP) * 100) : 0;
+      const compliancePercent = totalSP > 0 ? Math.round(((typeStats['Compliance'] || 0) / totalSP) * 100) : 0;
+      const enablerPercent = totalSP > 0 ? Math.round(((typeStats['Enabler'] || 0) / totalSP) * 100) : 0;
+      
+      // IR - это сумма округленных процентов (как в Excel)
+      const actualIR = epicPercent + compliancePercent + enablerPercent;
+      const innovationSP = (typeStats['Epic'] || 0) + (typeStats['Compliance'] || 0) + (typeStats['Enabler'] || 0);
 
-      // Расчитываем фактический IR
-      const actualIR = totalSP > 0 ? Math.round((innovationSP / totalSP) * 100) : 0;
+      log(`[Innovation Rate] Total SP: ${totalSP}, Epic: ${typeStats['Epic'] || 0}, Compliance: ${typeStats['Compliance'] || 0}, Enabler: ${typeStats['Enabler'] || 0}`);
+      log(`[Innovation Rate] Epic: ${epicPercent}%, Compliance: ${compliancePercent}%, Enabler: ${enablerPercent}%`);
+      log(`[Innovation Rate] Actual IR (sum of rounded %): ${actualIR}%`);
       
       // Расчитываем разницу с плановым IR
       const plannedIR = department.plannedIr || 0;
