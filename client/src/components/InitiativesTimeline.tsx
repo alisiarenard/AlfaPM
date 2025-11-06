@@ -1103,7 +1103,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       data-testid={`button-sprint-header-${sprintId}`}
                       aria-label={`Показать задачи спринта ${sprintInfo?.title || sprintId}`}
                     >
-                      <span className={`text-sm text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
+                      <span className={`text-xs text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
                       <span className="text-xs text-muted-foreground font-normal">
@@ -1112,7 +1112,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     </button>
                   ) : (
                     <div className="flex flex-col gap-0.5">
-                      <span className={`text-sm text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
+                      <span className={`text-xs text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
                       <span className="text-xs text-muted-foreground font-normal">
