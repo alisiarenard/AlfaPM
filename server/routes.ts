@@ -1426,6 +1426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/metrics/innovation-rate", async (req, res) => {
     try {
       const teamIdsParam = req.query.teamIds as string;
+      const yearParam = req.query.year as string;
       
       if (!teamIdsParam) {
         return res.status(400).json({ 
@@ -1435,6 +1436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const teamIds = teamIdsParam.split(',').map(id => id.trim()).filter(id => id);
+      const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
       
       if (teamIds.length === 0) {
         return res.status(400).json({ 
@@ -1443,7 +1445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Innovation Rate] Calculating for teams: ${teamIds.join(', ')}`);
+      log(`[Innovation Rate] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
 
       // Получаем команды и департамент
       const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
@@ -1472,9 +1474,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allSprints = await Promise.all(
         validTeams.map(team => storage.getSprintsByBoardId(team.sprintBoardId))
       );
-      const sprintIds = new Set(allSprints.flat().map(s => s.sprintId));
       
-      log(`[Innovation Rate] Found ${sprintIds.size} unique sprints`);
+      // Фильтруем спринты по году
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+      
+      const yearSprints = allSprints.flat().filter(sprint => {
+        const sprintStart = new Date(sprint.startDate);
+        return sprintStart >= yearStart && sprintStart <= yearEnd;
+      });
+      
+      const sprintIds = new Set(yearSprints.map(s => s.sprintId));
+      
+      log(`[Innovation Rate] Found ${sprintIds.size} sprints in year ${year}`);
 
       // Получаем все таски из этих спринтов
       const allTasks = await storage.getAllTasks();
@@ -1484,6 +1496,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       log(`[Innovation Rate] Found ${relevantTasks.length} tasks in selected sprints`);
 
+      // Получаем все инициативы для выбранных команд
+      const allInitiatives = await Promise.all(
+        validTeams.map(team => storage.getInitiativesByBoardId(team.initBoardId))
+      );
+      const initiatives = allInitiatives.flat();
+      
+      // Создаем мапу инициатив по cardId для быстрого поиска
+      const initiativesMap = new Map(initiatives.map(init => [init.cardId, init]));
+      
+      log(`[Innovation Rate] Found ${initiatives.length} initiatives`);
+
       // Подсчитываем SP
       let totalSP = 0;
       let innovationSP = 0;
@@ -1492,9 +1515,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const taskSize = task.size || 0;
         totalSP += taskSize;
 
-        // Таск относится к инновациям, если у него есть родительская инициатива (init_card_id !== null и !== 0)
+        // Таск относится к инновациям, если у него есть родительская инициатива типа Epic, Compliance или Enabler
         if (task.initCardId !== null && task.initCardId !== 0) {
-          innovationSP += taskSize;
+          const initiative = initiativesMap.get(task.initCardId);
+          if (initiative && (initiative.type === 'Epic' || initiative.type === 'Compliance' || initiative.type === 'Enabler')) {
+            innovationSP += taskSize;
+          }
         }
       }
 

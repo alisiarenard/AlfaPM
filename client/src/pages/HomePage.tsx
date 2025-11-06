@@ -834,9 +834,9 @@ export default function HomePage() {
     totalSP: number;
     innovationSP: number;
   }>({
-    queryKey: ['/api/metrics/innovation-rate', { teamIds: teamIdsParam }],
+    queryKey: ['/api/metrics/innovation-rate', { teamIds: teamIdsParam, year: selectedYear }],
     queryFn: async () => {
-      const response = await fetch(`/api/metrics/innovation-rate?teamIds=${teamIdsParam}`);
+      const response = await fetch(`/api/metrics/innovation-rate?teamIds=${teamIdsParam}&year=${selectedYear}`);
       if (!response.ok) {
         throw new Error('Failed to fetch innovation rate');
       }

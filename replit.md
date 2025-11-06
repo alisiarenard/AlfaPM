@@ -42,7 +42,10 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 
 **API Endpoints:**
 - Standard CRUD endpoints for departments, teams, initiatives, and tasks.
-- Metrics endpoints for Innovation Rate, Cost Structure, and Value/Cost.
+- Metrics endpoints for Innovation Rate, Cost Structure, and Value/Cost:
+  - Innovation Rate: Calculates percentage of story points from tasks linked to Epic, Compliance, or Enabler initiatives, filtered by selected teams and year
+  - Cost Structure: Breaks down story points by initiative/task types, filtered by selected teams and year
+  - Value/Cost: Calculates planned and actual value-to-cost ratios, filtered by selected teams' sprints
 - Kaiten synchronization endpoints, including `PATCH /api/kaiten/update-initiative/:cardId` for updating initiative fields in both Kaiten and the local database.
 
 **Kaiten Integration:**
