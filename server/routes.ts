@@ -1881,8 +1881,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? parseFloat(firstInit.factValue) 
             : 0;
           
-          // Добавляем только если есть фактические затраты у выбранных команд
-          if (totalPlannedCost > 0 || totalActualCost > 0) {
+          // Добавляем только если есть ФАКТИЧЕСКИЕ затраты у выбранных команд
+          // (плановые затраты могут быть у всех команд, но это не значит что они работали над Epic)
+          if (totalActualCost > 0) {
             sumPlannedValue += plannedValue;
             sumPlannedCost += totalPlannedCost;
             sumFactValue += factValue;
