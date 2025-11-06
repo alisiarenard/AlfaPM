@@ -1778,13 +1778,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 sp: data.sp,
               }));
               
-              // Явно создаем объект с team
-              const initiativeWithTeam = Object.assign({}, initiative, {
+              // Создаем новый объект с полями team и sprints
+              return {
+                id: initiative.id,
+                cardId: initiative.cardId,
+                title: initiative.title,
+                state: initiative.state,
+                condition: initiative.condition,
+                type: initiative.type,
+                initBoardId: initiative.initBoardId,
+                size: initiative.size,
+                plannedInvolvement: initiative.plannedInvolvement,
+                plannedValueId: initiative.plannedValueId,
+                plannedValue: initiative.plannedValue,
+                factValueId: initiative.factValueId,
+                factValue: initiative.factValue,
+                dueDate: initiative.dueDate,
+                doneDate: initiative.doneDate,
                 team: team,
                 sprints: sprints
-              });
-              
-              return initiativeWithTeam;
+              };
             })
           );
         })
