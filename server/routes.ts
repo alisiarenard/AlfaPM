@@ -1836,11 +1836,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const [cardId, relatedInitiatives] of Array.from(initiativesByCardId.entries())) {
         const firstInit = relatedInitiatives[0];
         
-        // Суммируем затраты по всем командам, работающим с этой инициативой (как в Excel)
+        // Фильтруем только инициативы выбранных команд
+        const teamFilteredInitiatives = relatedInitiatives.filter(init => teamIds.includes(init.teamId));
+        
+        // Если после фильтрации не осталось инициатив - пропускаем
+        if (teamFilteredInitiatives.length === 0) continue;
+        
+        // Суммируем затраты только по выбранным командам
         let totalPlannedCost = 0;
         let totalActualCost = 0;
         
-        for (const initiative of relatedInitiatives) {
+        for (const initiative of teamFilteredInitiatives) {
           // Actual size уже рассчитан в initiative.sprints
           const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
           const plannedSize = initiative.size || 0;
