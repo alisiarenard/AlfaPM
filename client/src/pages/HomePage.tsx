@@ -339,6 +339,14 @@ export default function HomePage() {
     setEditingTeam(team);
     setEditingDepartment(null);
     setRightPanelMode("editTeam");
+    // Обновляем поля формы сразу, чтобы избежать мелькания кнопки "Сохранить"
+    setTeamName(team.teamName);
+    setSpaceId(team.spaceId.toString());
+    setSprintBoardId(team.sprintBoardId.toString());
+    setInitBoardId(team.initBoardId.toString());
+    setVelocity(team.vilocity.toString());
+    setSprintDuration(team.sprintDuration.toString());
+    setSpPrice(team.spPrice.toString());
   };
 
   const hasFormChanged = () => {
