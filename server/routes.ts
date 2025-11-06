@@ -1836,6 +1836,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const [cardId, relatedInitiatives] of Array.from(initiativesByCardId.entries())) {
         const firstInit = relatedInitiatives[0];
         
+        // Считаем Value/Cost только для Epic инициатив
+        if (firstInit.type !== 'Epic') continue;
+        
         // Фильтруем только инициативы выбранных команд
         const teamFilteredInitiatives = relatedInitiatives.filter(init => teamIds.includes(init.teamId));
         
@@ -1859,36 +1862,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         log(`[Value/Cost] Init ${cardId} total costs: planned=${totalPlannedCost}, actual=${totalActualCost}`);
         
-        // Для Compliance и Enabler эффект = затратам
-        let plannedValue: number;
-        let factValue: number;
+        // Для Epic получаем plannedValue и factValue из БД
+        const plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
+          ? parseFloat(firstInit.plannedValue) 
+          : 0;
+        const factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
+          ? parseFloat(firstInit.factValue) 
+          : 0;
         
-        if (firstInit.type === 'Compliance' || firstInit.type === 'Enabler') {
-          plannedValue = totalPlannedCost;
-          factValue = totalActualCost;
-          
-          // Добавляем к суммам
+        // Добавляем только если есть ФАКТИЧЕСКИЕ затраты у выбранных команд
+        if (totalActualCost > 0) {
           sumPlannedValue += plannedValue;
           sumPlannedCost += totalPlannedCost;
           sumFactValue += factValue;
           sumFactCost += totalActualCost;
-        } else {
-          // Для Epic и других типов получаем plannedValue и factValue из БД
-          plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
-            ? parseFloat(firstInit.plannedValue) 
-            : 0;
-          factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
-            ? parseFloat(firstInit.factValue) 
-            : 0;
-          
-          // Добавляем только если есть ФАКТИЧЕСКИЕ затраты у выбранных команд
-          // (плановые затраты могут быть у всех команд, но это не значит что они работали над Epic)
-          if (totalActualCost > 0) {
-            sumPlannedValue += plannedValue;
-            sumPlannedCost += totalPlannedCost;
-            sumFactValue += factValue;
-            sumFactCost += totalActualCost;
-          }
+          log(`[Value/Cost] Added to totals: plannedValue=${plannedValue}, factValue=${factValue}, plannedCost=${totalPlannedCost}, actualCost=${totalActualCost}`);
         }
       }
 
