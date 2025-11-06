@@ -1778,11 +1778,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 sp: data.sp,
               }));
               
-              return {
-                ...initiative,
-                team,
-                sprints
-              };
+              // Явно создаем объект с team
+              const initiativeWithTeam = Object.assign({}, initiative, {
+                team: team,
+                sprints: sprints
+              });
+              
+              return initiativeWithTeam;
             })
           );
         })
