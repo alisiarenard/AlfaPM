@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
-import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder, MoreVertical, Download } from "lucide-react";
+import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder, MoreVertical, Download, Users } from "lucide-react";
+import { MdAccountTree } from "react-icons/md";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
@@ -1078,7 +1079,7 @@ export default function HomePage() {
                   <div className="px-6 py-4 border-b border-border bg-card">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
-                        <Folder className="h-5 w-5" style={{ color: '#cd253d' }} />
+                        <MdAccountTree className="h-5 w-5" style={{ color: '#cd253d' }} />
                       </div>
                       <h2 className="text-lg font-semibold text-foreground">
                         {blockName.trim() || "Новый блок"}
@@ -1147,7 +1148,7 @@ export default function HomePage() {
                   <div className="px-6 py-4 border-b border-border bg-card">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
-                        <Folder className="h-5 w-5" style={{ color: '#cd253d' }} />
+                        <Users className="h-5 w-5" style={{ color: '#cd253d' }} />
                       </div>
                       <div className="flex flex-col">
                         <h2 className="text-lg font-semibold text-foreground">
@@ -1284,7 +1285,7 @@ export default function HomePage() {
                   <div className="px-6 py-4 border-b border-border bg-card">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
-                        <Folder className="h-5 w-5" style={{ color: '#cd253d' }} />
+                        <Users className="h-5 w-5" style={{ color: '#cd253d' }} />
                       </div>
                       <h2 className="text-lg font-semibold text-foreground">
                         {teamName.trim() || "Новая команда"}
