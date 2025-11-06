@@ -1525,6 +1525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       log(`[Innovation Rate] Total SP: ${totalSP}, Innovation SP: ${innovationSP}`);
+      log(`[Innovation Rate] Calculation: ${innovationSP} / ${totalSP} = ${totalSP > 0 ? (innovationSP / totalSP) * 100 : 0}%`);
 
       // Расчитываем фактический IR
       const actualIR = totalSP > 0 ? Math.round((innovationSP / totalSP) * 100) : 0;
