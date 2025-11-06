@@ -1257,7 +1257,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                  {hasFormChanged() && (
+                  {editingTeam && hasFormChanged() && (
                     <div className="p-4 flex justify-end">
                       <Button
                         disabled={!teamName.trim() || updateTeamMutation.isPending}
