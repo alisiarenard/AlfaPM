@@ -112,7 +112,7 @@ export default function HomePage() {
 
   // Функция для парсинга query параметров из URL
   const parseUrlParams = () => {
-    const searchParams = new URLSearchParams(location.split('?')[1] || '');
+    const searchParams = new URLSearchParams(window.location.search);
     return {
       dept: searchParams.get('dept') || '',
       year: searchParams.get('year') || currentYear.toString(),
@@ -308,21 +308,6 @@ export default function HomePage() {
   });
 
   useEffect(() => {
-    if (departments && departments.length > 0 && !selectedDepartment) {
-      const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
-      if (firstAvailableDepartment) {
-        setSelectedDepartment(firstAvailableDepartment.id);
-      }
-    }
-  }, [departments, selectedDepartment]);
-
-  useEffect(() => {
-    if (departmentTeams && departmentTeams.length > 0) {
-      setActiveTab(departmentTeams[0].teamId);
-    }
-  }, [departmentTeams]);
-
-  useEffect(() => {
     if (departments && departments.length > 0) {
       const allDepartmentIds = new Set(departments.map(dept => dept.id));
       setExpandedDepartments(allDepartmentIds);
@@ -334,9 +319,14 @@ export default function HomePage() {
     if (isInitialLoad && departments && departments.length > 0) {
       const urlParams = parseUrlParams();
       
-      // Восстанавливаем департамент
+      // Восстанавливаем департамент из URL или выбираем первый доступный
       if (urlParams.dept && departments.some(d => d.id === urlParams.dept)) {
         setSelectedDepartment(urlParams.dept);
+      } else if (!selectedDepartment) {
+        const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
+        if (firstAvailableDepartment) {
+          setSelectedDepartment(firstAvailableDepartment.id);
+        }
       }
       
       // Восстанавливаем год
@@ -348,6 +338,12 @@ export default function HomePage() {
       setIsInitialLoad(false);
     }
   }, [departments, isInitialLoad]);
+
+  useEffect(() => {
+    if (departmentTeams && departmentTeams.length > 0) {
+      setActiveTab(departmentTeams[0].teamId);
+    }
+  }, [departmentTeams]);
 
   // Восстановление выбранных команд после загрузки команд департамента
   useEffect(() => {
@@ -370,47 +366,56 @@ export default function HomePage() {
     }
   }, [selectedDepartment, selectedYear, selectedTeams, showActiveOnly, isInitialLoad]);
 
-  // Синхронизация состояния при изменении URL (назад/вперед браузера или ручное редактирование)
+  // Синхронизация состояния при изменении URL через popstate (назад/вперед браузера)
   useEffect(() => {
-    if (!isInitialLoad && departments && departments.length > 0) {
-      const urlParams = parseUrlParams();
-      
-      // Обновляем департамент если он изменился в URL
-      if (urlParams.dept !== selectedDepartment) {
-        if (urlParams.dept && departments.some(d => d.id === urlParams.dept)) {
-          setSelectedDepartment(urlParams.dept);
-        } else if (!urlParams.dept && selectedDepartment) {
-          // Если параметр dept убрали из URL, выбираем первый доступный
-          const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
-          if (firstAvailableDepartment) {
-            setSelectedDepartment(firstAvailableDepartment.id);
+    const handlePopState = () => {
+      if (!isInitialLoad && departments && departments.length > 0) {
+        const urlParams = parseUrlParams();
+        
+        // Обновляем департамент если он изменился в URL
+        setSelectedDepartment(currentDept => {
+          if (urlParams.dept !== currentDept) {
+            if (urlParams.dept && departments.some(d => d.id === urlParams.dept)) {
+              return urlParams.dept;
+            } else if (!urlParams.dept && currentDept) {
+              // Если параметр dept убрали из URL, выбираем первый доступный
+              const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
+              return firstAvailableDepartment ? firstAvailableDepartment.id : currentDept;
+            }
           }
-        }
+          return currentDept;
+        });
+        
+        // Обновляем год если он изменился в URL
+        setSelectedYear(currentYear => {
+          return urlParams.year !== currentYear ? urlParams.year : currentYear;
+        });
+        
+        // Обновляем фильтр "Активные" если он изменился в URL
+        setShowActiveOnly(currentActive => {
+          return urlParams.active !== currentActive ? urlParams.active : currentActive;
+        });
+        
+        // Обновляем выбранные команды если они изменились в URL
+        setSelectedTeams(currentTeams => {
+          const currentTeamsArray = Array.from(currentTeams).sort();
+          const urlTeamsArray = urlParams.teams.sort();
+          const teamsChanged = currentTeamsArray.length !== urlTeamsArray.length ||
+            currentTeamsArray.some((t, i) => t !== urlTeamsArray[i]);
+          
+          if (teamsChanged && departmentTeams) {
+            const validTeamIds = departmentTeams.map(t => t.teamId);
+            const teamsToSelect = urlParams.teams.filter(tid => validTeamIds.includes(tid));
+            return new Set(teamsToSelect);
+          }
+          return currentTeams;
+        });
       }
-      
-      // Обновляем год если он изменился в URL
-      if (urlParams.year !== selectedYear) {
-        setSelectedYear(urlParams.year);
-      }
-      
-      // Обновляем фильтр "Активные" если он изменился в URL
-      if (urlParams.active !== showActiveOnly) {
-        setShowActiveOnly(urlParams.active);
-      }
-      
-      // Обновляем выбранные команды если они изменились в URL
-      const currentTeamsArray = Array.from(selectedTeams).sort();
-      const urlTeamsArray = urlParams.teams.sort();
-      const teamsChanged = currentTeamsArray.length !== urlTeamsArray.length ||
-        currentTeamsArray.some((t, i) => t !== urlTeamsArray[i]);
-      
-      if (teamsChanged && departmentTeams) {
-        const validTeamIds = departmentTeams.map(t => t.teamId);
-        const teamsToSelect = urlParams.teams.filter(tid => validTeamIds.includes(tid));
-        setSelectedTeams(new Set(teamsToSelect));
-      }
-    }
-  }, [location, isInitialLoad, departments, departmentTeams]);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isInitialLoad, departments, departmentTeams]);
 
   useEffect(() => {
     if (rightPanelMode === "editBlock" && editingDepartment) {

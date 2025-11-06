@@ -20,6 +20,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for tooling,
 - **Multi-Team Support:** Departments and teams are managed via Shadcn Tabs, with independent data fetching.
 - **Year Selection:** Filter data by year (2025, 2026) using a header dropdown.
 - **Team Selection Menu:** Multi-select teams within a department, with an option to download Excel reports.
+- **URL-Based Filter State:** Complete bidirectional synchronization between URL parameters and filter state, enabling shareable links and browser history navigation. URL parameters include dept (department ID), year (2025/2026), teams (comma-separated IDs), and active (boolean flag). State automatically restores from URL on page load and updates during browser back/forward navigation via popstate events.
 - **Excel Report Download:** Generates client-side Excel files with "Cost Structure" and "Initiatives" sheets. The "Initiatives" sheet groups initiatives by `cardId`, sums costs for shared initiatives, and applies specific value calculations for Compliance and Enabler initiatives.
 - **Metrics Card:** Displays Innovation Rate and Value/Cost metrics with smooth loading transitions.
 - **Initiatives Timeline:** Core visualization with sticky columns and scrollable sprint columns.
