@@ -1608,7 +1608,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               Спринт {sprintModalData?.sprintDates || ''}
             </DialogTitle>
             {sprintModalData?.goal && (
-              <p className="text-sm text-muted-foreground italic mt-1" data-testid="sprint-goal">
+              <p className="text-sm text-muted-foreground mt-1" data-testid="sprint-goal">
                 {sprintModalData.goal}
               </p>
             )}
