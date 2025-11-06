@@ -1105,6 +1105,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={innovationRate}
                           onChange={(e) => setInnovationRate(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-innovation-rate"
                         />
                       </div>
@@ -1117,6 +1118,7 @@ export default function HomePage() {
                           placeholder="0.0"
                           value={valueCost}
                           onChange={(e) => setValueCost(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-value-cost"
                         />
                       </div>
@@ -1179,6 +1181,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={spaceId}
                           onChange={(e) => setSpaceId(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-space-id"
                         />
                       </div>
@@ -1190,6 +1193,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={sprintBoardId}
                           onChange={(e) => setSprintBoardId(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-sprint-board-id"
                         />
                       </div>
@@ -1203,6 +1207,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={initBoardId}
                           onChange={(e) => setInitBoardId(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-init-board-id"
                         />
                       </div>
@@ -1214,6 +1219,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={velocity}
                           onChange={(e) => setVelocity(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-velocity"
                         />
                       </div>
@@ -1227,6 +1233,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={sprintDuration}
                           onChange={(e) => setSprintDuration(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-sprint-duration"
                         />
                       </div>
@@ -1238,6 +1245,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={spPrice}
                           onChange={(e) => setSpPrice(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-sp-price"
                         />
                       </div>
@@ -1320,6 +1328,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={spaceId}
                           onChange={(e) => setSpaceId(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-space-id"
                         />
                       </div>
@@ -1331,6 +1340,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={sprintBoardId}
                           onChange={(e) => setSprintBoardId(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-sprint-board-id"
                         />
                       </div>
@@ -1344,6 +1354,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={initBoardId}
                           onChange={(e) => setInitBoardId(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-init-board-id"
                         />
                       </div>
@@ -1355,6 +1366,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={velocity}
                           onChange={(e) => setVelocity(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-velocity"
                         />
                       </div>
@@ -1368,6 +1380,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={sprintDuration}
                           onChange={(e) => setSprintDuration(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-sprint-duration"
                         />
                       </div>
@@ -1379,6 +1392,7 @@ export default function HomePage() {
                           placeholder="0"
                           value={spPrice}
                           onChange={(e) => setSpPrice(e.target.value)}
+                          className="no-arrows"
                           data-testid="input-sp-price"
                         />
                       </div>
