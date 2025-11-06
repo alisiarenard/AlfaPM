@@ -1729,6 +1729,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Value/Cost] Found ${initiativesByCardId.size} unique initiatives`);
 
+      // Получаем все спринты для выбранных команд
+      const allSprints = await Promise.all(
+        validTeams.map(team => storage.getSprintsByBoardId(team.sprintBoardId))
+      );
+      const sprintIds = new Set(allSprints.flat().map(s => s.sprintId));
+      
+      log(`[Value/Cost] Found ${sprintIds.size} unique sprints from selected teams`);
+
       // Рассчитываем суммарные значения
       let sumPlannedValue = 0;
       let sumPlannedCost = 0;
@@ -1746,7 +1754,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const team = validTeams.find(t => t.initBoardId === initiative.initBoardId);
           if (!team) continue;
           
-          const tasks = await storage.getTasksByInitCardId(initiative.cardId);
+          // Получаем задачи и фильтруем только по спринтам выбранных команд
+          const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+          const tasks = allTasks.filter(task => 
+            task.sprintId !== null && sprintIds.has(task.sprintId)
+          );
           const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
           const plannedSize = initiative.size || 0;
           
