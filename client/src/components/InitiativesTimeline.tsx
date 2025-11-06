@@ -1576,7 +1576,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       </Dialog>
 
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
               Спринт {sprintModalData?.sprintDates || ''}
@@ -1603,7 +1603,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             <div className="flex-1 px-4 py-3 flex flex-col justify-between">
               <div className="text-sm font-bold text-muted-foreground">Velocity</div>
               <div className="text-2xl font-semibold" data-testid="sprint-velocity">
-                {team.vilocity || '-'}
+                {(() => {
+                  const businessSP = sprintModalData?.businessSupportSP || 0;
+                  const otherSP = sprintModalData?.otherInitiativesSP || 0;
+                  const totalSP = businessSP + otherSP;
+                  return totalSP || '-';
+                })()}
               </div>
               <div></div>
             </div>
