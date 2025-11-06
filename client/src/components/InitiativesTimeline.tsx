@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
 import { ExternalLink, Check } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 
@@ -1582,71 +1581,35 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               Спринт {sprintModalData?.sprintDates || ''}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex gap-6">
-            {/* Левый блок - 30% ширины - Круговая диаграмма */}
-            <div className="w-[30%] flex-shrink-0">
-              {(() => {
-                const businessSP = sprintModalData?.businessSupportSP || 0;
-                const otherSP = sprintModalData?.otherInitiativesSP || 0;
-                const totalSP = businessSP + otherSP;
-                
-                if (totalSP === 0) {
-                  return (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      Нет данных
-                    </p>
-                  );
-                }
-                
-                const businessPercent = Math.round((businessSP / totalSP) * 100);
-                const otherPercent = Math.round((otherSP / totalSP) * 100);
-                
-                // IR - процент инициатив (не включая поддержку бизнеса)
-                const ir = otherPercent;
-                
-                const data = [
-                  { name: 'Поддержка бизнеса', value: businessSP, percent: businessPercent },
-                  { name: 'Остальные инициативы', value: otherSP, percent: otherPercent }
-                ];
-                
-                const COLORS = ['rgb(131, 137, 149)', '#cd253d'];
-                
-                return (
-                  <div>
-                    <div className="relative">
-                      <ResponsiveContainer width="100%" height={160}>
-                        <PieChart>
-                          <Pie
-                            data={data}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            innerRadius={45}
-                            outerRadius={60}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {data.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="text-sm font-semibold text-foreground">
-                            IR - {ir}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+          
+          {/* Карточка с метриками */}
+          <div className="w-full h-[90px] border border-border rounded-lg flex mb-4">
+            <div className="flex-1 px-4 py-3 flex flex-col justify-between">
+              <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
+              <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">
+                {(() => {
+                  const businessSP = sprintModalData?.businessSupportSP || 0;
+                  const otherSP = sprintModalData?.otherInitiativesSP || 0;
+                  const totalSP = businessSP + otherSP;
+                  if (totalSP === 0) return '-';
+                  const ir = Math.round((otherSP / totalSP) * 100);
+                  return `${ir}%`;
+                })()}
+              </div>
+              <div></div>
             </div>
-            
-            {/* Правый блок - Инициативы с прогресс-барами */}
-            <div className="flex-1">
+            <div className="border-l border-border my-3"></div>
+            <div className="flex-1 px-4 py-3 flex flex-col justify-between">
+              <div className="text-sm font-bold text-muted-foreground">Velocity</div>
+              <div className="text-2xl font-semibold" data-testid="sprint-velocity">
+                {team.vilocity || '-'}
+              </div>
+              <div></div>
+            </div>
+          </div>
+          
+          {/* Инициативы с прогресс-барами */}
+          <div className="w-full">
               {sprintModalData && sprintModalData.initiatives.length > 0 ? (
                 <Accordion 
                   type="multiple" 
@@ -1712,7 +1675,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   Нет данных
                 </p>
               )}
-            </div>
           </div>
         </DialogContent>
       </Dialog>
