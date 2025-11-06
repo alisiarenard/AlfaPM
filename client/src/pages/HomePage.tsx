@@ -1588,7 +1588,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
   };
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 400px)' }}>
+    <div className="border border-border rounded-lg overflow-hidden">
       <TeamHeader 
         team={teamData} 
         initiatives={allInitiatives} 
@@ -1598,7 +1598,7 @@ function TeamInitiativesTab({ team }: { team: TeamRow }) {
         onSync={handleSync}
         isSyncing={syncAllMutation.isPending}
       />
-      <div className="px-4 overflow-auto custom-scrollbar" style={{ height: 'calc(100% - 60px)' }}>
+      <div className="px-4 overflow-auto custom-scrollbar" style={{ height: 'calc(100vh - 400px)' }}>
         <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
       </div>
     </div>
