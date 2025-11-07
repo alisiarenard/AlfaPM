@@ -827,8 +827,12 @@ export default function HomePage() {
           }
           
           // Числовой формат для столбцов с затратами и эффектами
-          if ([6, 7, 10, 11, 12, 13].includes(colNumber)) {
+          if ([6, 7, 10, 11].includes(colNumber)) {
             cell.numFmt = '#,##0';
+          }
+          // Value/Cost округляем до одной десятой
+          if ([12, 13].includes(colNumber)) {
+            cell.numFmt = '#,##0.0';
           }
         });
 
@@ -860,8 +864,12 @@ export default function HomePage() {
             }
             
             // Числовой формат для столбцов с затратами и эффектами
-            if ([6, 7, 10, 11, 12, 13].includes(colNumber)) {
+            if ([6, 7, 10, 11].includes(colNumber)) {
               cell.numFmt = '#,##0';
+            }
+            // Value/Cost округляем до одной десятой
+            if ([12, 13].includes(colNumber)) {
+              cell.numFmt = '#,##0.0';
             }
           });
         });
