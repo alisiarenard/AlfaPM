@@ -583,9 +583,12 @@ export default function HomePage() {
       const initiativesArrays = await Promise.all(initiativesPromises);
       const allInitiatives = initiativesArrays.flat();
 
-      // Динамически импортируем библиотеку xlsx
-      const XLSX = await import('xlsx');
+      // Динамически импортируем библиотеку exceljs
+      const ExcelJS = (await import('exceljs')).default;
 
+      // Создаем рабочую книгу ExcelJS
+      const workbook = new ExcelJS.Workbook();
+      
       // Получаем название департамента
       const departmentName = departments?.find(d => d.id === selectedDepartment)?.department || 'Не указан';
 
@@ -599,42 +602,68 @@ export default function HomePage() {
       // Получаем названия команд
       const teamNames = data.teams.map((t: { name: string }) => t.name).join(', ');
 
-      // Подготавливаем данные для Excel в новом формате
-      const worksheetData: any[][] = [
-        ['Год', data.year],
-        ['Блок', departmentName],
-        ['Команды', teamNames],
-        [''],
-        ['Развитие', `${developmentPercent}%`],
-        ['Epic', `${epicPercent}%`],
-        ['Compliance', `${compliancePercent}%`],
-        ['Enabler', `${enablerPercent}%`],
-        [''],
-        ['Поддержка', `${supportPercent}%`],
+      // Создаем лист "Структура затрат"
+      const worksheet = workbook.addWorksheet('Структура затрат');
+      
+      // Устанавливаем ширину колонок
+      worksheet.columns = [
+        { width: 25 },
+        { width: 15 }
       ];
+
+      // Добавляем данные
+      worksheet.addRow(['Год', data.year]);
+      worksheet.addRow(['Блок', departmentName]);
+      worksheet.addRow(['Команды', teamNames]);
+      worksheet.addRow(['']);
+      worksheet.addRow(['Развитие', `${developmentPercent}%`]);
+      worksheet.addRow(['Epic', `${epicPercent}%`]);
+      worksheet.addRow(['Compliance', `${compliancePercent}%`]);
+      worksheet.addRow(['Enabler', `${enablerPercent}%`]);
+      worksheet.addRow(['']);
+      worksheet.addRow(['Поддержка', `${supportPercent}%`]);
 
       // Добавляем остальные типы (кроме Epic, Compliance, Enabler)
       const supportTypes = ['Service Desk', 'Bug', 'Security', 'Tech debt', 'Postmortem', 'Др. доработки'];
       for (const type of supportTypes) {
         const percentage = data.typePercentages[type] || 0;
-        worksheetData.push([type, `${percentage}%`]);
+        worksheet.addRow([type, `${percentage}%`]);
       }
 
-      // Создаем рабочую книгу и лист
-      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Структура затрат');
+      // Применяем шрифт Akrobat 14 ко всем ячейкам
+      worksheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          cell.font = { name: 'Akrobat', size: 14 };
+        });
+      });
 
+      // Создаем лист "Инициативы"
+      const initiativesWorksheet = workbook.addWorksheet('Инициативы');
+      
       // Устанавливаем ширину колонок
-      worksheet['!cols'] = [
-        { wch: 25 },
-        { wch: 15 }
+      initiativesWorksheet.columns = [
+        { width: 15 }, // Тип
+        { width: 40 }, // Инициативы
+        { width: 15 }, // Срок (план)
+        { width: 15 }, // Срок (прод)
+        { width: 15 }, // Срок (эффект)
+        { width: 15 }, // Затраты (план)
+        { width: 15 }, // Затраты (факт)
+        { width: 15 }, // Тип эффект
+        { width: 18 }, // эффект по данным
+        { width: 15 }, // Эффект (план)
+        { width: 15 }, // Эффект (факт)
+        { width: 18 }, // Value/Cost (план)
+        { width: 18 }  // Value/Cost (факт)
       ];
 
-      // Готовим данные для листа с инициативами
-      const initiativesData: any[][] = [
-        ['Тип', 'Инициативы', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 'Затраты (план)', 'Затраты (факт)', 'Тип эффект', 'эффект по данным', 'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)']
-      ];
+      // Добавляем заголовок
+      const headerRow = initiativesWorksheet.addRow([
+        'Тип', 'Инициативы', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 
+        'Затраты (план)', 'Затраты (факт)', 'Тип эффект', 'эффект по данным', 
+        'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)'
+      ]);
+      headerRow.font = { name: 'Akrobat', size: 14 };
 
       // Функция для форматирования даты в формат "dd.MM"
       const formatDate = (dateString: string | null | undefined): string => {
@@ -754,7 +783,7 @@ export default function HomePage() {
           ? Math.round((sumFactValue / sumActualCost) * 10) / 10
           : '—';
 
-        initiativesData.push([
+        const totalRow = initiativesWorksheet.addRow([
           'Всего',
           typeName, // Тип инициативы
           '',
@@ -769,10 +798,20 @@ export default function HomePage() {
           totalPlannedValueCost,
           totalFactValueCost
         ]);
+        
+        // Применяем светлый фон и шрифт к строке "Всего"
+        totalRow.eachCell((cell) => {
+          cell.font = { name: 'Akrobat', size: 14 };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE8E8E8' } // Светло-серый фон
+          };
+        });
 
         // Потом добавляем детали инициатив (только с фактическими затратами)
         initiativesWithActualCosts.forEach((init) => {
-          initiativesData.push([
+          const row = initiativesWorksheet.addRow([
             init.type,
             init.title,
             formatDate(init.dueDate),
@@ -787,6 +826,11 @@ export default function HomePage() {
             init.plannedValueCost ?? '—',
             init.factValueCost ?? '—'
           ]);
+          
+          // Применяем шрифт к обычным строкам
+          row.eachCell((cell) => {
+            cell.font = { name: 'Akrobat', size: 14 };
+          });
         });
       };
 
@@ -796,75 +840,18 @@ export default function HomePage() {
       addInitiativesGroup(enablerInitiatives, 'Enabler');
       addInitiativesGroup(otherInitiatives, 'Other');
 
-      // Создаем лист с инициативами
-      const initiativesWorksheet = XLSX.utils.aoa_to_sheet(initiativesData);
-      XLSX.utils.book_append_sheet(workbook, initiativesWorksheet, 'Инициативы');
-
-      // Устанавливаем ширину колонок для листа инициатив
-      initiativesWorksheet['!cols'] = [
-        { wch: 15 }, // Тип
-        { wch: 40 }, // Название
-        { wch: 15 }, // Срок (план)
-        { wch: 15 }, // Срок (прод)
-        { wch: 15 }, // Срок (эффект)
-        { wch: 15 }, // Затраты (план)
-        { wch: 15 }, // Затраты (факт)
-        { wch: 15 }, // Тип эффект
-        { wch: 18 }, // эффект по данным
-        { wch: 15 }, // Эффект (план)
-        { wch: 15 }, // Эффект (факт)
-        { wch: 18 }, // Value/Cost (план)
-        { wch: 18 }  // Value/Cost (факт)
-      ];
-
-      // Применяем шрифт Akrobat 14 ко всем ячейкам обоих листов
-      const fontStyle = {
-        font: {
-          name: 'Akrobat',
-          sz: 14
-        }
-      };
-
-      // Применяем стили к листу "Структура затрат"
-      const wsRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-      for (let R = wsRange.s.r; R <= wsRange.e.r; ++R) {
-        for (let C = wsRange.s.c; C <= wsRange.e.c; ++C) {
-          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!worksheet[cellAddress]) continue;
-          if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
-          worksheet[cellAddress].s = fontStyle;
-        }
-      }
-
-      // Применяем стили к листу "Инициативы"
-      const iwsRange = XLSX.utils.decode_range(initiativesWorksheet['!ref'] || 'A1');
-      for (let R = iwsRange.s.r; R <= iwsRange.e.r; ++R) {
-        // Проверяем, является ли эта строка строкой "Всего"
-        const firstCellAddress = XLSX.utils.encode_cell({ r: R, c: 0 });
-        const isVsegoRow = initiativesWorksheet[firstCellAddress]?.v === 'Всего';
-        
-        for (let C = iwsRange.s.c; C <= iwsRange.e.c; ++C) {
-          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!initiativesWorksheet[cellAddress]) continue;
-          if (!initiativesWorksheet[cellAddress].s) initiativesWorksheet[cellAddress].s = {};
-          
-          // Применяем шрифт
-          initiativesWorksheet[cellAddress].s = { ...fontStyle };
-          
-          // Если это строка "Всего", добавляем светлый фон
-          if (isVsegoRow) {
-            initiativesWorksheet[cellAddress].s.fill = {
-              fgColor: { rgb: 'E8E8E8' } // Светло-серый цвет
-            };
-          }
-        }
-      }
-
       // Генерируем имя файла
       const fileName = `Cost_Structure_${data.year}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-      // Скачиваем файл
-      XLSX.writeFile(workbook, fileName);
+      // Сохраняем файл через ExcelJS
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      window.URL.revokeObjectURL(url);
 
       toast({
         title: "Успешно",
