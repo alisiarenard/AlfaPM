@@ -839,11 +839,24 @@ export default function HomePage() {
       // Применяем стили к листу "Инициативы"
       const iwsRange = XLSX.utils.decode_range(initiativesWorksheet['!ref'] || 'A1');
       for (let R = iwsRange.s.r; R <= iwsRange.e.r; ++R) {
+        // Проверяем, является ли эта строка строкой "Всего"
+        const firstCellAddress = XLSX.utils.encode_cell({ r: R, c: 0 });
+        const isVsegoRow = initiativesWorksheet[firstCellAddress]?.v === 'Всего';
+        
         for (let C = iwsRange.s.c; C <= iwsRange.e.c; ++C) {
           const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
           if (!initiativesWorksheet[cellAddress]) continue;
           if (!initiativesWorksheet[cellAddress].s) initiativesWorksheet[cellAddress].s = {};
-          initiativesWorksheet[cellAddress].s = fontStyle;
+          
+          // Применяем шрифт
+          initiativesWorksheet[cellAddress].s = { ...fontStyle };
+          
+          // Если это строка "Всего", добавляем светлый фон
+          if (isVsegoRow) {
+            initiativesWorksheet[cellAddress].s.fill = {
+              fgColor: { rgb: 'E8E8E8' } // Светло-серый цвет
+            };
+          }
         }
       }
 
