@@ -11,7 +11,12 @@ if (!process.env.DATABASE_URL) {
 
 console.log("[DB] DATABASE_URL is set");
 
-const sql = neon(process.env.DATABASE_URL);
+const databaseUrl = process.env.DATABASE_URL.includes('?')
+  ? `${process.env.DATABASE_URL}&pooled=true`
+  : `${process.env.DATABASE_URL}?pooled=true`;
+
+const sql = neon(databaseUrl);
+
 export const db = drizzle(sql, { schema });
 
 console.log("[DB] Database connection initialized successfully");
