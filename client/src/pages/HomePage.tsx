@@ -546,6 +546,10 @@ export default function HomePage() {
     }
   }, [selectedDepartment, departmentTeams]);
 
+  // Получаем массив ID команд для запросов
+  const teamIdsArray = Array.from(selectedTeams);
+  const teamIdsParam = teamIdsArray.sort().join(',');
+
   const handleDownloadReport = async () => {
     try {
       if (teamIdsArray.length === 0) {
@@ -868,8 +872,6 @@ export default function HomePage() {
   };
 
   // Получаем Innovation Rate для выбранных команд
-  const teamIdsArray = Array.from(selectedTeams);
-  const teamIdsParam = teamIdsArray.sort().join(',');
   const { data: innovationRateData, isFetching: isIRFetching } = useQuery<{
     success: boolean;
     actualIR: number;
