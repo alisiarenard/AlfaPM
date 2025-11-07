@@ -726,11 +726,46 @@ export default function HomePage() {
 
       // Функция для добавления группы инициатив
       const addInitiativesGroup = (initiatives: any[]) => {
+        if (initiatives.length === 0) return;
+
+        // Сначала вычисляем суммы
         let sumPlannedCost = 0;
         let sumActualCost = 0;
         let sumPlannedValue = 0;
         let sumFactValue = 0;
 
+        initiatives.forEach((init) => {
+          sumPlannedCost += init.totalPlannedCost;
+          sumActualCost += init.totalActualCost;
+          if (init.plannedValue !== null) sumPlannedValue += init.plannedValue;
+          if (init.factValue !== null) sumFactValue += init.factValue;
+        });
+
+        // Добавляем строку "Всего" СНАЧАЛА
+        const totalPlannedValueCost = sumPlannedValue > 0 && sumPlannedCost > 0
+          ? Math.round((sumPlannedValue / sumPlannedCost) * 10) / 10
+          : '—';
+        const totalFactValueCost = sumFactValue > 0 && sumActualCost > 0
+          ? Math.round((sumFactValue / sumActualCost) * 10) / 10
+          : '—';
+
+        initiativesData.push([
+          'Всего',
+          '',
+          '',
+          '',
+          '',
+          sumPlannedCost,
+          sumActualCost,
+          '', // Тип эффект - пусто для итоговой строки
+          '', // эффект по данным - пусто для итоговой строки
+          sumPlannedValue || '—',
+          sumFactValue || '—',
+          totalPlannedValueCost,
+          totalFactValueCost
+        ]);
+
+        // Потом добавляем детали инициатив
         initiatives.forEach((init) => {
           initiativesData.push([
             init.type,
@@ -747,39 +782,7 @@ export default function HomePage() {
             init.plannedValueCost ?? '—',
             init.factValueCost ?? '—'
           ]);
-
-          // Суммируем для строки "Всего"
-          sumPlannedCost += init.totalPlannedCost;
-          sumActualCost += init.totalActualCost;
-          if (init.plannedValue !== null) sumPlannedValue += init.plannedValue;
-          if (init.factValue !== null) sumFactValue += init.factValue;
         });
-
-        // Добавляем строку "Всего" если есть инициативы
-        if (initiatives.length > 0) {
-          const totalPlannedValueCost = sumPlannedValue > 0 && sumPlannedCost > 0
-            ? Math.round((sumPlannedValue / sumPlannedCost) * 10) / 10
-            : '—';
-          const totalFactValueCost = sumFactValue > 0 && sumActualCost > 0
-            ? Math.round((sumFactValue / sumActualCost) * 10) / 10
-            : '—';
-
-          initiativesData.push([
-            'Всего',
-            '',
-            '',
-            '',
-            '',
-            sumPlannedCost,
-            sumActualCost,
-            '', // Тип эффект - пусто для итоговой строки
-            '', // эффект по данным - пусто для итоговой строки
-            sumPlannedValue || '—',
-            sumFactValue || '—',
-            totalPlannedValueCost,
-            totalFactValueCost
-          ]);
-        }
       };
 
       // Добавляем группы в порядке: Epic, Compliance, Enabler, остальные
