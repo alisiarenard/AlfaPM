@@ -670,7 +670,12 @@ export default function HomePage() {
       
       // Применяем форматирование к заголовку
       headerRow.eachCell((cell, colNumber) => {
-        cell.font = { name: 'Akrobat', size: 14 };
+        cell.font = { name: 'Akrobat', size: 14, color: { argb: 'FFFFFFFF' } }; // Белый текст
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFC00000' } // Красный фон RGB(192, 0, 0)
+        };
         
         // Выравнивание по центру для всех столбцов кроме первых двух
         if (colNumber > 2) {
