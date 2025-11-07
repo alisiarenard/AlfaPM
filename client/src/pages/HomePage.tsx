@@ -620,12 +620,12 @@ export default function HomePage() {
       worksheet.addRow(['Блок', departmentName]);
       worksheet.addRow(['Команды', teamNames]);
       worksheet.addRow(['']);
-      worksheet.addRow(['Развитие', `${developmentPercent}%`]);
+      const razvitieRow = worksheet.addRow(['РАЗВИТИЕ', `${developmentPercent}%`]);
       worksheet.addRow(['Epic', `${epicPercent}%`]);
       worksheet.addRow(['Compliance', `${compliancePercent}%`]);
       worksheet.addRow(['Enabler', `${enablerPercent}%`]);
       worksheet.addRow(['']);
-      worksheet.addRow(['Поддержка', `${supportPercent}%`]);
+      const podderzhkaRow = worksheet.addRow(['ПОДДЕРЖКА', `${supportPercent}%`]);
 
       // Добавляем остальные типы (кроме Epic, Compliance, Enabler)
       const supportTypes = ['Service Desk', 'Bug', 'Security', 'Tech debt', 'Postmortem', 'Др. доработки'];
@@ -634,10 +634,21 @@ export default function HomePage() {
         worksheet.addRow([type, `${percentage}%`]);
       }
 
-      // Применяем шрифт Akrobat 14 ко всем ячейкам
+      // Применяем шрифт Akrobat 14 и выравнивание ко всем ячейкам
       worksheet.eachRow((row) => {
-        row.eachCell((cell) => {
+        row.eachCell((cell, colNumber) => {
           cell.font = { name: 'Akrobat', size: 14 };
+          // Выравнивание по центру для ячеек с процентами (второй столбец)
+          if (colNumber === 2 && cell.value && typeof cell.value === 'string' && cell.value.includes('%')) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          }
+        });
+      });
+
+      // Выделяем жирным строки "РАЗВИТИЕ" и "ПОДДЕРЖКА"
+      [razvitieRow, podderzhkaRow].forEach(row => {
+        row.eachCell((cell) => {
+          cell.font = { name: 'Akrobat', size: 14, bold: true };
         });
       });
 
