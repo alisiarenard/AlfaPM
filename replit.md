@@ -49,9 +49,15 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 - Kaiten synchronization endpoints, including `PATCH /api/kaiten/update-initiative/:cardId` for updating initiative fields in both Kaiten and the local database.
 
 **Kaiten Integration:**
+- **New Sprint API:** Uses Kaiten's `/api/latest/sprints` endpoint to fetch all company sprints in a single request, filtering by team `board_id` for efficiency.
+- **Synchronization Sequence:** 
+  1. Initiatives: Fetches cards from initiative boards
+  2. Sprints: Retrieves all sprints via new API, filters by board_id, saves to database
+  3. Tasks: Fetches task cards from each sprint
 - Synchronizes initiatives and tasks from Kaiten, including type, archived status, and custom field values (e.g., `planned_value_id`, `fact_value_id`).
 - Automatically calculates and sets `planned_value` and `fact_value` for "Compliance" and "Enabler" initiative types based on costs.
 - Synchronizes `due_date` and `done_date` from Kaiten.
+- Automatic synchronization on team creation: creates team and immediately syncs all data (initiatives → sprints → tasks).
 
 ### Data Storage Solutions
 PostgreSQL (via Neon) is the primary data store, managed with Drizzle ORM.

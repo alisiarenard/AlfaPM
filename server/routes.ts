@@ -131,13 +131,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Создаем команду в БД
       const team = await storage.createTeam(teamData);
       
-      // Автоматическая синхронизация инициатив с Kaiten
+      // Автоматическая синхронизация данных с Kaiten
+      // Последовательность: 1) Инициативы, 2) Спринты, 3) Таски
+      
+      // 1. Синхронизация инициатив
       if (teamData.initBoardId) {
         try {
-          log(`[Team Creation] Starting automatic sync for board ${teamData.initBoardId}`);
+          log(`[Team Creation] Step 1: Syncing initiatives from board ${teamData.initBoardId}`);
           
           const cards = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
-          log(`[Team Creation] Found ${cards.length} cards to sync`);
+          log(`[Team Creation] Found ${cards.length} initiative cards`);
           
           const plannedValueId = "id_451379";
           const factValueId = "id_448119";
@@ -155,11 +158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
             
-            // Получаем plannedValue из properties по ключу plannedValueId
             const rawPlanned = card.properties?.[plannedValueId];
             const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
             
-            // Получаем factValue из properties по ключу factValueId
             const rawFact = card.properties?.[factValueId];
             const factValue = rawFact == null ? undefined : String(rawFact);
             
@@ -182,8 +183,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           log(`[Team Creation] Successfully synced ${cards.length} initiatives`);
         } catch (syncError) {
-          // Логируем ошибку синхронизации, но не блокируем создание команды
           console.error("[Team Creation] Initiative sync error:", syncError);
+        }
+      }
+      
+      // 2. Синхронизация спринтов
+      if (teamData.sprintBoardId) {
+        try {
+          log(`[Team Creation] Step 2: Syncing sprints from board ${teamData.sprintBoardId}`);
+          
+          // Получаем все спринты через новый API
+          const allSprints = await kaitenClient.getAllSprints({ limit: 100 });
+          
+          // Фильтруем по board_id команды
+          const boardSprints = allSprints.filter(sprint => sprint.board_id === teamData.sprintBoardId);
+          log(`[Team Creation] Found ${boardSprints.length} sprints for board ${teamData.sprintBoardId}`);
+          
+          // Сохраняем спринты в БД
+          for (const sprint of boardSprints) {
+            await storage.syncSprintFromKaiten(
+              sprint.id,
+              sprint.board_id,
+              sprint.title,
+              sprint.velocity,
+              sprint.start_date,
+              sprint.finish_date,
+              sprint.actual_finish_date,
+              sprint.goal
+            );
+          }
+          
+          log(`[Team Creation] Successfully synced ${boardSprints.length} sprints`);
+          
+          // 3. Синхронизация тасок по спринтам
+          log(`[Team Creation] Step 3: Syncing tasks for each sprint`);
+          let totalTasks = 0;
+          
+          for (const sprint of boardSprints) {
+            try {
+              const kaitenSprint = await kaitenClient.getSprint(sprint.id);
+              
+              if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
+                for (const sprintCard of kaitenSprint.cards) {
+                  const card = await kaitenClient.getCard(sprintCard.id);
+                  
+                  let initCardId = 0;
+                  if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                    const parentInitiative = await storage.getInitiativeByCardId(card.parents_ids[0]);
+                    initCardId = parentInitiative ? card.parents_ids[0] : 0;
+                  }
+                  
+                  let state: "1-queued" | "2-inProgress" | "3-done";
+                  if (card.state === 3) {
+                    state = "3-done";
+                  } else if (card.state === 2) {
+                    state = "2-inProgress";
+                  } else {
+                    state = "1-queued";
+                  }
+                  
+                  const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+                  
+                  await storage.syncTaskFromKaiten(
+                    card.id,
+                    card.board_id,
+                    card.title,
+                    card.created || new Date().toISOString(),
+                    state,
+                    card.size || 0,
+                    condition,
+                    card.archived || false,
+                    initCardId,
+                    card.type?.name,
+                    card.completed_at ?? undefined,
+                    sprint.id
+                  );
+                  
+                  totalTasks++;
+                }
+              }
+            } catch (sprintError: unknown) {
+              const errorMessage = sprintError instanceof Error ? sprintError.message : String(sprintError);
+              log(`[Team Creation] Error syncing tasks for sprint ${sprint.id}: ${errorMessage}`);
+            }
+          }
+          
+          log(`[Team Creation] Successfully synced ${totalTasks} tasks`);
+        } catch (syncError) {
+          console.error("[Team Creation] Sprint/Task sync error:", syncError);
         }
       }
       
@@ -1245,36 +1332,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Sync All Sprints] Starting sync for all sprints on board ${boardId}`);
+      log(`[Kaiten Sync All Sprints] Starting sync for board ${boardId}`);
       
-      // Получаем все спринты для этой доски
-      const sprints = await storage.getSprintsByBoardId(boardId);
-      log(`[Kaiten Sync All Sprints] Found ${sprints.length} sprints`);
-
+      // Шаг 1: Получаем все спринты через новый API
+      log(`[Kaiten Sync All Sprints] Step 1: Fetching all sprints from Kaiten API`);
+      const allKaitenSprints = await kaitenClient.getAllSprints({ limit: 100 });
+      log(`[Kaiten Sync All Sprints] Found ${allKaitenSprints.length} total sprints in Kaiten`);
+      
+      // Шаг 2: Фильтруем спринты по board_id
+      const boardSprints = allKaitenSprints.filter(sprint => sprint.board_id === boardId);
+      log(`[Kaiten Sync All Sprints] Filtered to ${boardSprints.length} sprints for board ${boardId}`);
+      
+      // Шаг 3: Сохраняем спринты в БД
+      log(`[Kaiten Sync All Sprints] Step 2: Saving sprints to database`);
+      const savedSprints = [];
+      for (const kaitenSprint of boardSprints) {
+        const saved = await storage.syncSprintFromKaiten(
+          kaitenSprint.id,
+          kaitenSprint.board_id,
+          kaitenSprint.title,
+          kaitenSprint.velocity,
+          kaitenSprint.start_date,
+          kaitenSprint.finish_date,
+          kaitenSprint.actual_finish_date,
+          kaitenSprint.goal
+        );
+        savedSprints.push(saved);
+        log(`[Kaiten Sync All Sprints] Saved sprint ${kaitenSprint.id}: "${kaitenSprint.title}"`);
+      }
+      
+      // Шаг 4: Синхронизируем задачи для каждого спринта
+      log(`[Kaiten Sync All Sprints] Step 3: Syncing tasks for each sprint`);
       let totalSynced = 0;
       const results = [];
 
-      // Синхронизируем задачи для каждого спринта
-      for (const sprint of sprints) {
+      for (const sprint of savedSprints) {
         try {
-          log(`[Kaiten Sync All Sprints] Syncing sprint ${sprint.sprintId} (${sprint.title})`);
+          log(`[Kaiten Sync All Sprints] Syncing tasks for sprint ${sprint.sprintId} (${sprint.title})`);
           
-          // Получаем данные спринта из Kaiten
+          // Получаем полные данные спринта с карточками
           const kaitenSprint = await kaitenClient.getSprint(sprint.sprintId);
-          
-          // Обновляем информацию о спринте в БД (включая goal)
-          log(`[Kaiten Sync All Sprints] Updating sprint ${sprint.sprintId} metadata from Kaiten`);
-          await storage.syncSprintFromKaiten(
-            sprint.sprintId,
-            boardId,
-            kaitenSprint.title || sprint.title,
-            kaitenSprint.velocity || sprint.velocity,
-            kaitenSprint.start_date || sprint.startDate,
-            kaitenSprint.finish_date || sprint.finishDate,
-            kaitenSprint.actual_finish_date || sprint.actualFinishDate || null,
-            kaitenSprint.goal || null
-          );
-          log(`[Kaiten Sync All Sprints] Sprint ${sprint.sprintId} goal: ${kaitenSprint.goal || 'not set'}`);
           
           if (!kaitenSprint.cards || !Array.isArray(kaitenSprint.cards)) {
             log(`[Kaiten Sync All Sprints] No cards in sprint ${sprint.sprintId}`);
@@ -1287,11 +1384,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Синхронизируем каждую карточку из спринта
           for (const sprintCard of kaitenSprint.cards) {
             const card = await kaitenClient.getCard(sprintCard.id);
-            
-            // Логирование для отладки
-            if (card.id === 56806578 || card.id === 56806579) {
-              log(`[Kaiten Sync Debug] Card ${card.id} "${card.title}": size from Kaiten = ${card.size}, will save as ${card.size || 0}`);
-            }
             
             // Определяем init_card_id из parents_ids
             let initCardId: number | null = null;
@@ -1350,12 +1442,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      log(`[Kaiten Sync All Sprints] Completed. Total synced: ${totalSynced} tasks`);
+      log(`[Kaiten Sync All Sprints] Completed. Saved ${savedSprints.length} sprints, synced ${totalSynced} tasks`);
       
       res.json({
         success: true,
+        sprintsSaved: savedSprints.length,
         totalSynced,
-        sprintsProcessed: sprints.length,
         results
       });
     } catch (error) {

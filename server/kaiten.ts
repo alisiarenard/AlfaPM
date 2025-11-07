@@ -44,6 +44,26 @@ export interface KaitenSprintResponse {
   [key: string]: any;
 }
 
+export interface KaitenSprintListItem {
+  id: number;
+  uid: string;
+  board_id: number;
+  title: string;
+  goal: string | null;
+  active: boolean;
+  committed: number;
+  velocity: number;
+  velocity_details: {
+    by_members: Array<{ user_id: number; velocity: number }>;
+  } | null;
+  start_date: string;
+  finish_date: string;
+  actual_finish_date: string | null;
+  created: string;
+  updated: string;
+  archived: boolean;
+}
+
 export class KaitenClient {
   private baseUrl: string;
   private apiKey: string;
@@ -136,6 +156,32 @@ export class KaitenClient {
     }
     
     log(`[Kaiten API] No sprints found in board ${boardId}`);
+    return [];
+  }
+
+  async getAllSprints(params?: { active?: boolean; limit?: number; offset?: number }): Promise<KaitenSprintListItem[]> {
+    log(`[Kaiten API] Fetching all sprints with params: ${JSON.stringify(params)}`);
+    
+    const queryParams = new URLSearchParams();
+    if (params?.active !== undefined) {
+      queryParams.append('active', String(params.active));
+    }
+    if (params?.limit !== undefined) {
+      queryParams.append('limit', String(params.limit));
+    }
+    if (params?.offset !== undefined) {
+      queryParams.append('offset', String(params.offset));
+    }
+    
+    const url = `/sprints${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await this.makeRequest<KaitenSprintListItem[]>(url);
+    
+    if (Array.isArray(response)) {
+      log(`[Kaiten API] Found ${response.length} sprints`);
+      return response;
+    }
+    
+    log(`[Kaiten API] No sprints found`);
     return [];
   }
 
