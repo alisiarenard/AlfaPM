@@ -830,7 +830,7 @@ export default function HomePage() {
         
         // Применяем светлый фон, шрифт и выравнивание к строке "Всего"
         totalRow.eachCell((cell, colNumber) => {
-          cell.font = { name: 'Akrobat', size: 14 };
+          cell.font = { name: 'Akrobat', size: 14, bold: true }; // Жирный шрифт
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
