@@ -725,16 +725,21 @@ export default function HomePage() {
       const otherInitiatives = processedInitiatives.filter(i => i.type !== 'Epic' && i.type !== 'Compliance' && i.type !== 'Enabler');
 
       // Функция для добавления группы инициатив
-      const addInitiativesGroup = (initiatives: any[]) => {
+      const addInitiativesGroup = (initiatives: any[], typeName: string) => {
         if (initiatives.length === 0) return;
 
-        // Сначала вычисляем суммы
+        // Фильтруем инициативы - только с фактическими затратами
+        const initiativesWithActualCosts = initiatives.filter(init => init.totalActualCost > 0);
+        
+        if (initiativesWithActualCosts.length === 0) return;
+
+        // Сначала вычисляем суммы только для инициатив с фактическими затратами
         let sumPlannedCost = 0;
         let sumActualCost = 0;
         let sumPlannedValue = 0;
         let sumFactValue = 0;
 
-        initiatives.forEach((init) => {
+        initiativesWithActualCosts.forEach((init) => {
           sumPlannedCost += init.totalPlannedCost;
           sumActualCost += init.totalActualCost;
           if (init.plannedValue !== null) sumPlannedValue += init.plannedValue;
@@ -751,7 +756,7 @@ export default function HomePage() {
 
         initiativesData.push([
           'Всего',
-          '',
+          typeName, // Тип инициативы
           '',
           '',
           '',
@@ -765,8 +770,8 @@ export default function HomePage() {
           totalFactValueCost
         ]);
 
-        // Потом добавляем детали инициатив
-        initiatives.forEach((init) => {
+        // Потом добавляем детали инициатив (только с фактическими затратами)
+        initiativesWithActualCosts.forEach((init) => {
           initiativesData.push([
             init.type,
             init.title,
@@ -786,10 +791,10 @@ export default function HomePage() {
       };
 
       // Добавляем группы в порядке: Epic, Compliance, Enabler, остальные
-      addInitiativesGroup(epicInitiatives);
-      addInitiativesGroup(complianceInitiatives);
-      addInitiativesGroup(enablerInitiatives);
-      addInitiativesGroup(otherInitiatives);
+      addInitiativesGroup(epicInitiatives, 'Epic');
+      addInitiativesGroup(complianceInitiatives, 'Compliance');
+      addInitiativesGroup(enablerInitiatives, 'Enabler');
+      addInitiativesGroup(otherInitiatives, 'Other');
 
       // Создаем лист с инициативами
       const initiativesWorksheet = XLSX.utils.aoa_to_sheet(initiativesData);
