@@ -1343,10 +1343,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const boardSprints = allKaitenSprints.filter(sprint => sprint.board_id === boardId);
       log(`[Kaiten Sync All Sprints] Filtered to ${boardSprints.length} sprints for board ${boardId}`);
       
-      // Шаг 3: Сохраняем спринты в БД
-      log(`[Kaiten Sync All Sprints] Step 2: Saving sprints to database`);
+      // Шаг 3: Получаем существующие спринты из БД для этой команды
+      log(`[Kaiten Sync All Sprints] Step 2: Checking existing sprints in database`);
+      const existingSprints = await storage.getSprintsByBoardId(boardId);
+      log(`[Kaiten Sync All Sprints] Found ${existingSprints.length} existing sprints in database`);
+      
+      // Шаг 4: Находим новые спринты (те, которых нет в БД по ID)
+      const existingSprintIds = new Set(existingSprints.map(s => s.sprintId));
+      const newSprints = boardSprints.filter(sprint => !existingSprintIds.has(sprint.id));
+      log(`[Kaiten Sync All Sprints] Found ${newSprints.length} new sprints to sync`);
+      
+      // Шаг 5: Если новых спринтов нет, возвращаем результат без синхронизации
+      if (newSprints.length === 0) {
+        log(`[Kaiten Sync All Sprints] No new sprints found. All sprints are already in sync.`);
+        return res.json({
+          success: true,
+          sprintsSaved: 0,
+          totalSynced: 0,
+          sprintsProcessed: 0,
+          results: [],
+          message: 'No new sprints found'
+        });
+      }
+      
+      // Шаг 6: Сохраняем только новые спринты в БД
+      log(`[Kaiten Sync All Sprints] Step 3: Saving new sprints to database`);
       const savedSprints = [];
-      for (const kaitenSprint of boardSprints) {
+      for (const kaitenSprint of newSprints) {
         const saved = await storage.syncSprintFromKaiten(
           kaitenSprint.id,
           kaitenSprint.board_id,
@@ -1358,11 +1381,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           kaitenSprint.goal
         );
         savedSprints.push(saved);
-        log(`[Kaiten Sync All Sprints] Saved sprint ${kaitenSprint.id}: "${kaitenSprint.title}"`);
+        log(`[Kaiten Sync All Sprints] Saved new sprint ${kaitenSprint.id}: "${kaitenSprint.title}"`);
       }
       
-      // Шаг 4: Синхронизируем задачи для каждого спринта
-      log(`[Kaiten Sync All Sprints] Step 3: Syncing tasks for each sprint`);
+      // Шаг 7: Синхронизируем задачи только для новых спринтов
+      log(`[Kaiten Sync All Sprints] Step 4: Syncing tasks for new sprints`);
       let totalSynced = 0;
       const results = [];
 
@@ -1442,12 +1465,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      log(`[Kaiten Sync All Sprints] Completed. Saved ${savedSprints.length} sprints, synced ${totalSynced} tasks`);
+      log(`[Kaiten Sync All Sprints] Completed. Saved ${savedSprints.length} new sprints, synced ${totalSynced} tasks`);
       
       res.json({
         success: true,
         sprintsSaved: savedSprints.length,
         totalSynced,
+        sprintsProcessed: savedSprints.length,
         results
       });
     } catch (error) {

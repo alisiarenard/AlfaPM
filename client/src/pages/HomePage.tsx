@@ -1747,7 +1747,11 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team:
       
       let description = `Синхронизировано ${data.initiatives.count} инициатив`;
       if (data.sprints) {
-        description += ` и ${data.sprints.totalSynced} задач из ${data.sprints.sprintsProcessed} спринтов`;
+        if (data.sprints.sprintsProcessed === 0) {
+          description += '. Новых спринтов не найдено';
+        } else {
+          description += ` и ${data.sprints.totalSynced} задач из ${data.sprints.sprintsProcessed} новых спринтов`;
+        }
       }
       
       toast({
