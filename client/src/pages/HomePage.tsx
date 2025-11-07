@@ -633,7 +633,7 @@ export default function HomePage() {
 
       // Готовим данные для листа с инициативами
       const initiativesData: any[][] = [
-        ['Тип', 'Название', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 'Затраты (план)', 'Затраты (факт)', 'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)']
+        ['Тип', 'Название', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 'Затраты (план)', 'Затраты (факт)', 'Тип эффект', 'эффект по данным', 'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)']
       ];
 
       // Функция для форматирования даты в формат "dd.MM"
@@ -740,6 +740,8 @@ export default function HomePage() {
             '—', // Срок (эффект) - пока не определено
             init.totalPlannedCost,
             init.totalActualCost,
+            init.type, // Тип эффект
+            init.factValue ?? '—', // эффект по данным
             init.plannedValue ?? '—',
             init.factValue ?? '—',
             init.plannedValueCost ?? '—',
@@ -770,6 +772,8 @@ export default function HomePage() {
             '',
             sumPlannedCost,
             sumActualCost,
+            '', // Тип эффект - пусто для итоговой строки
+            '', // эффект по данным - пусто для итоговой строки
             sumPlannedValue || '—',
             sumFactValue || '—',
             totalPlannedValueCost,
@@ -797,11 +801,43 @@ export default function HomePage() {
         { wch: 15 }, // Срок (эффект)
         { wch: 15 }, // Затраты (план)
         { wch: 15 }, // Затраты (факт)
+        { wch: 15 }, // Тип эффект
+        { wch: 18 }, // эффект по данным
         { wch: 15 }, // Эффект (план)
         { wch: 15 }, // Эффект (факт)
         { wch: 18 }, // Value/Cost (план)
         { wch: 18 }  // Value/Cost (факт)
       ];
+
+      // Применяем шрифт Akrobat 14 ко всем ячейкам обоих листов
+      const fontStyle = {
+        font: {
+          name: 'Akrobat',
+          sz: 14
+        }
+      };
+
+      // Применяем стили к листу "Структура затрат"
+      const wsRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      for (let R = wsRange.s.r; R <= wsRange.e.r; ++R) {
+        for (let C = wsRange.s.c; C <= wsRange.e.c; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!worksheet[cellAddress]) continue;
+          if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
+          worksheet[cellAddress].s = fontStyle;
+        }
+      }
+
+      // Применяем стили к листу "Инициативы"
+      const iwsRange = XLSX.utils.decode_range(initiativesWorksheet['!ref'] || 'A1');
+      for (let R = iwsRange.s.r; R <= iwsRange.e.r; ++R) {
+        for (let C = iwsRange.s.c; C <= iwsRange.e.c; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!initiativesWorksheet[cellAddress]) continue;
+          if (!initiativesWorksheet[cellAddress].s) initiativesWorksheet[cellAddress].s = {};
+          initiativesWorksheet[cellAddress].s = fontStyle;
+        }
+      }
 
       // Генерируем имя файла
       const fileName = `Cost_Structure_${data.year}_${new Date().toISOString().split('T')[0]}.xlsx`;
