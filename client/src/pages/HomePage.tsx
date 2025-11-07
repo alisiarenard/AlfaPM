@@ -1732,7 +1732,18 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team:
       return { initiatives: initiativesData, sprints: sprintsData };
     },
     onSuccess: (data) => {
+      // Инвалидация инициатив
       queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", team.initBoardId] });
+      
+      // Инвалидация спринтов
+      if (team.sprintBoardId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/sprints/board", team.sprintBoardId] });
+      }
+      
+      // Инвалидация всех метрик (Innovation Rate, Cost Structure, Value/Cost)
+      queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/metrics/cost-structure'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/metrics/value-cost'] });
       
       let description = `Синхронизировано ${data.initiatives.count} инициатив`;
       if (data.sprints) {
