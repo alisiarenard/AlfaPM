@@ -667,7 +667,16 @@ export default function HomePage() {
         'Затраты (план)', 'Затраты (факт)', 'Тип эффект', 'эффект по данным', 
         'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)'
       ]);
-      headerRow.font = { name: 'Akrobat', size: 14 };
+      
+      // Применяем форматирование к заголовку
+      headerRow.eachCell((cell, colNumber) => {
+        cell.font = { name: 'Akrobat', size: 14 };
+        
+        // Выравнивание по центру для всех столбцов кроме первых двух
+        if (colNumber > 2) {
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+      });
 
       // Функция для форматирования даты в формат "dd.MM"
       const formatDate = (dateString: string | null | undefined): string => {
@@ -803,14 +812,24 @@ export default function HomePage() {
           totalFactValueCost
         ]);
         
-        // Применяем светлый фон и шрифт к строке "Всего"
-        totalRow.eachCell((cell) => {
+        // Применяем светлый фон, шрифт и выравнивание к строке "Всего"
+        totalRow.eachCell((cell, colNumber) => {
           cell.font = { name: 'Akrobat', size: 14 };
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
             fgColor: { argb: 'FFE8E8E8' } // Светло-серый фон
           };
+          
+          // Выравнивание по центру для всех столбцов кроме первых двух
+          if (colNumber > 2) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          }
+          
+          // Числовой формат для столбцов с затратами и эффектами
+          if ([6, 7, 10, 11, 12, 13].includes(colNumber)) {
+            cell.numFmt = '#,##0';
+          }
         });
 
         // Потом добавляем детали инициатив (только с фактическими затратами)
@@ -831,9 +850,19 @@ export default function HomePage() {
             init.factValueCost ?? '—'
           ]);
           
-          // Применяем шрифт к обычным строкам
-          row.eachCell((cell) => {
+          // Применяем шрифт, выравнивание и числовой формат к обычным строкам
+          row.eachCell((cell, colNumber) => {
             cell.font = { name: 'Akrobat', size: 14 };
+            
+            // Выравнивание по центру для всех столбцов кроме первых двух
+            if (colNumber > 2) {
+              cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            }
+            
+            // Числовой формат для столбцов с затратами и эффектами
+            if ([6, 7, 10, 11, 12, 13].includes(colNumber)) {
+              cell.numFmt = '#,##0';
+            }
           });
         });
       };
