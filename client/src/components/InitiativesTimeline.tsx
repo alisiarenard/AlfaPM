@@ -51,6 +51,8 @@ interface SprintModalData {
   initiatives: InitiativeProgress[];
   businessSupportSP: number;
   otherInitiativesSP: number;
+  sprintId: number;
+  teamName: string;
 }
 
 interface InitiativeDetailsData {
@@ -555,7 +557,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       goal: sprintInfo?.goal || null,
       initiatives: initiativesProgress,
       businessSupportSP,
-      otherInitiativesSP
+      otherInitiativesSP,
+      sprintId,
+      teamName: team.name
     });
     setSprintModalOpen(true);
   };
@@ -1616,20 +1620,21 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       </Dialog>
 
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
-        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
-              Спринт {sprintModalData?.sprintDates || ''}
-            </DialogTitle>
-            {sprintModalData?.goal && (
-              <p className="text-sm text-muted-foreground mt-1" data-testid="sprint-goal">
-                {sprintModalData.goal}
-              </p>
-            )}
-          </DialogHeader>
-          
-          {/* Карточка с метриками */}
-          <div className="w-full h-[90px] border border-border rounded-lg flex mb-4">
+        <DialogContent className="max-w-xl max-h-[60vh] flex flex-col p-0">
+          <div className="flex-1 overflow-y-auto p-6">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">
+                Спринт {sprintModalData?.sprintDates || ''}
+              </DialogTitle>
+              {sprintModalData?.goal && (
+                <p className="text-sm text-muted-foreground mt-1" data-testid="sprint-goal">
+                  {sprintModalData.goal}
+                </p>
+              )}
+            </DialogHeader>
+            
+            {/* Карточка с метриками */}
+            <div className="w-full h-[90px] border border-border rounded-lg flex mb-4 mt-4">
             <div className="flex-1 px-4 py-3 flex flex-col justify-between">
               <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
               <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">
@@ -1726,6 +1731,46 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   Нет данных
                 </p>
               )}
+            </div>
+          </div>
+          
+          {/* Footer с кнопкой */}
+          <div className="border-t border-border p-4 flex items-center justify-center">
+            <Button 
+              onClick={async () => {
+                if (!sprintModalData) return;
+                
+                try {
+                  const response = await fetch(`/api/sprints/${sprintModalData.sprintId}/generate-report`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      teamName: sprintModalData.teamName,
+                      sprintDates: sprintModalData.sprintDates
+                    })
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error('Failed to generate report');
+                  }
+                  
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `Sprint_Report_${sprintModalData.sprintId}.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                } catch (error) {
+                  console.error('Error downloading report:', error);
+                }
+              }}
+              data-testid="button-download-report"
+            >
+              Скачать отчет спринта
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
