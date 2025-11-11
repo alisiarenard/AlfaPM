@@ -1384,10 +1384,10 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       {/* Initiative Details Modal */}
       <Dialog open={initiativeDetailsOpen} onOpenChange={setInitiativeDetailsOpen}>
         <DialogContent className="max-w-md p-0 flex flex-col">
-          <DialogHeader className="px-6 py-4 border-b border-border">
+          <DialogHeader className="px-6 pt-[0.7rem] pb-4 border-b border-border">
             <DialogTitle className="text-lg font-semibold">
               {initiativeDetailsData && (
-                <div className="space-y-1">
+                <div>
                   <a 
                     href={getKaitenCardUrl(team.spaceId, initiativeDetailsData.cardId, initiativeDetailsData.archived)}
                     target="_blank"
@@ -1399,7 +1399,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     <ExternalLink className="h-4 w-4 flex-shrink-0" />
                   </a>
                   {initiativeDetailsData?.type && (
-                    <p className="text-xs text-muted-foreground" data-testid="text-initiative-type">
+                    <p className="text-xs text-muted-foreground mt-0" data-testid="text-initiative-type">
                       {initiativeDetailsData.type}
                     </p>
                   )}
