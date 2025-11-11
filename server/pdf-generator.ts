@@ -73,6 +73,10 @@ export async function generateSprintReportPDF(
   });
 }
 
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: string; hasBack: boolean; hasFront: boolean }>> {
   try {
     // Если задач мало, обрабатываем все сразу; если много - батчами по 20
@@ -85,15 +89,38 @@ async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: str
       
       const prompt = `Сократи задачи до 5-7 слов каждую, сохраняя суть. Отвечай только сокращенными формулировками (одна на строке, без нумерации):\n\n${tasksText}`;
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: 'Сокращай задачи до 5-7 слов, сохраняя суть.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.5,
-        max_tokens: 500,
-      });
+      // Retry logic для обработки rate limit
+      let retries = 0;
+      let response;
+      
+      while (retries < 3) {
+        try {
+          response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: 'Сокращай задачи до 5-7 слов, сохраняя суть.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.5,
+            max_tokens: 500,
+          });
+          break; // Успешно выполнили запрос
+        } catch (err: any) {
+          if (err.status === 429 && retries < 2) {
+            // Rate limit - ждем и повторяем
+            const waitTime = (retries + 1) * 20000; // 20s, 40s
+            console.log(`Rate limit hit, waiting ${waitTime}ms before retry ${retries + 1}/2`);
+            await sleep(waitTime);
+            retries++;
+          } else {
+            throw err; // Другая ошибка или исчерпаны попытки
+          }
+        }
+      }
+
+      if (!response) {
+        throw new Error('Failed to get AI response after retries');
+      }
 
       const shortenedText = response.choices[0]?.message?.content || '';
       const shortenedLines = shortenedText.split('\n').filter(line => line.trim());
@@ -108,6 +135,11 @@ async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: str
           hasFront: titleLower.includes('front') || titleLower.includes('фронт'),
         });
       });
+      
+      // Задержка между батчами, чтобы не превысить rate limit
+      if (i + batchSize < tasks.length) {
+        await sleep(21000); // 21 секунда между батчами
+      }
     }
     
     return results;
