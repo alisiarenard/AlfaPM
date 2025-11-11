@@ -25,6 +25,7 @@ import { ExternalLink, Check } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
 
 interface InitiativesTimelineProps {
   initiatives: Initiative[];
@@ -1635,37 +1636,37 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             
             {/* Карточка с метриками */}
             <div className="w-full h-[90px] border border-border rounded-lg flex mb-4 mt-4">
-            <div className="flex-1 px-4 py-3 flex flex-col justify-between">
-              <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
-              <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">
-                {(() => {
-                  const businessSP = sprintModalData?.businessSupportSP || 0;
-                  const otherSP = sprintModalData?.otherInitiativesSP || 0;
-                  const totalSP = businessSP + otherSP;
-                  if (totalSP === 0) return '-';
-                  const ir = Math.round((otherSP / totalSP) * 100);
-                  return `${ir}%`;
-                })()}
+              <div className="flex-1 px-4 py-3 flex flex-col justify-between">
+                <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
+                <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">
+                  {(() => {
+                    const businessSP = sprintModalData?.businessSupportSP || 0;
+                    const otherSP = sprintModalData?.otherInitiativesSP || 0;
+                    const totalSP = businessSP + otherSP;
+                    if (totalSP === 0) return '-';
+                    const ir = Math.round((otherSP / totalSP) * 100);
+                    return `${ir}%`;
+                  })()}
+                </div>
+                <div></div>
               </div>
-              <div></div>
-            </div>
-            <div className="border-l border-border my-3"></div>
-            <div className="flex-1 px-4 py-3 flex flex-col justify-between">
-              <div className="text-sm font-bold text-muted-foreground">Velocity</div>
-              <div className="text-2xl font-semibold" data-testid="sprint-velocity">
-                {(() => {
-                  const businessSP = sprintModalData?.businessSupportSP || 0;
-                  const otherSP = sprintModalData?.otherInitiativesSP || 0;
-                  const totalSP = businessSP + otherSP;
-                  return totalSP || '-';
-                })()}
+              <div className="border-l border-border my-3"></div>
+              <div className="flex-1 px-4 py-3 flex flex-col justify-between">
+                <div className="text-sm font-bold text-muted-foreground">Velocity</div>
+                <div className="text-2xl font-semibold" data-testid="sprint-velocity">
+                  {(() => {
+                    const businessSP = sprintModalData?.businessSupportSP || 0;
+                    const otherSP = sprintModalData?.otherInitiativesSP || 0;
+                    const totalSP = businessSP + otherSP;
+                    return totalSP || '-';
+                  })()}
+                </div>
+                <div></div>
               </div>
-              <div></div>
             </div>
-          </div>
-          
-          {/* Инициативы с прогресс-барами */}
-          <div className="w-full">
+            
+            {/* Инициативы с прогресс-барами */}
+            <div className="w-full">
               {sprintModalData && sprintModalData.initiatives.length > 0 ? (
                 <Accordion 
                   type="multiple" 

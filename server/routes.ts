@@ -2072,6 +2072,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/sprints/:sprintId/generate-report", async (req, res) => {
+    try {
+      const { sprintId } = req.params;
+      const { teamName, sprintDates } = req.body;
+
+      // Получаем задачи спринта
+      const tasks = await storage.getTasksBySprint(parseInt(sprintId));
+      
+      // Получаем инициативы для группировки
+      const initiativeMap = new Map<number, { title: string; tasks: Array<{ title: string; size: number }> }>();
+      
+      for (const task of tasks) {
+        const initCardId = task.initCardId || 0;
+        
+        if (!initiativeMap.has(initCardId)) {
+          if (initCardId === 0) {
+            initiativeMap.set(0, { title: 'Другие задачи', tasks: [] });
+          } else {
+            const initiative = await storage.getInitiativeByCardId(initCardId);
+            initiativeMap.set(initCardId, {
+              title: initiative?.title || `Инициатива ${initCardId}`,
+              tasks: []
+            });
+          }
+        }
+        
+        initiativeMap.get(initCardId)!.tasks.push({
+          title: task.title,
+          size: task.size
+        });
+      }
+
+      // Преобразуем Map в массив
+      const initiatives = Array.from(initiativeMap.values());
+
+      // Динамически импортируем модуль генерации PDF
+      const { generateSprintReportPDF } = await import('./pdf-generator');
+      const pdfBuffer = await generateSprintReportPDF(teamName, sprintDates, initiatives);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=Sprint_Report_${sprintId}.pdf`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("POST /api/sprints/:sprintId/generate-report error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to generate report" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
