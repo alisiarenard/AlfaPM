@@ -1784,7 +1784,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               disabled={isDownloadingReport}
               data-testid="button-download-report"
             >
-              {isDownloadingReport ? 'Загрузка...' : 'Скачать отчет спринта'}
+              Скачать отчет спринта
             </Button>
           </div>
         </DialogContent>
