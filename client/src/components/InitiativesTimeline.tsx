@@ -1622,18 +1622,26 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
         <DialogContent className="max-w-xl max-h-[60vh] flex flex-col p-0">
-          <div className="flex-1 overflow-y-auto p-6">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-semibold">
-                Спринт {sprintModalData?.sprintDates || ''}
-              </DialogTitle>
-              {sprintModalData?.goal && (
-                <p className="text-sm text-muted-foreground mt-1" data-testid="sprint-goal">
-                  {sprintModalData.goal}
-                </p>
-              )}
-            </DialogHeader>
-            
+          {/* Фиксированный хедер */}
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+            <DialogTitle className="text-lg font-semibold">
+              Спринт {sprintModalData?.sprintDates || ''}
+            </DialogTitle>
+            {sprintModalData?.goal && (
+              <p className="text-sm text-muted-foreground mt-1" data-testid="sprint-goal">
+                {sprintModalData.goal}
+              </p>
+            )}
+          </DialogHeader>
+          
+          {/* Прокручиваемый контент с кастомным скроллом */}
+          <div 
+            className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'hsl(var(--muted-foreground) / 0.3) transparent'
+            }}
+          >
             {/* Карточка с метриками */}
             <div className="w-full h-[90px] border border-border rounded-lg flex mb-4 mt-4">
               <div className="flex-1 px-4 py-3 flex flex-col justify-between">
@@ -1737,7 +1745,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           
           {/* Footer с кнопкой */}
           <div className="border-t border-border p-4 flex items-center justify-center">
-            <Button 
+            <Button
+              variant="default"
               onClick={async () => {
                 if (!sprintModalData) return;
                 
