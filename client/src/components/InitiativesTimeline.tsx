@@ -88,6 +88,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   const [editingField, setEditingField] = useState<EditableField | null>(null);
   const [editingFieldValue, setEditingFieldValue] = useState<string>("");
   const [savingField, setSavingField] = useState<EditableField | null>(null);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const fieldInputRef = useRef<HTMLInputElement>(null);
   const currentSprintRef = useRef<HTMLTableCellElement>(null);
 
@@ -1747,7 +1748,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               style={{ backgroundColor: 'rgb(205, 37, 61)', borderColor: 'rgb(185, 27, 51)' }}
               className="text-white hover-elevate active-elevate-2"
               onClick={async () => {
-                if (!sprintModalData) return;
+                if (!sprintModalData || isDownloadingReport) return;
+                
+                setIsDownloadingReport(true);
                 
                 try {
                   const response = await fetch(`/api/sprints/${sprintModalData.sprintId}/generate-report`, {
@@ -1774,11 +1777,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   document.body.removeChild(a);
                 } catch (error) {
                   console.error('Error downloading report:', error);
+                } finally {
+                  setIsDownloadingReport(false);
                 }
               }}
+              disabled={isDownloadingReport}
               data-testid="button-download-report"
             >
-              Скачать отчет спринта
+              {isDownloadingReport ? 'Загрузка...' : 'Скачать отчет спринта'}
             </Button>
           </div>
         </DialogContent>
