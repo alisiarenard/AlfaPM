@@ -1630,13 +1630,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           </DialogHeader>
           
           {/* Прокручиваемый контент с кастомным скроллом */}
-          <div 
-            className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar"
-            style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'hsl(var(--muted-foreground) / 0.3) transparent'
-            }}
-          >
+          <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
             {/* Цель спринта */}
             {sprintModalData?.goal && (
               <p className="text-sm text-muted-foreground mb-4" data-testid="sprint-goal">
