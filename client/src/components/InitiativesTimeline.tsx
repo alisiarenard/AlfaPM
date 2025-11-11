@@ -1383,30 +1383,32 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
       {/* Initiative Details Modal */}
       <Dialog open={initiativeDetailsOpen} onOpenChange={setInitiativeDetailsOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md p-0 flex flex-col">
+          <DialogHeader className="px-6 py-4 border-b border-border">
             <DialogTitle className="text-lg font-semibold">
               {initiativeDetailsData && (
-                <a 
-                  href={getKaitenCardUrl(team.spaceId, initiativeDetailsData.cardId, initiativeDetailsData.archived)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-foreground hover:text-primary transition-colors group"
-                  data-testid="link-initiative-title"
-                >
-                  <span className="group-hover:underline">{initiativeDetailsData.title}</span>
-                  <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                </a>
+                <div className="flex items-center gap-2">
+                  <a 
+                    href={getKaitenCardUrl(team.spaceId, initiativeDetailsData.cardId, initiativeDetailsData.archived)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-foreground hover:text-primary transition-colors group"
+                    data-testid="link-initiative-title"
+                  >
+                    <span className="group-hover:underline">{initiativeDetailsData.title}</span>
+                    <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                  </a>
+                  {initiativeDetailsData?.type && (
+                    <span className="text-xs text-muted-foreground" data-testid="text-initiative-type">
+                      {initiativeDetailsData.type}
+                    </span>
+                  )}
+                </div>
               )}
             </DialogTitle>
-            {initiativeDetailsData?.type && (
-              <p className="text-xs text-foreground mt-1" data-testid="text-initiative-type">
-                {initiativeDetailsData.type}
-              </p>
-            )}
           </DialogHeader>
           
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4 px-6 py-4">
             {/* Размер */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
