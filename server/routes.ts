@@ -256,7 +256,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     initCardId,
                     card.type?.name,
                     card.completed_at ?? undefined,
-                    sprint.id
+                    sprint.id,
+                    card.last_moved_to_done_at ?? null
                   );
                   
                   totalTasks++;
@@ -1040,7 +1041,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             initCardId, // parent card_id from parents_ids
             card.type?.name,
             card.completed_at ?? undefined,
-            card.sprint_id ?? null // sprint_id from Kaiten
+            card.sprint_id ?? null, // sprint_id from Kaiten
+            card.last_moved_to_done_at ?? null
           );
           
           syncedTasks.push(synced);
@@ -1299,7 +1301,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           initCardId,
           card.type?.name,
           card.completed_at ?? undefined,
-          sprintId
+          sprintId,
+          card.last_moved_to_done_at ?? null
         );
         
         syncedTasks.push(synced);
@@ -1448,7 +1451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               initCardId,
               card.type?.name,
               card.completed_at ?? undefined,
-              sprint.sprintId
+              sprint.sprintId,
+              card.last_moved_to_done_at ?? null
             );
             
             sprintSynced++;

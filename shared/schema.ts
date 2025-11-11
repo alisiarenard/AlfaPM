@@ -42,6 +42,7 @@ export const tasks = pgTable("tasks", {
   type: varchar("type"),
   initCardId: integer("init_card_id"),
   archived: boolean("archived").notNull().default(false),
+  doneDate: varchar("done_date"),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true });

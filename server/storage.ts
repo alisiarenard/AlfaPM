@@ -57,7 +57,8 @@ export interface IStorage {
     initCardId?: number | null,
     type?: string,
     completedAt?: string,
-    sprintId?: number | null
+    sprintId?: number | null,
+    doneDate?: string | null
   ): Promise<TaskRow>;
   getAllSprints(): Promise<SprintRow[]>;
   getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
@@ -226,7 +227,8 @@ export class MemStorage implements IStorage {
       sprintId: task.sprintId ?? null,
       type: task.type ?? null,
       completedAt: task.completedAt ?? null,
-      initCardId: task.initCardId ?? 0
+      initCardId: task.initCardId ?? 0,
+      doneDate: task.doneDate ?? null
     };
   }
 
@@ -250,7 +252,8 @@ export class MemStorage implements IStorage {
     initCardId?: number | null,
     type?: string,
     completedAt?: string,
-    sprintId?: number | null
+    sprintId?: number | null,
+    doneDate?: string | null
   ): Promise<TaskRow> {
     const id = randomUUID();
     return {
@@ -266,7 +269,8 @@ export class MemStorage implements IStorage {
       sprintId: sprintId ?? null,
       initCardId: initCardId ?? 0,
       type: type ?? null,
-      completedAt: completedAt ?? null
+      completedAt: completedAt ?? null,
+      doneDate: doneDate ?? null
     };
   }
 
@@ -539,7 +543,8 @@ export class DbStorage implements IStorage {
     initCardId?: number | null,
     type?: string,
     completedAt?: string,
-    sprintId?: number | null
+    sprintId?: number | null,
+    doneDate?: string | null
   ): Promise<TaskRow> {
     const existing = await this.getTaskByCardId(cardId);
     
@@ -557,7 +562,8 @@ export class DbStorage implements IStorage {
           sprintId: sprintId ?? null,
           initCardId: initCardId ?? 0,
           type: type ?? null,
-          completedAt: completedAt ?? null
+          completedAt: completedAt ?? null,
+          doneDate: doneDate ?? null
         })
         .where(eq(tasks.cardId, cardId))
         .returning();
@@ -577,7 +583,8 @@ export class DbStorage implements IStorage {
           sprintId: sprintId ?? null,
           initCardId: initCardId ?? 0,
           type: type ?? null,
-          completedAt: completedAt ?? null
+          completedAt: completedAt ?? null,
+          doneDate: doneDate ?? null
         })
         .returning();
       return newTask;
