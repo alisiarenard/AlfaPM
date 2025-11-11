@@ -1387,7 +1387,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           <DialogHeader className="px-6 py-4 border-b border-border">
             <DialogTitle className="text-lg font-semibold">
               {initiativeDetailsData && (
-                <div className="flex items-center gap-2">
+                <div className="space-y-1">
                   <a 
                     href={getKaitenCardUrl(team.spaceId, initiativeDetailsData.cardId, initiativeDetailsData.archived)}
                     target="_blank"
@@ -1399,9 +1399,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     <ExternalLink className="h-4 w-4 flex-shrink-0" />
                   </a>
                   {initiativeDetailsData?.type && (
-                    <span className="text-xs text-muted-foreground" data-testid="text-initiative-type">
+                    <p className="text-xs text-muted-foreground" data-testid="text-initiative-type">
                       {initiativeDetailsData.type}
-                    </span>
+                    </p>
                   )}
                 </div>
               )}
