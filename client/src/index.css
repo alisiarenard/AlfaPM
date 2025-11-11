@@ -387,14 +387,9 @@
 }
 
 /* Custom scrollbar styles */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
-}
-
 .custom-scrollbar::-webkit-scrollbar {
-  height: 2px;
-  width: 2px;
+  height: 3px;
+  width: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
