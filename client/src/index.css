@@ -388,8 +388,8 @@
 
 /* Custom scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {
-  height: 3px;
-  width: 3px;
+  height: 2px;
+  width: 2px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {

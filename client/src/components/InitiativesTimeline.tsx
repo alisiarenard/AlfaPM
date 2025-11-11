@@ -1623,7 +1623,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
         <DialogContent className="max-w-xl max-h-[60vh] flex flex-col p-0">
           {/* Фиксированный хедер */}
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+          <DialogHeader className="px-6 py-4 border-b border-border">
             <DialogTitle className="text-lg font-semibold">
               Спринт {sprintModalData?.sprintDates || ''}
             </DialogTitle>
@@ -1744,7 +1744,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           </div>
           
           {/* Footer с кнопкой */}
-          <div className="border-t border-border p-4 flex items-center justify-center">
+          <div className="p-4 flex items-center justify-end">
             <Button
               variant="default"
               onClick={async () => {
