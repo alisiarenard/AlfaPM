@@ -71,32 +71,42 @@ export async function generateSprintReportPDF(
 
 async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: string; hasBack: boolean; hasFront: boolean }>> {
   try {
-    const tasksText = tasks.map(t => t.title).join('\n');
+    // Если задач мало, обрабатываем все сразу; если много - батчами по 20
+    const batchSize = 20;
+    const results: Array<{ shortened: string; hasBack: boolean; hasFront: boolean }> = [];
     
-    const prompt = `Сократи следующие формулировки задач до более краткого вида, сохраняя суть. Каждую задачу выведи на новой строке в том же порядке. Не добавляй нумерацию или маркеры:\n\n${tasksText}`;
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'Ты помощник, который сокращает формулировки задач, сохраняя их смысл. Отвечай только сокращенными формулировками без нумерации.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.3,
-    });
-
-    const shortenedText = response.choices[0]?.message?.content || '';
-    const shortenedLines = shortenedText.split('\n').filter(line => line.trim());
-
-    return tasks.map((task, idx) => {
-      const shortened = shortenedLines[idx] || task.title;
-      const titleLower = task.title.toLowerCase();
+    for (let i = 0; i < tasks.length; i += batchSize) {
+      const batch = tasks.slice(i, i + batchSize);
+      const tasksText = batch.map(t => t.title).join('\n');
       
-      return {
-        shortened,
-        hasBack: titleLower.includes('back') || titleLower.includes('бэк'),
-        hasFront: titleLower.includes('front') || titleLower.includes('фронт'),
-      };
-    });
+      const prompt = `Сократи задачи до 5-7 слов каждую, сохраняя суть. Отвечай только сокращенными формулировками (одна на строке, без нумерации):\n\n${tasksText}`;
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'Сокращай задачи до 5-7 слов, сохраняя суть.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.5,
+        max_tokens: 500,
+      });
+
+      const shortenedText = response.choices[0]?.message?.content || '';
+      const shortenedLines = shortenedText.split('\n').filter(line => line.trim());
+
+      batch.forEach((task, idx) => {
+        const shortened = shortenedLines[idx] || task.title;
+        const titleLower = task.title.toLowerCase();
+        
+        results.push({
+          shortened,
+          hasBack: titleLower.includes('back') || titleLower.includes('бэк'),
+          hasFront: titleLower.includes('front') || titleLower.includes('фронт'),
+        });
+      });
+    }
+    
+    return results;
   } catch (error) {
     console.error('AI shortening error:', error);
     // Fallback: возвращаем оригинальные тексты

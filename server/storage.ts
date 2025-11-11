@@ -62,6 +62,7 @@ export interface IStorage {
   getAllSprints(): Promise<SprintRow[]>;
   getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
   getSprint(sprintId: number): Promise<SprintRow | undefined>;
+  getTasksBySprint(sprintId: number): Promise<TaskRow[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -279,6 +280,10 @@ export class MemStorage implements IStorage {
 
   async getSprint(sprintId: number): Promise<SprintRow | undefined> {
     return undefined;
+  }
+
+  async getTasksBySprint(sprintId: number): Promise<TaskRow[]> {
+    return [];
   }
 }
 
@@ -595,6 +600,13 @@ export class DbStorage implements IStorage {
     const result = await db.query.sprints.findFirst({
       where: eq(sprints.sprintId, sprintId),
     });
+    return result;
+  }
+
+  async getTasksBySprint(sprintId: number): Promise<TaskRow[]> {
+    const result = await db.select().from(tasks)
+      .where(eq(tasks.sprintId, sprintId))
+      .orderBy(asc(tasks.created));
     return result;
   }
 

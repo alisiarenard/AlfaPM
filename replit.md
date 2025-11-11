@@ -22,6 +22,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for tooling,
 - **Team Selection Menu:** Multi-select teams within a department, with an option to download Excel reports.
 - **URL-Based Filter State:** Complete bidirectional synchronization between URL parameters and filter state, enabling shareable links and browser history navigation. URL parameters include dept (department ID), year (2025/2026), teams (comma-separated IDs), active (boolean flag), and tab (active team tab ID). State automatically restores from URL on page load and updates during browser back/forward navigation via popstate events.
 - **Excel Report Download:** Generates client-side Excel files with "Cost Structure" and "Initiatives" sheets. The "Initiatives" sheet groups initiatives by `cardId`, sums costs for shared initiatives, and applies specific value calculations for Compliance and Enabler initiatives.
+- **AI-Powered Sprint PDF Reports:** Generates downloadable PDF reports for sprints with AI-processed task summaries. Tasks are grouped by initiatives, shortened via OpenAI API (5-7 words), and labeled with (back)/(front) tags for backend/frontend work. "Поддержка бизнеса" tasks appear under "Другие задачи". Optimized with batched AI requests (20 tasks per batch), max_tokens limit, and graceful fallback to original text on API errors.
 - **Metrics Card:** Displays Innovation Rate and Value/Cost metrics with smooth loading transitions.
 - **Initiatives Timeline:** Core visualization with sticky columns and scrollable sprint columns.
     - **Status Icons:** Material Design icons indicate initiative status.
@@ -30,7 +31,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for tooling,
     - **Editable Planned Involvement:** Inline editing for "Фокус(план)" column.
     - **Business Support Handling:** Special display for "Поддержка бизнеса" initiatives.
     - **Initiative Details Modal:** Displays initiative details, four progress bars (Size, Costs, Effect, Value/Cost), and allows inline editing for "Epic" type initiatives (Planned Size, Planned Value, Actual Value). Value calculations are automated for Compliance and Enabler types.
-    - **Sprint Tasks Modal:** Shows tasks for a given sprint, with clickable links to Kaiten cards.
+    - **Sprint Tasks Modal:** Shows tasks for a given sprint with clickable links to Kaiten cards. Modal is max-height 60vh with footer containing "Скачать отчет спринта" button for PDF generation.
     - **Timeline Block Tooltips:** Displays start, planned end, and actual end dates on hover.
 - **Team Header:** Displays team name, board ID, Velocity, Innovation Rate, and a Kaiten sync button.
 - **Team Management:** Full CRUD operations for teams and departments with Kaiten board validation.
@@ -47,6 +48,7 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
   - Cost Structure: Breaks down story points by initiative/task types, filtered by selected teams and year
   - Value/Cost: Calculates planned and actual value-to-cost ratios, filtered by selected teams' sprints
 - Kaiten synchronization endpoints, including `PATCH /api/kaiten/update-initiative/:cardId` for updating initiative fields in both Kaiten and the local database.
+- Sprint PDF report generation endpoint `POST /api/sprints/:sprintId/generate-report` that creates AI-processed PDF reports with task summaries.
 
 **Kaiten Integration:**
 - **New Sprint API:** Uses Kaiten's `/api/latest/sprints` endpoint to fetch all company sprints in a single request, filtering by team `board_id` for efficiency.
@@ -89,6 +91,8 @@ PostgreSQL (via Neon) is the primary data store, managed with Drizzle ORM.
 - `cmdk`
 - `react-hook-form`
 - `xlsx` (SheetJS)
+- `openai` (for AI task summarization)
+- `pdfkit` (PDF generation)
 
 **Build & Development Tools:**
 - `vite`
