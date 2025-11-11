@@ -1625,21 +1625,21 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
         <DialogContent className="max-w-xl max-h-[60vh] flex flex-col p-0">
           {/* Фиксированный хедер */}
-          <DialogHeader className="px-6 py-4 border-b border-border">
+          <DialogHeader className="px-6 pt-[0.7rem] pb-4 border-b border-border">
             <DialogTitle className="text-lg font-semibold">
-              Спринт {sprintModalData?.sprintDates || ''}
+              <div>
+                <div>Спринт {sprintModalData?.sprintDates || ''}</div>
+                {sprintModalData?.goal && (
+                  <p className="text-xs text-muted-foreground mt-0" data-testid="sprint-goal">
+                    {sprintModalData.goal}
+                  </p>
+                )}
+              </div>
             </DialogTitle>
           </DialogHeader>
           
           {/* Прокручиваемый контент с кастомным скроллом */}
           <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
-            {/* Цель спринта */}
-            {sprintModalData?.goal && (
-              <p className="text-sm text-muted-foreground mb-4" data-testid="sprint-goal">
-                {sprintModalData.goal}
-              </p>
-            )}
-            
             {/* Карточка с метриками */}
             <div className="w-full h-[90px] border border-border rounded-lg flex mb-4">
               <div className="flex-1 px-4 py-3 flex flex-col justify-between">
