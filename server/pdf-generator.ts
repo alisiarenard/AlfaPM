@@ -29,16 +29,20 @@ export async function generateSprintReportPDF(
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
+      // Регистрируем шрифты с поддержкой кириллицы
+      doc.registerFont('DejaVu', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
+      doc.registerFont('DejaVu-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf');
+
       // Заголовок отчета
-      doc.fontSize(16).text(`Отчет по спринту`, { align: 'center' });
+      doc.font('DejaVu-Bold').fontSize(16).text(`Отчет по спринту`, { align: 'center' });
       doc.moveDown(0.5);
-      doc.fontSize(12).text(`Команда ${teamName} в спринте ${sprintDates} выполнила следующие задачи:`, { align: 'left' });
+      doc.font('DejaVu').fontSize(12).text(`Команда ${teamName} в спринте ${sprintDates} выполнила следующие задачи:`, { align: 'left' });
       doc.moveDown(1);
 
       // Обрабатываем каждую инициативу
       for (const initiative of initiatives) {
         // Название инициативы
-        doc.fontSize(14).text(initiative.title, { underline: true });
+        doc.font('DejaVu-Bold').fontSize(14).text(initiative.title, { underline: true });
         doc.moveDown(0.5);
 
         // Сокращаем формулировки задач через AI
@@ -56,7 +60,7 @@ export async function generateSprintReportPDF(
             taskText += ' (front)';
           }
 
-          doc.fontSize(11).text(taskText, { indent: 20 });
+          doc.font('DejaVu').fontSize(11).text(taskText, { indent: 20 });
         }
 
         doc.moveDown(1);
