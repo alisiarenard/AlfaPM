@@ -42,7 +42,7 @@ export async function generateSprintReportPDF(
       // Обрабатываем каждую инициативу
       for (const initiative of initiatives) {
         // Название инициативы
-        doc.font('DejaVu-Bold').fontSize(14).text(initiative.title, { underline: true });
+        doc.font('DejaVu-Bold').fontSize(14).text(initiative.title);
         doc.moveDown(0.5);
 
         // Сокращаем формулировки задач через AI

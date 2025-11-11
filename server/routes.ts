@@ -2104,8 +2104,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Преобразуем Map в массив
-      const initiatives = Array.from(initiativeMap.values());
+      // Преобразуем Map в массив и сортируем: сначала инициативы, потом "Другие задачи"
+      const initiatives = Array.from(initiativeMap.entries())
+        .sort(([idA], [idB]) => {
+          // Если ID = 0 (Другие задачи), помещаем в конец
+          if (idA === 0) return 1;
+          if (idB === 0) return -1;
+          return 0; // Остальные инициативы сохраняют исходный порядок
+        })
+        .map(([_, initiative]) => initiative);
 
       // Динамически импортируем модуль генерации PDF
       const { generateSprintReportPDF } = await import('./pdf-generator');
