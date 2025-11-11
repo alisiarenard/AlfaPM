@@ -1627,11 +1627,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             <DialogTitle className="text-lg font-semibold">
               Спринт {sprintModalData?.sprintDates || ''}
             </DialogTitle>
-            {sprintModalData?.goal && (
-              <p className="text-sm text-muted-foreground mt-1" data-testid="sprint-goal">
-                {sprintModalData.goal}
-              </p>
-            )}
           </DialogHeader>
           
           {/* Прокручиваемый контент с кастомным скроллом */}
@@ -1642,8 +1637,15 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               scrollbarColor: 'hsl(var(--muted-foreground) / 0.3) transparent'
             }}
           >
+            {/* Цель спринта */}
+            {sprintModalData?.goal && (
+              <p className="text-sm text-muted-foreground mb-4" data-testid="sprint-goal">
+                {sprintModalData.goal}
+              </p>
+            )}
+            
             {/* Карточка с метриками */}
-            <div className="w-full h-[90px] border border-border rounded-lg flex mb-4 mt-4">
+            <div className="w-full h-[90px] border border-border rounded-lg flex mb-4">
               <div className="flex-1 px-4 py-3 flex flex-col justify-between">
                 <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
                 <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">
@@ -1746,7 +1748,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           {/* Footer с кнопкой */}
           <div className="p-4 flex items-center justify-end">
             <Button
-              variant="default"
+              style={{ backgroundColor: 'rgb(205, 37, 61)', borderColor: 'rgb(185, 27, 51)' }}
+              className="text-white hover-elevate active-elevate-2"
               onClick={async () => {
                 if (!sprintModalData) return;
                 
