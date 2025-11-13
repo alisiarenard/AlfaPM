@@ -54,6 +54,7 @@ interface SprintModalData {
   otherInitiativesSP: number;
   sprintId: number;
   teamName: string;
+  teamId: string;
 }
 
 interface InitiativeDetailsData {
@@ -561,7 +562,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       businessSupportSP,
       otherInitiativesSP,
       sprintId,
-      teamName: team.name
+      teamName: team.name,
+      teamId: team.teamId
     });
     setSprintModalOpen(true);
   };
@@ -1758,6 +1760,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                       teamName: sprintModalData.teamName,
+                      teamId: sprintModalData.teamId,
                       sprintDates: sprintModalData.sprintDates
                     })
                   });

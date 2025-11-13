@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, users, departments, teams, initiatives, tasks, sprints } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, sql, asc } from "drizzle-orm";
+import { eq, sql, asc, and, gte, lt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -67,6 +67,7 @@ export interface IStorage {
   getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
   getSprint(sprintId: number): Promise<SprintRow | undefined>;
   getTasksBySprint(sprintId: number): Promise<TaskRow[]>;
+  getTasksByTeamAndDoneDateRange(teamId: string, startDate: Date, endDate: Date): Promise<TaskRow[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -301,6 +302,10 @@ export class MemStorage implements IStorage {
   }
 
   async getTasksBySprint(sprintId: number): Promise<TaskRow[]> {
+    return [];
+  }
+
+  async getTasksByTeamAndDoneDateRange(teamId: string, startDate: Date, endDate: Date): Promise<TaskRow[]> {
     return [];
   }
 }
@@ -640,6 +645,27 @@ export class DbStorage implements IStorage {
   async getTasksBySprint(sprintId: number): Promise<TaskRow[]> {
     const result = await db.select().from(tasks)
       .where(eq(tasks.sprintId, sprintId))
+      .orderBy(asc(tasks.created));
+    return result;
+  }
+
+  async getTasksByTeamAndDoneDateRange(teamId: string, startDate: Date, endDate: Date): Promise<TaskRow[]> {
+    // Добавляем буферы для учета timezone: вычитаем 1 день от начала и добавляем 1 день к концу
+    // Это гарантирует включение всех задач независимо от их timezone
+    const startDateInclusive = new Date(startDate);
+    startDateInclusive.setDate(startDateInclusive.getDate() - 1);
+    
+    const endDateInclusive = new Date(endDate);
+    endDateInclusive.setDate(endDateInclusive.getDate() + 2);
+    
+    const result = await db.select().from(tasks)
+      .where(
+        and(
+          eq(tasks.teamId, teamId),
+          gte(tasks.doneDate, startDateInclusive.toISOString()),
+          lt(tasks.doneDate, endDateInclusive.toISOString())
+        )
+      )
       .orderBy(asc(tasks.created));
     return result;
   }

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInitiativeSchema, insertTaskSchema, insertDepartmentSchema } from "@shared/schema";
+import { insertInitiativeSchema, insertTaskSchema, insertDepartmentSchema, type TaskRow } from "@shared/schema";
 import { kaitenClient } from "./kaiten";
 import { log } from "./vite";
 
@@ -2996,10 +2996,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/sprints/:sprintId/generate-report", async (req, res) => {
     try {
       const { sprintId } = req.params;
-      const { teamName, sprintDates } = req.body;
+      const { teamName, sprintDates, teamId } = req.body;
 
+      const sprintIdNum = parseInt(sprintId);
+      
       // Получаем задачи спринта
-      const tasks = await storage.getTasksBySprint(parseInt(sprintId));
+      let tasks: TaskRow[];
+      
+      if (sprintIdNum < 0) {
+        // Виртуальный спринт - выбираем задачи по команде и диапазону дат
+        if (!teamId || typeof teamId !== 'string') {
+          return res.status(400).json({ 
+            success: false, 
+            error: 'teamId is required for virtual sprints' 
+          });
+        }
+        
+        if (!sprintDates?.start || !sprintDates?.end) {
+          return res.status(400).json({ 
+            success: false, 
+            error: 'sprintDates.start and sprintDates.end are required for virtual sprints' 
+          });
+        }
+        
+        const startDate = new Date(sprintDates.start);
+        const endDate = new Date(sprintDates.end);
+        
+        // Проверяем валидность дат
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return res.status(400).json({ 
+            success: false, 
+            error: 'Invalid date format in sprintDates' 
+          });
+        }
+        
+        tasks = await storage.getTasksByTeamAndDoneDateRange(teamId, startDate, endDate);
+      } else {
+        // Реальный спринт - выбираем по sprint_id
+        tasks = await storage.getTasksBySprint(sprintIdNum);
+      }
       
       // Получаем инициативы для группировки
       const initiativeMap = new Map<number, { title: string; tasks: Array<{ title: string; size: number }> }>();
