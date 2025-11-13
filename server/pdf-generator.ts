@@ -36,10 +36,13 @@ export async function generateSprintReportPDF(
       // Форматируем даты для отображения
       let formattedDates: string;
       if (typeof sprintDates === 'object') {
-        // Виртуальный спринт - форматируем даты из объекта
+        // Виртуальный спринт - форматируем даты из объекта в формате DD.MM.YYYY
         const formatDate = (dateStr: string) => {
           const date = new Date(dateStr);
-          return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          return `${day}.${month}.${year}`;
         };
         formattedDates = `${formatDate(sprintDates.start)} - ${formatDate(sprintDates.end)}`;
       } else {
