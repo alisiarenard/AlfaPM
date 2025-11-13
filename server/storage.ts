@@ -14,6 +14,7 @@ export interface IStorage {
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
   getTeamById(teamId: string): Promise<TeamRow | undefined>;
   getTeamBySprintBoardId(sprintBoardId: number): Promise<TeamRow | undefined>;
+  getTeamByInitBoardId(initBoardId: number): Promise<TeamRow | undefined>;
   createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow>;
   updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined>;
   getAllInitiatives(): Promise<InitiativeRow[]>;
@@ -59,7 +60,8 @@ export interface IStorage {
     type?: string,
     completedAt?: string,
     sprintId?: number | null,
-    doneDate?: string | null
+    doneDate?: string | null,
+    teamId?: string | null
   ): Promise<TaskRow>;
   getAllSprints(): Promise<SprintRow[]>;
   getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
@@ -117,6 +119,10 @@ export class MemStorage implements IStorage {
   }
 
   async getTeamBySprintBoardId(sprintBoardId: number): Promise<TeamRow | undefined> {
+    return undefined;
+  }
+
+  async getTeamByInitBoardId(initBoardId: number): Promise<TeamRow | undefined> {
     return undefined;
   }
 
@@ -233,7 +239,8 @@ export class MemStorage implements IStorage {
       type: task.type ?? null,
       completedAt: task.completedAt ?? null,
       initCardId: task.initCardId ?? 0,
-      doneDate: task.doneDate ?? null
+      doneDate: task.doneDate ?? null,
+      teamId: task.teamId ?? null
     };
   }
 
@@ -258,7 +265,8 @@ export class MemStorage implements IStorage {
     type?: string,
     completedAt?: string,
     sprintId?: number | null,
-    doneDate?: string | null
+    doneDate?: string | null,
+    teamId?: string | null
   ): Promise<TaskRow> {
     const id = randomUUID();
     return {
@@ -275,7 +283,8 @@ export class MemStorage implements IStorage {
       initCardId: initCardId ?? 0,
       type: type ?? null,
       completedAt: completedAt ?? null,
-      doneDate: doneDate ?? null
+      doneDate: doneDate ?? null,
+      teamId: teamId ?? null
     };
   }
 
@@ -359,6 +368,11 @@ export class DbStorage implements IStorage {
 
   async getTeamBySprintBoardId(sprintBoardId: number): Promise<TeamRow | undefined> {
     const [result] = await db.select().from(teams).where(eq(teams.sprintBoardId, sprintBoardId));
+    return result;
+  }
+
+  async getTeamByInitBoardId(initBoardId: number): Promise<TeamRow | undefined> {
+    const [result] = await db.select().from(teams).where(eq(teams.initBoardId, initBoardId));
     return result;
   }
 
@@ -554,7 +568,8 @@ export class DbStorage implements IStorage {
     type?: string,
     completedAt?: string,
     sprintId?: number | null,
-    doneDate?: string | null
+    doneDate?: string | null,
+    teamId?: string | null
   ): Promise<TaskRow> {
     const existing = await this.getTaskByCardId(cardId);
     
@@ -573,7 +588,8 @@ export class DbStorage implements IStorage {
           initCardId: initCardId ?? 0,
           type: type ?? null,
           completedAt: completedAt ?? null,
-          doneDate: doneDate ?? null
+          doneDate: doneDate ?? null,
+          teamId: teamId ?? null
         })
         .where(eq(tasks.cardId, cardId))
         .returning();
@@ -594,7 +610,8 @@ export class DbStorage implements IStorage {
           initCardId: initCardId ?? 0,
           type: type ?? null,
           completedAt: completedAt ?? null,
-          doneDate: doneDate ?? null
+          doneDate: doneDate ?? null,
+          teamId: teamId ?? null
         })
         .returning();
       return newTask;

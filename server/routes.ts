@@ -301,7 +301,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       card.type?.name,
                       card.completed_at ?? undefined,
                       sprint.id,
-                      card.last_moved_to_done_at ?? null
+                      card.last_moved_to_done_at ?? null,
+                      team.teamId
                     );
                     
                     totalTasks++;
@@ -365,7 +366,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     taskCard.type?.name,
                     taskCard.completed_at ?? undefined,
                     null,
-                    taskCard.last_moved_to_done_at
+                    taskCard.last_moved_to_done_at,
+                    team.teamId
                   );
                   
                   totalTasks++;
@@ -447,7 +449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 taskCard.type?.name,
                 taskCard.completed_at ?? undefined,
                 null,
-                taskCard.last_moved_to_done_at
+                taskCard.last_moved_to_done_at,
+                team.teamId
               );
               
               totalTasksSynced++;
@@ -774,8 +777,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Загружаем все задачи один раз (избегаем N+1)
       const initiativeCardIds = new Set(initiatives.map(i => i.cardId));
       const allTasks = await storage.getAllTasks();
-      const initiativeTasks = allTasks.filter(task => task.initCardId !== null && initiativeCardIds.has(task.initCardId));
-      log(`[Timeline] Loaded ${initiativeTasks.length} tasks for ${initiatives.length} initiatives`);
+      // Фильтруем задачи по teamId чтобы показывать только задачи этой команды
+      const initiativeTasks = allTasks.filter(task => 
+        task.initCardId !== null && 
+        initiativeCardIds.has(task.initCardId) &&
+        task.teamId === teamId
+      );
+      log(`[Timeline] Loaded ${initiativeTasks.length} tasks for ${initiatives.length} initiatives (team: ${teamId})`);
 
       if (sprintBoardId) {
         // Команда со спринтами - используем реальные спринты
@@ -1621,6 +1629,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Kaiten Sync Tasks] Starting sync for board ${boardId}`);
       
+      // Lookup team by initBoardId
+      const team = await storage.getTeamByInitBoardId(boardId);
+      if (!team) {
+        log(`[Kaiten Sync Tasks] No team found for board ${boardId}`);
+        return res.status(404).json({
+          success: false,
+          error: `No team found with initBoardId=${boardId}`
+        });
+      }
+      log(`[Kaiten Sync Tasks] Found team ${team.teamName} (${team.teamId})`);
+      
       // Step 1: Get list of cards from board
       const boardCards = await kaitenClient.getCardsFromBoard(boardId);
       log(`[Kaiten Sync Tasks] Found ${boardCards.length} cards on board`);
@@ -1668,7 +1687,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.type?.name,
             card.completed_at ?? undefined,
             card.sprint_id ?? null, // sprint_id from Kaiten
-            card.last_moved_to_done_at ?? null
+            card.last_moved_to_done_at ?? null,
+            team.teamId
           );
           
           syncedTasks.push(synced);
@@ -1871,6 +1891,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Kaiten Sync Sprint] Sprint has ${sprint.cards.length} cards`);
       
+      // Lookup team once before processing cards
+      const dbSprint = await storage.getSprint(sprintId);
+      if (!dbSprint) {
+        throw new Error(`Sprint ${sprintId} not found in database`);
+      }
+      const team = await storage.getTeamBySprintBoardId(dbSprint.boardId);
+      if (!team) {
+        throw new Error(`No team found for sprint board ${dbSprint.boardId}`);
+      }
+      log(`[Kaiten Sync Sprint] Found team ${team.teamName} (${team.teamId})`);
+      
       const syncedTasks = [];
       
       // Создаем записи в tasks для каждой карточки из спринта
@@ -1928,7 +1959,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           card.type?.name,
           card.completed_at ?? undefined,
           sprintId,
-          card.last_moved_to_done_at ?? null
+          card.last_moved_to_done_at ?? null,
+          team.teamId
         );
         
         syncedTasks.push(synced);
@@ -1962,6 +1994,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       log(`[Kaiten Sync All Sprints] Starting sync for board ${boardId}`);
+      
+      // Lookup team once at the beginning
+      const team = await storage.getTeamBySprintBoardId(boardId);
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          error: `No team found for sprint board ${boardId}`
+        });
+      }
+      log(`[Kaiten Sync All Sprints] Found team ${team.teamName} (${team.teamId})`);
       
       // Шаг 1: Получаем все спринты через новый API с пагинацией
       log(`[Kaiten Sync All Sprints] Step 1: Fetching all sprints from Kaiten API`);
@@ -2018,22 +2060,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (boardSprints.length === 0) {
         log(`[Kaiten Sync All Sprints] No sprints found on board ${boardId}. Using date filter API fallback.`);
         
-        // Получаем team по sprintBoardId чтобы узнать initBoardId
-        const team = await storage.getTeamBySprintBoardId(boardId);
-        
-        if (!team) {
-          log(`[Kaiten Sync All Sprints] No team found with sprintBoardId=${boardId}`);
-          return res.json({
-            success: true,
-            sprintsSaved: 0,
-            totalSynced: 0,
-            sprintsProcessed: 0,
-            results: [],
-            message: 'No sprints found and no team associated with this board'
-          });
-        }
-        
-        log(`[Kaiten Sync All Sprints] Found team ${team.teamName}, using initBoardId=${team.initBoardId} for task sync`);
+        // Team уже загружен в начале endpoint, используем его
+        log(`[Kaiten Sync All Sprints] Using team ${team.teamName}, initBoardId=${team.initBoardId} for task sync`);
         
         // Используем date filter API для получения задач
         const currentYear = new Date().getFullYear();
@@ -2086,7 +2114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               taskCard.type?.name,
               taskCard.completed_at ?? undefined,
               null,
-              taskCard.last_moved_to_done_at
+              taskCard.last_moved_to_done_at,
+              team.teamId
             );
             
             totalTasksSynced++;
@@ -2214,7 +2243,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.type?.name,
               card.completed_at ?? undefined,
               sprint.sprintId,
-              card.last_moved_to_done_at ?? null
+              card.last_moved_to_done_at ?? null,
+              team.teamId
             );
             
             sprintSynced++;
@@ -2364,6 +2394,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
           
+          // Lookup team by initBoardId
+          const team = await storage.getTeamByInitBoardId(initBoardId);
+          if (!team) {
+            throw new Error(`No team found for init board ${initBoardId}`);
+          }
+
           const synced = await storage.syncTaskFromKaiten(
             taskCard.id,
             taskCard.board_id,
@@ -2377,7 +2413,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             taskCard.type?.name,
             taskCard.completed_at ?? undefined,
             null,
-            taskCard.last_moved_to_done_at
+            taskCard.last_moved_to_done_at,
+            team.teamId
           );
           
           syncedTasks.push(synced);
