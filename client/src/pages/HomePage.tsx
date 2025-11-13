@@ -1747,9 +1747,12 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team:
       let description = `Синхронизировано ${data.initiatives.count} инициатив`;
       if (data.sprints) {
         if (team.sprintBoardId) {
-          // Для команд со спринтами
-          if (data.sprints.sprintsProcessed === 0) {
+          // Для команд со спринтами (или с доской спринтов без спринтов)
+          if (data.sprints.sprintsProcessed === 0 && data.sprints.totalSynced === 0) {
             description += '. Новых спринтов не найдено';
+          } else if (data.sprints.sprintsProcessed === 0 && data.sprints.totalSynced > 0) {
+            // Спринтов нет, но задачи синхронизированы через fallback
+            description += ` и ${data.sprints.totalSynced} задач`;
           } else {
             description += ` и ${data.sprints.totalSynced} задач из ${data.sprints.sprintsProcessed} новых спринтов`;
           }
