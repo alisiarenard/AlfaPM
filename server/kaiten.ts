@@ -163,14 +163,21 @@ export class KaitenClient {
     const url = `/cards?${queryParams.toString()}`;
     log(`[Kaiten API] Fetching cards with query: ${url}`);
     
-    const response = await this.makeRequest<KaitenCard[]>(url);
+    const response = await this.makeRequest<{ data?: KaitenCard[]; [key: string]: any }>(url);
     
-    if (Array.isArray(response)) {
-      log(`[Kaiten API] Found ${response.length} cards`);
-      return response;
+    // Kaiten API returns an object wrapper: { data: [...], meta: {...} }
+    if (response.data && Array.isArray(response.data)) {
+      log(`[Kaiten API] Found ${response.data.length} cards in response.data`);
+      return response.data;
     }
     
-    log(`[Kaiten API] No cards found`);
+    // Fallback: if response is directly an array
+    if (Array.isArray(response)) {
+      log(`[Kaiten API] Found ${response.length} cards (direct array)`);
+      return response as unknown as KaitenCard[];
+    }
+    
+    log(`[Kaiten API] No cards found in response`);
     return [];
   }
 
