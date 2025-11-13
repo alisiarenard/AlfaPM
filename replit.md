@@ -54,8 +54,10 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 - **New Sprint API:** Uses Kaiten's `/api/latest/sprints` endpoint to fetch all company sprints in a single request, filtering by team `board_id` for efficiency.
 - **Synchronization Sequence:** 
   1. Initiatives: Fetches cards from initiative boards
-  2. Sprints: Retrieves all sprints via new API, filters by board_id, saves to database
-  3. Tasks: Fetches task cards from each sprint
+  2. Sprints: Retrieves all sprints via new API, filters by board_id, saves to database (for teams with sprint boards)
+  3. Tasks: For teams with sprints, fetches task cards from each sprint. For teams without sprints, uses Kaiten `/cards` API with `last_moved_to_done_at_after` filter (current year start).
+- **Sprintless Teams:** Uses Kaiten GET `/cards` endpoint with date filter `last_moved_to_done_at_after` set to start of current year. Checks `parents_ids[0]` against initiatives table, sets `initCardId` to parent card ID if found, or 0 if not found.
+- **API Response Handling:** Properly handles Kaiten's response envelope structure `{ data: [...], meta: {...} }` with fallback to direct array parsing.
 - Synchronizes initiatives and tasks from Kaiten, including type, archived status, and custom field values (e.g., `planned_value_id`, `fact_value_id`).
 - Automatically calculates and sets `planned_value` and `fact_value` for "Compliance" and "Enabler" initiative types based on costs.
 - Synchronizes `due_date` and `done_date` from Kaiten.
