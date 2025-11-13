@@ -1886,6 +1886,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       log(`[Kaiten Sync All Sprints] Found total ${boardSprints.length} sprints for board ${boardId}`);
       
+      // Если спринтов вообще не найдено - используем fallback на date filter API
+      if (boardSprints.length === 0) {
+        log(`[Kaiten Sync All Sprints] No sprints found on board ${boardId}. Using date filter API fallback.`);
+        
+        // Получаем team по sprintBoardId чтобы узнать initBoardId
+        const team = await storage.getTeamBySprintBoardId(boardId);
+        
+        if (!team) {
+          log(`[Kaiten Sync All Sprints] No team found with sprintBoardId=${boardId}`);
+          return res.json({
+            success: true,
+            sprintsSaved: 0,
+            totalSynced: 0,
+            sprintsProcessed: 0,
+            results: [],
+            message: 'No sprints found and no team associated with this board'
+          });
+        }
+        
+        log(`[Kaiten Sync All Sprints] Found team ${team.teamName}, using initBoardId=${team.initBoardId} for task sync`);
+        
+        // Используем date filter API для получения задач
+        const currentYear = new Date().getFullYear();
+        const yearStart = new Date(currentYear, 0, 1).toISOString();
+        
+        log(`[Kaiten Sync All Sprints] Fetching tasks completed after ${yearStart} from board ${team.initBoardId}`);
+        
+        const tasks = await kaitenClient.getCardsWithDateFilter({
+          boardId: team.initBoardId,
+          lastMovedToDoneAtAfter: yearStart,
+          limit: 1000
+        });
+        
+        log(`[Kaiten Sync All Sprints] Found ${tasks.length} tasks completed after ${yearStart}`);
+        
+        let totalTasksSynced = 0;
+        
+        for (const taskCard of tasks) {
+          try {
+            let initCardId = 0;
+            if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
+              const parentId = taskCard.parents_ids[0];
+              const parentInitiative = await storage.getInitiativeByCardId(parentId);
+              if (parentInitiative) {
+                initCardId = parentId;
+              }
+            }
+            
+            let state: "1-queued" | "2-inProgress" | "3-done";
+            if (taskCard.state === 3) {
+              state = "3-done";
+            } else if (taskCard.state === 2) {
+              state = "2-inProgress";
+            } else {
+              state = "1-queued";
+            }
+            
+            const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
+            
+            await storage.syncTaskFromKaiten(
+              taskCard.id,
+              taskCard.board_id,
+              taskCard.title,
+              taskCard.created || new Date().toISOString(),
+              state,
+              taskCard.size || 0,
+              condition,
+              taskCard.archived || false,
+              initCardId,
+              taskCard.type?.name,
+              taskCard.completed_at ?? undefined,
+              null,
+              taskCard.last_moved_to_done_at
+            );
+            
+            totalTasksSynced++;
+          } catch (taskError: unknown) {
+            const errorMessage = taskError instanceof Error ? taskError.message : String(taskError);
+            log(`[Kaiten Sync All Sprints] Error syncing task ${taskCard.id}: ${errorMessage}`);
+          }
+        }
+        
+        log(`[Kaiten Sync All Sprints] Fallback completed: synced ${totalTasksSynced} tasks via date filter API`);
+        
+        return res.json({
+          success: true,
+          sprintsSaved: 0,
+          totalSynced: totalTasksSynced,
+          sprintsProcessed: 0,
+          results: [],
+          message: `No sprints found. Synced ${totalTasksSynced} tasks via date filter API`
+        });
+      }
+      
       // Шаг 3: Получаем существующие спринты из БД для этой команды
       log(`[Kaiten Sync All Sprints] Step 2: Checking existing sprints in database`);
       const existingSprints = await storage.getSprintsByBoardId(boardId);

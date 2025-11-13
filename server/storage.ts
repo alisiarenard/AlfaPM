@@ -13,6 +13,7 @@ export interface IStorage {
   getAllTeams(): Promise<TeamRow[]>;
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
   getTeamById(teamId: string): Promise<TeamRow | undefined>;
+  getTeamBySprintBoardId(sprintBoardId: number): Promise<TeamRow | undefined>;
   createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow>;
   updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined>;
   getAllInitiatives(): Promise<InitiativeRow[]>;
@@ -112,6 +113,10 @@ export class MemStorage implements IStorage {
   }
 
   async getTeamById(teamId: string): Promise<TeamRow | undefined> {
+    return undefined;
+  }
+
+  async getTeamBySprintBoardId(sprintBoardId: number): Promise<TeamRow | undefined> {
     return undefined;
   }
 
@@ -349,6 +354,11 @@ export class DbStorage implements IStorage {
 
   async getTeamById(teamId: string): Promise<TeamRow | undefined> {
     const [result] = await db.select().from(teams).where(eq(teams.teamId, teamId));
+    return result;
+  }
+
+  async getTeamBySprintBoardId(sprintBoardId: number): Promise<TeamRow | undefined> {
+    const [result] = await db.select().from(teams).where(eq(teams.sprintBoardId, sprintBoardId));
     return result;
   }
 
