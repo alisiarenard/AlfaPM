@@ -257,7 +257,7 @@ export default function HomePage() {
       teamId: string; 
       teamName?: string; 
       spaceId?: number; 
-      sprintBoardId?: number; 
+      sprintBoardId?: number | null; 
       initBoardId?: number; 
       vilocity?: number; 
       sprintDuration?: number; 
@@ -278,7 +278,7 @@ export default function HomePage() {
       setEditingTeam(updatedTeam);
       setTeamName(updatedTeam.teamName);
       setSpaceId(updatedTeam.spaceId.toString());
-      setSprintBoardId(updatedTeam.sprintBoardId.toString());
+      setSprintBoardId(updatedTeam.sprintBoardId?.toString() || "");
       setInitBoardId(updatedTeam.initBoardId.toString());
       setVelocity(updatedTeam.vilocity.toString());
       setSprintDuration(updatedTeam.sprintDuration.toString());
@@ -458,7 +458,7 @@ export default function HomePage() {
     } else if (rightPanelMode === "editTeam" && editingTeam) {
       setTeamName(editingTeam.teamName);
       setSpaceId(editingTeam.spaceId.toString());
-      setSprintBoardId(editingTeam.sprintBoardId.toString());
+      setSprintBoardId(editingTeam.sprintBoardId?.toString() || "");
       setInitBoardId(editingTeam.initBoardId.toString());
       setVelocity(editingTeam.vilocity.toString());
       setSprintDuration(editingTeam.sprintDuration.toString());
@@ -479,7 +479,7 @@ export default function HomePage() {
     // Обновляем поля формы сразу, чтобы избежать мелькания кнопки "Сохранить"
     setTeamName(team.teamName);
     setSpaceId(team.spaceId.toString());
-    setSprintBoardId(team.sprintBoardId.toString());
+    setSprintBoardId(team.sprintBoardId?.toString() || "");
     setInitBoardId(team.initBoardId.toString());
     setVelocity(team.vilocity.toString());
     setSprintDuration(team.sprintDuration.toString());
@@ -1518,7 +1518,7 @@ export default function HomePage() {
                               teamId: editingTeam.teamId,
                               teamName: teamName.trim(),
                               spaceId: spaceId ? parseInt(spaceId) : editingTeam.spaceId,
-                              sprintBoardId: sprintBoardId ? parseInt(sprintBoardId) : editingTeam.sprintBoardId,
+                              sprintBoardId: sprintBoardId ? parseInt(sprintBoardId) : null,
                               initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
                               vilocity: velocity ? parseInt(velocity) : editingTeam.vilocity,
                               sprintDuration: sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration,
@@ -1700,21 +1700,20 @@ export default function HomePage() {
 function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void }) {
   const { toast } = useToast();
   
-  const { data: initiativeRows, isLoading: initiativesLoading, error: initiativesError } = useQuery<Initiative[]>({
-    queryKey: ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId],
+  const { data: timelineData, isLoading: timelineLoading, error: initiativesError } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
+    queryKey: ["/api/timeline", team.teamId],
     queryFn: async () => {
-      const url = `/api/initiatives/board/${team.initBoardId}?sprintBoardId=${team.sprintBoardId}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch initiatives');
+      const response = await fetch(`/api/timeline/${team.teamId}`);
+      if (!response.ok) throw new Error('Failed to fetch timeline');
       return response.json();
     },
-    enabled: !!team.initBoardId && !!team.sprintBoardId,
+    enabled: !!team.teamId && !!team.initBoardId,
   });
 
-  const { data: sprints, isLoading: sprintsLoading } = useQuery<SprintRow[]>({
-    queryKey: ["/api/sprints/board", team.sprintBoardId],
-    enabled: !!team.sprintBoardId,
-  });
+  const initiativeRows = timelineData?.initiatives;
+  const sprints = timelineData?.sprints;
+  const initiativesLoading = timelineLoading;
+  const sprintsLoading = timelineLoading;
 
   const syncAllMutation = useMutation({
     mutationFn: async () => {
@@ -1722,23 +1721,23 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team:
       const initiativesRes = await apiRequest("POST", `/api/kaiten/sync-board/${team.initBoardId}`, {});
       const initiativesData = await initiativesRes.json();
       
-      // Затем синхронизируем задачи по всем спринтам, если указана доска спринтов
+      // Затем синхронизируем задачи
       let sprintsData = null;
       if (team.sprintBoardId) {
+        // Для команд со спринтами - синхронизируем спринты
         const sprintsRes = await apiRequest("POST", `/api/kaiten/sync-all-sprints/${team.sprintBoardId}`, {});
         sprintsData = await sprintsRes.json();
+      } else {
+        // Для команд без спринтов - синхронизируем задачи из инициатив
+        const tasksRes = await apiRequest("POST", `/api/kaiten/sync-initiative-tasks/${team.initBoardId}`, {});
+        sprintsData = await tasksRes.json();
       }
       
       return { initiatives: initiativesData, sprints: sprintsData };
     },
     onSuccess: (data) => {
-      // Инвалидация инициатив
-      queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", team.initBoardId] });
-      
-      // Инвалидация спринтов
-      if (team.sprintBoardId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/sprints/board", team.sprintBoardId] });
-      }
+      // Инвалидация timeline
+      queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
       
       // Инвалидация всех метрик (Innovation Rate, Cost Structure, Value/Cost)
       queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
@@ -1747,10 +1746,16 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team:
       
       let description = `Синхронизировано ${data.initiatives.count} инициатив`;
       if (data.sprints) {
-        if (data.sprints.sprintsProcessed === 0) {
-          description += '. Новых спринтов не найдено';
+        if (team.sprintBoardId) {
+          // Для команд со спринтами
+          if (data.sprints.sprintsProcessed === 0) {
+            description += '. Новых спринтов не найдено';
+          } else {
+            description += ` и ${data.sprints.totalSynced} задач из ${data.sprints.sprintsProcessed} новых спринтов`;
+          }
         } else {
-          description += ` и ${data.sprints.totalSynced} задач из ${data.sprints.sprintsProcessed} новых спринтов`;
+          // Для команд без спринтов
+          description += ` и ${data.sprints.totalSynced || 0} задач`;
         }
       }
       

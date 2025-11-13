@@ -314,6 +314,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (syncError) {
           console.error("[Team Creation] Sprint/Task sync error:", syncError);
         }
+      } else {
+        // Команда без спринтов - синхронизируем задачи напрямую из инициатив
+        log(`[Team Creation] No sprint board specified. Syncing tasks from initiatives for teams without sprints.`);
+        
+        try {
+          // Получаем все инициативы команды
+          const initiativeCards = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
+          log(`[Team Creation] Found ${initiativeCards.length} initiatives`);
+          
+          let totalTasksFromInitiatives = 0;
+          
+          // Для каждой инициативы получаем полную карточку с children
+          for (const initiativeCard of initiativeCards) {
+            try {
+              const fullInitiative = await kaitenClient.getCard(initiativeCard.id);
+              
+              if (fullInitiative.children && Array.isArray(fullInitiative.children)) {
+                log(`[Team Creation] Initiative ${fullInitiative.id} has ${fullInitiative.children.length} children`);
+                
+                // Фильтруем только задачи с last_moved_to_done_at
+                const completedTasks = fullInitiative.children.filter(
+                  child => child.last_moved_to_done_at != null && child.last_moved_to_done_at !== ''
+                );
+                
+                log(`[Team Creation] Found ${completedTasks.length} completed tasks in initiative ${fullInitiative.id}`);
+                
+                // Сохраняем каждую завершенную задачу
+                for (const taskCard of completedTasks) {
+                  let state: "1-queued" | "2-inProgress" | "3-done";
+                  if (taskCard.state === 3) {
+                    state = "3-done";
+                  } else if (taskCard.state === 2) {
+                    state = "2-inProgress";
+                  } else {
+                    state = "1-queued";
+                  }
+                  
+                  const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
+                  
+                  await storage.syncTaskFromKaiten(
+                    taskCard.id,
+                    taskCard.board_id,
+                    taskCard.title,
+                    taskCard.created || new Date().toISOString(),
+                    state,
+                    taskCard.size || 0,
+                    condition,
+                    taskCard.archived || false,
+                    fullInitiative.id,
+                    taskCard.type?.name,
+                    taskCard.completed_at ?? undefined,
+                    null,
+                    taskCard.last_moved_to_done_at
+                  );
+                  
+                  totalTasksFromInitiatives++;
+                }
+              }
+            } catch (initiativeError: unknown) {
+              const errorMessage = initiativeError instanceof Error ? initiativeError.message : String(initiativeError);
+              log(`[Team Creation] Error processing initiative ${initiativeCard.id}: ${errorMessage}`);
+            }
+          }
+          
+          log(`[Team Creation] Successfully synced ${totalTasksFromInitiatives} tasks from initiatives (teams without sprints)`);
+        } catch (syncError) {
+          console.error("[Team Creation] Initiative tasks sync error:", syncError);
+        }
       }
       
       res.json(team);
@@ -595,6 +663,228 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/timeline/:teamId", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const team = await storage.getTeamById(teamId);
+      
+      if (!team) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Team not found" 
+        });
+      }
+
+      const initBoardId = team.initBoardId;
+      const sprintBoardId = team.sprintBoardId;
+      const sprintDuration = team.sprintDuration || 14; // Default to 14 days if not set
+
+      if (!initBoardId) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Team missing initBoardId" 
+        });
+      }
+
+      log(`[Timeline] Team ${teamId} - initBoardId: ${initBoardId}, sprintBoardId: ${sprintBoardId}, sprintDuration: ${sprintDuration}`);
+
+      // Получаем инициативы
+      const initiatives = await storage.getInitiativesByBoardId(initBoardId);
+      log(`[Timeline] Got ${initiatives.length} initiatives from DB for board ${initBoardId}`);
+
+      // Загружаем все задачи один раз (избегаем N+1)
+      const initiativeCardIds = new Set(initiatives.map(i => i.cardId));
+      const allTasks = await storage.getAllTasks();
+      const initiativeTasks = allTasks.filter(task => initiativeCardIds.has(task.initCardId));
+      log(`[Timeline] Loaded ${initiativeTasks.length} tasks for ${initiatives.length} initiatives`);
+
+      if (sprintBoardId) {
+        // Команда со спринтами - используем реальные спринты
+        const teamSprints = await storage.getSprintsByBoardId(sprintBoardId);
+        const teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
+        log(`[Timeline] Team has ${teamSprints.length} real sprints`);
+
+        // Группируем задачи по инициативам в памяти
+        const tasksByInitiative = new Map<number, any[]>();
+        initiativeTasks
+          .filter(task => task.sprintId !== null && teamSprintIds.has(task.sprintId))
+          .forEach(task => {
+            if (!tasksByInitiative.has(task.initCardId)) {
+              tasksByInitiative.set(task.initCardId, []);
+            }
+            tasksByInitiative.get(task.initCardId)!.push(task);
+          });
+
+        // Добавляем спринты для каждой инициативы
+        const initiativesWithSprints = initiatives.map(initiative => {
+          const tasks = tasksByInitiative.get(initiative.cardId) || [];
+
+          const sprintsMap = new Map<number, { sp: number; tasks: any[] }>();
+          tasks.forEach(task => {
+            if (task.sprintId !== null) {
+              const current = sprintsMap.get(task.sprintId) || { sp: 0, tasks: [] };
+              current.sp += task.size;
+              current.tasks.push({
+                id: task.id,
+                cardId: task.cardId,
+                title: task.title,
+                type: task.type,
+                size: task.size,
+                archived: task.archived
+              });
+              sprintsMap.set(task.sprintId, current);
+            }
+          });
+
+          const sprints = Array.from(sprintsMap.entries()).map(([sprint_id, data]) => ({
+            sprint_id,
+            sp: data.sp,
+            tasks: data.tasks
+          }));
+
+          return {
+            ...initiative,
+            sprints,
+            involvement: null
+          };
+        });
+
+        // Фильтруем инициативы (с задачами, поддержка бизнеса, или в очереди)
+        const filteredInitiatives = initiativesWithSprints.filter(init => {
+          const hasSprints = init.sprints.length > 0;
+          const isSupport = init.cardId === 0;
+          const isQueued = init.state === "1-queued";
+          return hasSprints || isSupport || isQueued;
+        });
+
+        res.json({ initiatives: filteredInitiatives, sprints: teamSprints });
+      } else {
+        // Команда без спринтов - создаём виртуальные спринты
+        log(`[Timeline] Creating virtual sprints for team without sprintBoardId`);
+
+        // Фильтруем задачи без sprint_id но с doneDate
+        const tasksForVirtual = initiativeTasks.filter(task => 
+          task.sprintId === null && 
+          task.doneDate !== null && 
+          task.doneDate !== ''
+        );
+
+        log(`[Timeline] Found ${tasksForVirtual.length} tasks without sprint (with doneDate)`);
+
+        if (tasksForVirtual.length === 0) {
+          // Нет задач - возвращаем пустые спринты
+          const initiativesWithEmpty = initiatives.map(init => ({
+            ...init,
+            sprints: [],
+            involvement: null
+          }));
+          return res.json({ initiatives: initiativesWithEmpty, sprints: [] });
+        }
+
+        // Создаём виртуальные спринты
+        const sortedTasks = tasksForVirtual.sort((a, b) => {
+          const dateA = new Date(a.doneDate!);
+          const dateB = new Date(b.doneDate!);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+        const firstDate = new Date(sortedTasks[0].doneDate!);
+        const lastDate = new Date(sortedTasks[sortedTasks.length - 1].doneDate!);
+
+        const virtualSprints: any[] = [];
+        const virtualSprintTasksMap = new Map<number, any[]>();
+        let currentStartDate = new Date(firstDate);
+        let sprintNumber = 1;
+
+        while (currentStartDate <= lastDate) {
+          const currentEndDate = new Date(currentStartDate);
+          currentEndDate.setDate(currentEndDate.getDate() + sprintDuration - 1);
+
+          const sprintTasks = sortedTasks.filter(task => {
+            const taskDate = new Date(task.doneDate!);
+            return taskDate >= currentStartDate && taskDate <= currentEndDate;
+          });
+
+          if (sprintTasks.length > 0) {
+            const totalSp = sprintTasks.reduce((sum, task) => sum + task.size, 0);
+            const virtualSprintId = -(sprintNumber);
+
+            virtualSprints.push({
+              sprintId: virtualSprintId,
+              boardId: initBoardId,
+              title: `Период ${sprintNumber}`,
+              velocity: totalSp,
+              startDate: currentStartDate.toISOString(),
+              finishDate: currentEndDate.toISOString(),
+              actualFinishDate: currentEndDate.toISOString(),
+              goal: `Задачи завершенные с ${currentStartDate.toLocaleDateString('ru-RU')} по ${currentEndDate.toLocaleDateString('ru-RU')}`,
+              isVirtual: true
+            });
+
+            virtualSprintTasksMap.set(virtualSprintId, sprintTasks);
+          }
+
+          currentStartDate = new Date(currentEndDate);
+          currentStartDate.setDate(currentStartDate.getDate() + 1);
+          sprintNumber++;
+        }
+
+        log(`[Timeline] Created ${virtualSprints.length} virtual sprints`);
+
+        // Группируем задачи по инициативам и виртуальным спринтам
+        const initiativesWithSprints = initiatives.map(initiative => {
+          const sprintsMap = new Map<number, { sp: number; tasks: any[] }>();
+          
+          virtualSprintTasksMap.forEach((tasks, virtualSprintId) => {
+            const tasksForInit = tasks.filter(task => task.initCardId === initiative.cardId);
+            if (tasksForInit.length > 0) {
+              const sp = tasksForInit.reduce((sum, task) => sum + task.size, 0);
+              sprintsMap.set(virtualSprintId, {
+                sp,
+                tasks: tasksForInit.map(task => ({
+                  id: task.id,
+                  cardId: task.cardId,
+                  title: task.title,
+                  type: task.type,
+                  size: task.size,
+                  archived: task.archived
+                }))
+              });
+            }
+          });
+
+          const sprints = Array.from(sprintsMap.entries()).map(([sprint_id, data]) => ({
+            sprint_id,
+            sp: data.sp,
+            tasks: data.tasks
+          }));
+
+          return {
+            ...initiative,
+            sprints,
+            involvement: null
+          };
+        });
+
+        // Фильтруем инициативы (с задачами, поддержка бизнеса, или в очереди)
+        const filteredInitiatives = initiativesWithSprints.filter(init => {
+          const hasSprints = init.sprints.length > 0;
+          const isSupport = init.cardId === 0;
+          const isQueued = init.state === "1-queued";
+          return hasSprints || isSupport || isQueued;
+        });
+
+        res.json({ initiatives: filteredInitiatives, sprints: virtualSprints });
+      }
+    } catch (error) {
+      console.error("GET /api/timeline/:teamId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve timeline data" 
+      });
+    }
+  });
+
   app.get("/api/initiatives/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -814,6 +1104,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve task" 
+        });
+    }
+  });
+
+  app.get("/api/tasks/grouped/:initBoardId/:sprintDuration", async (req, res) => {
+    try {
+      const initBoardId = parseInt(req.params.initBoardId);
+      const sprintDuration = parseInt(req.params.sprintDuration);
+      
+      if (isNaN(initBoardId) || isNaN(sprintDuration)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid board ID or sprint duration" 
+        });
+      }
+
+      log(`[Grouped Tasks] Fetching tasks for initBoardId=${initBoardId}, sprintDuration=${sprintDuration} days`);
+
+      // Получаем все задачи без sprintId для этой доски
+      const allTasks = await storage.getAllTasks();
+      const initiativeTasks = allTasks.filter(task => 
+        task.sprintId === null && 
+        task.doneDate !== null && 
+        task.doneDate !== ''
+      );
+
+      log(`[Grouped Tasks] Found ${initiativeTasks.length} tasks without sprint (with doneDate)`);
+
+      if (initiativeTasks.length === 0) {
+        return res.json([]);
+      }
+
+      // Сортируем по дате закрытия
+      const sortedTasks = initiativeTasks.sort((a, b) => {
+        const dateA = new Date(a.doneDate!);
+        const dateB = new Date(b.doneDate!);
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      // Определяем первую и последнюю дату
+      const firstDate = new Date(sortedTasks[0].doneDate!);
+      const lastDate = new Date(sortedTasks[sortedTasks.length - 1].doneDate!);
+
+      // Создаем интервалы (виртуальные спринты)
+      const virtualSprints: any[] = [];
+      let currentStartDate = new Date(firstDate);
+      let sprintNumber = 1;
+
+      while (currentStartDate <= lastDate) {
+        const currentEndDate = new Date(currentStartDate);
+        currentEndDate.setDate(currentEndDate.getDate() + sprintDuration - 1);
+
+        // Получаем задачи для этого интервала
+        const sprintTasks = sortedTasks.filter(task => {
+          const taskDate = new Date(task.doneDate!);
+          return taskDate >= currentStartDate && taskDate <= currentEndDate;
+        });
+
+        if (sprintTasks.length > 0) {
+          const totalSp = sprintTasks.reduce((sum, task) => sum + task.size, 0);
+
+          virtualSprints.push({
+            sprintId: -(sprintNumber), // Отрицательный ID для виртуальных спринтов
+            boardId: initBoardId,
+            title: `Период ${sprintNumber}`,
+            velocity: totalSp,
+            startDate: currentStartDate.toISOString(),
+            finishDate: currentEndDate.toISOString(),
+            actualFinishDate: currentEndDate.toISOString(),
+            goal: `Задачи завершенные с ${currentStartDate.toLocaleDateString('ru-RU')} по ${currentEndDate.toLocaleDateString('ru-RU')}`,
+            isVirtual: true
+          });
+        }
+
+        // Переходим к следующему интервалу
+        currentStartDate = new Date(currentEndDate);
+        currentStartDate.setDate(currentStartDate.getDate() + 1);
+        sprintNumber++;
+      }
+
+      log(`[Grouped Tasks] Created ${virtualSprints.length} virtual sprints`);
+
+      res.json(virtualSprints);
+    } catch (error) {
+      console.error("GET /api/tasks/grouped/:initBoardId/:sprintDuration error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve grouped tasks" 
       });
     }
   });
@@ -1626,6 +2004,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/kaiten/sync-initiative-tasks/:initBoardId", async (req, res) => {
+    try {
+      const initBoardId = parseInt(req.params.initBoardId);
+      if (isNaN(initBoardId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid initiative board ID" 
+        });
+      }
+
+      log(`[Kaiten Sync Initiative Tasks] Starting sync for initiative board ${initBoardId}`);
+      
+      // Получаем все инициативы команды
+      const initiativeCards = await kaitenClient.getCardsFromBoard(initBoardId);
+      log(`[Kaiten Sync Initiative Tasks] Found ${initiativeCards.length} initiatives`);
+      
+      let totalTasksSynced = 0;
+      const syncedTasks = [];
+      
+      // Для каждой инициативы получаем полную карточку с children
+      for (const initiativeCard of initiativeCards) {
+        try {
+          const fullInitiative = await kaitenClient.getCard(initiativeCard.id);
+          
+          if (fullInitiative.children && Array.isArray(fullInitiative.children)) {
+            log(`[Kaiten Sync Initiative Tasks] Initiative ${fullInitiative.id} has ${fullInitiative.children.length} children`);
+            
+            // Фильтруем только задачи с last_moved_to_done_at
+            const completedTasks = fullInitiative.children.filter(
+              child => child.last_moved_to_done_at != null && child.last_moved_to_done_at !== ''
+            );
+            
+            log(`[Kaiten Sync Initiative Tasks] Found ${completedTasks.length} completed tasks in initiative ${fullInitiative.id}`);
+            
+            // Сохраняем каждую завершенную задачу
+            for (const taskCard of completedTasks) {
+              let state: "1-queued" | "2-inProgress" | "3-done";
+              if (taskCard.state === 3) {
+                state = "3-done";
+              } else if (taskCard.state === 2) {
+                state = "2-inProgress";
+              } else {
+                state = "1-queued";
+              }
+              
+              const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
+              
+              const synced = await storage.syncTaskFromKaiten(
+                taskCard.id,
+                taskCard.board_id,
+                taskCard.title,
+                taskCard.created || new Date().toISOString(),
+                state,
+                taskCard.size || 0,
+                condition,
+                taskCard.archived || false,
+                fullInitiative.id,
+                taskCard.type?.name,
+                taskCard.completed_at ?? undefined,
+                null,
+                taskCard.last_moved_to_done_at
+              );
+              
+              syncedTasks.push(synced);
+              totalTasksSynced++;
+            }
+          }
+        } catch (initiativeError: unknown) {
+          const errorMessage = initiativeError instanceof Error ? initiativeError.message : String(initiativeError);
+          log(`[Kaiten Sync Initiative Tasks] Error processing initiative ${initiativeCard.id}: ${errorMessage}`);
+        }
+      }
+      
+      log(`[Kaiten Sync Initiative Tasks] Successfully synced ${totalTasksSynced} tasks from ${initiativeCards.length} initiatives`);
+      
+      res.json({
+        success: true,
+        synced: totalTasksSynced,
+        initiativesProcessed: initiativeCards.length,
+        tasks: syncedTasks
+      });
+    } catch (error) {
+      console.error("POST /api/kaiten/sync-initiative-tasks/:initBoardId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to sync initiative tasks" 
+      });
+    }
+  });
+
   app.get("/api/metrics/innovation-rate", async (req, res) => {
     try {
       const teamIdsParam = req.query.teamIds as string;
@@ -1673,9 +2141,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Получаем все спринты для выбранных команд
+      // Получаем все спринты для выбранных команд (только для команд со спринтами)
+      const teamsWithSprints = validTeams.filter(team => team.sprintBoardId !== null);
       const allSprints = await Promise.all(
-        validTeams.map(team => storage.getSprintsByBoardId(team.sprintBoardId))
+        teamsWithSprints.map(team => storage.getSprintsByBoardId(team.sprintBoardId!))
       );
       
       // Фильтруем спринты по году
@@ -1798,9 +2267,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Получаем все спринты для выбранных команд
+      // Получаем все спринты для выбранных команд (только для команд со спринтами)
+      const teamsWithSprints = validTeams.filter(team => team.sprintBoardId !== null);
       const allSprints = await Promise.all(
-        validTeams.map(team => storage.getSprintsByBoardId(team.sprintBoardId))
+        teamsWithSprints.map(team => storage.getSprintsByBoardId(team.sprintBoardId!))
       );
       
       // Фильтруем спринты по году
@@ -1954,13 +2424,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Получаем инициативы для этой команды
           const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
           
-          // Получаем спринты этой команды и фильтруем по году
-          const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
-          const filteredSprints = teamSprints.filter(sprint => {
-            const sprintYear = new Date(sprint.startDate).getFullYear();
-            return sprintYear === year;
-          });
-          const teamSprintIds = new Set(filteredSprints.map(s => s.sprintId));
+          // Получаем спринты этой команды и фильтруем по году (только для команд со спринтами)
+          let teamSprintIds = new Set<number>();
+          if (team.sprintBoardId !== null) {
+            const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+            const filteredSprints = teamSprints.filter(sprint => {
+              const sprintYear = new Date(sprint.startDate).getFullYear();
+              return sprintYear === year;
+            });
+            teamSprintIds = new Set(filteredSprints.map(s => s.sprintId));
+          }
           
           // Для каждой инициативы получаем задачи, отфильтрованные по спринтам команды
           return Promise.all(

@@ -92,7 +92,7 @@ export type DepartmentWithTeamCount = Department & { teamCount: number };
 
 export const teams = pgTable("teams", {
   spaceId: integer("space_id").notNull(),
-  sprintBoardId: integer("sprint_board_id").notNull(),
+  sprintBoardId: integer("sprint_board_id"),
   initBoardId: integer("init_board_id").notNull(),
   teamId: varchar("team_id").primaryKey().default(sql`gen_random_uuid()`),
   teamName: varchar("team_name").notNull(),
@@ -102,7 +102,11 @@ export const teams = pgTable("teams", {
   spPrice: integer("sp_price").notNull(),
 });
 
-export const insertTeamSchema = createInsertSchema(teams).omit({ teamId: true });
+export const insertTeamSchema = createInsertSchema(teams)
+  .omit({ teamId: true, sprintBoardId: true })
+  .extend({
+    sprintBoardId: z.number().nullable().optional(),
+  });
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type TeamRow = typeof teams.$inferSelect;
 
@@ -148,7 +152,7 @@ export interface Team {
   velocity: number;
   sprintDuration?: number;
   initBoardId: number;
-  sprintBoardId: number;
+  sprintBoardId: number | null;
   spaceId: number;
   spPrice: number;
 }
