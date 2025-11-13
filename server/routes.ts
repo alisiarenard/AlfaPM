@@ -320,10 +320,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const currentYear = new Date().getFullYear();
               const yearStart = new Date(currentYear, 0, 1).toISOString();
               
-              log(`[Team Creation] Fetching tasks completed after ${yearStart} from board ${teamData.initBoardId}`);
+              log(`[Team Creation] Fetching tasks completed after ${yearStart} from sprint board ${teamData.sprintBoardId}`);
               
               const tasks = await kaitenClient.getCardsWithDateFilter({
-                boardId: teamData.initBoardId,
+                boardId: teamData.sprintBoardId,
                 lastMovedToDoneAtAfter: yearStart,
                 limit: 1000
               });
@@ -332,6 +332,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               for (const taskCard of tasks) {
                 try {
+                  // Пропускаем инициативные карточки (Epic, Compliance, Enabler)
+                  const cardType = taskCard.type?.name;
+                  if (cardType === 'Epic' || cardType === 'Compliance' || cardType === 'Enabler') {
+                    log(`[Team Creation] Skipping initiative card ${taskCard.id} "${taskCard.title}" (type: ${cardType})`);
+                    continue;
+                  }
+                  
                   let initCardId = 0;
                   if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
                     const parentId = taskCard.parents_ids[0];
