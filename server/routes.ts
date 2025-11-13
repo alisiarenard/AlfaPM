@@ -192,15 +192,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           log(`[Team Creation] Step 2: Syncing sprints from board ${teamData.sprintBoardId}`);
           
-          // Получаем все спринты через новый API
-          const allSprints = await kaitenClient.getAllSprints({ limit: 100 });
+          const currentYear = new Date().getFullYear();
+          let offset = 0;
+          const limit = 100;
+          let allBoardSprints: any[] = [];
+          let foundPreviousYear = false;
           
-          // Фильтруем по board_id команды
-          const boardSprints = allSprints.filter(sprint => sprint.board_id === teamData.sprintBoardId);
-          log(`[Team Creation] Found ${boardSprints.length} sprints for board ${teamData.sprintBoardId}`);
+          // Получаем спринты порциями пока не найдем спринты предыдущего года
+          while (!foundPreviousYear) {
+            log(`[Team Creation] Fetching sprints with offset ${offset}`);
+            const allSprints = await kaitenClient.getAllSprints({ limit, offset });
+            
+            if (allSprints.length === 0) {
+              log(`[Team Creation] No more sprints to fetch`);
+              break;
+            }
+            
+            // Фильтруем по board_id команды
+            const boardSprints = allSprints.filter(sprint => sprint.board_id === teamData.sprintBoardId);
+            
+            if (boardSprints.length === 0) {
+              log(`[Team Creation] No sprints found for board ${teamData.sprintBoardId} in this batch, fetching next batch`);
+              offset += limit;
+              continue;
+            }
+            
+            // Добавляем найденные спринты команды в общий массив
+            allBoardSprints.push(...boardSprints);
+            
+            // Проверяем, есть ли спринты с датами предыдущего года
+            for (const sprint of boardSprints) {
+              const startDate = new Date(sprint.start_date);
+              const startYear = startDate.getFullYear();
+              
+              if (startYear < currentYear) {
+                foundPreviousYear = true;
+                log(`[Team Creation] Found sprint with previous year date: ${sprint.start_date} (Year: ${startYear})`);
+                break;
+              }
+            }
+            
+            if (!foundPreviousYear) {
+              log(`[Team Creation] All sprints in this batch are from ${currentYear}, fetching next batch`);
+              offset += limit;
+            }
+          }
           
-          // Сохраняем спринты в БД
-          for (const sprint of boardSprints) {
+          log(`[Team Creation] Found total ${allBoardSprints.length} sprints for board ${teamData.sprintBoardId}`);
+          
+          // Сохраняем все найденные спринты в БД
+          for (const sprint of allBoardSprints) {
             await storage.syncSprintFromKaiten(
               sprint.id,
               sprint.board_id,
@@ -213,13 +254,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
           }
           
-          log(`[Team Creation] Successfully synced ${boardSprints.length} sprints`);
+          log(`[Team Creation] Successfully synced ${allBoardSprints.length} sprints`);
           
           // 3. Синхронизация тасок по спринтам
           log(`[Team Creation] Step 3: Syncing tasks for each sprint`);
           let totalTasks = 0;
           
-          for (const sprint of boardSprints) {
+          for (const sprint of allBoardSprints) {
             try {
               const kaitenSprint = await kaitenClient.getSprint(sprint.id);
               
@@ -1337,14 +1378,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Kaiten Sync All Sprints] Starting sync for board ${boardId}`);
       
-      // Шаг 1: Получаем все спринты через новый API
+      // Шаг 1: Получаем все спринты через новый API с пагинацией
       log(`[Kaiten Sync All Sprints] Step 1: Fetching all sprints from Kaiten API`);
-      const allKaitenSprints = await kaitenClient.getAllSprints({ limit: 100 });
-      log(`[Kaiten Sync All Sprints] Found ${allKaitenSprints.length} total sprints in Kaiten`);
       
-      // Шаг 2: Фильтруем спринты по board_id
-      const boardSprints = allKaitenSprints.filter(sprint => sprint.board_id === boardId);
-      log(`[Kaiten Sync All Sprints] Filtered to ${boardSprints.length} sprints for board ${boardId}`);
+      const currentYear = new Date().getFullYear();
+      let offset = 0;
+      const limit = 100;
+      let boardSprints: any[] = [];
+      let foundPreviousYear = false;
+      
+      // Получаем спринты порциями пока не найдем спринты предыдущего года
+      while (!foundPreviousYear) {
+        log(`[Kaiten Sync All Sprints] Fetching sprints with offset ${offset}`);
+        const allSprints = await kaitenClient.getAllSprints({ limit, offset });
+        
+        if (allSprints.length === 0) {
+          log(`[Kaiten Sync All Sprints] No more sprints to fetch`);
+          break;
+        }
+        
+        // Фильтруем по board_id команды
+        const batchBoardSprints = allSprints.filter(sprint => sprint.board_id === boardId);
+        
+        if (batchBoardSprints.length === 0) {
+          log(`[Kaiten Sync All Sprints] No sprints found for board ${boardId} in this batch, fetching next batch`);
+          offset += limit;
+          continue;
+        }
+        
+        // Добавляем найденные спринты команды в общий массив
+        boardSprints.push(...batchBoardSprints);
+        
+        // Проверяем, есть ли спринты с датами предыдущего года
+        for (const sprint of batchBoardSprints) {
+          const startDate = new Date(sprint.start_date);
+          const startYear = startDate.getFullYear();
+          
+          if (startYear < currentYear) {
+            foundPreviousYear = true;
+            log(`[Kaiten Sync All Sprints] Found sprint with previous year date: ${sprint.start_date} (Year: ${startYear})`);
+            break;
+          }
+        }
+        
+        if (!foundPreviousYear) {
+          log(`[Kaiten Sync All Sprints] All sprints in this batch are from ${currentYear}, fetching next batch`);
+          offset += limit;
+        }
+      }
+      
+      log(`[Kaiten Sync All Sprints] Found total ${boardSprints.length} sprints for board ${boardId}`);
       
       // Шаг 3: Получаем существующие спринты из БД для этой команды
       log(`[Kaiten Sync All Sprints] Step 2: Checking existing sprints in database`);
