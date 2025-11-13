@@ -783,6 +783,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
         log(`[Timeline] Team has ${teamSprints.length} real sprints`);
 
+        // Если спринтов нет - используем виртуальные спринты
+        if (teamSprints.length === 0) {
+          log(`[Timeline] No real sprints found. Creating virtual sprints for team with sprintBoardId`);
+
+          // Фильтруем задачи с doneDate
+          const tasksForVirtual = initiativeTasks.filter(task => 
+            task.doneDate !== null && 
+            task.doneDate !== ''
+          );
+
+          log(`[Timeline] Found ${tasksForVirtual.length} tasks with doneDate`);
+
+          if (tasksForVirtual.length === 0) {
+            // Нет задач - возвращаем пустые спринты
+            const initiativesWithEmpty = initiatives.map(init => ({
+              ...init,
+              sprints: [],
+              involvement: null
+            }));
+            return res.json({ initiatives: initiativesWithEmpty, sprints: [] });
+          }
+
+          // Создаём виртуальные спринты (копия логики из else ветки)
+          const sortedTasks = tasksForVirtual.sort((a, b) => {
+            const dateA = new Date(a.doneDate!);
+            const dateB = new Date(b.doneDate!);
+            return dateA.getTime() - dateB.getTime();
+          });
+
+          const firstDate = new Date(sortedTasks[0].doneDate!);
+          const lastDate = new Date(sortedTasks[sortedTasks.length - 1].doneDate!);
+
+          const virtualSprints: any[] = [];
+          const virtualSprintTasksMap = new Map<number, any[]>();
+          let currentStartDate = new Date(firstDate);
+          let sprintNumber = 1;
+
+          while (currentStartDate <= lastDate) {
+            const currentEndDate = new Date(currentStartDate);
+            currentEndDate.setDate(currentEndDate.getDate() + sprintDuration - 1);
+
+            const sprintTasks = sortedTasks.filter(task => {
+              const taskDate = new Date(task.doneDate!);
+              return taskDate >= currentStartDate && taskDate <= currentEndDate;
+            });
+
+            if (sprintTasks.length > 0) {
+              const virtualSprintId = -sprintNumber;
+              virtualSprints.push({
+                sprintId: virtualSprintId,
+                boardId: sprintBoardId,
+                title: `Виртуальный спринт ${sprintNumber}`,
+                velocity: 0,
+                startDate: currentStartDate.toISOString(),
+                finishDate: currentEndDate.toISOString(),
+                actualFinishDate: null,
+                goal: null,
+                isVirtual: true
+              });
+              virtualSprintTasksMap.set(virtualSprintId, sprintTasks);
+              sprintNumber++;
+            }
+
+            currentStartDate = new Date(currentEndDate);
+            currentStartDate.setDate(currentStartDate.getDate() + 1);
+          }
+
+          // Группируем задачи по инициативам
+          const tasksByInitiative = new Map<number, any[]>();
+          tasksForVirtual.forEach(task => {
+            if (task.initCardId !== null) {
+              if (!tasksByInitiative.has(task.initCardId)) {
+                tasksByInitiative.set(task.initCardId, []);
+              }
+              tasksByInitiative.get(task.initCardId)!.push(task);
+            }
+          });
+
+          const initiativesWithVirtualSprints = initiatives.map(initiative => {
+            const tasks = tasksByInitiative.get(initiative.cardId) || [];
+
+            const sprintsMap = new Map<number, { sp: number; tasks: any[] }>();
+            tasks.forEach(task => {
+              const taskDate = new Date(task.doneDate!);
+              const virtualSprint = virtualSprints.find(vs => {
+                const start = new Date(vs.startDate);
+                const end = new Date(vs.finishDate);
+                return taskDate >= start && taskDate <= end;
+              });
+
+              if (virtualSprint) {
+                const current = sprintsMap.get(virtualSprint.sprintId) || { sp: 0, tasks: [] };
+                current.sp += task.size;
+                current.tasks.push({
+                  id: task.id,
+                  cardId: task.cardId,
+                  title: task.title,
+                  type: task.type,
+                  size: task.size,
+                  archived: task.archived
+                });
+                sprintsMap.set(virtualSprint.sprintId, current);
+              }
+            });
+
+            const sprints = Array.from(sprintsMap.entries()).map(([sprint_id, data]) => ({
+              sprint_id,
+              sp: data.sp,
+              tasks: data.tasks
+            }));
+
+            return {
+              ...initiative,
+              sprints,
+              involvement: null
+            };
+          });
+
+          const filteredInitiatives = initiativesWithVirtualSprints.filter(init => {
+            const hasSprints = init.sprints.length > 0;
+            const isSupport = init.cardId === 0;
+            const isQueued = init.state === "1-queued";
+            return hasSprints || isSupport || isQueued;
+          });
+
+          return res.json({ initiatives: filteredInitiatives, sprints: virtualSprints });
+        }
+
         // Группируем задачи по инициативам в памяти
         const tasksByInitiative = new Map<number, any[]>();
         initiativeTasks
