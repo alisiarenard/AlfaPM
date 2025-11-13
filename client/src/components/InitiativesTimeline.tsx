@@ -1505,40 +1505,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm text-muted-foreground">Эффект, ₽</p>
                 <div className="text-sm font-medium flex items-center gap-2" data-testid="text-value-progress">
-                  {editingField === 'plannedValue' ? (
-                    <input
-                      ref={fieldInputRef}
-                      type="number"
-                      value={editingFieldValue}
-                      onChange={(e) => setEditingFieldValue(e.target.value)}
-                      onBlur={saveFieldEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveFieldEdit();
-                        if (e.key === 'Escape') cancelFieldEdit();
-                      }}
-                      className="w-24 px-1 py-0.5 text-sm border rounded no-arrows"
-                      data-testid="input-planned-value"
-                      disabled={savingField === 'plannedValue'}
-                    />
-                  ) : initiativeDetailsData?.type === 'Epic' ? (
-                    <button
-                      onClick={() => startFieldEditing('plannedValue', initiativeDetailsData?.plannedValue || 0)}
-                      className="transition-colors cursor-pointer"
-                      data-testid="button-edit-planned-value"
-                      disabled={savingField !== null}
-                    >
-                      {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
-                        ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
-                        : '—'}
-                    </button>
-                  ) : (
-                    <span>
-                      {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
-                        ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
-                        : '—'}
-                    </span>
-                  )}
-                  <span>{' / '}</span>
                   {editingField === 'factValue' ? (
                     <input
                       ref={fieldInputRef}
@@ -1569,6 +1535,40 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                     <span>
                       {initiativeDetailsData?.factValue !== null && initiativeDetailsData?.factValue !== undefined
                         ? initiativeDetailsData.factValue.toLocaleString('ru-RU')
+                        : '—'}
+                    </span>
+                  )}
+                  <span>{' / '}</span>
+                  {editingField === 'plannedValue' ? (
+                    <input
+                      ref={fieldInputRef}
+                      type="number"
+                      value={editingFieldValue}
+                      onChange={(e) => setEditingFieldValue(e.target.value)}
+                      onBlur={saveFieldEdit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveFieldEdit();
+                        if (e.key === 'Escape') cancelFieldEdit();
+                      }}
+                      className="w-24 px-1 py-0.5 text-sm border rounded no-arrows"
+                      data-testid="input-planned-value"
+                      disabled={savingField === 'plannedValue'}
+                    />
+                  ) : initiativeDetailsData?.type === 'Epic' ? (
+                    <button
+                      onClick={() => startFieldEditing('plannedValue', initiativeDetailsData?.plannedValue || 0)}
+                      className="transition-colors cursor-pointer"
+                      data-testid="button-edit-planned-value"
+                      disabled={savingField !== null}
+                    >
+                      {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
+                        ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
+                        : '—'}
+                    </button>
+                  ) : (
+                    <span>
+                      {initiativeDetailsData?.plannedValue !== null && initiativeDetailsData?.plannedValue !== undefined
+                        ? initiativeDetailsData.plannedValue.toLocaleString('ru-RU')
                         : '—'}
                     </span>
                   )}
