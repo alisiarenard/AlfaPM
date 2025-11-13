@@ -141,6 +141,39 @@ export class KaitenClient {
     return [];
   }
 
+  async getCardsWithDateFilter(params: {
+    boardId: number;
+    lastMovedToDoneAtAfter?: string;
+    limit?: number;
+    skip?: number;
+  }): Promise<KaitenCard[]> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('board_id', String(params.boardId));
+    
+    if (params.lastMovedToDoneAtAfter) {
+      queryParams.append('last_moved_to_done_at_after', params.lastMovedToDoneAtAfter);
+    }
+    if (params.limit !== undefined) {
+      queryParams.append('limit', String(params.limit));
+    }
+    if (params.skip !== undefined) {
+      queryParams.append('skip', String(params.skip));
+    }
+    
+    const url = `/cards?${queryParams.toString()}`;
+    log(`[Kaiten API] Fetching cards with query: ${url}`);
+    
+    const response = await this.makeRequest<KaitenCard[]>(url);
+    
+    if (Array.isArray(response)) {
+      log(`[Kaiten API] Found ${response.length} cards`);
+      return response;
+    }
+    
+    log(`[Kaiten API] No cards found`);
+    return [];
+  }
+
   async getSprint(sprintId: number): Promise<KaitenSprintResponse> {
     log(`[Kaiten API] Fetching sprint ${sprintId}`);
     return this.makeRequest<KaitenSprintResponse>(`/sprints/${sprintId}`);
