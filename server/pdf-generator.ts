@@ -17,7 +17,7 @@ interface InitiativeWithTasks {
 
 export async function generateSprintReportPDF(
   teamName: string,
-  sprintDates: string,
+  sprintDates: string | { start: string; end: string },
   initiatives: InitiativeWithTasks[]
 ): Promise<Buffer> {
   return new Promise(async (resolve, reject) => {
@@ -33,10 +33,24 @@ export async function generateSprintReportPDF(
       doc.registerFont('DejaVu', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
       doc.registerFont('DejaVu-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf');
 
+      // Форматируем даты для отображения
+      let formattedDates: string;
+      if (typeof sprintDates === 'object') {
+        // Виртуальный спринт - форматируем даты из объекта
+        const formatDate = (dateStr: string) => {
+          const date = new Date(dateStr);
+          return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        };
+        formattedDates = `${formatDate(sprintDates.start)} - ${formatDate(sprintDates.end)}`;
+      } else {
+        // Реальный спринт - используем готовую строку
+        formattedDates = sprintDates;
+      }
+
       // Заголовок отчета
       doc.font('DejaVu-Bold').fontSize(16).text(`Отчет по спринту`, { align: 'center' });
       doc.moveDown(0.5);
-      doc.font('DejaVu').fontSize(12).text(`Команда ${teamName} в спринте ${sprintDates} выполнила следующие задачи:`, { align: 'left' });
+      doc.font('DejaVu').fontSize(12).text(`Команда ${teamName} в спринте ${formattedDates} выполнила следующие задачи:`, { align: 'left' });
       doc.moveDown(1);
 
       // Обрабатываем каждую инициативу
