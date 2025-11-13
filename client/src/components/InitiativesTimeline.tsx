@@ -47,7 +47,7 @@ interface InitiativeProgress {
 
 interface SprintModalData {
   sprintTitle: string;
-  sprintDates: string;
+  sprintDates: string | { start: string; end: string };
   goal: string | null;
   initiatives: InitiativeProgress[];
   businessSupportSP: number;
@@ -549,10 +549,20 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     
     if (initiativesProgress.length === 0) return;
     
-    // Форматируем даты спринта
-    const sprintDates = sprintInfo 
-      ? `${formatDate(sprintInfo.startDate)} - ${formatDate(sprintInfo.actualFinishDate || sprintInfo.finishDate)}`
-      : '';
+    // Для виртуальных спринтов передаем объект с датами, для реальных - строку
+    let sprintDates: string | { start: string; end: string };
+    if (sprintInfo && sprintId >= 0) {
+      // Реальный спринт - форматированная строка
+      sprintDates = `${formatDate(sprintInfo.startDate)} - ${formatDate(sprintInfo.actualFinishDate || sprintInfo.finishDate)}`;
+    } else if (sprintInfo) {
+      // Виртуальный спринт - объект с датами
+      sprintDates = {
+        start: sprintInfo.startDate,
+        end: sprintInfo.actualFinishDate || sprintInfo.finishDate
+      };
+    } else {
+      sprintDates = '';
+    }
     
     setSprintModalData({
       sprintTitle: sprintInfo?.title || `Спринт ${sprintId}`,
@@ -1631,7 +1641,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           <DialogHeader className="px-6 pt-[0.7rem] pb-4 border-b border-border">
             <DialogTitle className="text-lg font-semibold">
               <div>
-                <div>Спринт {sprintModalData?.sprintDates || ''}</div>
+                <div>
+                  Спринт {typeof sprintModalData?.sprintDates === 'object' 
+                    ? `${formatDate(sprintModalData.sprintDates.start)} - ${formatDate(sprintModalData.sprintDates.end)}`
+                    : sprintModalData?.sprintDates || ''}
+                </div>
                 {sprintModalData?.goal && (
                   <p className="text-xs text-muted-foreground mt-0" data-testid="sprint-goal">
                     {sprintModalData.goal}
