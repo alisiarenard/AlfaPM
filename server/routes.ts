@@ -257,56 +257,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
           log(`[Team Creation] Successfully synced ${allBoardSprints.length} sprints`);
           
           // 3. Синхронизация тасок по спринтам
-          log(`[Team Creation] Step 3: Syncing tasks for each sprint`);
+          log(`[Team Creation] Step 3: Syncing tasks`);
           let totalTasks = 0;
           
-          for (const sprint of allBoardSprints) {
+          if (allBoardSprints.length > 0) {
+            // Есть спринты - синхронизируем задачи из них
+            log(`[Team Creation] Syncing tasks from ${allBoardSprints.length} sprints`);
+            for (const sprint of allBoardSprints) {
+              try {
+                const kaitenSprint = await kaitenClient.getSprint(sprint.id);
+                
+                if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
+                  for (const sprintCard of kaitenSprint.cards) {
+                    const card = await kaitenClient.getCard(sprintCard.id);
+                    
+                    let initCardId = 0;
+                    if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                      const parentInitiative = await storage.getInitiativeByCardId(card.parents_ids[0]);
+                      initCardId = parentInitiative ? card.parents_ids[0] : 0;
+                    }
+                    
+                    let state: "1-queued" | "2-inProgress" | "3-done";
+                    if (card.state === 3) {
+                      state = "3-done";
+                    } else if (card.state === 2) {
+                      state = "2-inProgress";
+                    } else {
+                      state = "1-queued";
+                    }
+                    
+                    const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+                    
+                    await storage.syncTaskFromKaiten(
+                      card.id,
+                      card.board_id,
+                      card.title,
+                      card.created || new Date().toISOString(),
+                      state,
+                      card.size || 0,
+                      condition,
+                      card.archived || false,
+                      initCardId,
+                      card.type?.name,
+                      card.completed_at ?? undefined,
+                      sprint.id,
+                      card.last_moved_to_done_at ?? null
+                    );
+                    
+                    totalTasks++;
+                  }
+                }
+              } catch (sprintError: unknown) {
+                const errorMessage = sprintError instanceof Error ? sprintError.message : String(sprintError);
+                log(`[Team Creation] Error syncing tasks for sprint ${sprint.id}: ${errorMessage}`);
+              }
+            }
+          } else {
+            // Нет спринтов - используем date filter API
+            log(`[Team Creation] No sprints found. Using Kaiten API with date filter for tasks.`);
             try {
-              const kaitenSprint = await kaitenClient.getSprint(sprint.id);
+              const currentYear = new Date().getFullYear();
+              const yearStart = new Date(currentYear, 0, 1).toISOString();
               
-              if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
-                for (const sprintCard of kaitenSprint.cards) {
-                  const card = await kaitenClient.getCard(sprintCard.id);
-                  
+              log(`[Team Creation] Fetching tasks completed after ${yearStart} from board ${teamData.initBoardId}`);
+              
+              const tasks = await kaitenClient.getCardsWithDateFilter({
+                boardId: teamData.initBoardId,
+                lastMovedToDoneAtAfter: yearStart,
+                limit: 1000
+              });
+              
+              log(`[Team Creation] Found ${tasks.length} tasks completed after ${yearStart}`);
+              
+              for (const taskCard of tasks) {
+                try {
                   let initCardId = 0;
-                  if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                    const parentInitiative = await storage.getInitiativeByCardId(card.parents_ids[0]);
-                    initCardId = parentInitiative ? card.parents_ids[0] : 0;
+                  if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
+                    const parentId = taskCard.parents_ids[0];
+                    const parentInitiative = await storage.getInitiativeByCardId(parentId);
+                    if (parentInitiative) {
+                      initCardId = parentId;
+                      log(`[Team Creation] Task ${taskCard.id} linked to initiative ${parentId}`);
+                    }
                   }
                   
                   let state: "1-queued" | "2-inProgress" | "3-done";
-                  if (card.state === 3) {
+                  if (taskCard.state === 3) {
                     state = "3-done";
-                  } else if (card.state === 2) {
+                  } else if (taskCard.state === 2) {
                     state = "2-inProgress";
                   } else {
                     state = "1-queued";
                   }
                   
-                  const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+                  const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
                   
                   await storage.syncTaskFromKaiten(
-                    card.id,
-                    card.board_id,
-                    card.title,
-                    card.created || new Date().toISOString(),
+                    taskCard.id,
+                    taskCard.board_id,
+                    taskCard.title,
+                    taskCard.created || new Date().toISOString(),
                     state,
-                    card.size || 0,
+                    taskCard.size || 0,
                     condition,
-                    card.archived || false,
+                    taskCard.archived || false,
                     initCardId,
-                    card.type?.name,
-                    card.completed_at ?? undefined,
-                    sprint.id,
-                    card.last_moved_to_done_at ?? null
+                    taskCard.type?.name,
+                    taskCard.completed_at ?? undefined,
+                    null,
+                    taskCard.last_moved_to_done_at
                   );
                   
                   totalTasks++;
+                } catch (taskError: unknown) {
+                  const errorMessage = taskError instanceof Error ? taskError.message : String(taskError);
+                  log(`[Team Creation] Error syncing task ${taskCard.id}: ${errorMessage}`);
                 }
               }
-            } catch (sprintError: unknown) {
-              const errorMessage = sprintError instanceof Error ? sprintError.message : String(sprintError);
-              log(`[Team Creation] Error syncing tasks for sprint ${sprint.id}: ${errorMessage}`);
+            } catch (dateFilterError) {
+              console.error("[Team Creation] Task sync with date filter error:", dateFilterError);
             }
           }
           
