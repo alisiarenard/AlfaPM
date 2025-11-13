@@ -1466,7 +1466,7 @@ export default function HomePage() {
                         />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="velocity">Velocity</Label>
+                        <Label htmlFor="velocity">Velocity <span className="text-destructive">*</span></Label>
                         <Input
                           id="velocity"
                           type="number"
@@ -1480,7 +1480,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="sprint-duration">Длительность спринта (дней)</Label>
+                        <Label htmlFor="sprint-duration">Длительность спринта (дней) <span className="text-destructive">*</span></Label>
                         <Input
                           id="sprint-duration"
                           type="number"
@@ -1613,7 +1613,7 @@ export default function HomePage() {
                         />
                       </div>
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="new-velocity">Velocity</Label>
+                        <Label htmlFor="new-velocity">Velocity <span className="text-destructive">*</span></Label>
                         <Input
                           id="new-velocity"
                           type="number"
@@ -1627,7 +1627,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <Label htmlFor="new-sprint-duration">Длительность спринта (дней)</Label>
+                        <Label htmlFor="new-sprint-duration">Длительность спринта (дней) <span className="text-destructive">*</span></Label>
                         <Input
                           id="new-sprint-duration"
                           type="number"
