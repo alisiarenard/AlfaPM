@@ -2061,26 +2061,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         log(`[Kaiten Sync All Sprints] No sprints found on board ${boardId}. Using date filter API fallback.`);
         
         // Team уже загружен в начале endpoint, используем его
-        log(`[Kaiten Sync All Sprints] Using team ${team.teamName}, initBoardId=${team.initBoardId} for task sync`);
+        log(`[Kaiten Sync All Sprints] Using team ${team.teamName}, sprintBoardId=${boardId} for task sync`);
         
         // Используем date filter API для получения задач
         const currentYear = new Date().getFullYear();
         const yearStart = new Date(currentYear, 0, 1).toISOString();
         
-        log(`[Kaiten Sync All Sprints] Fetching tasks completed after ${yearStart} from board ${team.initBoardId}`);
+        log(`[Kaiten Sync All Sprints] Fetching tasks completed after ${yearStart} from sprint board ${boardId}`);
         
         const tasks = await kaitenClient.getCardsWithDateFilter({
-          boardId: team.initBoardId,
+          boardId: boardId,
           lastMovedToDoneAtAfter: yearStart,
           limit: 1000
         });
         
-        log(`[Kaiten Sync All Sprints] Found ${tasks.length} tasks completed after ${yearStart}`);
+        log(`[Kaiten Sync All Sprints] Found ${tasks.length} cards from board ${boardId}`);
         
         let totalTasksSynced = 0;
         
         for (const taskCard of tasks) {
           try {
+            // Пропускаем инициативные карточки (Epic, Compliance, Enabler)
+            const cardType = taskCard.type?.name;
+            if (cardType === 'Epic' || cardType === 'Compliance' || cardType === 'Enabler') {
+              log(`[Kaiten Sync All Sprints] Skipping initiative card ${taskCard.id} "${taskCard.title}" (type: ${cardType})`);
+              continue;
+            }
+            
             let initCardId = 0;
             if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
               const parentId = taskCard.parents_ids[0];
