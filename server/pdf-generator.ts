@@ -1,8 +1,14 @@
 import PDFDocument from 'pdfkit';
 import OpenAI from 'openai';
 
+// AI Configuration
+const AI_API_KEY = process.env.OPENAI_API_KEY || '';
+const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
+const AI_BASE_URL = process.env.AI_BASE_URL || undefined;
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
+  apiKey: AI_API_KEY,
+  baseURL: AI_BASE_URL,
 });
 
 interface Task {
@@ -113,7 +119,7 @@ async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: str
       while (retries < 3) {
         try {
           response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
+            model: AI_MODEL,
             messages: [
               { role: 'system', content: 'Сокращай задачи до 5-7 слов, сохраняя суть.' },
               { role: 'user', content: prompt }

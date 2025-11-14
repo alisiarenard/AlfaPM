@@ -22,7 +22,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for tooling,
 - **Team Selection Menu:** Multi-select teams within a department, with an option to download Excel reports.
 - **URL-Based Filter State:** Complete bidirectional synchronization between URL parameters and filter state, enabling shareable links and browser history navigation. URL parameters include dept (department ID), year (2025/2026), teams (comma-separated IDs), active (boolean flag), and tab (active team tab ID). State automatically restores from URL on page load and updates during browser back/forward navigation via popstate events.
 - **Excel Report Download:** Generates client-side Excel files with "Cost Structure" and "Initiatives" sheets. The "Initiatives" sheet groups initiatives by `cardId`, sums costs for shared initiatives, and applies specific value calculations for Compliance and Enabler initiatives.
-- **AI-Powered Sprint PDF Reports:** Generates downloadable PDF reports for sprints with AI-processed task summaries. Tasks are grouped by initiatives, shortened via OpenAI API (5-7 words), and labeled with (back)/(front) tags for backend/frontend work. "Поддержка бизнеса" tasks appear under "Другие задачи". Optimized with batched AI requests (20 tasks per batch), max_tokens limit, and graceful fallback to original text on API errors.
+- **AI-Powered Sprint PDF Reports:** Generates downloadable PDF reports for sprints with AI-processed task summaries. Tasks are grouped by initiatives, shortened via configurable AI model (5-7 words), and labeled with (back)/(front) tags for backend/frontend work. "Поддержка бизнеса" tasks appear under "Другие задачи". Optimized with batched AI requests (20 tasks per batch), max_tokens limit, and graceful fallback to original text on API errors. AI configuration is flexible via .env file, supporting OpenAI, Azure OpenAI, and compatible APIs.
 - **Metrics Card:** Displays Innovation Rate and Value/Cost metrics with smooth loading transitions.
 - **Initiatives Timeline:** Core visualization with sticky columns and scrollable sprint columns.
     - **Status Icons:** Material Design icons indicate initiative status.
@@ -75,6 +75,26 @@ PostgreSQL (via Neon) is the primary data store, managed with Drizzle ORM.
 - `sprints`: Sprint details (ID, board_id, title, velocity, dates).
 - Schema defined in `shared/schema.ts`, migrations managed by Drizzle-kit.
 
+## Configuration
+
+**AI Configuration (.env file):**
+The application uses AI to generate sprint reports with shortened task summaries. Configuration is managed via environment variables in `.env` file:
+
+- `OPENAI_API_KEY`: API key for OpenAI or compatible service (required)
+- `AI_MODEL`: Model to use for task summarization (default: `gpt-4o-mini`)
+  - Examples: `gpt-4o-mini`, `gpt-4o`, `gpt-3.5-turbo`, `gpt-4-turbo`
+- `AI_BASE_URL`: Custom API endpoint URL (optional)
+  - Default: `https://api.openai.com/v1`
+  - Azure OpenAI: `https://your-resource.openai.azure.com/openai/deployments/your-deployment`
+  - Local models: `http://localhost:1234/v1`
+
+**Setup Instructions:**
+1. Copy `.env.example` to `.env`
+2. Configure your AI credentials and preferences
+3. Restart the application to apply changes
+
+The flexible configuration allows using any OpenAI-compatible API, including Azure OpenAI, local models (LM Studio, Ollama), or other providers.
+
 ## External Dependencies
 
 **Database:**
@@ -93,7 +113,7 @@ PostgreSQL (via Neon) is the primary data store, managed with Drizzle ORM.
 - `cmdk`
 - `react-hook-form`
 - `xlsx` (SheetJS)
-- `openai` (for AI task summarization)
+- `openai` (for AI task summarization - configurable via .env)
 - `pdfkit` (PDF generation)
 
 **Build & Development Tools:**
