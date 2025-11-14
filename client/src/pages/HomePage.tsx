@@ -1031,12 +1031,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
-        <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
-          <div className="flex items-center gap-3">
-            <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
-            <h2 className="text-lg font-bold text-foreground">Продуктовые метрики</h2>
-          </div>
+      <div className="border-b border-border bg-card">
+        <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div className="flex items-center gap-3">
+              <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
+              <h2 className="text-lg font-bold text-foreground">AlfaPM</h2>
+            </div>
           <div className="flex items-center gap-3">
             <Select 
               value={selectedDepartment} 
@@ -1089,7 +1090,9 @@ export default function HomePage() {
             </Button>
           </div>
         </div>
-        
+      </div>
+      
+      <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
         <div className="p-6">
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -1329,6 +1332,7 @@ export default function HomePage() {
           )}
         </div>
       </div>
+    </div>
       
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
