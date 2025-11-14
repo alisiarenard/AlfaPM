@@ -2478,7 +2478,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const sprintIds = new Set(yearSprints.map(s => s.sprintId));
             const allTasks = await storage.getAllTasks();
             const teamSprintTasks = allTasks.filter(task => 
-              task.sprintId !== null && sprintIds.has(task.sprintId) && !processedTaskIds.has(task.cardId)
+              task.teamId === team.teamId &&
+              task.sprintId !== null && 
+              sprintIds.has(task.sprintId) && 
+              !processedTaskIds.has(task.cardId)
             );
             teamSprintTasks.forEach(task => {
               relevantTasks.push(task);
@@ -2608,32 +2611,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Получаем все спринты для выбранных команд (только для команд со спринтами)
-      const teamsWithSprints = validTeams.filter(team => team.sprintBoardId !== null);
-      const allSprints = await Promise.all(
-        teamsWithSprints.map(team => storage.getSprintsByBoardId(team.sprintBoardId!))
-      );
-      
-      // Фильтруем спринты по году
+      // Фильтруем по году
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31, 23, 59, 59);
       
-      const yearSprints = allSprints.flat().filter(sprint => {
-        const sprintStart = new Date(sprint.startDate);
-        return sprintStart >= yearStart && sprintStart <= yearEnd;
-      });
+      // Получаем задачи из двух источников:
+      // 1. Из реальных спринтов для команд со спринтами
+      // 2. По doneDate для команд без спринтов
+      const relevantTasks: TaskRow[] = [];
+      const processedTaskIds = new Set<number>();
       
-      const sprintIds = new Set(yearSprints.map(s => s.sprintId));
+      for (const team of validTeams) {
+        if (team.sprintBoardId !== null) {
+          // Получаем спринты команды
+          const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+          const yearSprints = teamSprints.filter(sprint => {
+            const sprintStart = new Date(sprint.startDate);
+            return sprintStart >= yearStart && sprintStart <= yearEnd;
+          });
+          
+          if (yearSprints.length > 0) {
+            // Команда имеет реальные спринты в этом году - берем задачи из спринтов
+            const sprintIds = new Set(yearSprints.map(s => s.sprintId));
+            const allTasks = await storage.getAllTasks();
+            const teamSprintTasks = allTasks.filter(task => 
+              task.teamId === team.teamId &&
+              task.sprintId !== null && 
+              sprintIds.has(task.sprintId) && 
+              !processedTaskIds.has(task.cardId)
+            );
+            teamSprintTasks.forEach(task => {
+              relevantTasks.push(task);
+              processedTaskIds.add(task.cardId);
+            });
+            log(`[Cost Structure] Team ${team.teamId}: found ${teamSprintTasks.length} tasks in ${yearSprints.length} sprints`);
+          } else {
+            // Команда не имеет реальных спринтов в этом году - берем по doneDate
+            const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
+            const newTasks = teamTasks.filter(task => !processedTaskIds.has(task.cardId));
+            newTasks.forEach(task => {
+              relevantTasks.push(task);
+              processedTaskIds.add(task.cardId);
+            });
+            log(`[Cost Structure] Team ${team.teamId}: found ${newTasks.length} tasks by doneDate (no sprints in year)`);
+          }
+        } else {
+          // Команда вообще без спринтовой доски - берем по doneDate
+          const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
+          const newTasks = teamTasks.filter(task => !processedTaskIds.has(task.cardId));
+          newTasks.forEach(task => {
+            relevantTasks.push(task);
+            processedTaskIds.add(task.cardId);
+          });
+          log(`[Cost Structure] Team ${team.teamId}: found ${newTasks.length} tasks by doneDate (no sprint board)`);
+        }
+      }
       
-      log(`[Cost Structure] Found ${sprintIds.size} sprints in year ${year}`);
-
-      // Получаем все таски из этих спринтов
-      const allTasks = await storage.getAllTasks();
-      const relevantTasks = allTasks.filter(task => 
-        task.sprintId !== null && sprintIds.has(task.sprintId)
-      );
-      
-      log(`[Cost Structure] Found ${relevantTasks.length} tasks in selected sprints`);
+      log(`[Cost Structure] Found total ${relevantTasks.length} unique tasks across all teams`);
 
       // Получаем все инициативы для выбранных команд
       const allInitiatives = await Promise.all(
@@ -2765,34 +2799,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Получаем инициативы для этой команды
           const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
           
-          // Получаем спринты этой команды и фильтруем по году (только для команд со спринтами)
+          // Определяем способ получения задач команды
+          const yearStart = new Date(year, 0, 1);
+          const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+          let useSprintFilter = false;
           let teamSprintIds = new Set<number>();
+          
           if (team.sprintBoardId !== null) {
             const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
             const filteredSprints = teamSprints.filter(sprint => {
               const sprintYear = new Date(sprint.startDate).getFullYear();
               return sprintYear === year;
             });
-            teamSprintIds = new Set(filteredSprints.map(s => s.sprintId));
+            if (filteredSprints.length > 0) {
+              useSprintFilter = true;
+              teamSprintIds = new Set(filteredSprints.map(s => s.sprintId));
+              log(`[Value/Cost] Team ${team.teamId}: using sprint filter with ${filteredSprints.length} sprints`);
+            } else {
+              log(`[Value/Cost] Team ${team.teamId}: no sprints in year ${year}, using doneDate filter`);
+            }
+          } else {
+            log(`[Value/Cost] Team ${team.teamId}: no sprint board, using doneDate filter`);
           }
           
-          // Для каждой инициативы получаем задачи, отфильтрованные по спринтам команды
+          // Для каждой инициативы получаем задачи, отфильтрованные по спринтам команды или по doneDate
           return Promise.all(
             initiatives.map(async (initiative) => {
               const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
               
-              // Фильтруем только задачи из спринтов этой команды
-              const tasks = allTasks.filter(task => 
-                task.sprintId !== null && teamSprintIds.has(task.sprintId)
-              );
+              // Фильтруем задачи в зависимости от типа команды
+              let tasks: TaskRow[];
+              if (useSprintFilter) {
+                // Команда со спринтами - фильтруем по спринтам
+                tasks = allTasks.filter(task => 
+                  task.sprintId !== null && teamSprintIds.has(task.sprintId)
+                );
+              } else {
+                // Команда без спринтов - фильтруем по doneDate и teamId
+                tasks = allTasks.filter(task => 
+                  task.teamId === team.teamId && 
+                  task.doneDate !== null &&
+                  task.doneDate !== '' &&
+                  new Date(task.doneDate) >= yearStart &&
+                  new Date(task.doneDate) <= yearEnd
+                );
+              }
               
-              // Группируем по sprint_id
+              log(`[Value/Cost] Initiative ${initiative.cardId} "${initiative.title}": found ${allTasks.length} tasks total, ${tasks.length} tasks after filter (useSprintFilter=${useSprintFilter})`);
+              
+              // Группируем по sprint_id (для команд со спринтами) или используем виртуальный sprint_id (для команд без)
               const sprintsMap = new Map<number, { sp: number }>();
               tasks.forEach(task => {
-                if (task.sprintId !== null) {
-                  const current = sprintsMap.get(task.sprintId) || { sp: 0 };
+                if (useSprintFilter) {
+                  // Для команд со спринтами - группируем по реальному sprint_id
+                  if (task.sprintId !== null) {
+                    const current = sprintsMap.get(task.sprintId) || { sp: 0 };
+                    current.sp += task.size;
+                    sprintsMap.set(task.sprintId, current);
+                  }
+                } else {
+                  // Для команд без спринтов - используем виртуальный sprint_id = -1
+                  const virtualSprintId = -1;
+                  const current = sprintsMap.get(virtualSprintId) || { sp: 0 };
                   current.sp += task.size;
-                  sprintsMap.set(task.sprintId, current);
+                  sprintsMap.set(virtualSprintId, current);
                 }
               });
               
