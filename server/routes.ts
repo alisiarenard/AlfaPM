@@ -2454,32 +2454,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Получаем все спринты для выбранных команд (только для команд со спринтами)
-      const teamsWithSprints = validTeams.filter(team => team.sprintBoardId !== null);
-      const allSprints = await Promise.all(
-        teamsWithSprints.map(team => storage.getSprintsByBoardId(team.sprintBoardId!))
-      );
-      
-      // Фильтруем спринты по году
+      // Фильтруем по году
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31, 23, 59, 59);
       
-      const yearSprints = allSprints.flat().filter(sprint => {
-        const sprintStart = new Date(sprint.startDate);
-        return sprintStart >= yearStart && sprintStart <= yearEnd;
-      });
+      // Получаем задачи из двух источников:
+      // 1. Из реальных спринтов для команд со спринтами
+      // 2. По doneDate для команд без спринтов
+      const relevantTasks: TaskRow[] = [];
+      const processedTaskIds = new Set<number>();
       
-      const sprintIds = new Set(yearSprints.map(s => s.sprintId));
+      for (const team of validTeams) {
+        if (team.sprintBoardId !== null) {
+          // Получаем спринты команды
+          const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+          const yearSprints = teamSprints.filter(sprint => {
+            const sprintStart = new Date(sprint.startDate);
+            return sprintStart >= yearStart && sprintStart <= yearEnd;
+          });
+          
+          if (yearSprints.length > 0) {
+            // Команда имеет реальные спринты в этом году - берем задачи из спринтов
+            const sprintIds = new Set(yearSprints.map(s => s.sprintId));
+            const allTasks = await storage.getAllTasks();
+            const teamSprintTasks = allTasks.filter(task => 
+              task.sprintId !== null && sprintIds.has(task.sprintId) && !processedTaskIds.has(task.cardId)
+            );
+            teamSprintTasks.forEach(task => {
+              relevantTasks.push(task);
+              processedTaskIds.add(task.cardId);
+            });
+            log(`[Innovation Rate] Team ${team.teamId}: found ${teamSprintTasks.length} tasks in ${yearSprints.length} sprints`);
+          } else {
+            // Команда не имеет реальных спринтов в этом году - берем по doneDate
+            const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
+            const newTasks = teamTasks.filter(task => !processedTaskIds.has(task.cardId));
+            newTasks.forEach(task => {
+              relevantTasks.push(task);
+              processedTaskIds.add(task.cardId);
+            });
+            log(`[Innovation Rate] Team ${team.teamId}: found ${newTasks.length} tasks by doneDate (no sprints in year)`);
+          }
+        } else {
+          // Команда вообще без спринтовой доски - берем по doneDate
+          const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
+          const newTasks = teamTasks.filter(task => !processedTaskIds.has(task.cardId));
+          newTasks.forEach(task => {
+            relevantTasks.push(task);
+            processedTaskIds.add(task.cardId);
+          });
+          log(`[Innovation Rate] Team ${team.teamId}: found ${newTasks.length} tasks by doneDate (no sprint board)`);
+        }
+      }
       
-      log(`[Innovation Rate] Found ${sprintIds.size} sprints in year ${year}`);
-
-      // Получаем все таски из этих спринтов
-      const allTasks = await storage.getAllTasks();
-      const relevantTasks = allTasks.filter(task => 
-        task.sprintId !== null && sprintIds.has(task.sprintId)
-      );
-      
-      log(`[Innovation Rate] Found ${relevantTasks.length} tasks in selected sprints`);
+      log(`[Innovation Rate] Found total ${relevantTasks.length} unique tasks across all teams`);
 
       // Получаем все инициативы для выбранных команд
       const allInitiatives = await Promise.all(
