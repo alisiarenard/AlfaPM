@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/neon-http";
-import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as schema from "@shared/schema";
 
 console.log("[DB] Initializing database connection...");
@@ -11,12 +11,11 @@ if (!process.env.DATABASE_URL) {
 
 console.log("[DB] DATABASE_URL is set");
 
-const databaseUrl = process.env.DATABASE_URL.includes('?')
-  ? `${process.env.DATABASE_URL}&pooled=true`
-  : `${process.env.DATABASE_URL}?pooled=true`;
+// Создаем пул подключений для локального PostgreSQL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
-const sql = neon(databaseUrl);
-
-export const db = drizzle(sql, { schema });
+export const db = drizzle(pool, { schema });
 
 console.log("[DB] Database connection initialized successfully");
