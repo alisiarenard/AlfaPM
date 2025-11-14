@@ -2951,12 +2951,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         log(`[Value/Cost] Init ${cardId} total costs: planned=${totalPlannedCost}, actual=${totalActualCost}`);
         
         // Для Epic получаем plannedValue и factValue из БД
-        const plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
-          ? parseFloat(firstInit.plannedValue) 
-          : 0;
-        const factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
-          ? parseFloat(firstInit.factValue) 
-          : 0;
+        // Для Compliance и Enabler: plannedValue = plannedCost, factValue = actualCost
+        let plannedValue = 0;
+        let factValue = 0;
+        
+        if (firstInit.type === 'Compliance' || firstInit.type === 'Enabler') {
+          // Для Compliance/Enabler value всегда равен cost
+          plannedValue = totalPlannedCost;
+          factValue = totalActualCost;
+        } else {
+          // Для Epic берем из БД
+          plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' 
+            ? parseFloat(firstInit.plannedValue) 
+            : 0;
+          factValue = firstInit.factValue && firstInit.factValue.trim() !== '' 
+            ? parseFloat(firstInit.factValue) 
+            : 0;
+        }
         
         // Добавляем только если есть ФАКТИЧЕСКИЕ затраты у выбранных команд
         if (totalActualCost > 0) {
