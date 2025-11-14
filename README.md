@@ -123,6 +123,17 @@ OPENAI_API_KEY=your_openai_api_key
 
 ### Шаг 4: Инициализация базы данных
 
+**Для локальной разработки** используйте команду с загрузкой `.env` файла:
+
+```bash
+# Для Node.js v20.6+
+node --env-file=.env ./node_modules/drizzle-kit/bin.cjs push
+
+# Для Windows (PowerShell)
+node --env-file=.env .\node_modules\drizzle-kit\bin.cjs push
+```
+
+**На Replit** можно использовать обычную команду (переменные загружаются автоматически):
 ```bash
 npm run db:push
 ```
@@ -239,11 +250,25 @@ AI_BASE_URL=https://api.openai.com/v1  # Опционально
 
 ## Скрипты
 
+### Для локальной разработки (с загрузкой .env)
+
+```bash
+# Запуск приложения
+npm run dev
+
+# Инициализация БД
+node --env-file=.env ./node_modules/drizzle-kit/bin.cjs push
+
+# Windows (PowerShell)
+node --env-file=.env .\node_modules\drizzle-kit\bin.cjs push
+```
+
+### Для Replit (переменные из Secrets)
+
 ```bash
 npm run dev        # Запуск в режиме разработки
 npm run build      # Сборка для продакшена
 npm run db:push    # Синхронизация схемы БД
-npm run db:studio  # Открыть Drizzle Studio
 ```
 
 ## Лицензия
