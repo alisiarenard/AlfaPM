@@ -2923,9 +2923,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const [cardId, relatedInitiatives] of Array.from(initiativesByCardId.entries())) {
         const firstInit = relatedInitiatives[0];
         
-        // Считаем Value/Cost только для Epic инициатив
-        if (firstInit.type !== 'Epic') continue;
-        
         // Фильтруем только инициативы выбранных команд
         const teamFilteredInitiatives = relatedInitiatives.filter(init => teamIds.includes(init.teamId));
         
