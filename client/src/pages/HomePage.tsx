@@ -351,6 +351,10 @@ export default function HomePage() {
         // Иначе выбираем первую команду
         setActiveTab(departmentTeams[0].teamId);
       }
+    } else if (departmentTeams && departmentTeams.length === 0) {
+      // Если департамент пустой, сбрасываем activeTab и selectedTeams
+      setActiveTab("");
+      setSelectedTeams(new Set());
     }
   }, [departmentTeams]);
 
@@ -1044,9 +1048,8 @@ export default function HomePage() {
                     key={dept.id} 
                     value={dept.id} 
                     data-testid={`option-department-${dept.id}`}
-                    disabled={dept.teamCount === 0}
                   >
-                    {dept.department}
+                    {dept.department} {dept.teamCount === 0 ? "(нет команд)" : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
