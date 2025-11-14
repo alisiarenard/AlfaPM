@@ -145,25 +145,21 @@ npm run db:push
 
 ### Шаг 5: Запуск приложения
 
-**Для Windows (PowerShell):**
-
-```powershell
-npx cross-env NODE_ENV=development tsx server/index.ts
-```
-
-**Для macOS/Linux:**
-
-```bash
-npm run dev
-```
-
-**Для всех платформ (универсальный способ):**
+**Универсальная команда (работает на всех платформах):**
 
 ```bash
 npx tsx server/index.ts
 ```
 
+**Для macOS/Linux (альтернатива):**
+
+```bash
+npm run dev
+```
+
 Приложение будет доступно по адресу: `http://localhost:5000`
+
+> **Примечание:** Переменные из `.env` файла загружаются автоматически при запуске. Убедитесь, что файл `.env` настроен правильно.
 
 ## Структура проекта
 
@@ -269,20 +265,12 @@ AI_BASE_URL=https://api.openai.com/v1  # Опционально
 
 ### Для локальной разработки
 
-**Запуск приложения (Windows PowerShell):**
-```powershell
-npx cross-env NODE_ENV=development tsx server/index.ts
-```
-
-**Запуск приложения (macOS/Linux):**
-```bash
-npm run dev
-```
-
-**Универсальный способ (все платформы):**
+**Запуск приложения (все платформы):**
 ```bash
 npx tsx server/index.ts
 ```
+
+> Переменные из `.env` загружаются автоматически
 
 **Инициализация БД (Windows PowerShell):**
 ```powershell
