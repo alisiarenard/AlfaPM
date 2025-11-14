@@ -1306,6 +1306,8 @@ export default function HomePage() {
                   setRightPanelMode("addBlock");
                   setSettingsOpen(true);
                 }}
+                style={{ backgroundColor: '#cd253d' }}
+                className="hover:opacity-90 border-0"
                 data-testid="button-create-department"
               >
                 <Plus className="h-4 w-4 mr-2" />
