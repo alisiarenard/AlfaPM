@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { log } from "./vite";
 import { request } from "undici";
 
