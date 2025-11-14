@@ -352,9 +352,12 @@ export default function HomePage() {
         setActiveTab(departmentTeams[0].teamId);
       }
     } else if (departmentTeams && departmentTeams.length === 0) {
-      // Если департамент пустой, сбрасываем activeTab и selectedTeams
+      // Если департамент пустой, сбрасываем activeTab, selectedTeams и метрики
       setActiveTab("");
       setSelectedTeams(new Set());
+      lastSuccessfulDataRef.current = null;
+      lastSuccessfulCostStructureRef.current = null;
+      lastSuccessfulValueCostRef.current = null;
     }
   }, [departmentTeams]);
 
@@ -1025,6 +1028,7 @@ export default function HomePage() {
   // Показываем последнее успешное значение во время загрузки
   const displayValueCost = valueCostData || lastSuccessfulValueCostRef.current;
 
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
@@ -1263,9 +1267,40 @@ export default function HomePage() {
                 </TabsContent>
               ))}
             </Tabs>
+          ) : selectedDepartment ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <Users className="h-16 w-16 text-muted-foreground/50" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Нет команд в департаменте
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                  Для начала работы создайте команду в этом департаменте. После создания команды вы сможете синхронизировать инициативы из Kaiten.
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  setSelectedDepartmentForTeam(selectedDepartment);
+                  setRightPanelMode("addTeam");
+                  setSettingsOpen(true);
+                }}
+                data-testid="button-create-team"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Создать команду
+              </Button>
+            </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              Нет команд в выбранном департаменте
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <MdAccountTree className="h-16 w-16 text-muted-foreground/50" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Выберите департамент
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  Используйте выпадающий список выше для выбора департамента
+                </p>
+              </div>
             </div>
           )}
         </div>
