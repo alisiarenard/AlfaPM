@@ -1038,7 +1038,7 @@ export default function HomePage() {
               <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
               <h2 className="text-lg font-bold text-foreground">AlfaPM</h2>
             </div>
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
             <Select 
               value={selectedDepartment} 
               onValueChange={setSelectedDepartment}
@@ -1091,8 +1091,9 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      
-      <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
+    </div>
+    
+    <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
         <div className="p-6">
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
