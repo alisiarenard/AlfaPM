@@ -1290,6 +1290,28 @@ export default function HomePage() {
                 Создать команду
               </Button>
             </div>
+          ) : departments && departments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <Folder className="h-16 w-16 text-muted-foreground/50" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Нет департаментов
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                  Для начала работы создайте первый департамент. В нём вы сможете добавить команды и синхронизировать инициативы.
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  setRightPanelMode("addBlock");
+                  setSettingsOpen(true);
+                }}
+                data-testid="button-create-department"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Создать департамент
+              </Button>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <MdAccountTree className="h-16 w-16 text-muted-foreground/50" />
