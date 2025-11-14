@@ -145,8 +145,22 @@ npm run db:push
 
 ### Шаг 5: Запуск приложения
 
+**Для Windows (PowerShell):**
+
+```powershell
+npx cross-env NODE_ENV=development tsx server/index.ts
+```
+
+**Для macOS/Linux:**
+
 ```bash
 npm run dev
+```
+
+**Для всех платформ (универсальный способ):**
+
+```bash
+npx tsx server/index.ts
 ```
 
 Приложение будет доступно по адресу: `http://localhost:5000`
@@ -255,9 +269,19 @@ AI_BASE_URL=https://api.openai.com/v1  # Опционально
 
 ### Для локальной разработки
 
-**Запуск приложения:**
+**Запуск приложения (Windows PowerShell):**
+```powershell
+npx cross-env NODE_ENV=development tsx server/index.ts
+```
+
+**Запуск приложения (macOS/Linux):**
 ```bash
 npm run dev
+```
+
+**Универсальный способ (все платформы):**
+```bash
+npx tsx server/index.ts
 ```
 
 **Инициализация БД (Windows PowerShell):**
