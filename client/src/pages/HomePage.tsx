@@ -1332,7 +1332,6 @@ export default function HomePage() {
           )}
         </div>
       </div>
-    </div>
       
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden flex flex-col">
