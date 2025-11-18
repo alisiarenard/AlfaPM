@@ -107,38 +107,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const teamData = req.body;
       
-      // ДЕБАГ: Получаем список всех спринтов и показываем board_id
+      // Валидация sprintBoardId через Kaiten API
       if (teamData.sprintBoardId) {
-        log(`[Team Creation DEBUG] Fetching all sprints to show available board IDs`);
-        try {
-          const allSprints = await kaitenClient.getAllSprints({ limit: 100, offset: 0 });
-          log(`[Team Creation DEBUG] Found ${allSprints.length} sprints total`);
-          
-          // Собираем уникальные board_id
-          const boardIdSet = new Set(allSprints.map(s => s.board_id));
-          const uniqueBoardIds = Array.from(boardIdSet);
-          log(`[Team Creation DEBUG] Unique board IDs: ${uniqueBoardIds.join(', ')}`);
-          
-          // Проверяем есть ли запрашиваемый board_id
-          const hasBoardId = uniqueBoardIds.includes(teamData.sprintBoardId);
-          log(`[Team Creation DEBUG] Board ID ${teamData.sprintBoardId} found: ${hasBoardId}`);
-          
-          // Возвращаем список board_id в ошибке для дебага
+        const sprintBoardValidation = await kaitenClient.validateBoard(teamData.sprintBoardId, 'sprints');
+        if (!sprintBoardValidation.valid) {
           return res.status(400).json({ 
             success: false, 
-            error: `ДЕБАГ: Найдены доски со спринтами: [${uniqueBoardIds.join(', ')}]. Ваша доска: ${teamData.sprintBoardId}. Найдена: ${hasBoardId ? 'ДА' : 'НЕТ'}`,
-            debug: {
-              totalSprints: allSprints.length,
-              uniqueBoardIds,
-              requestedBoardId: teamData.sprintBoardId,
-              found: hasBoardId
-            }
-          });
-        } catch (debugError) {
-          log(`[Team Creation DEBUG] Error fetching sprints: ${debugError}`);
-          return res.status(400).json({ 
-            success: false, 
-            error: `ДЕБАГ: Ошибка при получении спринтов: ${debugError instanceof Error ? debugError.message : String(debugError)}`
+            error: sprintBoardValidation.error || "Доска спринтов не найдена в Kaiten"
           });
         }
       }
