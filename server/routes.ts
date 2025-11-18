@@ -196,11 +196,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const currentYear = new Date().getFullYear();
           let offset = 0;
           const limit = 100;
+          const maxOffset = 500;
           let allBoardSprints: any[] = [];
           let foundPreviousYear = false;
           
-          // Получаем спринты порциями пока не найдем спринты предыдущего года
-          while (!foundPreviousYear) {
+          // Получаем спринты порциями пока не найдем спринты предыдущего года (до offset=500)
+          while (!foundPreviousYear && offset < maxOffset) {
             log(`[Team Creation] Fetching sprints with offset ${offset}`);
             const allSprints = await kaitenClient.getAllSprints({ limit, offset });
             
@@ -213,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const boardSprints = allSprints.filter(sprint => sprint.board_id === teamData.sprintBoardId);
             
             if (boardSprints.length === 0) {
-              log(`[Team Creation] No sprints found for board ${teamData.sprintBoardId} in this batch, fetching next batch`);
+              log(`[Team Creation] No sprints found for board ${teamData.sprintBoardId} in this batch (offset=${offset}), fetching next batch`);
               offset += limit;
               continue;
             }
@@ -237,6 +238,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               log(`[Team Creation] All sprints in this batch are from ${currentYear}, fetching next batch`);
               offset += limit;
             }
+          }
+          
+          if (offset >= maxOffset) {
+            log(`[Team Creation] Reached max offset ${maxOffset}, stopping sprint fetch`);
           }
           
           log(`[Team Creation] Found total ${allBoardSprints.length} sprints for board ${teamData.sprintBoardId}`);
@@ -1970,11 +1975,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentYear = new Date().getFullYear();
       let offset = 0;
       const limit = 100;
+      const maxOffset = 500;
       let boardSprints: any[] = [];
       let foundPreviousYear = false;
       
-      // Получаем спринты порциями пока не найдем спринты предыдущего года
-      while (!foundPreviousYear) {
+      // Получаем спринты порциями пока не найдем спринты предыдущего года (до offset=500)
+      while (!foundPreviousYear && offset < maxOffset) {
         log(`[Kaiten Sync All Sprints] Fetching sprints with offset ${offset}`);
         const allSprints = await kaitenClient.getAllSprints({ limit, offset });
         
@@ -1987,7 +1993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const batchBoardSprints = allSprints.filter(sprint => sprint.board_id === boardId);
         
         if (batchBoardSprints.length === 0) {
-          log(`[Kaiten Sync All Sprints] No sprints found for board ${boardId} in this batch, fetching next batch`);
+          log(`[Kaiten Sync All Sprints] No sprints found for board ${boardId} in this batch (offset=${offset}), fetching next batch`);
           offset += limit;
           continue;
         }
@@ -2011,6 +2017,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           log(`[Kaiten Sync All Sprints] All sprints in this batch are from ${currentYear}, fetching next batch`);
           offset += limit;
         }
+      }
+      
+      if (offset >= maxOffset) {
+        log(`[Kaiten Sync All Sprints] Reached max offset ${maxOffset}, stopping sprint fetch`);
       }
       
       log(`[Kaiten Sync All Sprints] Found total ${boardSprints.length} sprints for board ${boardId}`);
