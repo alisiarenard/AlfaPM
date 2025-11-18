@@ -115,7 +115,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           log(`[Team Creation DEBUG] Found ${allSprints.length} sprints total`);
           
           // Собираем уникальные board_id
-          const uniqueBoardIds = [...new Set(allSprints.map(s => s.board_id))];
+          const boardIdSet = new Set(allSprints.map(s => s.board_id));
+          const uniqueBoardIds = Array.from(boardIdSet);
           log(`[Team Creation DEBUG] Unique board IDs: ${uniqueBoardIds.join(', ')}`);
           
           // Проверяем есть ли запрашиваемый board_id
