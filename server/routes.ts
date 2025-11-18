@@ -107,41 +107,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const teamData = req.body;
       
-      // ДЕБАГ: Получаем инициативы с доски и показываем список
-      if (teamData.initBoardId) {
-        log(`[Team Creation DEBUG] Fetching initiatives from board ${teamData.initBoardId}`);
-        try {
-          const initiatives = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
-          log(`[Team Creation DEBUG] Found ${initiatives.length} initiatives`);
-          
-          // Формируем список названий инициатив
-          const initiativeTitles = initiatives
-            .slice(0, 10) // Берем первые 10 для показа
-            .map(init => `"${init.title}" (ID: ${init.id})`)
-            .join(', ');
-          
-          const moreText = initiatives.length > 10 ? ` и ещё ${initiatives.length - 10}` : '';
-          
-          // Возвращаем список инициатив в ошибке для дебага
+      // Валидация sprintBoardId через Kaiten API
+      if (teamData.sprintBoardId) {
+        const sprintBoardValidation = await kaitenClient.validateBoard(teamData.sprintBoardId, 'sprints');
+        if (!sprintBoardValidation.valid) {
           return res.status(400).json({ 
             success: false, 
-            error: `ДЕБАГ: Найдено инициатив: ${initiatives.length}. Примеры: ${initiativeTitles}${moreText}`,
-            debug: {
-              totalInitiatives: initiatives.length,
-              boardId: teamData.initBoardId,
-              initiatives: initiatives.map(init => ({
-                id: init.id,
-                title: init.title,
-                state: init.state,
-                archived: init.archived
-              }))
-            }
+            error: sprintBoardValidation.error || "Доска спринтов не найдена в Kaiten"
           });
-        } catch (debugError) {
-          log(`[Team Creation DEBUG] Error fetching initiatives: ${debugError}`);
+        }
+      }
+      
+      // Валидация initBoardId через Kaiten API
+      if (teamData.initBoardId) {
+        const initBoardValidation = await kaitenClient.validateBoard(teamData.initBoardId, 'initiatives');
+        if (!initBoardValidation.valid) {
           return res.status(400).json({ 
             success: false, 
-            error: `ДЕБАГ: Ошибка при получении инициатив: ${debugError instanceof Error ? debugError.message : String(debugError)}`
+            error: initBoardValidation.error || "Доска инициатив не найдена в Kaiten"
           });
         }
       }
@@ -157,8 +140,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           log(`[Team Creation] Step 1: Syncing initiatives from board ${teamData.initBoardId}`);
           
-          const cards = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
-          log(`[Team Creation] Found ${cards.length} initiative cards`);
+          const allCards = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
+          // Фильтруем только неархивные инициативы
+          const cards = allCards.filter(card => !card.archived);
+          log(`[Team Creation] Found ${allCards.length} total cards, ${cards.length} non-archived initiatives`);
           
           const plannedValueId = "id_451379";
           const factValueId = "id_448119";
@@ -1487,8 +1472,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       log(`[Kaiten Sync] Starting sync for board ${boardId}`);
       
-      const cards = await kaitenClient.getCardsFromBoard(boardId);
-      log(`[Kaiten Sync] Found ${cards.length} cards`);
+      const allCards = await kaitenClient.getCardsFromBoard(boardId);
+      // Фильтруем только неархивные инициативы
+      const cards = allCards.filter(card => !card.archived);
+      log(`[Kaiten Sync] Found ${allCards.length} total cards, ${cards.length} non-archived initiatives`);
 
       const syncedInitiatives = [];
       const plannedValueId = "id_451379";
