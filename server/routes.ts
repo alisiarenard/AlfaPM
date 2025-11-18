@@ -107,24 +107,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const teamData = req.body;
       
-      // Валидация sprintBoardId через Kaiten API
-      if (teamData.sprintBoardId) {
-        const sprintBoardValidation = await kaitenClient.validateBoard(teamData.sprintBoardId, 'sprints');
-        if (!sprintBoardValidation.valid) {
-          return res.status(400).json({ 
-            success: false, 
-            error: sprintBoardValidation.error || "Доска спринтов не найдена в Kaiten"
-          });
-        }
-      }
-      
-      // Валидация initBoardId через Kaiten API
+      // ДЕБАГ: Получаем инициативы с доски и показываем список
       if (teamData.initBoardId) {
-        const initBoardValidation = await kaitenClient.validateBoard(teamData.initBoardId, 'initiatives');
-        if (!initBoardValidation.valid) {
+        log(`[Team Creation DEBUG] Fetching initiatives from board ${teamData.initBoardId}`);
+        try {
+          const initiatives = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
+          log(`[Team Creation DEBUG] Found ${initiatives.length} initiatives`);
+          
+          // Формируем список названий инициатив
+          const initiativeTitles = initiatives
+            .slice(0, 10) // Берем первые 10 для показа
+            .map(init => `"${init.title}" (ID: ${init.id})`)
+            .join(', ');
+          
+          const moreText = initiatives.length > 10 ? ` и ещё ${initiatives.length - 10}` : '';
+          
+          // Возвращаем список инициатив в ошибке для дебага
           return res.status(400).json({ 
             success: false, 
-            error: initBoardValidation.error || "Доска инициатив не найдена в Kaiten"
+            error: `ДЕБАГ: Найдено инициатив: ${initiatives.length}. Примеры: ${initiativeTitles}${moreText}`,
+            debug: {
+              totalInitiatives: initiatives.length,
+              boardId: teamData.initBoardId,
+              initiatives: initiatives.map(init => ({
+                id: init.id,
+                title: init.title,
+                state: init.state,
+                archived: init.archived
+              }))
+            }
+          });
+        } catch (debugError) {
+          log(`[Team Creation DEBUG] Error fetching initiatives: ${debugError}`);
+          return res.status(400).json({ 
+            success: false, 
+            error: `ДЕБАГ: Ошибка при получении инициатив: ${debugError instanceof Error ? debugError.message : String(debugError)}`
           });
         }
       }
