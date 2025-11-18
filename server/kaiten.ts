@@ -93,6 +93,8 @@ export class KaitenClient {
   }): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
+    log(`[Kaiten API] Making ${options?.method || 'GET'} request to: ${url}`);
+    
     const { statusCode, body } = await request(url, {
       method: options?.method || 'GET',
       headers: {
@@ -103,6 +105,9 @@ export class KaitenClient {
     });
 
     const responseText = await body.text();
+    
+    log(`[Kaiten API] Response status: ${statusCode}`);
+    log(`[Kaiten API] Response body: ${responseText.substring(0, 500)}`);
 
     if (statusCode !== 200) {
       log(`[Kaiten API] Error ${statusCode}: ${responseText}`);
