@@ -217,8 +217,15 @@ export class KaitenClient {
     const url = `/sprints${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     const response = await this.makeRequest<KaitenSprintListItem[]>(url);
     
+    // Выводим полный ответ от Kaiten в лог
+    log(`[Kaiten API] Raw sprint response: ${JSON.stringify(response, null, 2)}`);
+    
     if (Array.isArray(response)) {
       log(`[Kaiten API] Found ${response.length} sprints`);
+      // Выводим каждый спринт с его данными
+      response.forEach((sprint, index) => {
+        log(`[Kaiten API] Sprint ${index + 1}: id=${sprint.id}, board_id=${sprint.board_id}, title="${sprint.title}", start_date=${sprint.start_date}, finish_date=${sprint.finish_date}`);
+      });
       return response;
     }
     
