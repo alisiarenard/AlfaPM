@@ -35,9 +35,8 @@ export async function generateSprintReportPDF(
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Регистрируем шрифты с поддержкой кириллицы
-      doc.registerFont('DejaVu', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf');
-      doc.registerFont('DejaVu-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf');
+      // Используем встроенные шрифты PDFKit (Helvetica поддерживает кириллицу в PDFKit)
+      // Примечание: PDFKit автоматически использует внутренние шрифты с поддержкой Unicode
 
       // Форматируем даты для отображения
       let formattedDates: string;
@@ -57,15 +56,15 @@ export async function generateSprintReportPDF(
       }
 
       // Заголовок отчета
-      doc.font('DejaVu-Bold').fontSize(16).text(`Отчет по спринту`, { align: 'center' });
+      doc.fontSize(16).text(`Отчет по спринту`, { align: 'center' });
       doc.moveDown(0.5);
-      doc.font('DejaVu').fontSize(12).text(`Команда ${teamName} в спринте ${formattedDates} выполнила следующие задачи:`, { align: 'left' });
+      doc.fontSize(12).text(`Команда ${teamName} в спринте ${formattedDates} выполнила следующие задачи:`, { align: 'left' });
       doc.moveDown(1);
 
       // Обрабатываем каждую инициативу
       for (const initiative of initiatives) {
         // Название инициативы
-        doc.font('DejaVu-Bold').fontSize(14).text(initiative.title);
+        doc.fontSize(14).text(initiative.title);
         doc.moveDown(0.5);
 
         // Сокращаем формулировки задач через AI
@@ -83,7 +82,7 @@ export async function generateSprintReportPDF(
             taskText += ' (front)';
           }
 
-          doc.font('DejaVu').fontSize(11).text(taskText, { indent: 20 });
+          doc.fontSize(11).text(taskText, { indent: 20 });
         }
 
         doc.moveDown(1);
