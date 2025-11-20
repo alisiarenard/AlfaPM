@@ -1468,7 +1468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.type?.name,
               card.completed_at || undefined,
               sprintId,
-              card.completed_at || null,
+              card.last_moved_to_done_at || null,  // Используем last_moved_to_done_at для doneDate
               teamId
             );
 
