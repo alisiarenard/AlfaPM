@@ -10,6 +10,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder, MoreVertical, Download, Users } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MdAccountTree } from "react-icons/md";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
@@ -107,6 +108,8 @@ export default function HomePage() {
   const [velocity, setVelocity] = useState("");
   const [sprintDuration, setSprintDuration] = useState("");
   const [spPrice, setSpPrice] = useState("");
+  const [hasSprints, setHasSprints] = useState(true);
+  const [sprintIds, setSprintIds] = useState("");
   const [showActiveOnly, setShowActiveOnly] = useState(false);
   const { toast } = useToast();
 
@@ -211,6 +214,8 @@ export default function HomePage() {
       sprintDuration: number; 
       spPrice?: number;
       departmentId: string;
+      hasSprints: boolean;
+      sprintIds?: string;
     }) => {
       const res = await apiRequest("POST", "/api/teams", data);
       return await res.json();
@@ -226,6 +231,16 @@ export default function HomePage() {
       setActiveTab(newTeam.teamId);
       setEditingTeam(newTeam);
       setRightPanelMode("editTeam");
+      // Сброс формы
+      setTeamName("");
+      setSpaceId("");
+      setSprintBoardId("");
+      setInitBoardId("");
+      setVelocity("");
+      setSprintDuration("");
+      setSpPrice("");
+      setHasSprints(true);
+      setSprintIds("");
     },
     onError: (error: Error) => {
       let errorMessage = "Не удалось создать команду";
@@ -1719,6 +1734,28 @@ export default function HomePage() {
                         />
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="new-has-sprints" 
+                          checked={hasSprints}
+                          onCheckedChange={(checked) => setHasSprints(checked === true)}
+                          data-testid="checkbox-has-sprints"
+                        />
+                        <Label htmlFor="new-has-sprints" className="cursor-pointer">Спринты</Label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
+                      <Input
+                        id="new-sprint-ids"
+                        placeholder="Введите ID спринтов через запятую (например: 123, 456, 789)"
+                        value={sprintIds}
+                        onChange={(e) => setSprintIds(e.target.value)}
+                        disabled={!hasSprints}
+                        data-testid="input-sprint-ids"
+                      />
+                    </div>
                   </div>
                   <div className="p-4 flex justify-end">
                     <Button
@@ -1729,6 +1766,7 @@ export default function HomePage() {
                         !initBoardId || 
                         !velocity || 
                         !sprintDuration ||
+                        (hasSprints && !sprintIds.trim()) ||
                         !selectedDepartmentForTeam ||
                         createTeamMutation.isPending
                       }
@@ -1744,7 +1782,9 @@ export default function HomePage() {
                           vilocity: parseInt(velocity),
                           sprintDuration: parseInt(sprintDuration),
                           spPrice: spPrice ? parseInt(spPrice) : undefined,
-                          departmentId: selectedDepartmentForTeam
+                          departmentId: selectedDepartmentForTeam,
+                          hasSprints,
+                          sprintIds: hasSprints ? sprintIds.trim() : undefined
                         });
                       }}
                     >

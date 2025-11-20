@@ -107,17 +107,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const teamData = req.body;
       
-      // Валидация sprintBoardId через Kaiten API
-      if (teamData.sprintBoardId) {
-        const sprintBoardValidation = await kaitenClient.validateBoard(teamData.sprintBoardId, 'sprints');
-        if (!sprintBoardValidation.valid) {
-          return res.status(400).json({ 
-            success: false, 
-            error: sprintBoardValidation.error || "Доска спринтов не найдена в Kaiten"
-          });
-        }
-      }
-      
       // Валидация initBoardId через Kaiten API
       if (teamData.initBoardId) {
         const initBoardValidation = await kaitenClient.validateBoard(teamData.initBoardId, 'initiatives');
@@ -190,88 +179,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // 2. Синхронизация спринтов
-      if (teamData.sprintBoardId) {
+      // 2. Синхронизация спринтов (если hasSprints === true)
+      if (teamData.hasSprints && teamData.sprintIds) {
         try {
-          log(`[Team Creation] Step 2: Syncing sprints from board ${teamData.sprintBoardId}`);
+          log(`[Team Creation] Step 2: Syncing sprints from IDs: ${teamData.sprintIds}`);
           
-          const currentYear = new Date().getFullYear();
-          let offset = 0;
-          const limit = 100;
-          const maxOffset = 500;
-          let allBoardSprints: any[] = [];
-          let foundPreviousYear = false;
+          // Парсим sprint IDs из строки (разделитель - запятая)
+          const sprintIdArray = teamData.sprintIds
+            .split(',')
+            .map((id: string) => id.trim())
+            .filter((id: string) => id.length > 0)
+            .map((id: string) => parseInt(id))
+            .filter((id: number) => !isNaN(id));
           
-          // Получаем спринты порциями пока не найдем спринты предыдущего года (до offset=500)
-          while (!foundPreviousYear && offset < maxOffset) {
-            log(`[Team Creation] Fetching sprints with offset ${offset}`);
-            const allSprints = await kaitenClient.getAllSprints({ limit, offset });
-            
-            if (allSprints.length === 0) {
-              log(`[Team Creation] No more sprints to fetch`);
-              break;
-            }
-            
-            // Фильтруем по board_id команды
-            const boardSprints = allSprints.filter(sprint => sprint.board_id === teamData.sprintBoardId);
-            
-            if (boardSprints.length === 0) {
-              log(`[Team Creation] No sprints found for board ${teamData.sprintBoardId} in this batch (offset=${offset}), fetching next batch`);
-              offset += limit;
-              continue;
-            }
-            
-            // Добавляем найденные спринты команды в общий массив
-            allBoardSprints.push(...boardSprints);
-            
-            // Проверяем, есть ли спринты с датами предыдущего года
-            for (const sprint of boardSprints) {
-              const startDate = new Date(sprint.start_date);
-              const startYear = startDate.getFullYear();
+          log(`[Team Creation] Parsed ${sprintIdArray.length} sprint IDs: ${sprintIdArray.join(', ')}`);
+          
+          // Получаем summary каждого спринта через getSprint API
+          const syncedSprints: any[] = [];
+          
+          for (const sprintId of sprintIdArray) {
+            try {
+              log(`[Team Creation] Fetching sprint ${sprintId}`);
+              const sprint = await kaitenClient.getSprint(sprintId);
               
-              if (startYear < currentYear) {
-                foundPreviousYear = true;
-                log(`[Team Creation] Found sprint with previous year date: ${sprint.start_date} (Year: ${startYear})`);
-                break;
-              }
+              // Сохраняем спринт в БД
+              await storage.syncSprintFromKaiten(
+                sprint.id,
+                sprint.board_id,
+                sprint.title,
+                sprint.velocity,
+                sprint.start_date,
+                sprint.finish_date,
+                sprint.actual_finish_date,
+                sprint.goal
+              );
+              
+              syncedSprints.push(sprint);
+            } catch (sprintError: unknown) {
+              const errorMessage = sprintError instanceof Error ? sprintError.message : String(sprintError);
+              log(`[Team Creation] Error syncing sprint ${sprintId}: ${errorMessage}`);
             }
-            
-            if (!foundPreviousYear) {
-              log(`[Team Creation] All sprints in this batch are from ${currentYear}, fetching next batch`);
-              offset += limit;
-            }
           }
           
-          if (offset >= maxOffset) {
-            log(`[Team Creation] Reached max offset ${maxOffset}, stopping sprint fetch`);
-          }
-          
-          log(`[Team Creation] Found total ${allBoardSprints.length} sprints for board ${teamData.sprintBoardId}`);
-          
-          // Сохраняем все найденные спринты в БД
-          for (const sprint of allBoardSprints) {
-            await storage.syncSprintFromKaiten(
-              sprint.id,
-              sprint.board_id,
-              sprint.title,
-              sprint.velocity,
-              sprint.start_date,
-              sprint.finish_date,
-              sprint.actual_finish_date,
-              sprint.goal
-            );
-          }
-          
-          log(`[Team Creation] Successfully synced ${allBoardSprints.length} sprints`);
+          log(`[Team Creation] Successfully synced ${syncedSprints.length} sprints`);
           
           // 3. Синхронизация тасок по спринтам
           log(`[Team Creation] Step 3: Syncing tasks`);
           let totalTasks = 0;
           
-          if (allBoardSprints.length > 0) {
+          if (syncedSprints.length > 0) {
             // Есть спринты - синхронизируем задачи из них
-            log(`[Team Creation] Syncing tasks from ${allBoardSprints.length} sprints`);
-            for (const sprint of allBoardSprints) {
+            log(`[Team Creation] Syncing tasks from ${syncedSprints.length} sprints`);
+            for (const sprint of syncedSprints) {
               try {
                 const kaitenSprint = await kaitenClient.getSprint(sprint.id);
                 
