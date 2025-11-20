@@ -1351,7 +1351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Sprint Save] Saving sprint ${sprintId} to database`);
+      log(`[Sprint Save] Validating sprint ${sprintId}`);
       
       // Валидируем обязательные поля
       if (!kaitenSprint.board_id || !kaitenSprint.start_date || !kaitenSprint.finish_date) {
@@ -1361,7 +1361,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Проверяем наличие команды ДО сохранения спринта
+      const team = await storage.getTeamBySprintBoardId(kaitenSprint.board_id);
+      if (!team) {
+        log(`[Sprint Save] No team found for board ${kaitenSprint.board_id}`);
+        return res.status(400).json({
+          success: false,
+          error: `Team with sprint board ID ${kaitenSprint.board_id} not found. Please create a team with this sprint board ID first.`
+        });
+      }
+
+      const teamId = team.teamId;
+      log(`[Sprint Save] Found team ${team.teamName} (${teamId})`);
+
       // Сохраняем спринт
+      log(`[Sprint Save] Saving sprint ${sprintId} to database`);
       await storage.syncSprintFromKaiten(
         kaitenSprint.id,
         kaitenSprint.board_id,
@@ -1374,16 +1388,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       log(`[Sprint Save] Sprint ${sprintId} saved`);
-
-      // Находим команду по board_id для сохранения задач
-      const team = await storage.getTeamBySprintBoardId(kaitenSprint.board_id);
-      let teamId: string | null = null;
-      if (team) {
-        teamId = team.teamId;
-        log(`[Sprint Save] Found team ${team.teamName} (${teamId})`);
-      } else {
-        log(`[Sprint Save] No team found for board ${kaitenSprint.board_id}`);
-      }
 
       let tasksSaved = 0;
       const errors: string[] = [];
