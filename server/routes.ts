@@ -683,12 +683,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Фильтруем инициативы - показываем только Epic, Enabler и "Поддержка бизнеса"
+      // Фильтруем инициативы - показываем только Epic, Compliance, Enabler и "Поддержка бизнеса"
       const allInitiatives = [...initiatives];
       initiatives = initiatives.filter(init => 
-        init.cardId === 0 || init.type === 'Epic' || init.type === 'Enabler'
+        init.cardId === 0 || init.type === 'Epic' || init.type === 'Compliance' || init.type === 'Enabler'
       );
-      log(`[Timeline] Filtered initiatives: ${initiatives.length} Epic/Enabler/Support from ${allInitiatives.length} total`);
+      log(`[Timeline] Filtered initiatives: ${initiatives.length} Epic/Compliance/Enabler/Support from ${allInitiatives.length} total`);
 
       // Загружаем все задачи один раз (избегаем N+1)
       // Используем allInitiatives для загрузки задач (включая задачи из других типов)
@@ -705,17 +705,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Создаем Map для быстрого поиска типа инициативы по cardId
       const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
       
-      // Перенаправляем задачи из инициатив других типов (не Epic и не Enabler) в "Поддержку бизнеса"
+      // Перенаправляем задачи из инициатив других типов (не Epic, Compliance и не Enabler) в "Поддержку бизнеса"
       initiativeTasks = initiativeTasks.map(task => {
         const initType = initiativeTypeMap.get(task.initCardId || 0);
-        // Если инициатива не Epic и не Enabler и не "Поддержка бизнеса" (cardId=0), перенаправляем в "Поддержку бизнеса"
-        if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Enabler') {
+        // Если инициатива не Epic, не Compliance, не Enabler и не "Поддержка бизнеса" (cardId=0), перенаправляем в "Поддержку бизнеса"
+        if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
           log(`[Timeline] Redirecting task ${task.cardId} from init type ${initType} to Business Support`);
           return { ...task, initCardId: 0 };
         }
         return task;
       });
-      log(`[Timeline] Redirected tasks from non-Epic/Enabler initiatives to Business Support`);
+      log(`[Timeline] Redirected tasks from non-Epic/Compliance/Enabler initiatives to Business Support`);
 
       // Логика зависит от флага hasSprints:
       // - Если hasSprints === true: используем реальные спринты из БД
@@ -1452,7 +1452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.archived || false,
               initCardId,
               card.type?.name,
-              card.completed_at,
+              card.completed_at || undefined,
               sprintId,
               card.completed_at || null,
               teamId

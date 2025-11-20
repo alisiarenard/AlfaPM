@@ -36,7 +36,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for tooling,
 - **Team Header:** Displays team name, board ID, Velocity, Innovation Rate, and a Kaiten sync button.
 - **Team Management:** Full CRUD operations for teams and departments with Kaiten board validation.
     - **Team Deletion:** Delete teams via trash icon in settings panel with AlertDialog confirmation. Uses ref-based state management to prevent race conditions during async deletion. Atomically removes all related data (tasks → sprints → initiatives → team) in a database transaction. Automatically clears UI state (editingTeam, selectedTeams, activeTab) and invalidates all dependent queries.
-- **Initiative Filtering:** Filters initiatives based on status and completion.
+- **Initiative Filtering:** Displays Epic, Compliance, Enabler, and "Поддержка бизнеса" (Business Support) initiatives. Filters based on status, year, and completion. Tasks from other initiative types are automatically redirected to Business Support.
 - **Calculations:** Dynamically calculates Innovation Rate, Value/Cost, Cost Structure, Involvement, Forecasted Sprint Count, and automatically generates sprints.
 
 ### Backend Architecture

@@ -2032,7 +2032,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
   
   // Фильтруем инициативы:
   // 1. "Поддержка бизнеса" (cardId === 0) показываем всегда независимо от года
-  // 2. Показываем только типы Epic и Enabler
+  // 2. Показываем только типы Epic, Compliance и Enabler
   // 3. Если включен фильтр "Активные" - только inProgress (скрываем queued и done)
   // 4. Если инициатива done или inProgress и выполнено 0 SP - не показываем
   // 5. Если выбран год, для инициатив done или inProgress показываем только те, у которых есть задачи, закрытые в этом году
@@ -2043,8 +2043,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       return true;
     }
     
-    // Показываем только Epic и Enabler
-    if (init.type !== 'Epic' && init.type !== 'Enabler') {
+    // Показываем только Epic, Compliance и Enabler
+    if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') {
       return false;
     }
     
