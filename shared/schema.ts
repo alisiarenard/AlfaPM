@@ -101,6 +101,7 @@ export const teams = pgTable("teams", {
   sprintDuration: integer("sprint_duration").notNull(),
   departmentId: varchar("department_id").notNull(),
   spPrice: integer("sp_price").notNull(),
+  hasSprints: boolean("has_sprints").notNull().default(true),
 });
 
 export const insertTeamSchema = createInsertSchema(teams)

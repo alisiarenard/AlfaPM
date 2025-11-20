@@ -179,10 +179,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // 2. Синхронизация спринтов (если hasSprints === true)
+      // 2. Синхронизация спринтов и задач
+      // Логика зависит от состояния hasSprints:
+      // - Если hasSprints === true: синхронизируем реальные спринты и их задачи
+      // - Если hasSprints === false: синхронизируем только задачи через date filter (виртуальные спринты создадутся автоматически)
+      
       if (teamData.hasSprints && teamData.sprintIds) {
+        // РЕЖИМ: Реальные спринты
         try {
-          log(`[Team Creation] Step 2: Syncing sprints from IDs: ${teamData.sprintIds}`);
+          log(`[Team Creation] Step 2: Syncing REAL sprints from IDs: ${teamData.sprintIds}`);
           
           // Парсим sprint IDs из строки (разделитель - запятая)
           const sprintIdArray = teamData.sprintIds
@@ -221,10 +226,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
           
-          log(`[Team Creation] Successfully synced ${syncedSprints.length} sprints`);
+          log(`[Team Creation] Successfully synced ${syncedSprints.length} real sprints`);
           
-          // 3. Синхронизация тасок по спринтам
-          log(`[Team Creation] Step 3: Syncing tasks`);
+          // 3. Синхронизация тасок из реальных спринтов
+          log(`[Team Creation] Step 3: Syncing tasks from real sprints`);
           let totalTasks = 0;
           
           if (syncedSprints.length > 0) {
@@ -280,97 +285,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 log(`[Team Creation] Error syncing tasks for sprint ${sprint.id}: ${errorMessage}`);
               }
             }
-          } else {
-            // Нет спринтов - используем date filter API
-            log(`[Team Creation] No sprints found. Using Kaiten API with date filter for tasks.`);
-            try {
-              const currentYear = new Date().getFullYear();
-              const yearStart = new Date(currentYear, 0, 1).toISOString();
-              
-              log(`[Team Creation] Fetching tasks completed after ${yearStart} from sprint board ${teamData.sprintBoardId}`);
-              
-              const tasks = await kaitenClient.getCardsWithDateFilter({
-                boardId: teamData.sprintBoardId,
-                lastMovedToDoneAtAfter: yearStart,
-                limit: 1000
-              });
-              
-              log(`[Team Creation] Found ${tasks.length} tasks completed after ${yearStart}`);
-              
-              for (const taskCard of tasks) {
-                try {
-                  // Пропускаем инициативные карточки (Epic, Compliance, Enabler)
-                  const cardType = taskCard.type?.name;
-                  if (cardType === 'Epic' || cardType === 'Compliance' || cardType === 'Enabler') {
-                    log(`[Team Creation] Skipping initiative card ${taskCard.id} "${taskCard.title}" (type: ${cardType})`);
-                    continue;
-                  }
-                  
-                  let initCardId = 0;
-                  if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
-                    const parentId = taskCard.parents_ids[0];
-                    const parentInitiative = await storage.getInitiativeByCardId(parentId);
-                    if (parentInitiative) {
-                      initCardId = parentId;
-                      log(`[Team Creation] Task ${taskCard.id} linked to initiative ${parentId}`);
-                    }
-                  }
-                  
-                  let state: "1-queued" | "2-inProgress" | "3-done";
-                  if (taskCard.state === 3) {
-                    state = "3-done";
-                  } else if (taskCard.state === 2) {
-                    state = "2-inProgress";
-                  } else {
-                    state = "1-queued";
-                  }
-                  
-                  const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
-                  
-                  await storage.syncTaskFromKaiten(
-                    taskCard.id,
-                    taskCard.board_id,
-                    taskCard.title,
-                    taskCard.created || new Date().toISOString(),
-                    state,
-                    taskCard.size || 0,
-                    condition,
-                    taskCard.archived || false,
-                    initCardId,
-                    taskCard.type?.name,
-                    taskCard.completed_at ?? undefined,
-                    null,
-                    taskCard.last_moved_to_done_at,
-                    team.teamId
-                  );
-                  
-                  totalTasks++;
-                } catch (taskError: unknown) {
-                  const errorMessage = taskError instanceof Error ? taskError.message : String(taskError);
-                  log(`[Team Creation] Error syncing task ${taskCard.id}: ${errorMessage}`);
-                }
-              }
-            } catch (dateFilterError) {
-              console.error("[Team Creation] Task sync with date filter error:", dateFilterError);
-            }
+            log(`[Team Creation] Successfully synced ${totalTasks} tasks from real sprints`);
           }
-          
-          log(`[Team Creation] Successfully synced ${totalTasks} tasks`);
         } catch (syncError) {
-          console.error("[Team Creation] Sprint/Task sync error:", syncError);
+          console.error("[Team Creation] Real sprints sync error:", syncError);
         }
-      } else {
-        // Команда без спринтов - используем Kaiten API для получения задач с фильтром по дате
-        log(`[Team Creation] No sprint board specified. Using Kaiten API with date filter for tasks.`);
-        
+      } else if (teamData.initBoardId) {
+        // РЕЖИМ: Виртуальные спринты (hasSprints === false)
+        // Синхронизируем только задачи через date filter API из доски инициатив
+        // Виртуальные спринты создадутся автоматически в /api/timeline на основе sprintDuration
         try {
-          // Получаем начало текущего года
+          log(`[Team Creation] Step 2: VIRTUAL sprints mode - syncing tasks only via date filter`);
+          
           const currentYear = new Date().getFullYear();
           const yearStart = new Date(currentYear, 0, 1).toISOString();
           
-          log(`[Team Creation] Fetching tasks completed after ${yearStart} from board ${teamData.initBoardId}`);
+          log(`[Team Creation] Fetching tasks completed after ${yearStart} from initiative board ${teamData.initBoardId}`);
           
-          // Получаем все задачи с фильтром по дате
           const tasks = await kaitenClient.getCardsWithDateFilter({
             boardId: teamData.initBoardId,
             lastMovedToDoneAtAfter: yearStart,
@@ -379,12 +310,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           log(`[Team Creation] Found ${tasks.length} tasks completed after ${yearStart}`);
           
-          let totalTasksSynced = 0;
+          let totalTasks = 0;
           
-          // Сохраняем каждую задачу
           for (const taskCard of tasks) {
             try {
-              // Определяем init_card_id по parent_id
+              // Пропускаем инициативные карточки (Epic, Compliance, Enabler)
+              const cardType = taskCard.type?.name;
+              if (cardType === 'Epic' || cardType === 'Compliance' || cardType === 'Enabler') {
+                log(`[Team Creation] Skipping initiative card ${taskCard.id} "${taskCard.title}" (type: ${cardType})`);
+                continue;
+              }
+              
               let initCardId = 0;
               if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
                 const parentId = taskCard.parents_ids[0];
@@ -392,11 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 if (parentInitiative) {
                   initCardId = parentId;
                   log(`[Team Creation] Task ${taskCard.id} linked to initiative ${parentId}`);
-                } else {
-                  log(`[Team Creation] Task ${taskCard.id} has parent ${parentId} but it's not an initiative`);
                 }
-              } else {
-                log(`[Team Creation] Task ${taskCard.id} has no parent_id`);
               }
               
               let state: "1-queued" | "2-inProgress" | "3-done";
@@ -427,16 +359,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 team.teamId
               );
               
-              totalTasksSynced++;
+              totalTasks++;
             } catch (taskError: unknown) {
               const errorMessage = taskError instanceof Error ? taskError.message : String(taskError);
               log(`[Team Creation] Error syncing task ${taskCard.id}: ${errorMessage}`);
             }
           }
           
-          log(`[Team Creation] Successfully synced ${totalTasksSynced} tasks from Kaiten API`);
+          log(`[Team Creation] Successfully synced ${totalTasks} tasks for virtual sprints`);
         } catch (syncError) {
-          console.error("[Team Creation] Task sync with date filter error:", syncError);
+          console.error("[Team Creation] Virtual sprints task sync error:", syncError);
         }
       }
       
@@ -664,7 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Timeline] Team ${teamId} - initBoardId: ${initBoardId}, sprintBoardId: ${sprintBoardId}, sprintDuration: ${sprintDuration}`);
+      log(`[Timeline] Team ${teamId} - initBoardId: ${initBoardId}, sprintBoardId: ${sprintBoardId}, sprintDuration: ${sprintDuration}, hasSprints: ${team.hasSprints}`);
 
       // Получаем инициативы
       const initiatives = await storage.getInitiativesByBoardId(initBoardId);
@@ -681,13 +613,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       log(`[Timeline] Loaded ${initiativeTasks.length} tasks for ${initiatives.length} initiatives (team: ${teamId})`);
 
-      if (sprintBoardId) {
-        // Команда со спринтами - используем реальные спринты
+      // Логика зависит от флага hasSprints:
+      // - Если hasSprints === true: используем реальные спринты из БД
+      // - Если hasSprints === false: создаём виртуальные спринты на основе sprintDuration
+      
+      if (team.hasSprints && sprintBoardId) {
+        // РЕЖИМ: Реальные спринты
         const teamSprints = await storage.getSprintsByBoardId(sprintBoardId);
         const teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
-        log(`[Timeline] Team has ${teamSprints.length} real sprints`);
+        log(`[Timeline] REAL sprints mode: Team has ${teamSprints.length} sprints in DB`);
 
-        // Если спринтов нет - используем виртуальные спринты
+        // Если спринтов нет в БД - возвращаем пустой результат с предупреждением
         if (teamSprints.length === 0) {
           log(`[Timeline] No real sprints found. Creating virtual sprints for team with sprintBoardId`);
 
@@ -892,12 +828,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         res.json({ initiatives: initiativesWithInvolvement, sprints: teamSprints });
       } else {
-        // Команда без спринтов - создаём виртуальные спринты
-        log(`[Timeline] Creating virtual sprints for team without sprintBoardId`);
+        // РЕЖИМ: Виртуальные спринты (hasSprints === false)
+        // Создаём виртуальные спринты на основе sprintDuration
+        log(`[Timeline] VIRTUAL sprints mode: creating sprints based on sprintDuration=${sprintDuration} days`);
 
-        // Фильтруем задачи без sprint_id но с doneDate
+        // Фильтруем задачи с doneDate (для виртуальных спринтов берём ВСЕ задачи с датой закрытия)
         const tasksForVirtual = initiativeTasks.filter(task => 
-          task.sprintId === null && 
           task.doneDate !== null && 
           task.doneDate !== ''
         );
