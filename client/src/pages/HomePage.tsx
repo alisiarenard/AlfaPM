@@ -532,7 +532,10 @@ export default function HomePage() {
       const velocityChanged = (velocity ? parseInt(velocity) : editingTeam.vilocity) !== editingTeam.vilocity;
       const sprintDurationChanged = (sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration) !== editingTeam.sprintDuration;
       const spPriceChanged = (spPrice ? parseInt(spPrice) : editingTeam.spPrice) !== editingTeam.spPrice;
-      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged;
+      // Пока hasSprints и sprintIds не сохраняются в БД, считаем что они изменились если не пустые
+      const hasSprintsChanged = hasSprints !== true; // По умолчанию true, если изменили - показываем кнопку
+      const sprintIdsChanged = sprintIds.trim() !== ""; // По умолчанию пусто, если заполнили - показываем кнопку
+      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || sprintIdsChanged;
     }
     return false;
   };
