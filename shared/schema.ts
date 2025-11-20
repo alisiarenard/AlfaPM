@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, jsonb, pgEnum, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, jsonb, pgEnum, boolean, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -12,7 +12,7 @@ export const initiatives = pgTable("initiatives", {
   title: varchar("title").notNull(),
   state: initiativeStateEnum("state").notNull(),
   condition: initiativeConditionEnum("condition").notNull(),
-  size: integer("size").notNull(),
+  size: real("size").notNull(),
   initBoardId: integer("init_board_id").notNull(),
   type: varchar("type"),
   plannedInvolvement: integer("planned_involvement"),
@@ -34,7 +34,7 @@ export const tasks = pgTable("tasks", {
   title: varchar("title").notNull(),
   created: varchar("created").notNull(),
   state: initiativeStateEnum("state").notNull(),
-  size: integer("size").notNull(),
+  size: real("size").notNull(),
   condition: initiativeConditionEnum("condition").notNull(),
   boardId: integer("board_id").notNull(),
   sprintId: integer("sprint_id"),
@@ -54,7 +54,7 @@ export const sprints = pgTable("sprints", {
   sprintId: integer("sprint_id").primaryKey(),
   boardId: integer("board_id").notNull(),
   title: varchar("title").notNull(),
-  velocity: integer("velocity").notNull(),
+  velocity: real("velocity").notNull(),
   startDate: varchar("start_date").notNull(),
   finishDate: varchar("finish_date").notNull(),
   actualFinishDate: varchar("actual_finish_date"),
