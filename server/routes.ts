@@ -22,8 +22,35 @@ async function findInitiativeInParentChain(parentCardId: number, depth = 0): Pro
   // Проверяем, является ли родитель инициативой
   const parentInitiative = await storage.getInitiativeByCardId(parentCardId);
   if (parentInitiative) {
-    log(`[findInitiativeInParentChain] Found initiative ${parentCardId} at depth ${depth}`);
-    return parentCardId;
+    // Проверяем тип инициативы - подходящие типы: Epic, Compliance, Enabler
+    const validTypes = ['Epic', 'Compliance', 'Enabler'];
+    const initiativeType = parentInitiative.type || '';
+    
+    if (validTypes.includes(initiativeType)) {
+      // Тип подходит - возвращаем этот ID
+      log(`[findInitiativeInParentChain] Found valid initiative ${parentCardId} (type: ${initiativeType}) at depth ${depth}`);
+      return parentCardId;
+    } else {
+      // Тип НЕ подходит - продолжаем поиск вверх по цепочке
+      log(`[findInitiativeInParentChain] Initiative ${parentCardId} has invalid type '${initiativeType}', searching parent chain`);
+      
+      try {
+        const parentCard = await kaitenClient.getCard(parentCardId);
+        
+        // Проверяем, есть ли у этой инициативы свой родитель
+        if (parentCard.parents_ids && Array.isArray(parentCard.parents_ids) && parentCard.parents_ids.length > 0) {
+          const grandParentId = parentCard.parents_ids[0];
+          log(`[findInitiativeInParentChain] Invalid-type initiative ${parentCardId} has parent ${grandParentId}, checking recursively (depth ${depth + 1})`);
+          return await findInitiativeInParentChain(grandParentId, depth + 1);
+        } else {
+          log(`[findInitiativeInParentChain] Invalid-type initiative ${parentCardId} has no parent, stopping search`);
+          return 0;
+        }
+      } catch (error) {
+        log(`[findInitiativeInParentChain] Error fetching invalid-type initiative card ${parentCardId}: ${error}`);
+        return 0;
+      }
+    }
   }
   
   // Если родитель не инициатива, получаем его карточку из Kaiten
