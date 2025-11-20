@@ -298,6 +298,8 @@ export default function HomePage() {
       setVelocity(updatedTeam.vilocity.toString());
       setSprintDuration(updatedTeam.sprintDuration.toString());
       setSpPrice(updatedTeam.spPrice.toString());
+      setHasSprints(true);
+      setSprintIds("");
     },
     onError: (error: Error) => {
       let errorMessage = "Не удалось обновить команду";
@@ -485,6 +487,8 @@ export default function HomePage() {
       setVelocity(editingTeam.vilocity.toString());
       setSprintDuration(editingTeam.sprintDuration.toString());
       setSpPrice(editingTeam.spPrice.toString());
+      setHasSprints(true);
+      setSprintIds("");
     }
   }, [rightPanelMode, editingDepartment, editingTeam, departments]);
 
@@ -506,6 +510,8 @@ export default function HomePage() {
     setVelocity(team.vilocity.toString());
     setSprintDuration(team.sprintDuration.toString());
     setSpPrice(team.spPrice.toString());
+    setHasSprints(true); // Пока по умолчанию true, позже можно сохранять в БД
+    setSprintIds(""); // Пока пустая строка, позже можно загружать из БД
   };
 
   const hasFormChanged = () => {
@@ -1498,7 +1504,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 p-6 space-y-4 overflow-y-auto">
+                  <div className="flex-1 p-6 space-y-3 overflow-y-auto">
                     <div className="space-y-2">
                       <Label htmlFor="team-name">Название команды <span className="text-destructive">*</span></Label>
                       <Input
@@ -1587,6 +1593,28 @@ export default function HomePage() {
                         />
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="edit-has-sprints" 
+                          checked={hasSprints}
+                          onCheckedChange={(checked) => setHasSprints(checked === true)}
+                          data-testid="checkbox-has-sprints"
+                        />
+                        <Label htmlFor="edit-has-sprints" className="cursor-pointer">Спринты</Label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
+                      <Input
+                        id="edit-sprint-ids"
+                        placeholder="Введите ID спринтов через запятую (например: 123, 456, 789)"
+                        value={sprintIds}
+                        onChange={(e) => setSprintIds(e.target.value)}
+                        disabled={!hasSprints}
+                        data-testid="input-sprint-ids"
+                      />
+                    </div>
                   </div>
                   {editingTeam && hasFormChanged() && (
                     <div className="p-4 flex justify-end">
@@ -1628,7 +1656,7 @@ export default function HomePage() {
                       </h2>
                     </div>
                   </div>
-                  <div className="flex-1 p-6 space-y-4 overflow-y-auto">
+                  <div className="flex-1 p-6 space-y-3 overflow-y-auto">
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
                         <Label htmlFor="new-team-name">Название команды <span className="text-destructive">*</span></Label>
