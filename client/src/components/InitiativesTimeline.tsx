@@ -1711,7 +1711,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-1 text-sm text-foreground hover:text-primary transition-colors group flex-1 min-w-0"
-                                    style={{ maxWidth: '70%' }}
+                                    style={{ maxWidth: '75%' }}
                                     data-testid={`task-link-${idx}-${taskIdx}`}
                                   >
                                     <span className="group-hover:underline truncate">{task.title}</span>
@@ -1723,9 +1723,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                                 </TooltipContent>
                               </Tooltip>
                               {task.size === 0 ? (
-                                <span className="text-[10px] text-destructive font-medium whitespace-nowrap">нет оценки</span>
+                                <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
                               ) : (
-                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">{task.size} sp</span>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
                               )}
                             </div>
                           ))}
