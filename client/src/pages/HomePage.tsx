@@ -1917,23 +1917,26 @@ export default function HomePage() {
             <AlertDialogCancel data-testid="button-cancel-delete" disabled={deleteTeamMutation.isPending}>
               Отмена
             </AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               data-testid="button-confirm-delete"
               disabled={deleteTeamMutation.isPending}
-              onClick={(e) => {
-                e.preventDefault();
+              onClick={() => {
+                console.log('[Delete Team] Button clicked, teamToDelete:', teamToDelete);
                 if (teamToDelete) {
+                  console.log('[Delete Team] Starting deletion for team:', teamToDelete.teamId);
                   deletingTeamIdRef.current = teamToDelete.teamId;
                   deleteTeamMutation.mutate({
                     teamId: teamToDelete.teamId,
                     departmentId: teamToDelete.departmentId
                   });
+                } else {
+                  console.log('[Delete Team] No team to delete!');
                 }
               }}
               className="bg-destructive hover:bg-destructive/90"
             >
               {deleteTeamMutation.isPending ? "Удаление..." : "Удалить"}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
