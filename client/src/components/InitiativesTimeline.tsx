@@ -1673,8 +1673,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
               {sprintModalData && sprintModalData.initiatives.length > 0 ? (
                 <Accordion 
                   type="multiple" 
-                  className="w-full" 
-                  defaultValue={sprintModalData.initiatives.map((_, idx) => `initiative-${idx}`)}
+                  className="w-full"
                   data-testid="sprint-initiatives-list"
                 >
                   {sprintModalData.initiatives.map((initiative, idx) => (
@@ -1704,21 +1703,29 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                       <AccordionContent className="pb-4">
                         <div className="space-y-2 pl-8">
                           {initiative.tasks.map((task, taskIdx) => (
-                            <div key={taskIdx} className="flex items-center justify-between" data-testid={`task-${idx}-${taskIdx}`}>
-                              <a 
-                                href={getKaitenCardUrl(team.spaceId, task.cardId, task.archived)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-sm text-foreground hover:text-primary transition-colors group"
-                                data-testid={`task-link-${idx}-${taskIdx}`}
-                              >
-                                <span className="group-hover:underline">{task.title}</span>
-                                <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                              </a>
+                            <div key={taskIdx} className="flex items-center justify-between gap-2" data-testid={`task-${idx}-${taskIdx}`}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <a 
+                                    href={getKaitenCardUrl(team.spaceId, task.cardId, task.archived)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-sm text-foreground hover:text-primary transition-colors group flex-1 min-w-0"
+                                    style={{ maxWidth: '70%' }}
+                                    data-testid={`task-link-${idx}-${taskIdx}`}
+                                  >
+                                    <span className="group-hover:underline truncate">{task.title}</span>
+                                    <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                  </a>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="max-w-sm">{task.title}</p>
+                                </TooltipContent>
+                              </Tooltip>
                               {task.size === 0 ? (
-                                <span className="text-[10px] text-destructive ml-4 font-medium">нет оценки</span>
+                                <span className="text-[10px] text-destructive font-medium whitespace-nowrap">нет оценки</span>
                               ) : (
-                                <span className="text-[10px] text-muted-foreground ml-4">{task.size} sp</span>
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">{task.size} sp</span>
                               )}
                             </div>
                           ))}
