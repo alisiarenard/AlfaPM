@@ -69,6 +69,17 @@ export interface IStorage {
   getSprint(sprintId: number): Promise<SprintRow | undefined>;
   getTasksBySprint(sprintId: number): Promise<TaskRow[]>;
   getTasksByTeamAndDoneDateRange(teamId: string, startDate: Date, endDate: Date): Promise<TaskRow[]>;
+  getSprintInfo(sprintId: number): Promise<{
+    sprint: SprintRow;
+    tasks: Array<{
+      id: string;
+      cardId: number;
+      title: string;
+      size: number;
+      initiativeTitle: string | null;
+      initiativeCardId: number | null;
+    }>;
+  } | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -312,6 +323,20 @@ export class MemStorage implements IStorage {
 
   async getTasksByTeamAndDoneDateRange(teamId: string, startDate: Date, endDate: Date): Promise<TaskRow[]> {
     return [];
+  }
+
+  async getSprintInfo(sprintId: number): Promise<{
+    sprint: SprintRow;
+    tasks: Array<{
+      id: string;
+      cardId: number;
+      title: string;
+      size: number;
+      initiativeTitle: string | null;
+      initiativeCardId: number | null;
+    }>;
+  } | null> {
+    return null;
   }
 }
 
@@ -690,6 +715,76 @@ export class DbStorage implements IStorage {
       )
       .orderBy(asc(tasks.created));
     return result;
+  }
+
+  async getSprintInfo(sprintId: number): Promise<{
+    sprint: SprintRow;
+    tasks: Array<{
+      id: string;
+      cardId: number;
+      title: string;
+      size: number;
+      initiativeTitle: string | null;
+      initiativeCardId: number | null;
+    }>;
+  } | null> {
+    const sprint = await this.getSprint(sprintId);
+    if (!sprint) {
+      return null;
+    }
+
+    const sprintTasks = await this.getTasksBySprint(sprintId);
+
+    // Собираем все уникальные initCardId (кроме null и 0)
+    const uniqueInitCardIds = Array.from(
+      new Set(
+        sprintTasks
+          .map(task => task.initCardId)
+          .filter(id => id !== null && id !== undefined && id !== 0)
+      )
+    ) as number[];
+
+    // Получаем все инициативы одним запросом
+    const initiativesMap = new Map<number, InitiativeRow>();
+    if (uniqueInitCardIds.length > 0) {
+      const foundInitiatives = await db.select().from(initiatives)
+        .where(sql`${initiatives.cardId} IN (${sql.join(uniqueInitCardIds.map(id => sql`${id}`), sql`, `)})`);
+      
+      foundInitiatives.forEach(initiative => {
+        initiativesMap.set(initiative.cardId, initiative);
+      });
+    }
+
+    // Формируем результат
+    const tasksWithInitiatives = sprintTasks.map((task) => {
+      let initiativeTitle: string | null = null;
+      let initiativeCardId: number | null = null;
+
+      if (task.initCardId === 0) {
+        initiativeTitle = "Поддержка бизнеса";
+        initiativeCardId = 0;
+      } else if (task.initCardId && task.initCardId !== 0) {
+        const initiative = initiativesMap.get(task.initCardId);
+        if (initiative) {
+          initiativeTitle = initiative.title;
+          initiativeCardId = initiative.cardId;
+        }
+      }
+
+      return {
+        id: task.id,
+        cardId: task.cardId,
+        title: task.title,
+        size: task.size,
+        initiativeTitle,
+        initiativeCardId,
+      };
+    });
+
+    return {
+      sprint,
+      tasks: tasksWithInitiatives,
+    };
   }
 
   async syncSprintFromKaiten(

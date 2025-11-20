@@ -1,8 +1,10 @@
-import { Users, RefreshCw } from "lucide-react";
+import { Users, RefreshCw, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import type { Team, Initiative, TeamRow } from "@shared/schema";
+import { SprintInfoDialog } from "@/components/SprintInfoDialog";
 
 interface TeamHeaderProps {
   team: Team;
@@ -15,6 +17,8 @@ interface TeamHeaderProps {
 }
 
 export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilterChange, onSync, isSyncing }: TeamHeaderProps) {
+  const [sprintInfoOpen, setSprintInfoOpen] = useState(false);
+
   const calculateInnovationRate = (): string => {
     let totalStoryPoints = 0;
     let innovationStoryPoints = 0;
@@ -60,6 +64,16 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
               >
                 <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
               </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                data-testid="button-sprint-info"
+                className="h-7 w-7"
+                onClick={() => setSprintInfoOpen(true)}
+                title="Просмотр информации о спринте"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               Innovation Rate: <span data-testid="text-innovation-rate">{calculateInnovationRate()}</span>
@@ -78,6 +92,10 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
           </Label>
         </div>
       </div>
+      <SprintInfoDialog 
+        open={sprintInfoOpen} 
+        onOpenChange={setSprintInfoOpen}
+      />
     </div>
   );
 }

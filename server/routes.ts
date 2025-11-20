@@ -1238,6 +1238,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/sprints/:sprintId/info", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid sprint ID" 
+        });
+      }
+      const sprintInfo = await storage.getSprintInfo(sprintId);
+      if (!sprintInfo) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Sprint not found" 
+        });
+      }
+      res.json(sprintInfo);
+    } catch (error) {
+      console.error("GET /api/sprints/:sprintId/info error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve sprint info" 
+      });
+    }
+  });
+
   // Tasks endpoints
   app.get("/api/tasks", async (req, res) => {
     try {
