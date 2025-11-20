@@ -1,5 +1,10 @@
 import PDFDocument from 'pdfkit';
 import OpenAI from 'openai';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // AI Configuration
 const AI_API_KEY = process.env.OPENAI_API_KEY || '';
@@ -35,8 +40,10 @@ export async function generateSprintReportPDF(
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Используем встроенные шрифты PDFKit (Helvetica поддерживает кириллицу в PDFKit)
-      // Примечание: PDFKit автоматически использует внутренние шрифты с поддержкой Unicode
+      // Регистрируем шрифты DejaVu из локальной папки проекта
+      const fontPath = path.join(__dirname, 'fonts');
+      doc.registerFont('DejaVu', path.join(fontPath, 'DejaVuSans.ttf'));
+      doc.registerFont('DejaVu-Bold', path.join(fontPath, 'DejaVuSans-Bold.ttf'));
 
       // Форматируем даты для отображения
       let formattedDates: string;
@@ -56,15 +63,15 @@ export async function generateSprintReportPDF(
       }
 
       // Заголовок отчета
-      doc.fontSize(16).text(`Отчет по спринту`, { align: 'center' });
+      doc.font('DejaVu-Bold').fontSize(16).text(`Отчет по спринту`, { align: 'center' });
       doc.moveDown(0.5);
-      doc.fontSize(12).text(`Команда ${teamName} в спринте ${formattedDates} выполнила следующие задачи:`, { align: 'left' });
+      doc.font('DejaVu').fontSize(12).text(`Команда ${teamName} в спринте ${formattedDates} выполнила следующие задачи:`, { align: 'left' });
       doc.moveDown(1);
 
       // Обрабатываем каждую инициативу
       for (const initiative of initiatives) {
         // Название инициативы
-        doc.fontSize(14).text(initiative.title);
+        doc.font('DejaVu-Bold').fontSize(14).text(initiative.title);
         doc.moveDown(0.5);
 
         // Сокращаем формулировки задач через AI
@@ -82,7 +89,7 @@ export async function generateSprintReportPDF(
             taskText += ' (front)';
           }
 
-          doc.fontSize(11).text(taskText, { indent: 20 });
+          doc.font('DejaVu').fontSize(11).text(taskText, { indent: 20 });
         }
 
         doc.moveDown(1);
