@@ -2030,6 +2030,16 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
   // Данные уже приходят в правильном формате Initiative с сервера
   const allInitiatives: Initiative[] = initiativeRows || [];
   
+  console.log(`[Initiatives Filter] Received ${allInitiatives.length} initiatives from backend for team ${team.teamName}`);
+  console.log(`[Initiatives Filter] All initiatives:`, allInitiatives.map(i => ({ 
+    cardId: i.cardId, 
+    title: i.title, 
+    type: i.type, 
+    state: i.state,
+    sprintsCount: i.sprints?.length || 0,
+    totalSp: i.sprints?.reduce((sum, s) => sum + s.sp, 0) || 0
+  })));
+  
   // Фильтруем инициативы:
   // 1. "Поддержка бизнеса" (cardId === 0) показываем всегда независимо от года
   // 2. Показываем только типы Epic, Compliance и Enabler
@@ -2045,11 +2055,13 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     
     // Показываем только Epic, Compliance и Enabler
     if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') {
+      console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - type: ${init.type} (не Epic/Compliance/Enabler)`);
       return false;
     }
     
     // Фильтр "Активные" - показываем только inProgress
     if (showActiveOnly && init.state !== "2-inProgress") {
+      console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - state: ${init.state} (showActiveOnly=${showActiveOnly})`);
       return false;
     }
     
@@ -2060,6 +2072,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       
       // Не показываем если выполнено 0 SP
       if (totalSp === 0) {
+        console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - totalSp: ${totalSp} (done/inProgress с 0 SP)`);
         return false;
       }
       
@@ -2074,12 +2087,16 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       
       // Не показываем если нет задач в выбранном году
       if (!hasTasksInSelectedYear) {
+        console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - no tasks in year ${selectedYear} (state: ${init.state})`);
         return false;
       }
     }
     
+    console.log(`[Initiatives Filter] Initiative ${init.cardId} "${init.title}" PASSED all filters`);
     return true;
   });
+  
+  console.log(`[Initiatives Filter] Final count: ${initiatives.length} initiatives shown (from ${allInitiatives.length} total)`);
 
   const teamData: Team = {
     boardId: team.initBoardId.toString(),
