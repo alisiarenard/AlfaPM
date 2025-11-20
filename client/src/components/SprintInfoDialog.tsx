@@ -57,9 +57,7 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
       if (!searchedSprintId) {
         throw new Error('No sprint selected');
       }
-      return apiRequest(`/api/sprints/${searchedSprintId}/save`, {
-        method: 'POST',
-      });
+      return apiRequest('POST', `/api/sprints/${searchedSprintId}/save`);
     },
     onSuccess: () => {
       toast({
