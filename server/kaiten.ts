@@ -14,6 +14,7 @@ export interface KaitenCard {
   archived: boolean;
   sprint_id?: number | null;
   children?: KaitenCard[];
+  children_ids?: number[] | null;
   created?: string;
   type_id?: number | null;
   type?: {

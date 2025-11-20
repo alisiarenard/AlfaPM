@@ -292,81 +292,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else if (teamData.initBoardId) {
         // РЕЖИМ: Виртуальные спринты (hasSprints === false)
-        // Синхронизируем только задачи через date filter API из доски инициатив
+        // Синхронизируем дочерние карточки инициатив (children)
         // Виртуальные спринты создадутся автоматически в /api/timeline на основе sprintDuration
         try {
-          log(`[Team Creation] Step 2: VIRTUAL sprints mode - syncing tasks only via date filter`);
+          log(`[Team Creation] Step 2: VIRTUAL sprints mode - syncing children of initiatives`);
           
-          const currentYear = new Date().getFullYear();
-          const yearStart = new Date(currentYear, 0, 1).toISOString();
-          
-          log(`[Team Creation] Fetching tasks completed after ${yearStart} from initiative board ${teamData.initBoardId}`);
-          
-          const tasks = await kaitenClient.getCardsWithDateFilter({
-            boardId: teamData.initBoardId,
-            lastMovedToDoneAtAfter: yearStart,
-            limit: 1000
-          });
-          
-          log(`[Team Creation] Found ${tasks.length} tasks completed after ${yearStart}`);
+          // Получаем все инициативы, которые были синхронизированы на шаге 1
+          const initiatives = await storage.getInitiativesByBoardId(teamData.initBoardId);
+          log(`[Team Creation] Found ${initiatives.length} initiatives to sync children for`);
           
           let totalTasks = 0;
           
-          for (const taskCard of tasks) {
+          // Для каждой инициативы синхронизируем её дочерние карточки
+          for (const initiative of initiatives) {
             try {
-              // Пропускаем инициативные карточки (Epic, Compliance, Enabler)
-              const cardType = taskCard.type?.name;
-              if (cardType === 'Epic' || cardType === 'Compliance' || cardType === 'Enabler') {
-                log(`[Team Creation] Skipping initiative card ${taskCard.id} "${taskCard.title}" (type: ${cardType})`);
-                continue;
-              }
+              // Получаем полную карточку инициативы из Kaiten для доступа к children_ids
+              const initiativeCard = await kaitenClient.getCard(initiative.cardId);
               
-              let initCardId = 0;
-              if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
-                const parentId = taskCard.parents_ids[0];
-                const parentInitiative = await storage.getInitiativeByCardId(parentId);
-                if (parentInitiative) {
-                  initCardId = parentId;
-                  log(`[Team Creation] Task ${taskCard.id} linked to initiative ${parentId}`);
+              if (initiativeCard.children_ids && Array.isArray(initiativeCard.children_ids) && initiativeCard.children_ids.length > 0) {
+                log(`[Team Creation] Initiative ${initiative.cardId} "${initiative.title}" has ${initiativeCard.children_ids.length} children`);
+                
+                // Синхронизируем каждую дочернюю карточку
+                for (const childId of initiativeCard.children_ids) {
+                  try {
+                    const childCard = await kaitenClient.getCard(childId);
+                    
+                    // Пропускаем архивные
+                    if (childCard.archived) {
+                      log(`[Team Creation] Skipping archived child ${childId}`);
+                      continue;
+                    }
+                    
+                    let state: "1-queued" | "2-inProgress" | "3-done";
+                    if (childCard.state === 3) {
+                      state = "3-done";
+                    } else if (childCard.state === 2) {
+                      state = "2-inProgress";
+                    } else {
+                      state = "1-queued";
+                    }
+                    
+                    const condition: "1-live" | "2-archived" = childCard.archived ? "2-archived" : "1-live";
+                    
+                    await storage.syncTaskFromKaiten(
+                      childCard.id,
+                      childCard.board_id,
+                      childCard.title,
+                      childCard.created || new Date().toISOString(),
+                      state,
+                      childCard.size || 0,
+                      condition,
+                      childCard.archived || false,
+                      initiative.cardId, // Привязываем к родительской инициативе
+                      childCard.type?.name,
+                      childCard.completed_at ?? undefined,
+                      null, // Нет sprint_id для виртуальных спринтов
+                      childCard.last_moved_to_done_at,
+                      team.teamId
+                    );
+                    
+                    totalTasks++;
+                  } catch (childError: unknown) {
+                    const errorMessage = childError instanceof Error ? childError.message : String(childError);
+                    log(`[Team Creation] Error syncing child ${childId}: ${errorMessage}`);
+                  }
                 }
               }
-              
-              let state: "1-queued" | "2-inProgress" | "3-done";
-              if (taskCard.state === 3) {
-                state = "3-done";
-              } else if (taskCard.state === 2) {
-                state = "2-inProgress";
-              } else {
-                state = "1-queued";
-              }
-              
-              const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
-              
-              await storage.syncTaskFromKaiten(
-                taskCard.id,
-                taskCard.board_id,
-                taskCard.title,
-                taskCard.created || new Date().toISOString(),
-                state,
-                taskCard.size || 0,
-                condition,
-                taskCard.archived || false,
-                initCardId,
-                taskCard.type?.name,
-                taskCard.completed_at ?? undefined,
-                null,
-                taskCard.last_moved_to_done_at,
-                team.teamId
-              );
-              
-              totalTasks++;
-            } catch (taskError: unknown) {
-              const errorMessage = taskError instanceof Error ? taskError.message : String(taskError);
-              log(`[Team Creation] Error syncing task ${taskCard.id}: ${errorMessage}`);
+            } catch (initError: unknown) {
+              const errorMessage = initError instanceof Error ? initError.message : String(initError);
+              log(`[Team Creation] Error processing initiative ${initiative.cardId}: ${errorMessage}`);
             }
           }
           
-          log(`[Team Creation] Successfully synced ${totalTasks} tasks for virtual sprints`);
+          log(`[Team Creation] Successfully synced ${totalTasks} tasks (children) for virtual sprints`);
         } catch (syncError) {
           console.error("[Team Creation] Virtual sprints task sync error:", syncError);
         }
