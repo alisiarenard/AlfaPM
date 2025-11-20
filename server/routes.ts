@@ -583,7 +583,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 title: task.title,
                 type: task.type,
                 size: task.size,
-                archived: task.archived
+                archived: task.archived,
+                doneDate: task.doneDate
               });
               sprintsMap.set(task.sprintId, current);
             }
@@ -785,7 +786,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   title: task.title,
                   type: task.type,
                   size: task.size,
-                  archived: task.archived
+                  archived: task.archived,
+                  doneDate: task.doneDate
                 });
                 sprintsMap.set(virtualSprint.sprintId, current);
               }
@@ -850,7 +852,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 title: task.title,
                 type: task.type,
                 size: task.size,
-                archived: task.archived
+                archived: task.archived,
+                doneDate: task.doneDate
               });
               sprintsMap.set(task.sprintId, current);
             }
@@ -977,7 +980,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   title: task.title,
                   type: task.type,
                   size: task.size,
-                  archived: task.archived
+                  archived: task.archived,
+                  doneDate: task.doneDate
                 }))
               });
             }

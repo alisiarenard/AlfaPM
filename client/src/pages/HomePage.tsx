@@ -1291,7 +1291,7 @@ export default function HomePage() {
               
               {departmentTeams.map((team) => (
                 <TabsContent key={team.teamId} value={team.teamId}>
-                  <TeamInitiativesTab team={team} showActiveOnly={showActiveOnly} setShowActiveOnly={setShowActiveOnly} />
+                  <TeamInitiativesTab team={team} showActiveOnly={showActiveOnly} setShowActiveOnly={setShowActiveOnly} selectedYear={selectedYear} />
                 </TabsContent>
               ))}
             </Tabs>
@@ -1836,7 +1836,7 @@ export default function HomePage() {
   );
 }
 
-function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void }) {
+function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedYear }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void; selectedYear: string }) {
   const { toast } = useToast();
   
   const { data: timelineData, isLoading: timelineLoading, error: initiativesError } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
@@ -1965,6 +1965,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team:
   // Фильтруем инициативы:
   // 1. Если включен фильтр "Активные" - только inProgress (скрываем queued и done)
   // 2. Если инициатива done или inProgress и выполнено 0 SP - не показываем
+  // 3. Если выбран год, для инициатив done или inProgress показываем только те, у которых есть задачи, закрытые в этом году
   const initiatives = allInitiatives.filter(init => {
     // Фильтр "Активные" - показываем только inProgress
     if (showActiveOnly && init.state !== "2-inProgress") {
@@ -1978,6 +1979,20 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly }: { team:
       
       // Не показываем если выполнено 0 SP
       if (totalSp === 0) {
+        return false;
+      }
+      
+      // Фильтр по году: проверяем, есть ли задачи, закрытые в выбранном году
+      const hasTasksInSelectedYear = init.sprints.some(sprint => 
+        sprint.tasks.some(task => {
+          if (!task.doneDate) return false;
+          const taskYear = new Date(task.doneDate).getFullYear();
+          return taskYear.toString() === selectedYear;
+        })
+      );
+      
+      // Не показываем если нет задач в выбранном году
+      if (!hasTasksInSelectedYear) {
         return false;
       }
     }
