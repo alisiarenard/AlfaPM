@@ -1477,7 +1477,6 @@ export default function HomePage() {
                     onDepartmentClick={handleDepartmentClick}
                     onTeamClick={handleTeamClick}
                     onTeamDelete={(team) => {
-                      console.log('[Delete Team] Direct delete for team:', team.teamId);
                       deleteTeamMutation.mutate({
                         teamId: team.teamId,
                         departmentId: team.departmentId
@@ -2030,6 +2029,11 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
 
   // Данные уже приходят в правильном формате Initiative с сервера
   const allInitiatives: Initiative[] = initiativeRows || [];
+  
+  // Debug: проверяем есть ли "Поддержка бизнеса" в данных
+  console.log('[Timeline] All initiatives:', allInitiatives.length);
+  const supportInit = allInitiatives.find(i => i.cardId === 0);
+  console.log('[Timeline] "Поддержка бизнеса" found:', supportInit ? supportInit.title : 'NOT FOUND');
   
   // Фильтруем инициативы:
   // 1. "Поддержка бизнеса" (cardId === 0) показываем всегда независимо от года
