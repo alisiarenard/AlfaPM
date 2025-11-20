@@ -1247,19 +1247,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: "Invalid sprint ID" 
         });
       }
-      const sprintInfo = await storage.getSprintInfo(sprintId);
-      if (!sprintInfo) {
+
+      log(`[Sprint Info] Fetching sprint ${sprintId} from Kaiten`);
+      const kaitenSprint = await kaitenClient.getSprint(sprintId);
+      
+      if (!kaitenSprint) {
         return res.status(404).json({ 
           success: false, 
-          error: "Sprint not found" 
+          error: "Sprint not found in Kaiten" 
         });
       }
-      res.json(sprintInfo);
+
+      log(`[Sprint Info] Sprint found: ${kaitenSprint.title}`);
+      
+      const sprint = {
+        sprintId: kaitenSprint.id,
+        boardId: kaitenSprint.board_id || 0,
+        title: kaitenSprint.title,
+        velocity: kaitenSprint.velocity || 0,
+        startDate: kaitenSprint.start_date || '',
+        finishDate: kaitenSprint.finish_date || '',
+        actualFinishDate: kaitenSprint.actual_finish_date || null,
+        goal: kaitenSprint.goal || null,
+      };
+
+      const tasks = [];
+      
+      if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
+        log(`[Sprint Info] Processing ${kaitenSprint.cards.length} cards`);
+        
+        for (const sprintCard of kaitenSprint.cards) {
+          try {
+            const card = await kaitenClient.getCard(sprintCard.id);
+            
+            let initiativeTitle: string | null = null;
+            let initiativeCardId: number | null = null;
+
+            // Проверяем parents_ids для определения инициативы
+            if (card.parents_ids && card.parents_ids.length > 0) {
+              const parentCardId = card.parents_ids[0];
+              
+              // Проверяем, является ли родитель инициативой
+              const initiative = await storage.getInitiativeByCardId(parentCardId);
+              if (initiative) {
+                initiativeTitle = initiative.title;
+                initiativeCardId = initiative.cardId;
+              }
+            }
+            
+            // Если инициатива не найдена, это задача "Поддержка бизнеса"
+            if (!initiativeCardId) {
+              initiativeTitle = "Поддержка бизнеса";
+              initiativeCardId = 0;
+            }
+
+            tasks.push({
+              id: card.id.toString(),
+              cardId: card.id,
+              title: card.title,
+              size: card.size || 0,
+              initiativeTitle,
+              initiativeCardId,
+            });
+          } catch (cardError) {
+            const errorMessage = cardError instanceof Error ? cardError.message : String(cardError);
+            log(`[Sprint Info] Error fetching card ${sprintCard.id}: ${errorMessage}`);
+          }
+        }
+      }
+
+      log(`[Sprint Info] Returning ${tasks.length} tasks`);
+      
+      res.json({
+        sprint,
+        tasks,
+      });
     } catch (error) {
       console.error("GET /api/sprints/:sprintId/info error:", error);
       res.status(500).json({ 
         success: false, 
-        error: "Failed to retrieve sprint info" 
+        error: "Failed to retrieve sprint info from Kaiten" 
       });
     }
   });
