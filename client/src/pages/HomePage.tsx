@@ -1963,10 +1963,17 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
   const allInitiatives: Initiative[] = initiativeRows || [];
   
   // Фильтруем инициативы:
-  // 1. Если включен фильтр "Активные" - только inProgress (скрываем queued и done)
-  // 2. Если инициатива done или inProgress и выполнено 0 SP - не показываем
-  // 3. Если выбран год, для инициатив done или inProgress показываем только те, у которых есть задачи, закрытые в этом году
+  // 1. "Поддержка бизнеса" (cardId === 0) показываем всегда независимо от года
+  // 2. Если включен фильтр "Активные" - только inProgress (скрываем queued и done)
+  // 3. Если инициатива done или inProgress и выполнено 0 SP - не показываем
+  // 4. Если выбран год, для инициатив done или inProgress показываем только те, у которых есть задачи, закрытые в этом году
   const initiatives = allInitiatives.filter(init => {
+    // "Поддержка бизнеса" показываем всегда (независимо от года и других фильтров)
+    const isSupport = init.cardId === 0;
+    if (isSupport) {
+      return true;
+    }
+    
     // Фильтр "Активные" - показываем только inProgress
     if (showActiveOnly && init.state !== "2-inProgress") {
       return false;

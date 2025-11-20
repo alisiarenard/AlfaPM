@@ -97,7 +97,7 @@ export const teams = pgTable("teams", {
   initBoardId: integer("init_board_id").notNull(),
   teamId: varchar("team_id").primaryKey().default(sql`gen_random_uuid()`),
   teamName: varchar("team_name").notNull(),
-  vilocity: integer("vilocity").notNull(),
+  vilocity: real("vilocity").notNull(),
   sprintDuration: integer("sprint_duration").notNull(),
   departmentId: varchar("department_id").notNull(),
   spPrice: integer("sp_price").notNull(),
