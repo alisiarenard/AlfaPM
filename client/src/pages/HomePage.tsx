@@ -1507,7 +1507,7 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 px-6 pb-6 space-y-3 overflow-y-auto">
+                  <div className="flex-1 px-6 pt-3 pb-6 space-y-3 overflow-y-auto">
                     <div className="space-y-2">
                       <Label htmlFor="team-name">Название команды <span className="text-destructive">*</span></Label>
                       <Input
@@ -1659,7 +1659,7 @@ export default function HomePage() {
                       </h2>
                     </div>
                   </div>
-                  <div className="flex-1 px-6 pb-6 space-y-3 overflow-y-auto">
+                  <div className="flex-1 px-6 pt-3 pb-6 space-y-3 overflow-y-auto">
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
                         <Label htmlFor="new-team-name">Название команды <span className="text-destructive">*</span></Label>
