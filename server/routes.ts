@@ -670,8 +670,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log(`[Timeline] Team ${teamId} - initBoardId: ${initBoardId}, sprintBoardId: ${sprintBoardId}, sprintDuration: ${sprintDuration}, hasSprints: ${team.hasSprints}`);
 
       // Получаем инициативы
-      const initiatives = await storage.getInitiativesByBoardId(initBoardId);
+      let initiatives = await storage.getInitiativesByBoardId(initBoardId);
       log(`[Timeline] Got ${initiatives.length} initiatives from DB for board ${initBoardId}`);
+      
+      // Добавляем "Поддержка бизнеса" (cardId=0) если её нет
+      const hasBusinessSupport = initiatives.some(init => init.cardId === 0);
+      if (!hasBusinessSupport) {
+        const businessSupport = await storage.getInitiativeByCardId(0);
+        if (businessSupport) {
+          initiatives = [businessSupport, ...initiatives];
+          log(`[Timeline] Added "Поддержка бизнеса" to initiatives`);
+        }
+      }
 
       // Загружаем все задачи один раз (избегаем N+1)
       const initiativeCardIds = new Set(initiatives.map(i => i.cardId));
