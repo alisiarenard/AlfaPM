@@ -415,8 +415,6 @@ export class DbStorage implements IStorage {
         await tx.delete(sprints).where(eq(sprints.boardId, team.sprintBoardId));
       }
 
-      await tx.delete(initiatives).where(eq(initiatives.initBoardId, team.initBoardId));
-
       await tx.delete(teams).where(eq(teams.teamId, teamId));
     });
   }
