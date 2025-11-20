@@ -1423,21 +1423,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Сохраняем только завершенные карточки
         for (const card of doneCards) {
           try {
-            let initCardId: number | null = null;
-
-            // Проверяем parents_ids для определения инициативы
-            if (card.parents_ids && card.parents_ids.length > 0) {
+            // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
+            let initCardId = 0;
+            if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
               const parentCardId = card.parents_ids[0];
+              initCardId = await findInitiativeInParentChain(parentCardId);
               
-              // Проверяем, является ли родитель инициативой
-              const initiative = await storage.getInitiativeByCardId(parentCardId);
-              if (initiative) {
-                initCardId = initiative.cardId;
+              if (initCardId !== 0) {
+                log(`[Sprint Save] Task ${card.id} linked to initiative ${initCardId} (via parent chain)`);
+              } else {
+                log(`[Sprint Save] Task ${card.id} has parent ${parentCardId} but no initiative found in chain`);
               }
+            } else {
+              log(`[Sprint Save] Task ${card.id} has no parent_id - will be saved as Business Support`);
             }
-            
-            // Если инициатива не найдена, оставляем null (не 0)
-            // 0 используется только для "Поддержки бизнеса" при синхронизации
 
             // Преобразуем state и condition из number в строку с валидацией
             let stateStr: "1-queued" | "2-inProgress" | "3-done" = "3-done"; // Всегда done, т.к. отфильтровали
