@@ -1033,7 +1033,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     }
 
     // Для инициатив в статусе "done" показываем блоки только до последнего фактического спринта
-    if (initiative.state === 'done') {
+    if (initiative.state === '3-done') {
       const lastSprintId = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1].sprintId;
       const lastSprintIndex = allSprintIds.indexOf(lastSprintId);
       const currentSprintIndex = allSprintIds.indexOf(sprintId);
