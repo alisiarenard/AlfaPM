@@ -2,11 +2,9 @@ import PDFDocument from 'pdfkit';
 import OpenAI from 'openai';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const require = createRequire(import.meta.url);
 
 // AI Configuration
 const AI_API_KEY = process.env.OPENAI_API_KEY || '';
@@ -42,10 +40,10 @@ export async function generateSprintReportPDF(
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Регистрируем шрифты DejaVu из npm пакета dejavu-fonts-ttf
-      const dejavuFontsPath = path.dirname(require.resolve('dejavu-fonts-ttf'));
-      doc.registerFont('DejaVu', path.join(dejavuFontsPath, 'ttf', 'DejaVuSans.ttf'));
-      doc.registerFont('DejaVu-Bold', path.join(dejavuFontsPath, 'ttf', 'DejaVuSans-Bold.ttf'));
+      // Регистрируем шрифты DejaVu из локальной папки проекта
+      const fontPath = path.join(__dirname, 'fonts');
+      doc.registerFont('DejaVu', path.join(fontPath, 'DejaVuSans.ttf'));
+      doc.registerFont('DejaVu-Bold', path.join(fontPath, 'DejaVuSans-Bold.ttf'));
 
       // Форматируем даты для отображения
       let formattedDates: string;
