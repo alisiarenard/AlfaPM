@@ -3,13 +3,14 @@ import { TeamHeader } from "@/components/TeamHeader";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder, MoreVertical, Download, Users } from "lucide-react";
+import { AlertCircle, Settings, ChevronRight, ChevronDown, Plus, Folder, MoreVertical, Download, Users, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MdAccountTree } from "react-icons/md";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -25,6 +26,7 @@ function DepartmentTreeItem({
   onToggle,
   onDepartmentClick,
   onTeamClick,
+  onTeamDelete,
   isSelected,
   selectedTeamId
 }: { 
@@ -33,6 +35,7 @@ function DepartmentTreeItem({
   onToggle: () => void;
   onDepartmentClick: (dept: DepartmentWithTeamCount) => void;
   onTeamClick: (team: TeamRow) => void;
+  onTeamDelete: (team: TeamRow) => void;
   isSelected: boolean;
   selectedTeamId: string | null;
 }) {
@@ -71,11 +74,27 @@ function DepartmentTreeItem({
           {teams.map((team) => (
             <div
               key={team.teamId}
-              className={`px-3 py-2 text-sm text-muted-foreground rounded-md hover-elevate cursor-pointer ${selectedTeamId === team.teamId ? 'bg-muted' : ''}`}
+              className={`group flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground rounded-md hover-elevate ${selectedTeamId === team.teamId ? 'bg-muted' : ''}`}
               data-testid={`settings-team-${team.teamId}`}
-              onClick={() => onTeamClick(team)}
             >
-              {team.teamName}
+              <span 
+                className="flex-1 cursor-pointer"
+                onClick={() => onTeamClick(team)}
+              >
+                {team.teamName}
+              </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTeamDelete(team);
+                }}
+                data-testid={`button-delete-team-${team.teamId}`}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
             </div>
           ))}
         </div>
@@ -111,6 +130,8 @@ export default function HomePage() {
   const [hasSprints, setHasSprints] = useState(true);
   const [sprintIds, setSprintIds] = useState("");
   const [showActiveOnly, setShowActiveOnly] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<TeamRow | null>(null);
+  const deletingTeamIdRef = useRef<string | null>(null);
   const { toast } = useToast();
 
   // Функция для парсинга query параметров из URL
@@ -322,6 +343,56 @@ export default function HomePage() {
       toast({
         title: "Ошибка",
         description: errorMessage,
+      });
+    },
+  });
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (data: { teamId: string; departmentId: string }) => {
+      const res = await apiRequest("DELETE", `/api/teams/${data.teamId}`);
+      return { teamId: data.teamId, departmentId: data.departmentId };
+    },
+    onSuccess: (data) => {
+      const deletedTeamId = deletingTeamIdRef.current || data.teamId;
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", data.departmentId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timeline", deletedTeamId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board"] });
+      
+      if (editingTeam?.teamId === deletedTeamId) {
+        setRightPanelMode(null);
+        setEditingTeam(null);
+      }
+      
+      if (selectedTeams.has(deletedTeamId)) {
+        const newSelectedTeams = new Set(selectedTeams);
+        newSelectedTeams.delete(deletedTeamId);
+        setSelectedTeams(newSelectedTeams);
+        
+        if (newSelectedTeams.size === 0 && selectedDepartment) {
+          setActiveTab('');
+        }
+      }
+      
+      if (activeTab === deletedTeamId) {
+        setActiveTab('');
+      }
+      
+      deletingTeamIdRef.current = null;
+      setTeamToDelete(null);
+      
+      toast({
+        title: "Успешно",
+        description: "Команда удалена",
+      });
+    },
+    onError: (error: Error) => {
+      deletingTeamIdRef.current = null;
+      setTeamToDelete(null);
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось удалить команду",
       });
     },
   });
@@ -1414,6 +1485,7 @@ export default function HomePage() {
                     }}
                     onDepartmentClick={handleDepartmentClick}
                     onTeamClick={handleTeamClick}
+                    onTeamDelete={(team) => setTeamToDelete(team)}
                   />
                 ))}
               </div>
@@ -1832,6 +1904,39 @@ export default function HomePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!teamToDelete} onOpenChange={(open) => !open && !deleteTeamMutation.isPending && setTeamToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить команду?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы уверены, что хотите удалить команду "{teamToDelete?.teamName}"? Это действие удалит команду и все связанные с ней данные (инициативы, спринты, задачи). Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete" disabled={deleteTeamMutation.isPending}>
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="button-confirm-delete"
+              disabled={deleteTeamMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (teamToDelete) {
+                  deletingTeamIdRef.current = teamToDelete.teamId;
+                  deleteTeamMutation.mutate({
+                    teamId: teamToDelete.teamId,
+                    departmentId: teamToDelete.departmentId
+                  });
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleteTeamMutation.isPending ? "Удаление..." : "Удалить"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

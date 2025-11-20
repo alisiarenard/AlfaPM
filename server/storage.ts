@@ -17,6 +17,7 @@ export interface IStorage {
   getTeamByInitBoardId(initBoardId: number): Promise<TeamRow | undefined>;
   createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow>;
   updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined>;
+  deleteTeam(teamId: string): Promise<void>;
   getAllInitiatives(): Promise<InitiativeRow[]>;
   getInitiativesByBoardId(initBoardId: number): Promise<InitiativeRow[]>;
   getInitiative(id: string): Promise<InitiativeRow | undefined>;
@@ -133,6 +134,10 @@ export class MemStorage implements IStorage {
 
   async updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined> {
     return undefined;
+  }
+
+  async deleteTeam(teamId: string): Promise<void> {
+    return;
   }
 
   async getAllInitiatives(): Promise<InitiativeRow[]> {
@@ -395,6 +400,25 @@ export class DbStorage implements IStorage {
       .where(eq(teams.teamId, teamId))
       .returning();
     return updated;
+  }
+
+  async deleteTeam(teamId: string): Promise<void> {
+    const team = await this.getTeamById(teamId);
+    if (!team) {
+      throw new Error("Team not found");
+    }
+
+    await db.transaction(async (tx) => {
+      await tx.delete(tasks).where(eq(tasks.teamId, teamId));
+
+      if (team.sprintBoardId) {
+        await tx.delete(sprints).where(eq(sprints.boardId, team.sprintBoardId));
+      }
+
+      await tx.delete(initiatives).where(eq(initiatives.initBoardId, team.initBoardId));
+
+      await tx.delete(teams).where(eq(teams.teamId, teamId));
+    });
   }
 
   async getAllInitiatives(): Promise<InitiativeRow[]> {

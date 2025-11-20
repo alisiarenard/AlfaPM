@@ -502,6 +502,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/teams/:teamId", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      
+      await storage.deleteTeam(teamId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("DELETE /api/teams/:teamId error:", error);
+      
+      if (error instanceof Error && error.message === "Team not found") {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Team not found" 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        error: "Internal server error" 
+      });
+    }
+  });
+
   app.get("/api/initiatives", async (req, res) => {
     try {
       const initiatives = await storage.getAllInitiatives();
