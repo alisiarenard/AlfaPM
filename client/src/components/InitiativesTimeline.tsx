@@ -1032,6 +1032,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return false;
     }
 
+    // Для инициатив в статусе "done" показываем блоки только до последнего фактического спринта
+    if (initiative.state === 'done') {
+      const lastSprintId = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1].sprintId;
+      const lastSprintIndex = allSprintIds.indexOf(lastSprintId);
+      const currentSprintIndex = allSprintIds.indexOf(sprintId);
+      return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastSprintIndex;
+    }
+
     // Рассчитываем прогнозируемое количество спринтов
     const forecastedSprintCount = calculateForecastedSprints(initiative);
     
