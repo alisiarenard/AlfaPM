@@ -1407,10 +1407,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const cards = await Promise.all(cardPromises);
         
-        // Сохраняем карточки
-        for (const card of cards) {
-          if (!card) continue;
-          
+        // Фильтруем только задачи в статусе "done" (state === 3)
+        const doneCards = cards.filter(card => card && card.state === 3);
+        log(`[Sprint Save] Filtered ${doneCards.length} done tasks from ${cards.filter(c => c).length} total tasks`);
+        
+        // Сохраняем только завершенные карточки
+        for (const card of doneCards) {
           try {
             let initCardId: number | null = null;
 
@@ -1429,7 +1431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // 0 используется только для "Поддержки бизнеса" при синхронизации
 
             // Преобразуем state и condition из number в строку с валидацией
-            let stateStr: "1-queued" | "2-inProgress" | "3-done" = "1-queued";
+            let stateStr: "1-queued" | "2-inProgress" | "3-done" = "3-done"; // Всегда done, т.к. отфильтровали
             if (card.state === 1) stateStr = "1-queued";
             else if (card.state === 2) stateStr = "2-inProgress";
             else if (card.state === 3) stateStr = "3-done";
