@@ -1,11 +1,13 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { roundSP } from "@shared/utils";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface SprintInfoDialogProps {
   open: boolean;
@@ -36,6 +38,7 @@ interface SprintInfo {
 export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) {
   const [sprintId, setSprintId] = useState("");
   const [searchedSprintId, setSearchedSprintId] = useState<number | null>(null);
+  const { toast } = useToast();
 
   const { data: sprintInfo, isLoading, error } = useQuery<SprintInfo>({
     queryKey: ["/api/sprints", searchedSprintId, "info"],
@@ -49,11 +52,41 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
     enabled: searchedSprintId !== null,
   });
 
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!searchedSprintId) {
+        throw new Error('No sprint selected');
+      }
+      return apiRequest(`/api/sprints/${searchedSprintId}/save`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Успешно",
+        description: "Спринт и задачи сохранены в базу данных",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/sprints"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось сохранить спринт",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSearch = () => {
     const id = parseInt(sprintId, 10);
     if (!isNaN(id)) {
       setSearchedSprintId(id);
     }
+  };
+
+  const handleSave = () => {
+    saveMutation.mutate();
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -191,6 +224,25 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
             </div>
           )}
         </div>
+
+        {sprintInfo && (
+          <DialogFooter className="pt-4 border-t">
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              data-testid="button-save-sprint"
+            >
+              {saveMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Сохранение...
+                </>
+              ) : (
+                'Сохранить в БД'
+              )}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

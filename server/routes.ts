@@ -1331,6 +1331,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/sprints/:sprintId/save", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid sprint ID" 
+        });
+      }
+
+      log(`[Sprint Save] Fetching sprint ${sprintId} from Kaiten`);
+      const kaitenSprint = await kaitenClient.getSprint(sprintId);
+      
+      if (!kaitenSprint) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Sprint not found in Kaiten" 
+        });
+      }
+
+      log(`[Sprint Save] Saving sprint ${sprintId} to database`);
+      
+      // Валидируем обязательные поля
+      if (!kaitenSprint.board_id || !kaitenSprint.start_date || !kaitenSprint.finish_date) {
+        return res.status(400).json({
+          success: false,
+          error: "Sprint is missing required fields (board_id, start_date, or finish_date)"
+        });
+      }
+
+      // Сохраняем спринт
+      await storage.syncSprintFromKaiten(
+        kaitenSprint.id,
+        kaitenSprint.board_id,
+        kaitenSprint.title,
+        kaitenSprint.velocity || 0,
+        kaitenSprint.start_date,
+        kaitenSprint.finish_date,
+        kaitenSprint.actual_finish_date || null,
+        kaitenSprint.goal || null
+      );
+
+      log(`[Sprint Save] Sprint ${sprintId} saved`);
+
+      // Находим команду по board_id для сохранения задач
+      const team = await storage.getTeamBySprintBoardId(kaitenSprint.board_id);
+      let teamId: string | null = null;
+      if (team) {
+        teamId = team.teamId;
+        log(`[Sprint Save] Found team ${team.teamName} (${teamId})`);
+      } else {
+        log(`[Sprint Save] No team found for board ${kaitenSprint.board_id}`);
+      }
+
+      let tasksSaved = 0;
+      const errors: string[] = [];
+      
+      if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
+        log(`[Sprint Save] Saving ${kaitenSprint.cards.length} tasks`);
+        
+        // Параллельно получаем все карточки
+        const cardPromises = kaitenSprint.cards.map(sprintCard => 
+          kaitenClient.getCard(sprintCard.id).catch(err => {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            log(`[Sprint Save] Error fetching card ${sprintCard.id}: ${errorMessage}`);
+            errors.push(`Card ${sprintCard.id}: ${errorMessage}`);
+            return null;
+          })
+        );
+        
+        const cards = await Promise.all(cardPromises);
+        
+        // Сохраняем карточки
+        for (const card of cards) {
+          if (!card) continue;
+          
+          try {
+            let initCardId: number | null = null;
+
+            // Проверяем parents_ids для определения инициативы
+            if (card.parents_ids && card.parents_ids.length > 0) {
+              const parentCardId = card.parents_ids[0];
+              
+              // Проверяем, является ли родитель инициативой
+              const initiative = await storage.getInitiativeByCardId(parentCardId);
+              if (initiative) {
+                initCardId = initiative.cardId;
+              }
+            }
+            
+            // Если инициатива не найдена, оставляем null (не 0)
+            // 0 используется только для "Поддержки бизнеса" при синхронизации
+
+            // Преобразуем state и condition из number в строку с валидацией
+            let stateStr: "1-queued" | "2-inProgress" | "3-done" = "1-queued";
+            if (card.state === 1) stateStr = "1-queued";
+            else if (card.state === 2) stateStr = "2-inProgress";
+            else if (card.state === 3) stateStr = "3-done";
+            else {
+              log(`[Sprint Save] Warning: Unknown state ${card.state} for card ${card.id}, defaulting to queued`);
+            }
+
+            let conditionStr: "1-live" | "2-archived" = "1-live";
+            if (card.condition === 1) conditionStr = "1-live";
+            else if (card.condition === 2) conditionStr = "2-archived";
+            else {
+              log(`[Sprint Save] Warning: Unknown condition ${card.condition} for card ${card.id}, defaulting to live`);
+            }
+
+            // Сохраняем задачу
+            await storage.syncTaskFromKaiten(
+              card.id,
+              card.board_id,
+              card.title,
+              card.created || new Date().toISOString(),
+              stateStr,
+              card.size || 0,
+              conditionStr,
+              card.archived || false,
+              initCardId,
+              card.type?.name,
+              card.completed_at,
+              sprintId,
+              card.completed_at || null,
+              teamId
+            );
+
+            tasksSaved++;
+          } catch (cardError) {
+            const errorMessage = cardError instanceof Error ? cardError.message : String(cardError);
+            log(`[Sprint Save] Error saving card ${card.id}: ${errorMessage}`);
+            errors.push(`Card ${card.id}: ${errorMessage}`);
+          }
+        }
+      }
+
+      log(`[Sprint Save] Saved ${tasksSaved} tasks`);
+      if (errors.length > 0) {
+        log(`[Sprint Save] Encountered ${errors.length} errors`);
+      }
+      
+      res.json({
+        success: true,
+        sprint: {
+          sprintId: kaitenSprint.id,
+          title: kaitenSprint.title,
+        },
+        tasksSaved,
+        errors: errors.length > 0 ? errors : undefined,
+      });
+    } catch (error) {
+      console.error("POST /api/sprints/:sprintId/save error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to save sprint to database" 
+      });
+    }
+  });
+
   // Tasks endpoints
   app.get("/api/tasks", async (req, res) => {
     try {
