@@ -130,8 +130,6 @@ export default function HomePage() {
   const [hasSprints, setHasSprints] = useState(true);
   const [sprintIds, setSprintIds] = useState("");
   const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const [teamToDelete, setTeamToDelete] = useState<TeamRow | null>(null);
-  const deletingTeamIdRef = useRef<string | null>(null);
   const { toast } = useToast();
 
   // Функция для парсинга query параметров из URL
@@ -353,21 +351,19 @@ export default function HomePage() {
       return { teamId: data.teamId, departmentId: data.departmentId };
     },
     onSuccess: (data) => {
-      const deletedTeamId = deletingTeamIdRef.current || data.teamId;
-      
       queryClient.invalidateQueries({ queryKey: ["/api/teams", data.departmentId] });
       queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/timeline", deletedTeamId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/timeline", data.teamId] });
       queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board"] });
       
-      if (editingTeam?.teamId === deletedTeamId) {
+      if (editingTeam?.teamId === data.teamId) {
         setRightPanelMode(null);
         setEditingTeam(null);
       }
       
-      if (selectedTeams.has(deletedTeamId)) {
+      if (selectedTeams.has(data.teamId)) {
         const newSelectedTeams = new Set(selectedTeams);
-        newSelectedTeams.delete(deletedTeamId);
+        newSelectedTeams.delete(data.teamId);
         setSelectedTeams(newSelectedTeams);
         
         if (newSelectedTeams.size === 0 && selectedDepartment) {
@@ -375,12 +371,9 @@ export default function HomePage() {
         }
       }
       
-      if (activeTab === deletedTeamId) {
+      if (activeTab === data.teamId) {
         setActiveTab('');
       }
-      
-      deletingTeamIdRef.current = null;
-      setTeamToDelete(null);
       
       toast({
         title: "Успешно",
@@ -388,8 +381,6 @@ export default function HomePage() {
       });
     },
     onError: (error: Error) => {
-      deletingTeamIdRef.current = null;
-      setTeamToDelete(null);
       toast({
         title: "Ошибка",
         description: error.message || "Не удалось удалить команду",
@@ -1485,7 +1476,13 @@ export default function HomePage() {
                     }}
                     onDepartmentClick={handleDepartmentClick}
                     onTeamClick={handleTeamClick}
-                    onTeamDelete={(team) => setTeamToDelete(team)}
+                    onTeamDelete={(team) => {
+                      console.log('[Delete Team] Direct delete for team:', team.teamId);
+                      deleteTeamMutation.mutate({
+                        teamId: team.teamId,
+                        departmentId: team.departmentId
+                      });
+                    }}
                   />
                 ))}
               </div>
@@ -1904,42 +1901,6 @@ export default function HomePage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={!!teamToDelete} onOpenChange={(open) => !open && !deleteTeamMutation.isPending && setTeamToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Удалить команду?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Вы уверены, что хотите удалить команду "{teamToDelete?.teamName}"? Это действие удалит команду и все связанные с ней данные (инициативы, спринты, задачи). Это действие нельзя отменить.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete" disabled={deleteTeamMutation.isPending}>
-              Отмена
-            </AlertDialogCancel>
-            <Button
-              data-testid="button-confirm-delete"
-              disabled={deleteTeamMutation.isPending}
-              onClick={() => {
-                console.log('[Delete Team] Button clicked, teamToDelete:', teamToDelete);
-                if (teamToDelete) {
-                  console.log('[Delete Team] Starting deletion for team:', teamToDelete.teamId);
-                  deletingTeamIdRef.current = teamToDelete.teamId;
-                  deleteTeamMutation.mutate({
-                    teamId: teamToDelete.teamId,
-                    departmentId: teamToDelete.departmentId
-                  });
-                } else {
-                  console.log('[Delete Team] No team to delete!');
-                }
-              }}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {deleteTeamMutation.isPending ? "Удаление..." : "Удалить"}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
