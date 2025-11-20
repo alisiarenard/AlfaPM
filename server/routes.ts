@@ -1280,6 +1280,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const card = await kaitenClient.getCard(sprintCard.id);
             
+            // Фильтруем только задачи в статусе "done" (state === 3)
+            if (!card || card.state !== 3) {
+              if (card) {
+                log(`[Sprint Info] Skipping card ${card.id} with state ${card.state} (not done)`);
+              }
+              continue;
+            }
+            
             let initiativeTitle: string | null = null;
             let initiativeCardId: number | null = null;
 
@@ -1316,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      log(`[Sprint Info] Returning ${tasks.length} tasks`);
+      log(`[Sprint Info] Returning ${tasks.length} done tasks`);
       
       res.json({
         sprint,
@@ -1408,8 +1416,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const cards = await Promise.all(cardPromises);
         
         // Фильтруем только задачи в статусе "done" (state === 3)
-        const doneCards = cards.filter(card => card && card.state === 3);
-        log(`[Sprint Save] Filtered ${doneCards.length} done tasks from ${cards.filter(c => c).length} total tasks`);
+        const validCards = cards.filter(c => c !== null);
+        const doneCards = validCards.filter(card => card.state === 3);
+        log(`[Sprint Save] Filtered ${doneCards.length} done tasks from ${validCards.length} total tasks`);
         
         // Сохраняем только завершенные карточки
         for (const card of doneCards) {
