@@ -2030,21 +2030,22 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
   // Данные уже приходят в правильном формате Initiative с сервера
   const allInitiatives: Initiative[] = initiativeRows || [];
   
-  // Debug: проверяем есть ли "Поддержка бизнеса" в данных
-  console.log('[Timeline] All initiatives:', allInitiatives.length);
-  const supportInit = allInitiatives.find(i => i.cardId === 0);
-  console.log('[Timeline] "Поддержка бизнеса" found:', supportInit ? supportInit.title : 'NOT FOUND');
-  
   // Фильтруем инициативы:
   // 1. "Поддержка бизнеса" (cardId === 0) показываем всегда независимо от года
-  // 2. Если включен фильтр "Активные" - только inProgress (скрываем queued и done)
-  // 3. Если инициатива done или inProgress и выполнено 0 SP - не показываем
-  // 4. Если выбран год, для инициатив done или inProgress показываем только те, у которых есть задачи, закрытые в этом году
+  // 2. Показываем только типы Epic и Enabler
+  // 3. Если включен фильтр "Активные" - только inProgress (скрываем queued и done)
+  // 4. Если инициатива done или inProgress и выполнено 0 SP - не показываем
+  // 5. Если выбран год, для инициатив done или inProgress показываем только те, у которых есть задачи, закрытые в этом году
   const initiatives = allInitiatives.filter(init => {
     // "Поддержка бизнеса" показываем всегда (независимо от года и других фильтров)
     const isSupport = init.cardId === 0;
     if (isSupport) {
       return true;
+    }
+    
+    // Показываем только Epic и Enabler
+    if (init.type !== 'Epic' && init.type !== 'Enabler') {
+      return false;
     }
     
     // Фильтр "Активные" - показываем только inProgress

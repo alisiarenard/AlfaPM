@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { Initiative, Team, SprintRow, TaskInSprint } from "@shared/schema";
 import { getKaitenCardUrl } from "@shared/kaiten.config";
+import { roundSP } from "@shared/utils";
 import {
   Dialog,
   DialogContent,
@@ -478,7 +479,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   // Получить SP для конкретной инициативы в конкретном спринте
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
     const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
-    return sprint?.sp || 0;
+    return roundSP(sprint?.sp || 0);
   };
 
   // Получить задачи для конкретной инициативы в конкретном спринте
@@ -564,7 +565,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     }
     
     const actualSize = getTotalSP(initiative);
-    const plannedSize = initiative.size || 0;
+    const plannedSize = roundSP(initiative.size || 0);
     const plannedCost = plannedSize * team.spPrice;
     const actualCost = actualSize * team.spPrice;
     
@@ -613,13 +614,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
   // Рассчитать общую сумму SP для инициативы (выполнено)
   const getTotalSP = (initiative: Initiative): number => {
-    return initiative.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
+    const total = initiative.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
+    return roundSP(total);
   };
 
   // Форматировать колонку "Выполнено"
   const formatCompleted = (initiative: Initiative): string => {
     const completed = getTotalSP(initiative);
-    const size = initiative.size || 0;
+    const size = roundSP(initiative.size || 0);
     
     if (completed === 0 && size === 0) {
       return '—';

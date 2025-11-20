@@ -682,17 +682,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           log(`[Timeline] Added "Поддержка бизнеса" to initiatives`);
         }
       }
+      
+      // Фильтруем инициативы - показываем только Epic, Enabler и "Поддержка бизнеса"
+      const allInitiatives = [...initiatives];
+      initiatives = initiatives.filter(init => 
+        init.cardId === 0 || init.type === 'Epic' || init.type === 'Enabler'
+      );
+      log(`[Timeline] Filtered initiatives: ${initiatives.length} Epic/Enabler/Support from ${allInitiatives.length} total`);
 
       // Загружаем все задачи один раз (избегаем N+1)
-      const initiativeCardIds = new Set(initiatives.map(i => i.cardId));
+      // Используем allInitiatives для загрузки задач (включая задачи из других типов)
+      const allInitiativeCardIds = new Set(allInitiatives.map(i => i.cardId));
       const allTasks = await storage.getAllTasks();
       // Фильтруем задачи по teamId чтобы показывать только задачи этой команды
-      const initiativeTasks = allTasks.filter(task => 
+      let initiativeTasks = allTasks.filter(task => 
         task.initCardId !== null && 
-        initiativeCardIds.has(task.initCardId) &&
+        allInitiativeCardIds.has(task.initCardId) &&
         task.teamId === teamId
       );
-      log(`[Timeline] Loaded ${initiativeTasks.length} tasks for ${initiatives.length} initiatives (team: ${teamId})`);
+      log(`[Timeline] Loaded ${initiativeTasks.length} tasks for ${allInitiatives.length} initiatives (team: ${teamId})`);
+      
+      // Создаем Map для быстрого поиска типа инициативы по cardId
+      const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
+      
+      // Перенаправляем задачи из инициатив других типов (не Epic и не Enabler) в "Поддержку бизнеса"
+      initiativeTasks = initiativeTasks.map(task => {
+        const initType = initiativeTypeMap.get(task.initCardId || 0);
+        // Если инициатива не Epic и не Enabler и не "Поддержка бизнеса" (cardId=0), перенаправляем в "Поддержку бизнеса"
+        if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Enabler') {
+          log(`[Timeline] Redirecting task ${task.cardId} from init type ${initType} to Business Support`);
+          return { ...task, initCardId: 0 };
+        }
+        return task;
+      });
+      log(`[Timeline] Redirected tasks from non-Epic/Enabler initiatives to Business Support`);
 
       // Логика зависит от флага hasSprints:
       // - Если hasSprints === true: используем реальные спринты из БД
