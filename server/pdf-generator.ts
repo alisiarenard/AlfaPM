@@ -40,10 +40,10 @@ export async function generateSprintReportPDF(
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Регистрируем шрифты DejaVu из локальной папки проекта
-      const fontPath = path.join(__dirname, 'fonts');
-      doc.registerFont('DejaVu', path.join(fontPath, 'DejaVuSans.ttf'));
-      doc.registerFont('DejaVu-Bold', path.join(fontPath, 'DejaVuSans-Bold.ttf'));
+      // Регистрируем шрифты DejaVu из npm пакета dejavu-fonts-ttf
+      const dejavuFontsPath = path.dirname(require.resolve('dejavu-fonts-ttf'));
+      doc.registerFont('DejaVu', path.join(dejavuFontsPath, 'ttf', 'DejaVuSans.ttf'));
+      doc.registerFont('DejaVu-Bold', path.join(dejavuFontsPath, 'ttf', 'DejaVuSans-Bold.ttf'));
 
       // Форматируем даты для отображения
       let formattedDates: string;
