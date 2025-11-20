@@ -6,6 +6,45 @@ import { kaitenClient } from "./kaiten";
 import { log } from "./vite";
 import { calculateInitiativesInvolvement } from "./utils/involvement";
 
+/**
+ * Рекурсивно ищет инициативу в родительской цепочке карточки
+ * @param parentCardId - ID родительской карточки
+ * @param depth - глубина рекурсии (защита от бесконечных циклов)
+ * @returns ID инициативы или 0, если не найдена
+ */
+async function findInitiativeInParentChain(parentCardId: number, depth = 0): Promise<number> {
+  // Защита от бесконечной рекурсии
+  if (depth > 5) {
+    log(`[findInitiativeInParentChain] Max depth reached for card ${parentCardId}`);
+    return 0;
+  }
+  
+  // Проверяем, является ли родитель инициативой
+  const parentInitiative = await storage.getInitiativeByCardId(parentCardId);
+  if (parentInitiative) {
+    log(`[findInitiativeInParentChain] Found initiative ${parentCardId} at depth ${depth}`);
+    return parentCardId;
+  }
+  
+  // Если родитель не инициатива, получаем его карточку из Kaiten
+  try {
+    const parentCard = await kaitenClient.getCard(parentCardId);
+    
+    // Проверяем, есть ли у родительской карточки свой родитель
+    if (parentCard.parents_ids && Array.isArray(parentCard.parents_ids) && parentCard.parents_ids.length > 0) {
+      const grandParentId = parentCard.parents_ids[0];
+      log(`[findInitiativeInParentChain] Card ${parentCardId} has parent ${grandParentId}, checking recursively (depth ${depth + 1})`);
+      return await findInitiativeInParentChain(grandParentId, depth + 1);
+    }
+  } catch (error) {
+    log(`[findInitiativeInParentChain] Error fetching card ${parentCardId}: ${error}`);
+  }
+  
+  // Не нашли инициативу в цепочке
+  log(`[findInitiativeInParentChain] No initiative found in chain for card ${parentCardId}`);
+  return 0;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/departments", async (req, res) => {
     try {
@@ -243,10 +282,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   for (const sprintCard of kaitenSprint.cards) {
                     const card = await kaitenClient.getCard(sprintCard.id);
                     
+                    // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
                     let initCardId = 0;
                     if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                      const parentInitiative = await storage.getInitiativeByCardId(card.parents_ids[0]);
-                      initCardId = parentInitiative ? card.parents_ids[0] : 0;
+                      initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
                     }
                     
                     let state: "1-queued" | "2-inProgress" | "3-done";
@@ -323,6 +362,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       continue;
                     }
                     
+                    // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
+                    let initCardId = initiative.cardId; // По умолчанию - родительская инициатива
+                    if (childCard.parents_ids && Array.isArray(childCard.parents_ids) && childCard.parents_ids.length > 0) {
+                      // Если у дочерней карточки есть parents_ids, ищем инициативу через цепочку
+                      const foundInitCardId = await findInitiativeInParentChain(childCard.parents_ids[0]);
+                      if (foundInitCardId !== 0) {
+                        initCardId = foundInitCardId;
+                      }
+                    }
+                    
                     let state: "1-queued" | "2-inProgress" | "3-done";
                     if (childCard.state === 3) {
                       state = "3-done";
@@ -343,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       childCard.size || 0,
                       condition,
                       childCard.archived || false,
-                      initiative.cardId, // Привязываем к родительской инициативе
+                      initCardId, // Используем найденную инициативу
                       childCard.type?.name,
                       childCard.completed_at ?? undefined,
                       null, // Нет sprint_id для виртуальных спринтов
@@ -1515,10 +1564,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const boardCard of boardCards) {
         const card = await kaitenClient.getCard(boardCard.id);
         
-        // Определяем init_card_id по parents_ids
+        // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
         let initCardId = 0; // По умолчанию - "Поддержка бизнеса"
         if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-          initCardId = card.parents_ids[0]; // Первый родитель - это инициатива
+          initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
         }
         
         // Синхронизируем таски с state === 3 (done)
@@ -1775,22 +1824,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const card = await kaitenClient.getCard(sprintCard.id);
         log(`[Kaiten Sync Sprint] Syncing card ${card.id}: ${card.title}`);
         
-        // Определяем init_card_id из parents_ids
+        // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
         let initCardId: number | null = null;
         
         if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-          const parentCardId = card.parents_ids[0]; // Первый родитель
+          const parentCardId = card.parents_ids[0];
           log(`[Kaiten Sync Sprint]   Parent card_id: ${parentCardId}`);
           
-          // Проверяем есть ли такая инициатива в базе
-          const parentInitiative = await storage.getInitiativeByCardId(parentCardId);
+          // Ищем инициативу в родительской цепочке
+          initCardId = await findInitiativeInParentChain(parentCardId);
           
-          if (parentInitiative) {
-            initCardId = parentCardId;
-            log(`[Kaiten Sync Sprint]   ✓ Parent found in initiatives, setting init_card_id=${initCardId}`);
+          if (initCardId !== 0) {
+            log(`[Kaiten Sync Sprint]   ✓ Found initiative in chain, init_card_id=${initCardId}`);
           } else {
-            initCardId = 0;
-            log(`[Kaiten Sync Sprint]   ✗ Parent NOT found in initiatives, setting init_card_id=0`);
+            log(`[Kaiten Sync Sprint]   ✗ No initiative found in chain, setting init_card_id=0`);
           }
         } else {
           initCardId = 0;
@@ -1958,13 +2005,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               continue;
             }
             
+            // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
             let initCardId = 0;
             if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
-              const parentId = taskCard.parents_ids[0];
-              const parentInitiative = await storage.getInitiativeByCardId(parentId);
-              if (parentInitiative) {
-                initCardId = parentId;
-              }
+              initCardId = await findInitiativeInParentChain(taskCard.parents_ids[0]);
             }
             
             let state: "1-queued" | "2-inProgress" | "3-done";
@@ -2079,18 +2123,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const sprintCard of kaitenSprint.cards) {
             const card = await kaitenClient.getCard(sprintCard.id);
             
-            // Определяем init_card_id из parents_ids
+            // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
             let initCardId: number | null = null;
             
             if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-              const parentCardId = card.parents_ids[0];
-              const parentInitiative = await storage.getInitiativeByCardId(parentCardId);
-              
-              if (parentInitiative) {
-                initCardId = parentCardId;
-              } else {
-                initCardId = 0;
-              }
+              initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
             } else {
               initCardId = 0;
             }
@@ -2245,16 +2282,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Сохраняем каждую задачу
       for (const taskCard of tasks) {
         try {
-          // Определяем init_card_id по parent_id
+          // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
           let initCardId = 0;
           if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
             const parentId = taskCard.parents_ids[0];
-            const parentInitiative = await storage.getInitiativeByCardId(parentId);
-            if (parentInitiative) {
-              initCardId = parentId;
-              log(`[Kaiten Sync Initiative Tasks] Task ${taskCard.id} linked to initiative ${parentId}`);
+            initCardId = await findInitiativeInParentChain(parentId);
+            
+            if (initCardId !== 0) {
+              log(`[Kaiten Sync Initiative Tasks] Task ${taskCard.id} linked to initiative ${initCardId} (via parent chain)`);
             } else {
-              log(`[Kaiten Sync Initiative Tasks] Task ${taskCard.id} has parent ${parentId} but it's not an initiative`);
+              log(`[Kaiten Sync Initiative Tasks] Task ${taskCard.id} has parent ${parentId} but no initiative found in chain`);
             }
           } else {
             log(`[Kaiten Sync Initiative Tasks] Task ${taskCard.id} has no parent_id`);
