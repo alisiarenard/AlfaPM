@@ -861,31 +861,39 @@ export default function HomePage() {
           : null;
 
         // Находим дату завершения последней задачи инициативы
-        const allTaskDoneDates: string[] = [];
-        initiatives.forEach((initiative: any) => {
-          initiative.sprints?.forEach((sprint: any) => {
-            sprint.tasks?.forEach((task: any) => {
-              if (task.doneDate) {
-                allTaskDoneDates.push(task.doneDate);
-              }
+        // Показываем дату только если инициатива в статусе "done"
+        let productionDate: string | null = null;
+        
+        if (firstInit.state === '3-done') {
+          const allTaskDoneDates: string[] = [];
+          initiatives.forEach((initiative: any) => {
+            initiative.sprints?.forEach((sprint: any) => {
+              sprint.tasks?.forEach((task: any) => {
+                if (task.doneDate) {
+                  allTaskDoneDates.push(task.doneDate);
+                }
+              });
             });
           });
-        });
-        
-        // Находим максимальную дату (последняя завершенная задача)
-        let lastTaskDoneDate: string | null = null;
-        if (allTaskDoneDates.length > 0) {
-          const maxDate = allTaskDoneDates.reduce((max, current) => {
-            return new Date(current) > new Date(max) ? current : max;
-          });
-          lastTaskDoneDate = maxDate;
+          
+          // Находим максимальную дату (последняя завершенная задача)
+          if (allTaskDoneDates.length > 0) {
+            const maxDate = allTaskDoneDates.reduce((max, current) => {
+              return new Date(current) > new Date(max) ? current : max;
+            });
+            productionDate = maxDate;
+          } else {
+            // Если задач нет, используем дату самой инициативы
+            productionDate = firstInit.doneDate;
+          }
         }
+        // Если инициатива не в статусе done - productionDate остается null (будет прочерк)
 
         processedInitiatives.push({
           type: firstInit.type || '—',
           title: firstInit.title,
           dueDate: firstInit.dueDate,
-          doneDate: lastTaskDoneDate || firstInit.doneDate,
+          doneDate: productionDate,
           totalPlannedCost,
           totalActualCost,
           plannedValue,
