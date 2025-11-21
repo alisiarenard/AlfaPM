@@ -2924,6 +2924,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       log(`[Cost Structure] Found ${initiatives.length} initiatives`);
 
+      // Маппинг различных вариантов написания типов (применяется ко ВСЕМ задачам)
+      const typeMapping: Record<string, string> = {
+        'Omni': 'Service Desk',
+        'Technical Debt': 'Tech debt',
+        'Technical debt': 'Tech debt',
+        'Tech Debt': 'Tech debt',
+        'Tech debt': 'Tech debt',
+        'Tech Task': 'Tech debt'
+      };
+
       // Подсчитываем SP по типам инициатив
       const typeStats: Record<string, number> = {};
       let totalSP = 0;
@@ -2942,8 +2952,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tasksWithInitiative++;
           const initiative = initiativesMap.get(task.initCardId);
           if (initiative && initiative.type) {
-            // Используем тип инициативы
-            typeStats[initiative.type] = (typeStats[initiative.type] || 0) + taskSize;
+            // Применяем маппинг к типу инициативы
+            let displayType = initiative.type;
+            if (typeMapping[initiative.type]) {
+              displayType = typeMapping[initiative.type];
+              log(`[Cost Structure DEBUG] Initiative type mapped: "${initiative.type}" → "${displayType}"`);
+            }
+            typeStats[displayType] = (typeStats[displayType] || 0) + taskSize;
           } else {
             // Инициатива не найдена или нет типа - в "Др. доработки"
             typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
@@ -2954,20 +2969,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (task.type) {
             log(`[Cost Structure DEBUG] Task ${task.cardId} "${task.title.substring(0, 40)}..." has type: "${task.type}", initCardId: ${task.initCardId}, size: ${taskSize}`);
             
-            // Маппинг типов задач к категориям структуры затрат
+            // Применяем маппинг к типу задачи
             let displayType = task.type;
-            
-            // Маппинг различных вариантов написания типов
-            const typeMapping: Record<string, string> = {
-              'Omni': 'Service Desk',
-              'Technical Debt': 'Tech debt',
-              'Technical debt': 'Tech debt',
-              'Tech Debt': 'Tech debt',
-              'Tech debt': 'Tech debt',
-              'Tech Task': 'Tech debt'
-            };
-            
-            // Применяем маппинг если есть
             if (typeMapping[task.type]) {
               displayType = typeMapping[task.type];
               log(`[Cost Structure DEBUG] ✓ Mapped "${task.type}" → "${displayType}"`);
