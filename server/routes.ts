@@ -2427,8 +2427,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Шаг 1: Синхронизируем инициативы
       log(`[Kaiten Smart Sync] Step 1: Syncing initiatives from board ${team.initBoardId}`);
       const allCards = await kaitenClient.getCardsFromBoard(team.initBoardId);
+      log(`[Kaiten Smart Sync] Total cards from Kaiten: ${allCards.length}`);
+      
+      // Логируем все карточки ДО фильтрации
+      allCards.forEach(card => {
+        log(`[Kaiten Smart Sync] ALL CARDS - Card ${card.id}: "${card.title.substring(0, 50)}..." - state=${card.state}, archived=${card.archived}`);
+      });
+      
       const cards = allCards.filter(card => !card.archived);
-      log(`[Kaiten Smart Sync] Found ${cards.length} non-archived initiatives`);
+      log(`[Kaiten Smart Sync] After filtering: ${cards.length} non-archived initiatives (filtered out ${allCards.length - cards.length} archived)`);
       
       const plannedValueId = "id_451379";
       const factValueId = "id_448119";
