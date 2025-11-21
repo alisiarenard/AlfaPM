@@ -52,12 +52,15 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 - Sprint PDF report generation endpoint `POST /api/sprints/:sprintId/generate-report` that creates AI-processed PDF reports with task summaries.
 
 **Kaiten Integration:**
-- **Smart Sync Endpoint:** `POST /api/kaiten/smart-sync/:teamId` provides intelligent synchronization:
-  - Step 1: Syncs all initiatives from initiative board with accurate `syncedCount` tracking
-  - Step 2: Automatically detects new sprints by checking first card's `sprint_id` in sprint board
-  - Returns: `{ success, initiativesSynced, newSprintSynced, newSprint }`
-  - Enhanced error handling with per-card try-catch for robust syncing
+- **Smart Sync Endpoint:** `POST /api/kaiten/smart-sync/:teamId` provides intelligent all-in-one synchronization:
+  - Step 1: Syncs all initiatives from initiative board with accurate `syncedCount` tracking and per-card error handling
+  - Step 2: Detects current sprint by checking first card's `sprint_id` in sprint board (for teams with sprint boards)
+  - Step 3: **ALWAYS** syncs tasks for current sprint (whether new or existing) with parent chain validation
+  - If sprint is new: saves to database with `newSprintSynced = true`
+  - If sprint exists: uses existing sprint data with `newSprintSynced = false`
+  - Returns: `{ success, initiativesSynced, newSprintSynced, sprint: { ...sprintData, tasksSynced } | null }`
   - Preserves `doneDate` via `card.last_moved_to_done_at` for accurate year-based filtering
+  - For teams without sprint boards: only syncs initiatives, frontend calls separate endpoint for tasks
 - **Initiative Type Validation:** `findInitiativeInParentChain` recursively searches parent chain and validates initiative types (Epic/Compliance/Enabler only), preventing incorrect task-initiative associations
 - **New Sprint API:** Uses Kaiten's `/api/latest/sprints` endpoint to fetch all company sprints in a single request, filtering by team `board_id` for efficiency.
 - **Synchronization Sequence:** 

@@ -1924,26 +1924,22 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
 
   const syncAllMutation = useMutation({
     mutationFn: async () => {
-      // Используем умную синхронизацию: синхронизирует инициативы + проверяет новый спринт
+      // Умная синхронизация: синхронизирует инициативы + проверяет новый спринт + синхронизирует задачи нового спринта
       const smartSyncRes = await apiRequest("POST", `/api/kaiten/smart-sync/${team.teamId}`, {});
       const smartSyncData = await smartSyncRes.json();
       
-      // Затем синхронизируем задачи
-      let sprintsData = null;
-      if (team.sprintBoardId) {
-        // Для команд со спринтами - синхронизируем спринты
-        const sprintsRes = await apiRequest("POST", `/api/kaiten/sync-all-sprints/${team.sprintBoardId}`, {});
-        sprintsData = await sprintsRes.json();
-      } else {
-        // Для команд без спринтов - синхронизируем задачи из инициатив
+      // Для команд без спринтов - дополнительно синхронизируем задачи из инициатив
+      let tasksData = null;
+      if (!team.sprintBoardId) {
         const tasksRes = await apiRequest("POST", `/api/kaiten/sync-initiative-tasks/${team.initBoardId}`, {});
-        sprintsData = await tasksRes.json();
+        tasksData = await tasksRes.json();
       }
       
       return { 
         initiatives: { count: smartSyncData.initiativesSynced }, 
-        sprints: sprintsData,
-        newSprint: smartSyncData.newSprintSynced ? smartSyncData.newSprint : null
+        sprint: smartSyncData.sprint,
+        newSprintSynced: smartSyncData.newSprintSynced,
+        tasks: tasksData
       };
     },
     onSuccess: (data) => {
@@ -1956,21 +1952,22 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       queryClient.invalidateQueries({ queryKey: ['/api/metrics/value-cost'] });
       
       let description = `Синхронизировано ${data.initiatives.count} инициатив`;
-      if (data.sprints) {
-        if (team.sprintBoardId) {
-          // Для команд со спринтами (или с доской спринтов без спринтов)
-          if (data.sprints.sprintsProcessed === 0 && data.sprints.totalSynced === 0) {
-            description += '. Новых спринтов не найдено';
-          } else if (data.sprints.sprintsProcessed === 0 && data.sprints.totalSynced > 0) {
-            // Спринтов нет, но задачи синхронизированы через fallback
-            description += ` и ${data.sprints.totalSynced} задач`;
-          } else {
-            description += ` и ${data.sprints.totalSynced} задач из ${data.sprints.sprintsProcessed} новых спринтов`;
-          }
+      
+      // Для команд со спринтами - показываем информацию о синхронизированном спринте
+      if (team.sprintBoardId && data.sprint) {
+        const taskCount = data.sprint.tasksSynced || 0;
+        if (data.newSprintSynced) {
+          description += `. Новый спринт: ${taskCount} задач`;
         } else {
-          // Для команд без спринтов
-          description += ` и ${data.sprints.totalSynced || 0} задач`;
+          description += ` и ${taskCount} задач из текущего спринта`;
         }
+      } else if (team.sprintBoardId && !data.sprint) {
+        description += '. Спринт не найден';
+      }
+      
+      // Для команд без спринтов - показываем информацию о синхронизированных задачах
+      if (!team.sprintBoardId && data.tasks) {
+        description += ` и ${data.tasks.totalSynced || 0} задач`;
       }
       
       toast({
