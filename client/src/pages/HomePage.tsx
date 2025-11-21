@@ -860,34 +860,8 @@ export default function HomePage() {
           ? Math.round((factValue / totalActualCost) * 10) / 10
           : null;
 
-        // Находим дату завершения последней задачи инициативы
-        // Показываем дату только если инициатива в статусе "done"
-        let productionDate: string | null = null;
-        
-        if (firstInit.state === '3-done') {
-          const allTaskDoneDates: string[] = [];
-          initiatives.forEach((initiative: any) => {
-            initiative.sprints?.forEach((sprint: any) => {
-              sprint.tasks?.forEach((task: any) => {
-                if (task.doneDate) {
-                  allTaskDoneDates.push(task.doneDate);
-                }
-              });
-            });
-          });
-          
-          // Находим максимальную дату (последняя завершенная задача)
-          if (allTaskDoneDates.length > 0) {
-            const maxDate = allTaskDoneDates.reduce((max, current) => {
-              return new Date(current) > new Date(max) ? current : max;
-            });
-            productionDate = maxDate;
-          } else {
-            // Если задач нет, используем дату самой инициативы
-            productionDate = firstInit.doneDate;
-          }
-        }
-        // Если инициатива не в статусе done - productionDate остается null (будет прочерк)
+        // Срок (прод): показываем срок план только если инициатива в статусе done
+        const productionDate = firstInit.state === '3-done' ? firstInit.dueDate : null;
 
         processedInitiatives.push({
           type: firstInit.type || '—',
