@@ -2956,7 +2956,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let displayType = initiative.type;
             if (typeMapping[initiative.type]) {
               displayType = typeMapping[initiative.type];
-              log(`[Cost Structure DEBUG] Initiative type mapped: "${initiative.type}" → "${displayType}"`);
+              log(`[Cost Structure DEBUG] ✓ Initiative type mapped: "${initiative.type}" → "${displayType}", size: ${taskSize}`);
+            } else {
+              // Тип НЕ в маппинге - используем как есть
+              log(`[Cost Structure DEBUG] ✗ Initiative type NOT in mapping: "${initiative.type}" (length: ${initiative.type.length}, charCodes: ${Array.from(initiative.type).map(c => c.charCodeAt(0)).join(',')}), size: ${taskSize}`);
             }
             typeStats[displayType] = (typeStats[displayType] || 0) + taskSize;
           } else {
