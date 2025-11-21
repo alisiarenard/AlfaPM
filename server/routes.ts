@@ -2960,7 +2960,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const typeMapping: Record<string, string> = {
               'Omni': 'Service Desk',
               'Technical Debt': 'Tech debt',
+              'Technical debt': 'Tech debt',
               'Tech Debt': 'Tech debt',
+              'Tech debt': 'Tech debt',
               'Tech Task': 'Tech debt'
             };
             
