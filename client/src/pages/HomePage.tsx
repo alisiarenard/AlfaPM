@@ -860,11 +860,32 @@ export default function HomePage() {
           ? Math.round((factValue / totalActualCost) * 10) / 10
           : null;
 
+        // Находим дату завершения последней задачи инициативы
+        const allTaskDoneDates: string[] = [];
+        initiatives.forEach((initiative: any) => {
+          initiative.sprints?.forEach((sprint: any) => {
+            sprint.tasks?.forEach((task: any) => {
+              if (task.doneDate) {
+                allTaskDoneDates.push(task.doneDate);
+              }
+            });
+          });
+        });
+        
+        // Находим максимальную дату (последняя завершенная задача)
+        let lastTaskDoneDate: string | null = null;
+        if (allTaskDoneDates.length > 0) {
+          const maxDate = allTaskDoneDates.reduce((max, current) => {
+            return new Date(current) > new Date(max) ? current : max;
+          });
+          lastTaskDoneDate = maxDate;
+        }
+
         processedInitiatives.push({
           type: firstInit.type || '—',
           title: firstInit.title,
           dueDate: firstInit.dueDate,
-          doneDate: firstInit.doneDate,
+          doneDate: lastTaskDoneDate || firstInit.doneDate,
           totalPlannedCost,
           totalActualCost,
           plannedValue,
