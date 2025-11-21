@@ -2436,6 +2436,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let syncedCount = 0;
       for (const card of cards) {
         try {
+          // Детальное логирование для отладки
+          log(`[Kaiten Smart Sync] Card ${card.id}: "${card.title.substring(0, 50)}..." - Kaiten state=${card.state}, archived=${card.archived}`);
+          
           let state: "1-queued" | "2-inProgress" | "3-done";
           if (card.state === 3) {
             state = "3-done";
@@ -2444,6 +2447,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             state = "1-queued";
           }
+          
+          log(`[Kaiten Smart Sync] Card ${card.id}: Mapped to state="${state}"`);
           
           const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
           
