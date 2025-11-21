@@ -88,6 +88,23 @@ PostgreSQL (via Neon) is the primary data store, managed with Drizzle ORM.
 
 ## Configuration
 
+**Kaiten Configuration:**
+Kaiten domain and custom field IDs are configured via environment variables:
+
+- `KAITEN_DOMAIN`: Your Kaiten domain (e.g., `feature.kaiten.ru`)
+- `VITE_KAITEN_DOMAIN`: Same as KAITEN_DOMAIN, used for frontend card links (Vite requires VITE_ prefix)
+- `KAITEN_API_KEY`: API key for Kaiten integration
+- **Custom Field IDs:** Hardcoded in `server/routes.ts`:
+  - `plannedValueId = "id_237"` - Kaiten custom field for planned value
+  - `factValueId = "id_240"` - Kaiten custom field for actual value
+
+**Kaiten Card Links:**
+The application generates clickable links to Kaiten cards in:
+- Initiative details modal (initiative title)
+- Sprint tasks modal (task titles)
+
+Links are generated via `getKaitenCardUrl()` function in `shared/kaiten.config.ts`, which reads the domain from `VITE_KAITEN_DOMAIN` environment variable. The function automatically handles archived vs. active cards by using different URL paths.
+
 **AI Configuration (.env file):**
 The application uses AI to generate sprint reports with shortened task summaries. Configuration is managed via environment variables in `.env` file:
 
