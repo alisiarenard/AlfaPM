@@ -739,8 +739,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const initType = initiativeTypeMap.get(task.initCardId || 0);
         // Если инициатива не Epic, не Compliance, не Enabler и не "Поддержка бизнеса" (cardId=0), перенаправляем в "Поддержку бизнеса"
         if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
-          log(`[Timeline] Redirecting task ${task.cardId} from init type ${initType} to Business Support`);
-          return { ...task, initCardId: 0 };
+          log(`[Timeline] Redirecting task ${task.cardId} from init type ${initType} to Business Support, preserving type for cost structure`);
+          // ВАЖНО: Сохраняем тип инициативы в task.type для правильного подсчета в Cost Structure
+          return { ...task, initCardId: 0, type: initType || task.type };
         }
         return task;
       });
