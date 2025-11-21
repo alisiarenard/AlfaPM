@@ -2705,6 +2705,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/kaiten/smart-sync/:teamId", async (req, res) => {
+    try {
+      const teamId = req.params.teamId;
+      
+      log(`[Kaiten Smart Sync] Starting smart sync for team ${teamId}`);
+      
+      // Получаем команду
+      const team = await storage.getTeamById(teamId);
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          error: `Team ${teamId} not found`
+        });
+      }
+      
+      log(`[Kaiten Smart Sync] Found team: ${team.teamName}, initBoardId: ${team.initBoardId}, sprintBoardId: ${team.sprintBoardId || 'none'}`);
+      
+      // Шаг 1: Синхронизируем инициативы
+      log(`[Kaiten Smart Sync] Step 1: Syncing initiatives from board ${team.initBoardId}`);
+      const allCards = await kaitenClient.getCardsFromBoard(team.initBoardId);
+      const cards = allCards.filter(card => !card.archived);
+      log(`[Kaiten Smart Sync] Found ${cards.length} non-archived initiatives`);
+      
+      const plannedValueId = "id_451379";
+      const factValueId = "id_448119";
+      
+      let syncedCount = 0;
+      for (const card of cards) {
+        try {
+          let state: "1-queued" | "2-inProgress" | "3-done";
+          if (card.state === 3) {
+            state = "3-done";
+          } else if (card.state === 2) {
+            state = "2-inProgress";
+          } else {
+            state = "1-queued";
+          }
+          
+          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+          
+          const plannedValueRaw = card.properties?.[plannedValueId];
+          const factValueRaw = card.properties?.[factValueId];
+          
+          let plannedValue: number | null = null;
+          if (plannedValueRaw !== undefined && plannedValueRaw !== null && plannedValueRaw !== "") {
+            const parsed = parseFloat(String(plannedValueRaw));
+            if (!isNaN(parsed)) {
+              plannedValue = parsed;
+            }
+          }
+          
+          let factValue: number | null = null;
+          if (factValueRaw !== undefined && factValueRaw !== null && factValueRaw !== "") {
+            const parsed = parseFloat(String(factValueRaw));
+            if (!isNaN(parsed)) {
+              factValue = parsed;
+            }
+          }
+          
+          await storage.syncInitiativeFromKaiten(
+            card.id,
+            team.initBoardId,
+            card.title,
+            state,
+            condition,
+            card.size || 0,
+            card.type?.name || null,
+            plannedValueId,
+            plannedValue !== null ? String(plannedValue) : null,
+            factValueId,
+            factValue !== null ? String(factValue) : null,
+            card.due_date || null,
+            card.last_moved_to_done_at || null
+          );
+          
+          syncedCount++;
+        } catch (error) {
+          log(`[Kaiten Smart Sync] Error syncing initiative ${card.id}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      
+      log(`[Kaiten Smart Sync] Step 1 completed: ${syncedCount} of ${cards.length} initiatives synced successfully`);
+      
+      // Шаг 2: Проверяем наличие нового спринта (только для команд со sprint board)
+      let newSprintSynced = false;
+      let newSprintData = null;
+      
+      if (team.sprintBoardId) {
+        log(`[Kaiten Smart Sync] Step 2: Checking for new sprint in board ${team.sprintBoardId}`);
+        
+        // Получаем список карточек из sprint board
+        const sprintBoardCards = await kaitenClient.getCardsWithDateFilter({
+          boardId: team.sprintBoardId,
+          limit: 10  // Берем первые 10 карточек, чтобы наверняка найти хотя бы одну
+        });
+        
+        log(`[Kaiten Smart Sync] Found ${sprintBoardCards.length} cards in sprint board`);
+        
+        if (sprintBoardCards.length > 0) {
+          // Берем первую карточку
+          const firstCard = sprintBoardCards[0];
+          log(`[Kaiten Smart Sync] First card: id=${firstCard.id}, title="${firstCard.title}", sprint_id=${firstCard.sprint_id || 'none'}`);
+          
+          if (firstCard.sprint_id) {
+            const sprintId = firstCard.sprint_id;
+            
+            // Проверяем, есть ли такой спринт в БД
+            const existingSprint = await storage.getSprint(sprintId);
+            
+            if (!existingSprint) {
+              log(`[Kaiten Smart Sync] Sprint ${sprintId} not found in DB, fetching from Kaiten...`);
+              
+              // Спринта нет - получаем данные и сохраняем
+              const sprintDetails = await kaitenClient.getSprint(sprintId);
+              
+              log(`[Kaiten Smart Sync] Sprint details: ${JSON.stringify(sprintDetails)}`);
+              
+              const syncedSprint = await storage.syncSprintFromKaiten(
+                sprintDetails.id,
+                team.sprintBoardId,
+                sprintDetails.title || `Sprint ${sprintDetails.id}`,
+                sprintDetails.velocity || 0,
+                sprintDetails.start_date || new Date().toISOString(),
+                sprintDetails.finish_date || new Date().toISOString(),
+                sprintDetails.actual_finish_date || null,
+                sprintDetails.goal || null
+              );
+              
+              newSprintSynced = true;
+              newSprintData = syncedSprint;
+              log(`[Kaiten Smart Sync] New sprint ${sprintId} synced successfully`);
+            } else {
+              log(`[Kaiten Smart Sync] Sprint ${sprintId} already exists in DB, skipping`);
+            }
+          } else {
+            log(`[Kaiten Smart Sync] First card has no sprint_id`);
+          }
+        } else {
+          log(`[Kaiten Smart Sync] No cards found in sprint board`);
+        }
+      } else {
+        log(`[Kaiten Smart Sync] Team has no sprint board, skipping sprint check`);
+      }
+      
+      log(`[Kaiten Smart Sync] Completed for team ${teamId}`);
+      
+      res.json({
+        success: true,
+        initiativesSynced: syncedCount,
+        newSprintSynced,
+        newSprint: newSprintData
+      });
+    } catch (error) {
+      console.error("POST /api/kaiten/smart-sync/:teamId error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to perform smart sync" 
+      });
+    }
+  });
+
   app.get("/api/metrics/innovation-rate", async (req, res) => {
     try {
       const teamIdsParam = req.query.teamIds as string;

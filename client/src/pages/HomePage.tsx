@@ -1924,9 +1924,9 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
 
   const syncAllMutation = useMutation({
     mutationFn: async () => {
-      // Сначала синхронизируем инициативы
-      const initiativesRes = await apiRequest("POST", `/api/kaiten/sync-board/${team.initBoardId}`, {});
-      const initiativesData = await initiativesRes.json();
+      // Используем умную синхронизацию: синхронизирует инициативы + проверяет новый спринт
+      const smartSyncRes = await apiRequest("POST", `/api/kaiten/smart-sync/${team.teamId}`, {});
+      const smartSyncData = await smartSyncRes.json();
       
       // Затем синхронизируем задачи
       let sprintsData = null;
@@ -1940,7 +1940,11 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         sprintsData = await tasksRes.json();
       }
       
-      return { initiatives: initiativesData, sprints: sprintsData };
+      return { 
+        initiatives: { count: smartSyncData.initiativesSynced }, 
+        sprints: sprintsData,
+        newSprint: smartSyncData.newSprintSynced ? smartSyncData.newSprint : null
+      };
     },
     onSuccess: (data) => {
       // Инвалидация timeline
