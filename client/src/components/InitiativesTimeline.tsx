@@ -186,10 +186,41 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
         setInitiativeDetailsData(updatedData);
       }
       
-      // Инвалидируем кэш в фоне
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId] 
-      });
+      // Оптимистично обновляем инициативу в кэше таймлайна
+      const queryKey = ["/api/initiatives/board", team.initBoardId, "sprint", team.sprintBoardId];
+      const currentData = queryClient.getQueryData<Initiative[]>(queryKey);
+      
+      if (currentData && variables.cardId) {
+        const updatedInitiatives = currentData.map(init => {
+          if (init.cardId === variables.cardId) {
+            const updated = { ...init };
+            
+            // Обновляем размер если он был изменен
+            if (variables.size !== undefined) {
+              updated.size = variables.size;
+            }
+            
+            // Обновляем плановый эффект если он был изменен
+            if (variables.plannedValue !== undefined) {
+              updated.plannedValue = variables.plannedValue;
+            }
+            
+            // Обновляем фактический эффект если он был изменен
+            if (variables.factValue !== undefined) {
+              updated.factValue = variables.factValue;
+            }
+            
+            return updated;
+          }
+          return init;
+        });
+        
+        // Устанавливаем обновленные данные в кэш
+        queryClient.setQueryData(queryKey, updatedInitiatives);
+      }
+      
+      // Инвалидируем кэш в фоне для полной синхронизации
+      queryClient.invalidateQueries({ queryKey });
     },
     onError: (error: Error) => {
       // Сбрасываем состояние редактирования
