@@ -96,7 +96,7 @@ Kaiten domain and custom field IDs are configured via environment variables:
 - `KAITEN_API_KEY`: API key for Kaiten integration
 - **Custom Field IDs:** Hardcoded in `server/routes.ts`:
   - `plannedValueId = "id_237"` - Kaiten custom field for planned value
-  - `factValueId = "id_240"` - Kaiten custom field for actual value
+  - `factValueId = "id_510"` - Kaiten custom field for actual value
 
 **Kaiten Card Links:**
 The application generates clickable links to Kaiten cards in:
