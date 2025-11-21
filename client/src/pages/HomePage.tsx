@@ -2098,9 +2098,17 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
   });
   
   // Сортируем инициативы:
-  // 1. Группировка по статусу (в работе -> завершенные -> запланированные)
-  // 2. Внутри каждой группы статуса - от начатых раньше к начатым позже
+  // 1. "Поддержка бизнеса" всегда первая
+  // 2. Группировка по статусу (завершенные -> в работе -> запланированные)
+  // 3. Внутри каждой группы статуса - от начатых раньше к начатым позже
   const sortedInitiatives = [...initiatives].sort((a, b) => {
+    // "Поддержка бизнеса" всегда первая
+    const isSupportA = a.cardId === 0;
+    const isSupportB = b.cardId === 0;
+    
+    if (isSupportA && !isSupportB) return -1;
+    if (!isSupportA && isSupportB) return 1;
+    
     // Вспомогательная функция для получения самой ранней даты начала работы
     const getStartDate = (init: typeof a) => {
       // Собираем все doneDate из всех задач всех спринтов
@@ -2114,10 +2122,10 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       return allDoneDates.length > 0 ? Math.min(...allDoneDates) : Infinity;
     };
     
-    // Приоритет статусов: inProgress (1) -> done (2) -> queued (3)
+    // Приоритет статусов: done (1) -> inProgress (2) -> queued (3)
     const statusPriority = {
-      "2-inProgress": 1,
-      "3-done": 2,
+      "3-done": 1,
+      "2-inProgress": 2,
       "1-queued": 3,
     };
     
