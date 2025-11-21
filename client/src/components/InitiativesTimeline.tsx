@@ -743,7 +743,17 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return false;
     }
     
-    // Для типов Compliance и Enabler эффект рассчитывается автоматически
+    // Проверяем фактический эффект для всех типов инициатив
+    if (!initiative.factValue || initiative.factValue.trim() === '') {
+      return false;
+    }
+    
+    const factValueNum = parseFloat(initiative.factValue);
+    if (isNaN(factValueNum) || factValueNum <= 0) {
+      return false;
+    }
+    
+    // Для типов Compliance и Enabler плановый эффект рассчитывается автоматически
     if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
       return true;
     }
