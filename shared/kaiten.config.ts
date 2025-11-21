@@ -2,8 +2,20 @@
  * Конфигурация для формирования URL карточек Kaiten
  */
 
+// Получаем домен Kaiten из переменной окружения
+// В бекенде используется process.env.KAITEN_DOMAIN
+// Во фронтенде используется import.meta.env.VITE_KAITEN_DOMAIN
+const getKaitenDomain = (): string => {
+  // Проверяем наличие import.meta (работает только во фронтенде)
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env.VITE_KAITEN_DOMAIN || 'feature.kaiten.ru';
+  }
+  // Fallback для бекенда или если переменная не задана
+  return 'feature.kaiten.ru';
+};
+
 export const KAITEN_CONFIG = {
-  baseUrl: 'https://feature.kaiten.ru',
+  baseUrl: `https://${getKaitenDomain()}`,
 } as const;
 
 /**
