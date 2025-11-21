@@ -1829,6 +1829,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         log(`[Kaiten Sync] Card ${card.id} - raw factValue from properties[${factValueId}]:`, rawFact);
         log(`[Kaiten Sync] Card ${card.id} - factValue (converted to string):`, factValue);
+        
+        // Логируем даты для отладки
+        log(`[Kaiten Sync] Card ${card.id} "${card.title}" - due_date:`, card.due_date || 'null');
+        log(`[Kaiten Sync] Card ${card.id} "${card.title}" - last_moved_to_done_at:`, card.last_moved_to_done_at || 'null');
+        log(`[Kaiten Sync] Card ${card.id} "${card.title}" - completed_at:`, card.completed_at || 'null');
 
         const synced = await storage.syncInitiativeFromKaiten(
           card.id,
@@ -2495,6 +2500,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (!isNaN(parsed)) {
               factValue = parsed;
             }
+          }
+          
+          // Логируем дату для отладки
+          if (card.last_moved_to_done_at) {
+            log(`[Kaiten Smart Sync] Card ${card.id} "${card.title}" - last_moved_to_done_at from Kaiten:`, card.last_moved_to_done_at);
           }
           
           await storage.syncInitiativeFromKaiten(
