@@ -1007,21 +1007,34 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       }
     }
 
-    // Рассчитываем прогнозируемое количество спринтов (фактическая дата)
-    const forecastedSprintCount = calculateForecastedSprints(initiative);
+    // Проверяем, выполнены ли все плановые SP
+    const actualSize = getTotalSP(initiative);
+    const plannedSize = roundSP(initiative.size || 0);
+    const isCompleted = plannedSize > 0 && actualSize >= plannedSize;
+
+    // Рассчитываем фактическую дату окончания
     let actualEndDate: Date | null = null;
     
-    // Если не можем рассчитать прогноз, используем фактические спринты
-    if (forecastedSprintCount === 0) {
+    // Если все SP выполнены - используем дату последнего фактического спринта
+    if (isCompleted) {
       const lastSprint = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1];
       actualEndDate = lastSprint.finishDate;
     } else {
-      // Индекс последнего прогнозируемого спринта
-      const lastForecastedIndex = firstSprintIndex + forecastedSprintCount - 1;
-      if (lastForecastedIndex >= 0 && lastForecastedIndex < allSprintIds.length) {
-        const lastSprintId = allSprintIds[lastForecastedIndex];
-        const lastSprintInfo = getSprintInfo(lastSprintId);
-        actualEndDate = lastSprintInfo ? new Date(lastSprintInfo.actualFinishDate || lastSprintInfo.finishDate) : null;
+      // Рассчитываем прогнозируемое количество спринтов
+      const forecastedSprintCount = calculateForecastedSprints(initiative);
+      
+      // Если не можем рассчитать прогноз, используем фактические спринты
+      if (forecastedSprintCount === 0) {
+        const lastSprint = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1];
+        actualEndDate = lastSprint.finishDate;
+      } else {
+        // Индекс последнего прогнозируемого спринта
+        const lastForecastedIndex = firstSprintIndex + forecastedSprintCount - 1;
+        if (lastForecastedIndex >= 0 && lastForecastedIndex < allSprintIds.length) {
+          const lastSprintId = allSprintIds[lastForecastedIndex];
+          const lastSprintInfo = getSprintInfo(lastSprintId);
+          actualEndDate = lastSprintInfo ? new Date(lastSprintInfo.actualFinishDate || lastSprintInfo.finishDate) : null;
+        }
       }
     }
 
@@ -1073,8 +1086,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return false;
     }
 
-    // Для инициатив в статусе "done" показываем блоки только до последнего фактического спринта
-    if (initiative.state === '3-done') {
+    // Проверяем, выполнены ли все плановые SP
+    const actualSize = getTotalSP(initiative);
+    const plannedSize = roundSP(initiative.size || 0);
+    const isCompleted = plannedSize > 0 && actualSize >= plannedSize;
+
+    // Для инициатив в статусе "done" ИЛИ когда все SP выполнены - показываем блоки только до последнего фактического спринта
+    if (initiative.state === '3-done' || isCompleted) {
       const lastSprintId = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1].sprintId;
       const lastSprintIndex = allSprintIds.indexOf(lastSprintId);
       const currentSprintIndex = allSprintIds.indexOf(sprintId);
