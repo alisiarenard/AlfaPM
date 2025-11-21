@@ -2097,7 +2097,43 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     return true;
   });
   
-  console.log(`[Initiatives Filter] Final count: ${initiatives.length} initiatives shown (from ${allInitiatives.length} total)`);
+  // Сортируем инициативы:
+  // 1. Группировка по статусу (в работе -> завершенные -> запланированные)
+  // 2. Внутри каждой группы статуса - от начатых раньше к начатым позже
+  const sortedInitiatives = [...initiatives].sort((a, b) => {
+    // Вспомогательная функция для получения самой ранней даты начала работы
+    const getStartDate = (init: typeof a) => {
+      // Собираем все doneDate из всех задач всех спринтов
+      const allDoneDates = init.sprints
+        .flatMap(sprint => sprint.tasks)
+        .map(task => task.doneDate)
+        .filter((date): date is string => date !== null)
+        .map(date => new Date(date).getTime());
+      
+      // Возвращаем минимальную дату (самая ранняя задача = дата начала инициативы)
+      return allDoneDates.length > 0 ? Math.min(...allDoneDates) : Infinity;
+    };
+    
+    // Приоритет статусов: inProgress (1) -> done (2) -> queued (3)
+    const statusPriority = {
+      "2-inProgress": 1,
+      "3-done": 2,
+      "1-queued": 3,
+    };
+    
+    const priorityA = statusPriority[a.state as keyof typeof statusPriority] || 999;
+    const priorityB = statusPriority[b.state as keyof typeof statusPriority] || 999;
+    
+    // Сначала сортируем по статусу
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    
+    // Внутри одного статуса - сортируем по дате начала (раньше начатые - выше)
+    return getStartDate(a) - getStartDate(b);
+  });
+  
+  console.log(`[Initiatives Filter] Final count: ${sortedInitiatives.length} initiatives shown (from ${allInitiatives.length} total)`);
 
   const teamData: Team = {
     boardId: team.initBoardId.toString(),
@@ -2127,7 +2163,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         isSyncing={syncAllMutation.isPending}
       />
       <div className="overflow-auto custom-scrollbar pr-4" style={{ height: 'calc(100vh - 400px)' }}>
-        <InitiativesTimeline initiatives={initiatives} team={teamData} sprints={sprints || []} />
+        <InitiativesTimeline initiatives={sortedInitiatives} team={teamData} sprints={sprints || []} />
       </div>
     </div>
   );
