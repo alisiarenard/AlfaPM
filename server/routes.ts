@@ -197,16 +197,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const allCards = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
           
-          // Фильтруем: archived инициативы со статусом "queued" не сохраняем
-          const cards = allCards.filter(card => {
-            // Не archived - синхронизируем всегда
-            if (!card.archived) return true;
-            
-            // Archived - синхронизируем только если статус done (3) или in-progress (2)
-            return card.state === 3 || card.state === 2;
-          });
+          // Фильтруем: сохраняем только неархивные инициативы
+          const cards = allCards.filter(card => !card.archived);
           
-          log(`[Team Creation] Found ${allCards.length} total cards, will sync ${cards.length} (skipped ${allCards.length - cards.length} archived with queued status)`);
+          log(`[Team Creation] Found ${allCards.length} total cards, will sync ${cards.length} non-archived initiatives (skipped ${allCards.length - cards.length} archived)`);
           
           const plannedValueId = "id_237";
           const factValueId = "id_510";
@@ -1778,16 +1772,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const allCards = await kaitenClient.getCardsFromBoard(boardId);
       
-      // Фильтруем: archived инициативы со статусом "queued" не сохраняем
-      const cards = allCards.filter(card => {
-        // Не archived - синхронизируем всегда
-        if (!card.archived) return true;
-        
-        // Archived - синхронизируем только если статус done (3) или in-progress (2)
-        return card.state === 3 || card.state === 2;
-      });
+      // Фильтруем: сохраняем только неархивные инициативы
+      const cards = allCards.filter(card => !card.archived);
       
-      log(`[Kaiten Sync] Found ${allCards.length} total cards, will sync ${cards.length} (skipped ${allCards.length - cards.length} archived with queued status)`);
+      log(`[Kaiten Sync] Found ${allCards.length} total cards, will sync ${cards.length} non-archived initiatives (skipped ${allCards.length - cards.length} archived)`);
 
       const syncedInitiatives = [];
       const plannedValueId = "id_237";
@@ -2450,16 +2438,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allCards = await kaitenClient.getCardsFromBoard(team.initBoardId);
       log(`[Kaiten Smart Sync] Total cards from Kaiten: ${allCards.length}`);
       
-      // Фильтруем: archived инициативы со статусом "queued" не сохраняем
-      const cardsToSync = allCards.filter(card => {
-        // Не archived - синхронизируем всегда
-        if (!card.archived) return true;
-        
-        // Archived - синхронизируем только если статус done (3) или in-progress (2)
-        return card.state === 3 || card.state === 2;
-      });
+      // Фильтруем: сохраняем только неархивные инициативы
+      const cardsToSync = allCards.filter(card => !card.archived);
       
-      log(`[Kaiten Smart Sync] Total from Kaiten: ${allCards.length}, will sync: ${cardsToSync.length} (skipped ${allCards.length - cardsToSync.length} archived with queued status)`);
+      log(`[Kaiten Smart Sync] Total from Kaiten: ${allCards.length}, will sync: ${cardsToSync.length} non-archived initiatives (skipped ${allCards.length - cardsToSync.length} archived)`);
       
       const plannedValueId = "id_237";
       const factValueId = "id_510";
