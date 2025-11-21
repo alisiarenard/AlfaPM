@@ -2429,19 +2429,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allCards = await kaitenClient.getCardsFromBoard(team.initBoardId);
       log(`[Kaiten Smart Sync] Total cards from Kaiten: ${allCards.length}`);
       
-      // Логируем все карточки ДО фильтрации
-      allCards.forEach(card => {
-        log(`[Kaiten Smart Sync] ALL CARDS - Card ${card.id}: "${card.title.substring(0, 50)}..." - state=${card.state}, archived=${card.archived}`);
-      });
-      
-      const cards = allCards.filter(card => !card.archived);
-      log(`[Kaiten Smart Sync] After filtering: ${cards.length} non-archived initiatives (filtered out ${allCards.length - cards.length} archived)`);
+      // Синхронизируем ВСЕ карточки, включая archived, чтобы обновить их статус в БД
+      log(`[Kaiten Smart Sync] Will sync all ${allCards.length} initiatives (including archived to update their status)`);
       
       const plannedValueId = "id_451379";
       const factValueId = "id_448119";
       
       let syncedCount = 0;
-      for (const card of cards) {
+      for (const card of allCards) {
         try {
           // Детальное логирование для отладки
           log(`[Kaiten Smart Sync] Card ${card.id}: "${card.title.substring(0, 50)}..." - Kaiten state=${card.state}, archived=${card.archived}`);
@@ -2500,7 +2495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      log(`[Kaiten Smart Sync] Step 1 completed: ${syncedCount} of ${cards.length} initiatives synced successfully`);
+      log(`[Kaiten Smart Sync] Step 1 completed: ${syncedCount} of ${allCards.length} initiatives synced successfully`);
       
       // Шаг 2: Проверяем наличие текущего спринта и синхронизируем его задачи
       let newSprintSynced = false;
