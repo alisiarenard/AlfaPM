@@ -1820,15 +1820,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const rawPlanned = card.properties?.[plannedValueId];
         const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
         
-        log(`[Kaiten Sync] Card ${card.id} - raw plannedValue from properties[${plannedValueId}]:`, rawPlanned);
-        log(`[Kaiten Sync] Card ${card.id} - plannedValue (converted to string):`, plannedValue);
+        // log(`[Kaiten Sync] Card ${card.id} - raw plannedValue from properties[${plannedValueId}]:`, rawPlanned);
+        // log(`[Kaiten Sync] Card ${card.id} - plannedValue (converted to string):`, plannedValue);
         
         // Получаем factValue из properties по ключу factValueId
         const rawFact = card.properties?.[factValueId];
         const factValue = rawFact == null ? undefined : String(rawFact);
         
-        log(`[Kaiten Sync] Card ${card.id} - raw factValue from properties[${factValueId}]:`, rawFact);
-        log(`[Kaiten Sync] Card ${card.id} - factValue (converted to string):`, factValue);
+        // log(`[Kaiten Sync] Card ${card.id} - raw factValue from properties[${factValueId}]:`, rawFact);
+        // log(`[Kaiten Sync] Card ${card.id} - factValue (converted to string):`, factValue);
         
         // Логируем даты для отладки
         log(`[Kaiten Sync] Card ${card.id} "${card.title}" - due_date:`, card.due_date || 'null');
@@ -1877,7 +1877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
             const factCost = actualSize * spPrice;
             
-            log(`[Kaiten Sync] Updating initiative ${initiative.cardId} "${initiative.title}" (${initiative.type}): planned_cost=${plannedCost}, fact_cost=${factCost}`);
+            // log(`[Kaiten Sync] Updating initiative ${initiative.cardId} "${initiative.title}" (${initiative.type}): planned_cost=${plannedCost}, fact_cost=${factCost}`);
             
             // Обновляем planned_value и fact_value
             await storage.updateInitiative(initiative.id, {
@@ -3041,7 +3041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Value/Cost] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
+      // log(`[Value/Cost] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
 
       // Получаем команды
       const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
@@ -3075,12 +3075,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (filteredSprints.length > 0) {
               useSprintFilter = true;
               teamSprintIds = new Set(filteredSprints.map(s => s.sprintId));
-              log(`[Value/Cost] Team ${team.teamId}: using sprint filter with ${filteredSprints.length} sprints`);
+              // log(`[Value/Cost] Team ${team.teamId}: using sprint filter with ${filteredSprints.length} sprints`);
             } else {
-              log(`[Value/Cost] Team ${team.teamId}: no sprints in year ${year}, using doneDate filter`);
+              // log(`[Value/Cost] Team ${team.teamId}: no sprints in year ${year}, using doneDate filter`);
             }
           } else {
-            log(`[Value/Cost] Team ${team.teamId}: no sprint board, using doneDate filter`);
+            // log(`[Value/Cost] Team ${team.teamId}: no sprint board, using doneDate filter`);
           }
           
           // Для каждой инициативы получаем задачи, отфильтрованные по спринтам команды или по doneDate
@@ -3106,7 +3106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
               }
               
-              log(`[Value/Cost] Initiative ${initiative.cardId} "${initiative.title}": found ${allTasks.length} tasks total, ${tasks.length} tasks after filter (useSprintFilter=${useSprintFilter})`);
+              // log(`[Value/Cost] Initiative ${initiative.cardId} "${initiative.title}": found ${allTasks.length} tasks total, ${tasks.length} tasks after filter (useSprintFilter=${useSprintFilter})`);
               
               // Группируем по sprint_id (для команд со спринтами) или используем виртуальный sprint_id (для команд без)
               const sprintsMap = new Map<number, { sp: number }>();
@@ -3173,7 +3173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         initiativesByCardId.get(initiative.cardId)!.push(initiative);
       });
 
-      log(`[Value/Cost] Found ${initiativesByCardId.size} unique initiatives`);
+      // log(`[Value/Cost] Found ${initiativesByCardId.size} unique initiatives`);
 
       // Рассчитываем суммарные значения
       let sumPlannedValue = 0;
@@ -3200,7 +3200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
           const plannedSize = initiative.size || 0;
           
-          log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type} team=${initiative.teamName}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${initiative.spPrice}`);
+          // log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type} team=${initiative.teamName}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${initiative.spPrice}`);
           
           // Плановые затраты считаем только для команд с фактическими затратами
           if (actualSize > 0) {
@@ -3209,7 +3209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalActualCost += actualSize * (initiative.spPrice || 0);
         }
         
-        log(`[Value/Cost] Init ${cardId} total costs: planned=${totalPlannedCost}, actual=${totalActualCost}`);
+        // log(`[Value/Cost] Init ${cardId} total costs: planned=${totalPlannedCost}, actual=${totalActualCost}`);
         
         // Для Epic получаем plannedValue и factValue из БД
         // Для Compliance и Enabler: plannedValue = plannedCost, factValue = actualCost
@@ -3236,7 +3236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sumPlannedCost += totalPlannedCost;
           sumFactValue += factValue;
           sumFactCost += totalActualCost;
-          log(`[Value/Cost] Added to totals: plannedValue=${plannedValue}, factValue=${factValue}, plannedCost=${totalPlannedCost}, actualCost=${totalActualCost}`);
+          // log(`[Value/Cost] Added to totals: plannedValue=${plannedValue}, factValue=${factValue}, plannedCost=${totalPlannedCost}, actualCost=${totalActualCost}`);
         }
       }
 
@@ -3248,7 +3248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? Math.round((sumFactValue / sumFactCost) * 10) / 10
         : 0;
 
-      log(`[Value/Cost] Planned: ${plannedValueCost} (${sumPlannedValue}/${sumPlannedCost}), Fact: ${factValueCost} (${sumFactValue}/${sumFactCost})`);
+      // log(`[Value/Cost] Planned: ${plannedValueCost} (${sumPlannedValue}/${sumPlannedCost}), Fact: ${factValueCost} (${sumFactValue}/${sumFactCost})`);
 
       res.json({
         success: true,
