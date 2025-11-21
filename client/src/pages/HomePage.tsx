@@ -806,6 +806,11 @@ export default function HomePage() {
         // Пропускаем "Поддержку бизнеса"
         if (initiative.cardId === 0) return;
         
+        // Оставляем только Epic, Compliance, Enabler
+        if (initiative.type !== 'Epic' && initiative.type !== 'Compliance' && initiative.type !== 'Enabler') {
+          return;
+        }
+        
         if (!initiativesByCardId.has(initiative.cardId)) {
           initiativesByCardId.set(initiative.cardId, []);
         }
@@ -873,7 +878,6 @@ export default function HomePage() {
       const epicInitiatives = processedInitiatives.filter(i => i.type === 'Epic');
       const complianceInitiatives = processedInitiatives.filter(i => i.type === 'Compliance');
       const enablerInitiatives = processedInitiatives.filter(i => i.type === 'Enabler');
-      const otherInitiatives = processedInitiatives.filter(i => i.type !== 'Epic' && i.type !== 'Compliance' && i.type !== 'Enabler');
 
       // Функция для добавления группы инициатив
       const addInitiativesGroup = (initiatives: any[], typeName: string) => {
@@ -984,11 +988,10 @@ export default function HomePage() {
         });
       };
 
-      // Добавляем группы в порядке: Epic, Compliance, Enabler, остальные
+      // Добавляем группы в порядке: Epic, Compliance, Enabler
       addInitiativesGroup(epicInitiatives, 'Epic');
       addInitiativesGroup(complianceInitiatives, 'Compliance');
       addInitiativesGroup(enablerInitiatives, 'Enabler');
-      addInitiativesGroup(otherInitiatives, 'Other');
 
       // Генерируем имя файла
       const fileName = `Cost_Structure_${data.year}_${new Date().toISOString().split('T')[0]}.xlsx`;
