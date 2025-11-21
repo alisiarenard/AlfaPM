@@ -53,7 +53,7 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 
 **Kaiten Integration:**
 - **Smart Sync Endpoint:** `POST /api/kaiten/smart-sync/:teamId` provides intelligent all-in-one synchronization:
-  - Step 1: Syncs all initiatives from initiative board with accurate `syncedCount` tracking and per-card error handling
+  - Step 1: Syncs initiatives from initiative board with filtering: non-archived initiatives (any status) and archived initiatives with status "done" or "in-progress" only. Archived initiatives with status "queued" are skipped.
   - Step 2: Detects current sprint by checking first card's `sprint_id` in sprint board (for teams with sprint boards)
   - Step 3: **ALWAYS** syncs tasks for current sprint (whether new or existing) with parent chain validation
   - If sprint is new: saves to database with `newSprintSynced = true`
