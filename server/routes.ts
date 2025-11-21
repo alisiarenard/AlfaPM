@@ -2926,6 +2926,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Подсчитываем SP по типам инициатив
       const typeStats: Record<string, number> = {};
       let totalSP = 0;
+      
+      // Счетчики для отладки
+      let tasksWithInitiative = 0;
+      let tasksWithoutInitiative = 0;
+      let techDebtCandidates = 0;
 
       for (const task of relevantTasks) {
         const taskSize = task.size || 0;
@@ -2933,6 +2938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Проверяем, привязан ли таск к инициативе
         if (task.initCardId !== null && task.initCardId !== 0) {
+          tasksWithInitiative++;
           const initiative = initiativesMap.get(task.initCardId);
           if (initiative && initiative.type) {
             // Используем тип инициативы
@@ -2942,8 +2948,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
           }
         } else {
+          tasksWithoutInitiative++;
           // Таск не привязан к инициативе - используем тип задачи
           if (task.type) {
+            log(`[Cost Structure DEBUG] Task ${task.cardId} "${task.title.substring(0, 40)}..." has type: "${task.type}", initCardId: ${task.initCardId}, size: ${taskSize}`);
+            
             // Маппинг типов задач к категориям структуры затрат
             let displayType = task.type;
             
@@ -2958,6 +2967,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Применяем маппинг если есть
             if (typeMapping[task.type]) {
               displayType = typeMapping[task.type];
+              log(`[Cost Structure DEBUG] ✓ Mapped "${task.type}" → "${displayType}"`);
+              if (displayType === 'Tech debt') {
+                techDebtCandidates++;
+              }
             }
             
             // Известные типы из структуры затрат
@@ -2965,16 +2978,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             if (knownTypes.includes(displayType)) {
               typeStats[displayType] = (typeStats[displayType] || 0) + taskSize;
+              log(`[Cost Structure DEBUG] ✓ Added ${taskSize} SP to "${displayType}"`);
             } else {
               // Неизвестный тип - в "Др. доработки"
               typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
+              log(`[Cost Structure DEBUG] ✗ Unknown type "${displayType}" → "Др. доработки"`);
             }
           } else {
             // Нет типа - в "Др. доработки"
             typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
+            log(`[Cost Structure DEBUG] Task ${task.cardId} has NO type → "Др. доработки"`);
           }
         }
       }
+      
+      log(`[Cost Structure DEBUG] Summary:`);
+      log(`  - Total tasks: ${relevantTasks.length}`);
+      log(`  - Tasks WITH initiative: ${tasksWithInitiative}`);
+      log(`  - Tasks WITHOUT initiative: ${tasksWithoutInitiative}`);
+      log(`  - Tech debt candidates found: ${techDebtCandidates}`);
+      log(`  - Tech debt SP: ${typeStats['Tech debt'] || 0}`);
+      log(`  - All types: ${JSON.stringify(typeStats, null, 2)}`);
 
       // Рассчитываем проценты
       const typePercentages: Record<string, number> = {};
