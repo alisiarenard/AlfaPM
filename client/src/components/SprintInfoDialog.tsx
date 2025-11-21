@@ -173,7 +173,7 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
                   )}
                   <div>
                     <span className="text-muted-foreground">Velocity:</span>{' '}
-                    <span data-testid="text-sprint-velocity">{roundSP(sprintInfo.sprint.velocity)}</span>
+                    <span data-testid="text-sprint-velocity">{Math.round(sprintInfo.sprint.velocity)}</span>
                   </div>
                 </div>
               </div>
