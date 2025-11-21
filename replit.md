@@ -52,6 +52,13 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 - Sprint PDF report generation endpoint `POST /api/sprints/:sprintId/generate-report` that creates AI-processed PDF reports with task summaries.
 
 **Kaiten Integration:**
+- **Smart Sync Endpoint:** `POST /api/kaiten/smart-sync/:teamId` provides intelligent synchronization:
+  - Step 1: Syncs all initiatives from initiative board with accurate `syncedCount` tracking
+  - Step 2: Automatically detects new sprints by checking first card's `sprint_id` in sprint board
+  - Returns: `{ success, initiativesSynced, newSprintSynced, newSprint }`
+  - Enhanced error handling with per-card try-catch for robust syncing
+  - Preserves `doneDate` via `card.last_moved_to_done_at` for accurate year-based filtering
+- **Initiative Type Validation:** `findInitiativeInParentChain` recursively searches parent chain and validates initiative types (Epic/Compliance/Enabler only), preventing incorrect task-initiative associations
 - **New Sprint API:** Uses Kaiten's `/api/latest/sprints` endpoint to fetch all company sprints in a single request, filtering by team `board_id` for efficiency.
 - **Synchronization Sequence:** 
   1. Initiatives: Fetches cards from initiative boards
