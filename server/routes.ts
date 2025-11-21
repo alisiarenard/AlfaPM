@@ -208,8 +208,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           log(`[Team Creation] Found ${allCards.length} total cards, will sync ${cards.length} (skipped ${allCards.length - cards.length} archived with queued status)`);
           
-          const plannedValueId = "id_451379";
-          const factValueId = "id_448119";
+          const plannedValueId = "id_237";
+          const factValueId = "id_240";
           
           for (const card of cards) {
             let state: "1-queued" | "2-inProgress" | "3-done";
@@ -1790,8 +1790,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log(`[Kaiten Sync] Found ${allCards.length} total cards, will sync ${cards.length} (skipped ${allCards.length - cards.length} archived with queued status)`);
 
       const syncedInitiatives = [];
-      const plannedValueId = "id_451379";
-      const factValueId = "id_448119";
+      const plannedValueId = "id_237";
+      const factValueId = "id_240";
       
       for (const card of cards) {
         let state: "1-queued" | "2-inProgress" | "3-done";
@@ -2081,8 +2081,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (plannedValue !== undefined || factValue !== undefined) {
         kaitenUpdates.properties = {};
         
-        const plannedValueId = "id_451379";
-        const factValueId = "id_448119";
+        const plannedValueId = "id_237";
+        const factValueId = "id_240";
         
         if (plannedValue !== undefined) {
           // Kaiten expects numeric values for custom properties
@@ -2456,8 +2456,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       log(`[Kaiten Smart Sync] Total from Kaiten: ${allCards.length}, will sync: ${cardsToSync.length} (skipped ${allCards.length - cardsToSync.length} archived with queued status)`);
       
-      const plannedValueId = "id_451379";
-      const factValueId = "id_448119";
+      const plannedValueId = "id_237";
+      const factValueId = "id_240";
       
       let syncedCount = 0;
       for (const card of cardsToSync) {
