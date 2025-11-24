@@ -2060,6 +2060,12 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       return true;
     }
     
+    // Не показываем архивные инициативы
+    if (init.condition === "2-archived") {
+      console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - archived`);
+      return false;
+    }
+    
     // Показываем только Epic, Compliance и Enabler
     if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') {
       console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - type: ${init.type} (не Epic/Compliance/Enabler)`);
