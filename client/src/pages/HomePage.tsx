@@ -420,28 +420,36 @@ export default function HomePage() {
     }
   }, [departments, isInitialLoad]);
 
+  // Устанавливаем activeTab из URL только на начальной загрузке или когда текущий activeTab невалиден
   useEffect(() => {
     if (departmentTeams && departmentTeams.length > 0) {
-      // Устанавливаем activeTab из URL только если он еще не установлен (начальная загрузка или смена департамента)
-      if (!activeTab || !departmentTeams.some(t => t.teamId === activeTab)) {
+      // Проверяем, нужно ли установить activeTab
+      const needsTabUpdate = !activeTab || !departmentTeams.some(t => t.teamId === activeTab);
+      
+      if (needsTabUpdate) {
         const urlParams = parseUrlParams();
         // Если в URL есть tab параметр и он валидный, используем его
         if (urlParams.tab && departmentTeams.some(t => t.teamId === urlParams.tab)) {
+          console.log(`[Tab Restore] Setting activeTab from URL: ${urlParams.tab}`);
           setActiveTab(urlParams.tab);
         } else {
           // Иначе выбираем первую команду
+          console.log(`[Tab Restore] No valid tab in URL, using first team: ${departmentTeams[0].teamId}`);
           setActiveTab(departmentTeams[0].teamId);
         }
+      } else {
+        console.log(`[Tab Restore] activeTab already set and valid: ${activeTab}, skipping`);
       }
     } else if (departmentTeams && departmentTeams.length === 0) {
       // Если департамент пустой, сбрасываем activeTab, selectedTeams и метрики
+      console.log(`[Tab Restore] Department has no teams, clearing activeTab`);
       setActiveTab("");
       setSelectedTeams(new Set());
       lastSuccessfulDataRef.current = null;
       lastSuccessfulCostStructureRef.current = null;
       lastSuccessfulValueCostRef.current = null;
     }
-  }, [departmentTeams, activeTab]);
+  }, [departmentTeams]);
 
   // Восстановление выбранных команд после загрузки команд департамента
   useEffect(() => {
