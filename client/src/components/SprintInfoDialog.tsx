@@ -103,53 +103,57 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col p-0" data-testid="dialog-sprint-info">
-        {/* Фиксированный хедер */}
-        <DialogHeader className="px-6 pt-[0.7rem] pb-4 border-b border-border">
-          <DialogTitle className="text-lg font-semibold">Добавить спринт</DialogTitle>
-        </DialogHeader>
+        {/* Фиксированный хедер с поиском */}
+        <div className="px-6 pt-[0.7rem] pb-4 border-b border-border">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-lg font-semibold">Добавить спринт</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Label htmlFor="sprint-id">Sprint ID</Label>
+              <Input
+                id="sprint-id"
+                type="number"
+                placeholder="Введите ID спринта"
+                value={sprintId}
+                onChange={(e) => setSprintId(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
+                data-testid="input-sprint-id"
+              />
+            </div>
+            <Button 
+              onClick={handleSearch} 
+              className="self-end hover:opacity-90 border-0"
+              style={{ backgroundColor: '#cd253d' }}
+              disabled={!sprintId || isLoading}
+              data-testid="button-search-sprint"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Загрузка...
+                </>
+              ) : (
+                'Найти'
+              )}
+            </Button>
+          </div>
+
+          {error && (
+            <div className="text-sm text-destructive mt-2" data-testid="text-sprint-error">
+              Спринт не найден
+            </div>
+          )}
+        </div>
 
         {/* Прокручиваемый контент */}
         <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Label htmlFor="sprint-id">Sprint ID</Label>
-                <Input
-                  id="sprint-id"
-                  type="number"
-                  placeholder="Введите ID спринта"
-                  value={sprintId}
-                  onChange={(e) => setSprintId(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSearch();
-                    }
-                  }}
-                  data-testid="input-sprint-id"
-                />
-              </div>
-              <Button 
-                onClick={handleSearch} 
-                className="self-end"
-                disabled={!sprintId || isLoading}
-                data-testid="button-search-sprint"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Загрузка...
-                  </>
-                ) : (
-                  'Найти'
-                )}
-              </Button>
-            </div>
-
-            {error && (
-              <div className="text-sm text-destructive" data-testid="text-sprint-error">
-                Спринт не найден
-              </div>
-            )}
 
             {sprintInfo && (
               <div className="space-y-4 pt-4 border-t">
@@ -233,6 +237,8 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
             <Button
               onClick={handleSave}
               disabled={saveMutation.isPending}
+              className="hover:opacity-90 border-0"
+              style={{ backgroundColor: '#cd253d' }}
               data-testid="button-save-sprint"
             >
               {saveMutation.isPending ? (
