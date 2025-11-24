@@ -66,6 +66,12 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
       });
       queryClient.invalidateQueries({ queryKey: ["/api/sprints"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/initiatives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      // Закрыть модалку и сбросить состояние
+      setSprintId("");
+      setSearchedSprintId(null);
+      onOpenChange(false);
     },
     onError: (error) => {
       toast({
