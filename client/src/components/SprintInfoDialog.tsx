@@ -156,7 +156,7 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
           <div className="space-y-4">
 
             {sprintInfo && (
-              <div className="space-y-4 pt-4 border-t">
+              <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-lg mb-2" data-testid="text-sprint-title">
                     {sprintInfo.sprint.title}
