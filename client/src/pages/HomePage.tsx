@@ -107,6 +107,7 @@ export default function HomePage() {
   const currentYear = new Date().getFullYear();
   const [location, setLocation] = useLocation();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [activeTabInitialized, setActiveTabInitialized] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState<string>("");
@@ -146,14 +147,21 @@ export default function HomePage() {
 
   // Функция для обновления URL с текущими фильтрами
   const updateUrl = (dept: string, year: string, teams: Set<string>, active: boolean, tab?: string) => {
+    console.log(`[updateUrl] Called with tab: "${tab}"`);
     const params = new URLSearchParams();
     if (dept) params.set('dept', dept);
     if (year) params.set('year', year);
     if (teams.size > 0) params.set('teams', Array.from(teams).join(','));
     if (active) params.set('active', '1');
-    if (tab) params.set('tab', tab);
+    if (tab) {
+      console.log(`[updateUrl] Adding tab to URL: ${tab}`);
+      params.set('tab', tab);
+    } else {
+      console.log(`[updateUrl] Tab is empty, NOT adding to URL`);
+    }
     
     const newUrl = params.toString() ? `/?${params.toString()}` : '/';
+    console.log(`[updateUrl] New URL: ${newUrl}`);
     if (location !== newUrl) {
       setLocation(newUrl);
     }
@@ -432,18 +440,24 @@ export default function HomePage() {
         if (urlParams.tab && departmentTeams.some(t => t.teamId === urlParams.tab)) {
           console.log(`[Tab Restore] Setting activeTab from URL: ${urlParams.tab}`);
           setActiveTab(urlParams.tab);
+          setActiveTabInitialized(true);
         } else {
           // Иначе выбираем первую команду
           console.log(`[Tab Restore] No valid tab in URL, using first team: ${departmentTeams[0].teamId}`);
           setActiveTab(departmentTeams[0].teamId);
+          setActiveTabInitialized(true);
         }
       } else {
         console.log(`[Tab Restore] activeTab already set and valid: ${activeTab}, skipping`);
+        if (!activeTabInitialized) {
+          setActiveTabInitialized(true);
+        }
       }
     } else if (departmentTeams && departmentTeams.length === 0) {
       // Если департамент пустой, сбрасываем activeTab, selectedTeams и метрики
       console.log(`[Tab Restore] Department has no teams, clearing activeTab`);
       setActiveTab("");
+      setActiveTabInitialized(false);
       setSelectedTeams(new Set());
       lastSuccessfulDataRef.current = null;
       lastSuccessfulCostStructureRef.current = null;
@@ -468,11 +482,13 @@ export default function HomePage() {
   // Синхронизация URL при изменении фильтров
   useEffect(() => {
     // Не обновляем URL пока не загружены данные и не установлен activeTab
-    if (!isInitialLoad && activeTab) {
+    if (!isInitialLoad && activeTabInitialized && activeTab) {
       console.log(`[URL Sync] Updating URL with activeTab: ${activeTab}`);
       updateUrl(selectedDepartment, selectedYear, selectedTeams, showActiveOnly, activeTab);
+    } else {
+      console.log(`[URL Sync] Skipping URL update - isInitialLoad: ${isInitialLoad}, activeTabInitialized: ${activeTabInitialized}, activeTab: "${activeTab}"`);
     }
-  }, [selectedDepartment, selectedYear, selectedTeams, showActiveOnly, activeTab, isInitialLoad]);
+  }, [selectedDepartment, selectedYear, selectedTeams, showActiveOnly, activeTab, isInitialLoad, activeTabInitialized]);
 
   // Синхронизация состояния при изменении URL через popstate (назад/вперед браузера)
   useEffect(() => {
@@ -1146,7 +1162,10 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
             <Select 
               value={selectedDepartment} 
-              onValueChange={setSelectedDepartment}
+              onValueChange={(dept) => {
+                setSelectedDepartment(dept);
+                setActiveTabInitialized(false); // Сбрасываем флаг при смене департамента
+              }}
               data-testid="select-department"
             >
               <SelectTrigger className="w-[200px] bg-white">
