@@ -467,7 +467,9 @@ export default function HomePage() {
 
   // Синхронизация URL при изменении фильтров
   useEffect(() => {
-    if (!isInitialLoad) {
+    // Не обновляем URL пока не загружены данные и не установлен activeTab
+    if (!isInitialLoad && activeTab) {
+      console.log(`[URL Sync] Updating URL with activeTab: ${activeTab}`);
       updateUrl(selectedDepartment, selectedYear, selectedTeams, showActiveOnly, activeTab);
     }
   }, [selectedDepartment, selectedYear, selectedTeams, showActiveOnly, activeTab, isInitialLoad]);
