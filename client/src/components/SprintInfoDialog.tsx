@@ -123,6 +123,7 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
                     handleSearch();
                   }
                 }}
+                className="no-arrows"
                 data-testid="input-sprint-id"
               />
             </div>
