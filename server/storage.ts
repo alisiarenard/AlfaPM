@@ -40,6 +40,7 @@ export interface IStorage {
     dueDate?: string | null,
     doneDate?: string | null
   ): Promise<InitiativeRow>;
+  archiveInitiativesNotInList(boardId: number, activeCardIds: number[]): Promise<void>;
   getAllTasks(): Promise<TaskRow[]>;
   getTasksByBoardId(boardId: number): Promise<TaskRow[]>;
   getTasksByInitCardId(initCardId: number): Promise<TaskRow[]>;
@@ -224,6 +225,10 @@ export class MemStorage implements IStorage {
       dueDate: dueDate ?? null,
       doneDate: doneDate ?? null
     };
+  }
+
+  async archiveInitiativesNotInList(boardId: number, activeCardIds: number[]): Promise<void> {
+    return;
   }
 
   async getAllTasks(): Promise<TaskRow[]> {
@@ -557,6 +562,30 @@ export class DbStorage implements IStorage {
         })
         .returning();
       return created;
+    }
+  }
+
+  async archiveInitiativesNotInList(boardId: number, activeCardIds: number[]): Promise<void> {
+    const cardIdSet = new Set(activeCardIds);
+    
+    // Получаем все инициативы этой доски
+    const boardInitiatives = await this.getInitiativesByBoardId(boardId);
+    
+    // Находим те, которых нет в списке активных
+    const initiativesToArchive = boardInitiatives.filter(init => !cardIdSet.has(init.cardId));
+    
+    if (initiativesToArchive.length > 0) {
+      console.log(`[Archive Initiatives] Archiving ${initiativesToArchive.length} initiatives not in sync list for board ${boardId}`);
+      
+      // Помечаем как archived
+      for (const initiative of initiativesToArchive) {
+        await db
+          .update(initiatives)
+          .set({ condition: "2-archived" })
+          .where(eq(initiatives.cardId, initiative.cardId));
+      }
+      
+      console.log(`[Archive Initiatives] Archived initiatives: ${initiativesToArchive.map(i => i.cardId).join(', ')}`);
     }
   }
 

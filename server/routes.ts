@@ -204,6 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const plannedValueId = "id_237";
           const factValueId = "id_510";
+          const syncedCardIds: number[] = [];
           
           for (const card of cards) {
             let state: "1-queued" | "2-inProgress" | "3-done";
@@ -239,7 +240,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.due_date || null,
               card.last_moved_to_done_at || null
             );
+            syncedCardIds.push(card.id);
           }
+          
+          // Архивируем инициативы, которых больше нет на доске
+          await storage.archiveInitiativesNotInList(teamData.initBoardId, syncedCardIds);
           
           log(`[Team Creation] Successfully synced ${cards.length} initiatives`);
         } catch (syncError) {
@@ -1779,6 +1784,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log(`[Kaiten Sync] Found ${allCards.length} total cards, will sync ${cards.length} non-archived initiatives (skipped ${allCards.length - cards.length} archived)`);
 
       const syncedInitiatives = [];
+      const syncedCardIds: number[] = [];
       const plannedValueId = "id_237";
       const factValueId = "id_510";
       
@@ -1841,7 +1847,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         
         syncedInitiatives.push(synced);
+        syncedCardIds.push(card.id);
       }
+
+      // Архивируем инициативы, которых больше нет на доске
+      await storage.archiveInitiativesNotInList(boardId, syncedCardIds);
 
       log(`[Kaiten Sync] Successfully synced ${syncedInitiatives.length} initiatives`);
       
@@ -2446,6 +2456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const plannedValueId = "id_237";
       const factValueId = "id_510";
+      const syncedCardIds: number[] = [];
       
       let syncedCount = 0;
       for (const card of cardsToSync) {
@@ -2506,11 +2517,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.last_moved_to_done_at || null
           );
           
+          syncedCardIds.push(card.id);
           syncedCount++;
         } catch (error) {
           log(`[Kaiten Smart Sync] Error syncing initiative ${card.id}: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
+      
+      // Архивируем инициативы, которых больше нет на доске
+      await storage.archiveInitiativesNotInList(team.initBoardId, syncedCardIds);
       
       log(`[Kaiten Smart Sync] Step 1 completed: ${syncedCount} of ${cardsToSync.length} initiatives synced successfully`);
       
