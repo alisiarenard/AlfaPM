@@ -102,129 +102,134 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" data-testid="dialog-sprint-info">
-        <DialogHeader>
-          <DialogTitle>Информация о спринте</DialogTitle>
+      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col p-0" data-testid="dialog-sprint-info">
+        {/* Фиксированный хедер */}
+        <DialogHeader className="px-6 pt-[0.7rem] pb-4 border-b border-border">
+          <DialogTitle className="text-lg font-semibold">Добавить спринт</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Label htmlFor="sprint-id">Sprint ID</Label>
-              <Input
-                id="sprint-id"
-                type="number"
-                placeholder="Введите ID спринта"
-                value={sprintId}
-                onChange={(e) => setSprintId(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-                data-testid="input-sprint-id"
-              />
+        {/* Прокручиваемый контент */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label htmlFor="sprint-id">Sprint ID</Label>
+                <Input
+                  id="sprint-id"
+                  type="number"
+                  placeholder="Введите ID спринта"
+                  value={sprintId}
+                  onChange={(e) => setSprintId(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
+                  data-testid="input-sprint-id"
+                />
+              </div>
+              <Button 
+                onClick={handleSearch} 
+                className="self-end"
+                disabled={!sprintId || isLoading}
+                data-testid="button-search-sprint"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Загрузка...
+                  </>
+                ) : (
+                  'Найти'
+                )}
+              </Button>
             </div>
-            <Button 
-              onClick={handleSearch} 
-              className="self-end"
-              disabled={!sprintId || isLoading}
-              data-testid="button-search-sprint"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Загрузка...
-                </>
-              ) : (
-                'Найти'
-              )}
-            </Button>
-          </div>
 
-          {error && (
-            <div className="text-sm text-destructive" data-testid="text-sprint-error">
-              Спринт не найден
-            </div>
-          )}
+            {error && (
+              <div className="text-sm text-destructive" data-testid="text-sprint-error">
+                Спринт не найден
+              </div>
+            )}
 
-          {sprintInfo && (
-            <div className="space-y-4 pt-4 border-t">
-              <div>
-                <h3 className="font-semibold text-lg mb-2" data-testid="text-sprint-title">
-                  {sprintInfo.sprint.title}
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Дата начала:</span>{' '}
-                    <span data-testid="text-sprint-start-date">{formatDate(sprintInfo.sprint.startDate)}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Дата окончания (план):</span>{' '}
-                    <span data-testid="text-sprint-finish-date">{formatDate(sprintInfo.sprint.finishDate)}</span>
-                  </div>
-                  {sprintInfo.sprint.actualFinishDate && (
+            {sprintInfo && (
+              <div className="space-y-4 pt-4 border-t">
+                <div>
+                  <h3 className="font-semibold text-lg mb-2" data-testid="text-sprint-title">
+                    {sprintInfo.sprint.title}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Дата окончания (факт):</span>{' '}
-                      <span data-testid="text-sprint-actual-finish-date">
-                        {formatDate(sprintInfo.sprint.actualFinishDate)}
-                      </span>
+                      <span className="text-muted-foreground">Дата начала:</span>{' '}
+                      <span data-testid="text-sprint-start-date">{formatDate(sprintInfo.sprint.startDate)}</span>
                     </div>
-                  )}
-                  <div>
-                    <span className="text-muted-foreground">Velocity:</span>{' '}
-                    <span data-testid="text-sprint-velocity">{Math.round(sprintInfo.sprint.velocity)}</span>
+                    <div>
+                      <span className="text-muted-foreground">Дата окончания (план):</span>{' '}
+                      <span data-testid="text-sprint-finish-date">{formatDate(sprintInfo.sprint.finishDate)}</span>
+                    </div>
+                    {sprintInfo.sprint.actualFinishDate && (
+                      <div>
+                        <span className="text-muted-foreground">Дата окончания (факт):</span>{' '}
+                        <span data-testid="text-sprint-actual-finish-date">
+                          {formatDate(sprintInfo.sprint.actualFinishDate)}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-muted-foreground">Velocity:</span>{' '}
+                      <span data-testid="text-sprint-velocity">{Math.round(sprintInfo.sprint.velocity)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <h4 className="font-semibold mb-2">Задачи ({sprintInfo.tasks.length})</h4>
-                <div className="border rounded-md">
-                  <table className="w-full">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-2 text-sm font-medium">Название задачи</th>
-                        <th className="text-left p-2 text-sm font-medium">Инициатива</th>
-                        <th className="text-right p-2 text-sm font-medium">SP</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sprintInfo.tasks.length === 0 ? (
+                <div>
+                  <h4 className="font-semibold mb-2">Задачи ({sprintInfo.tasks.length})</h4>
+                  <div className="border rounded-md">
+                    <table className="w-full">
+                      <thead className="bg-muted">
                         <tr>
-                          <td colSpan={3} className="p-4 text-center text-muted-foreground text-sm">
-                            Задачи не найдены
-                          </td>
+                          <th className="text-left p-2 text-sm font-medium">Название задачи</th>
+                          <th className="text-left p-2 text-sm font-medium">Инициатива</th>
+                          <th className="text-right p-2 text-sm font-medium">SP</th>
                         </tr>
-                      ) : (
-                        sprintInfo.tasks.map((task) => (
-                          <tr 
-                            key={task.id} 
-                            className="border-t hover-elevate"
-                            data-testid={`row-task-${task.cardId}`}
-                          >
-                            <td className="p-2 text-sm" data-testid={`text-task-title-${task.cardId}`}>
-                              {task.title}
-                            </td>
-                            <td className="p-2 text-sm text-muted-foreground" data-testid={`text-task-initiative-${task.cardId}`}>
-                              {task.initiativeTitle || '—'}
-                            </td>
-                            <td className="p-2 text-sm text-right" data-testid={`text-task-sp-${task.cardId}`}>
-                              {roundSP(task.size)}
+                      </thead>
+                      <tbody>
+                        {sprintInfo.tasks.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="p-4 text-center text-muted-foreground text-sm">
+                              Задачи не найдены
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ) : (
+                          sprintInfo.tasks.map((task) => (
+                            <tr 
+                              key={task.id} 
+                              className="border-t hover-elevate"
+                              data-testid={`row-task-${task.cardId}`}
+                            >
+                              <td className="p-2 text-sm" data-testid={`text-task-title-${task.cardId}`}>
+                                {task.title}
+                              </td>
+                              <td className="p-2 text-sm text-muted-foreground" data-testid={`text-task-initiative-${task.cardId}`}>
+                                {task.initiativeTitle || '—'}
+                              </td>
+                              <td className="p-2 text-sm text-right" data-testid={`text-task-sp-${task.cardId}`}>
+                                {roundSP(task.size)}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
+        {/* Фиксированный футер */}
         {sprintInfo && (
-          <DialogFooter className="pt-4 border-t">
+          <DialogFooter className="px-6 py-4 border-t">
             <Button
               onClick={handleSave}
               disabled={saveMutation.isPending}
@@ -236,7 +241,7 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
                   Сохранение...
                 </>
               ) : (
-                'Сохранить в БД'
+                'Сохранить'
               )}
             </Button>
           </DialogFooter>

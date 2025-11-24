@@ -70,7 +70,7 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
                 data-testid="button-sprint-info"
                 className="h-7 w-7"
                 onClick={() => setSprintInfoOpen(true)}
-                title="Просмотр информации о спринте"
+                title="Добавить спринт"
               >
                 <Plus className="h-4 w-4" />
               </Button>
