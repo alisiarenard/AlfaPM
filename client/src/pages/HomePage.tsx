@@ -422,13 +422,16 @@ export default function HomePage() {
 
   useEffect(() => {
     if (departmentTeams && departmentTeams.length > 0) {
-      const urlParams = parseUrlParams();
-      // Если в URL есть tab параметр и он валидный, используем его
-      if (urlParams.tab && departmentTeams.some(t => t.teamId === urlParams.tab)) {
-        setActiveTab(urlParams.tab);
-      } else {
-        // Иначе выбираем первую команду
-        setActiveTab(departmentTeams[0].teamId);
+      // Устанавливаем activeTab из URL только если он еще не установлен (начальная загрузка или смена департамента)
+      if (!activeTab || !departmentTeams.some(t => t.teamId === activeTab)) {
+        const urlParams = parseUrlParams();
+        // Если в URL есть tab параметр и он валидный, используем его
+        if (urlParams.tab && departmentTeams.some(t => t.teamId === urlParams.tab)) {
+          setActiveTab(urlParams.tab);
+        } else {
+          // Иначе выбираем первую команду
+          setActiveTab(departmentTeams[0].teamId);
+        }
       }
     } else if (departmentTeams && departmentTeams.length === 0) {
       // Если департамент пустой, сбрасываем activeTab, selectedTeams и метрики
@@ -438,7 +441,7 @@ export default function HomePage() {
       lastSuccessfulCostStructureRef.current = null;
       lastSuccessfulValueCostRef.current = null;
     }
-  }, [departmentTeams]);
+  }, [departmentTeams, activeTab]);
 
   // Восстановление выбранных команд после загрузки команд департамента
   useEffect(() => {
