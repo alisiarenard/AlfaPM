@@ -1293,9 +1293,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Sprint Info] ====== RAW KAITEN RESPONSE ======`);
-      log(`[Sprint Info] ${JSON.stringify(kaitenSprint, null, 2)}`);
-      log(`[Sprint Info] ====================================`);
+      log(`[Sprint Info] ====== SPRINT ${sprintId}: ${kaitenSprint.title} ======`);
+      log(`[Sprint Info] Board: ${kaitenSprint.board_id} | Velocity: ${kaitenSprint.velocity} | Cards: ${kaitenSprint.cards?.length || 0}`);
       
       const sprint = {
         sprintId: kaitenSprint.id,
@@ -1323,10 +1322,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               continue;
             }
             
-            log(`[Sprint Info] --- Card ${card.id} RAW DATA ---`);
-            log(`[Sprint Info] ${JSON.stringify(card, null, 2)}`);
-            log(`[Sprint Info] ----------------------------`);
-            
             const cardSize = card.size || 0;
             totalSP += cardSize;
             
@@ -1336,7 +1331,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               doneSP += cardSize;
             }
             
-            log(`[Sprint Info] Card ${card.id}: "${card.title}" | Size: ${cardSize} SP | State: ${card.state} | Done: ${isDone}`);
+            // Логируем только ключевые поля
+            const stateText = isDone ? 'Done' : 'Not Done';
+            log(`[Sprint Info] [${stateText}] ${cardSize} SP | "${card.title}" (state: ${card.state})`);
             
             let initiativeTitle: string | null = null;
             let initiativeCardId: number | null = null;
