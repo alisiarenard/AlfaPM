@@ -1372,23 +1372,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
+      // СПД = Done SP / Velocity из Кайтена (committed SP)
+      const kaitenVelocity = kaitenSprint.velocity || 0;
+      const deliveryPlanCompliance = kaitenVelocity > 0 ? Math.round((doneSP / kaitenVelocity) * 100) : 0;
       
       log(`[Sprint Info] =====================================`);
       log(`[Sprint Info] КАЙТЕН ВЕРНУЛ:`);
       log(`[Sprint Info]   Карточек в спринте: ${kaitenSprint.cards?.length || 0}`);
-      log(`[Sprint Info]   Velocity из Kaiten: ${kaitenSprint.velocity}`);
+      log(`[Sprint Info]   Velocity (Committed SP): ${kaitenVelocity}`);
       log(`[Sprint Info] `);
       log(`[Sprint Info] МЫ ПОСЧИТАЛИ:`);
       log(`[Sprint Info]   Обработано задач: ${tasks.length}`);
-      log(`[Sprint Info]   Total SP: ${totalSP}`);
+      log(`[Sprint Info]   Total SP (все задачи): ${totalSP}`);
       log(`[Sprint Info]   Done SP: ${doneSP}`);
-      log(`[Sprint Info]   СПД: ${deliveryPlanCompliance}%`);
+      log(`[Sprint Info]   СПД: ${doneSP} / ${kaitenVelocity} = ${deliveryPlanCompliance}%`);
       log(`[Sprint Info] `);
       log(`[Sprint Info] ОТПРАВЛЯЕМ НА ФРОНТ:`);
       log(`[Sprint Info]   Задач: ${tasks.length}`);
-      log(`[Sprint Info]   Total SP: ${totalSP}`);
+      log(`[Sprint Info]   Committed SP (Velocity): ${kaitenVelocity}`);
       log(`[Sprint Info]   Done SP: ${doneSP}`);
+      log(`[Sprint Info]   СПД: ${deliveryPlanCompliance}%`);
       log(`[Sprint Info] =====================================`);
       
       res.json({
