@@ -1373,11 +1373,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
-      log(`[Sprint Info] ====== CALCULATION RESULTS ======`);
-      log(`[Sprint Info] Total tasks: ${tasks.length}`);
-      log(`[Sprint Info] Total SP: ${totalSP}`);
-      log(`[Sprint Info] Done SP: ${doneSP}`);
-      log(`[Sprint Info] СПД: ${deliveryPlanCompliance}%`);
+      
+      log(`[Sprint Info] =====================================`);
+      log(`[Sprint Info] КАЙТЕН ВЕРНУЛ:`);
+      log(`[Sprint Info]   Карточек в спринте: ${kaitenSprint.cards?.length || 0}`);
+      log(`[Sprint Info]   Velocity из Kaiten: ${kaitenSprint.velocity}`);
+      log(`[Sprint Info] `);
+      log(`[Sprint Info] МЫ ПОСЧИТАЛИ:`);
+      log(`[Sprint Info]   Обработано задач: ${tasks.length}`);
+      log(`[Sprint Info]   Total SP: ${totalSP}`);
+      log(`[Sprint Info]   Done SP: ${doneSP}`);
+      log(`[Sprint Info]   СПД: ${deliveryPlanCompliance}%`);
+      log(`[Sprint Info] `);
+      log(`[Sprint Info] ОТПРАВЛЯЕМ НА ФРОНТ:`);
+      log(`[Sprint Info]   Задач: ${tasks.length}`);
+      log(`[Sprint Info]   Total SP: ${totalSP}`);
+      log(`[Sprint Info]   Done SP: ${doneSP}`);
       log(`[Sprint Info] =====================================`);
       
       res.json({
