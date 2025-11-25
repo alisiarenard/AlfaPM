@@ -1313,12 +1313,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
         log(`[Sprint Info] Processing ${kaitenSprint.cards.length} cards`);
+        log(`[Sprint Info] --- Задачи в Done (state === 3) ---`);
         
         for (const sprintCard of kaitenSprint.cards) {
           try {
             const card = await kaitenClient.getCard(sprintCard.id);
             
             if (!card) {
+              log(`[Sprint Info] ⚠️ Card ${sprintCard.id} не найдена`);
               continue;
             }
             
@@ -1329,11 +1331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const isDone = card.state === 3;
             if (isDone) {
               doneSP += cardSize;
+              log(`[Sprint Info] ✓ [Done] ${cardSize} SP | "${card.title}"`);
             }
-            
-            // Логируем только ключевые поля
-            const stateText = isDone ? 'Done' : 'Not Done';
-            log(`[Sprint Info] [${stateText}] ${cardSize} SP | "${card.title}" (state: ${card.state})`);
             
             let initiativeTitle: string | null = null;
             let initiativeCardId: number | null = null;
@@ -1372,27 +1371,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // СПД = Done SP / Velocity из Кайтена (committed SP)
       const kaitenVelocity = kaitenSprint.velocity || 0;
-      const deliveryPlanCompliance = kaitenVelocity > 0 ? Math.round((doneSP / kaitenVelocity) * 100) : 0;
       
       log(`[Sprint Info] =====================================`);
       log(`[Sprint Info] КАЙТЕН ВЕРНУЛ:`);
       log(`[Sprint Info]   Карточек в спринте: ${kaitenSprint.cards?.length || 0}`);
-      log(`[Sprint Info]   Velocity (Committed SP): ${kaitenVelocity}`);
+      log(`[Sprint Info]   Velocity: ${kaitenVelocity}`);
       log(`[Sprint Info] `);
       log(`[Sprint Info] МЫ ПОСЧИТАЛИ:`);
       log(`[Sprint Info]   Обработано задач: ${tasks.length}`);
       log(`[Sprint Info]   Total SP (все задачи): ${totalSP}`);
-      log(`[Sprint Info]   Done SP: ${doneSP}`);
-      log(`[Sprint Info]   СПД: ${doneSP} / ${kaitenVelocity} = ${deliveryPlanCompliance}%`);
+      log(`[Sprint Info]   Done SP (state === 3): ${doneSP}`);
       log(`[Sprint Info] `);
-      log(`[Sprint Info] ОТПРАВЛЯЕМ НА ФРОНТ:`);
-      log(`[Sprint Info]   Задач: ${tasks.length}`);
-      log(`[Sprint Info]   Committed SP (Velocity): ${kaitenVelocity}`);
-      log(`[Sprint Info]   Done SP: ${doneSP}`);
-      log(`[Sprint Info]   СПД: ${deliveryPlanCompliance}%`);
+      log(`[Sprint Info] НЕСООТВЕТСТВИЕ:`);
+      log(`[Sprint Info]   Velocity из Kaiten: ${kaitenVelocity}`);
+      log(`[Sprint Info]   Done SP (наш расчет): ${doneSP}`);
+      log(`[Sprint Info]   Разница: ${doneSP - kaitenVelocity}`);
       log(`[Sprint Info] =====================================`);
+      
+      // Пока используем Done SP / Velocity для СПД
+      const deliveryPlanCompliance = kaitenVelocity > 0 ? Math.round((doneSP / kaitenVelocity) * 100) : 0;
       
       res.json({
         sprint,
