@@ -1293,7 +1293,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Sprint Info] Sprint found: ${kaitenSprint.title}`);
+      log(`[Sprint Info] ====== KAITEN SPRINT DATA ======`);
+      log(`[Sprint Info] Sprint ID: ${kaitenSprint.id}`);
+      log(`[Sprint Info] Sprint Title: ${kaitenSprint.title}`);
+      log(`[Sprint Info] Board ID: ${kaitenSprint.board_id}`);
+      log(`[Sprint Info] Velocity: ${kaitenSprint.velocity}`);
+      log(`[Sprint Info] Start Date: ${kaitenSprint.start_date}`);
+      log(`[Sprint Info] Finish Date: ${kaitenSprint.finish_date}`);
+      log(`[Sprint Info] Actual Finish Date: ${kaitenSprint.actual_finish_date || 'null'}`);
+      log(`[Sprint Info] Cards count: ${kaitenSprint.cards?.length || 0}`);
       
       const sprint = {
         sprintId: kaitenSprint.id,
@@ -1325,9 +1333,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalSP += cardSize;
             
             // Считаем done SP отдельно
-            if (card.state === 3) {
+            const isDone = card.state === 3;
+            if (isDone) {
               doneSP += cardSize;
             }
+            
+            log(`[Sprint Info] Card ${card.id}: "${card.title}" | Size: ${cardSize} SP | State: ${card.state} | Done: ${isDone}`);
             
             let initiativeTitle: string | null = null;
             let initiativeCardId: number | null = null;
@@ -1367,7 +1378,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
-      log(`[Sprint Info] Returning ${tasks.length} tasks (total: ${totalSP} SP, done: ${doneSP} SP, СПД: ${deliveryPlanCompliance}%)`);
+      log(`[Sprint Info] ====== CALCULATION RESULTS ======`);
+      log(`[Sprint Info] Total tasks: ${tasks.length}`);
+      log(`[Sprint Info] Total SP: ${totalSP}`);
+      log(`[Sprint Info] Done SP: ${doneSP}`);
+      log(`[Sprint Info] СПД: ${deliveryPlanCompliance}%`);
+      log(`[Sprint Info] =====================================`);
       
       res.json({
         sprint,
@@ -1409,18 +1425,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Получаем все задачи спринта из БД
       const tasks = await storage.getTasksBySprint(sprintId);
       
+      log(`[Sprint Stats] ====== DATABASE STATS FOR SPRINT ${sprintId} ======`);
+      log(`[Sprint Stats] Total tasks in DB: ${tasks.length}`);
+      
       // Подсчитываем статистику
       let totalSP = 0;
       let doneSP = 0;
       
       tasks.forEach(task => {
-        totalSP += task.size || 0;
-        if (task.state === '3-done') {
-          doneSP += task.size || 0;
+        const taskSize = task.size || 0;
+        totalSP += taskSize;
+        const isDone = task.state === '3-done';
+        if (isDone) {
+          doneSP += taskSize;
         }
+        log(`[Sprint Stats] Task ${task.cardId}: "${task.title}" | Size: ${taskSize} SP | State: ${task.state} | Done: ${isDone}`);
       });
       
       const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
+      
+      log(`[Sprint Stats] Total SP: ${totalSP}`);
+      log(`[Sprint Stats] Done SP: ${doneSP}`);
+      log(`[Sprint Stats] СПД: ${deliveryPlanCompliance}%`);
+      log(`[Sprint Stats] ================================================`);
       
       res.json({
         success: true,
