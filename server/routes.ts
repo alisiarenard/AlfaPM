@@ -1312,9 +1312,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let doneSP = 0;
       let doneTasksCount = 0;
       
+      // Дата окончания спринта для фильтрации
+      const sprintEndDate = kaitenSprint.actual_finish_date || kaitenSprint.finish_date;
+      const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
+      
       if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
         log(`[Sprint Info] Processing ${kaitenSprint.cards.length} cards`);
-        log(`[Sprint Info] --- Задачи в Done (state === 3) ---`);
+        log(`[Sprint Info] Sprint end date: ${sprintEndDate}`);
+        log(`[Sprint Info] --- Задачи Done ДО окончания спринта ---`);
         
         for (const sprintCard of kaitenSprint.cards) {
           try {
@@ -1328,12 +1333,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const cardSize = card.size || 0;
             totalSP += cardSize;
             
-            // Считаем done SP отдельно
+            // Проверяем: была ли задача Done ДО окончания спринта
             const isDone = card.state === 3;
-            if (isDone) {
+            const completedAt = card.completed_at || card.last_moved_to_done_at;
+            const wasDoneBeforeSprintEnd = completedAt && new Date(completedAt).getTime() <= sprintEndTime;
+            
+            if (isDone && wasDoneBeforeSprintEnd) {
               doneSP += cardSize;
               doneTasksCount++;
-              log(`[Sprint Info] ✓ [Done] ${cardSize} SP | "${card.title}"`);
+              log(`[Sprint Info] ✓ [Done] ${cardSize} SP | "${card.title}" (completed: ${completedAt})`);
+            } else if (isDone && !wasDoneBeforeSprintEnd) {
+              log(`[Sprint Info] ⏭ [Done AFTER sprint] ${cardSize} SP | "${card.title}" (completed: ${completedAt || 'unknown'})`);
             }
             
             let initiativeTitle: string | null = null;
@@ -1357,15 +1367,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               initiativeCardId = 0;
             }
 
-            tasks.push({
-              id: card.id.toString(),
-              cardId: card.id,
-              title: card.title,
-              size: cardSize,
-              state: card.state,
-              initiativeTitle,
-              initiativeCardId,
-            });
+            // Добавляем в список задач ТОЛЬКО те, которые были Done до окончания спринта
+            if (isDone && wasDoneBeforeSprintEnd) {
+              tasks.push({
+                id: card.id.toString(),
+                cardId: card.id,
+                title: card.title,
+                size: cardSize,
+                state: card.state,
+                initiativeTitle,
+                initiativeCardId,
+              });
+            }
           } catch (cardError) {
             const errorMessage = cardError instanceof Error ? cardError.message : String(cardError);
             log(`[Sprint Info] Error fetching card ${sprintCard.id}: ${errorMessage}`);
