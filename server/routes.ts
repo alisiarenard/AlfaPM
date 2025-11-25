@@ -2745,20 +2745,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           if (yearSprints.length > 0) {
-            // Команда имеет реальные спринты в этом году - берем задачи из спринтов
+            // Команда имеет реальные спринты в этом году - берем только done-задачи из спринтов
             const sprintIds = new Set(yearSprints.map(s => s.sprintId));
             const allTasks = await storage.getAllTasks();
             const teamSprintTasks = allTasks.filter(task => 
               task.teamId === team.teamId &&
               task.sprintId !== null && 
               sprintIds.has(task.sprintId) && 
+              task.state === '3-done' &&  // Только done-задачи
               !processedTaskIds.has(task.cardId)
             );
             teamSprintTasks.forEach(task => {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
             });
-            log(`[Innovation Rate] Team ${team.teamId}: found ${teamSprintTasks.length} tasks in ${yearSprints.length} sprints`);
+            log(`[Innovation Rate] Team ${team.teamId}: found ${teamSprintTasks.length} done tasks in ${yearSprints.length} sprints`);
           } else {
             // Команда не имеет реальных спринтов в этом году - берем по doneDate
             const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
@@ -2902,20 +2903,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           if (yearSprints.length > 0) {
-            // Команда имеет реальные спринты в этом году - берем задачи из спринтов
+            // Команда имеет реальные спринты в этом году - берем только done-задачи из спринтов
             const sprintIds = new Set(yearSprints.map(s => s.sprintId));
             const allTasks = await storage.getAllTasks();
             const teamSprintTasks = allTasks.filter(task => 
               task.teamId === team.teamId &&
               task.sprintId !== null && 
               sprintIds.has(task.sprintId) && 
+              task.state === '3-done' &&  // Только done-задачи
               !processedTaskIds.has(task.cardId)
             );
             teamSprintTasks.forEach(task => {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
             });
-            log(`[Cost Structure] Team ${team.teamId}: found ${teamSprintTasks.length} tasks in ${yearSprints.length} sprints`);
+            log(`[Cost Structure] Team ${team.teamId}: found ${teamSprintTasks.length} done tasks in ${yearSprints.length} sprints`);
           } else {
             // Команда не имеет реальных спринтов в этом году - берем по doneDate
             const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
@@ -3130,15 +3132,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             initiatives.map(async (initiative) => {
               const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
               
-              // Фильтруем задачи в зависимости от типа команды
+              // Фильтруем задачи в зависимости от типа команды (только done-задачи)
               let tasks: TaskRow[];
               if (useSprintFilter) {
-                // Команда со спринтами - фильтруем по спринтам
+                // Команда со спринтами - фильтруем по спринтам и только done-задачи
                 tasks = allTasks.filter(task => 
-                  task.sprintId !== null && teamSprintIds.has(task.sprintId)
+                  task.sprintId !== null && 
+                  teamSprintIds.has(task.sprintId) &&
+                  task.state === '3-done'  // Только done-задачи
                 );
               } else {
-                // Команда без спринтов - фильтруем по doneDate и teamId
+                // Команда без спринтов - фильтруем по doneDate и teamId (doneDate уже означает done)
                 tasks = allTasks.filter(task => 
                   task.teamId === team.teamId && 
                   task.doneDate !== null &&
