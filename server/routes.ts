@@ -1387,6 +1387,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/sprints/:sprintId/stats", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid sprint ID" 
+        });
+      }
+
+      // Получаем спринт из БД
+      const sprint = await storage.getSprint(sprintId);
+      if (!sprint) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Sprint not found in database" 
+        });
+      }
+
+      // Получаем все задачи спринта из БД
+      const tasks = await storage.getTasksBySprint(sprintId);
+      
+      // Подсчитываем статистику
+      let totalSP = 0;
+      let doneSP = 0;
+      
+      tasks.forEach(task => {
+        totalSP += task.size || 0;
+        if (task.state === '3-done') {
+          doneSP += task.size || 0;
+        }
+      });
+      
+      const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
+      
+      res.json({
+        success: true,
+        stats: {
+          totalSP,
+          doneSP,
+          deliveryPlanCompliance,
+        },
+      });
+    } catch (error) {
+      console.error("GET /api/sprints/:sprintId/stats error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve sprint stats" 
+      });
+    }
+  });
+
   app.post("/api/sprints/:sprintId/save", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);

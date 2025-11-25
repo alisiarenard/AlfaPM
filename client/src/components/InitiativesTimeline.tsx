@@ -56,6 +56,9 @@ interface SprintModalData {
   sprintId: number;
   teamName: string;
   teamId: string;
+  totalSP?: number;
+  doneSP?: number;
+  deliveryPlanCompliance?: number;
 }
 
 interface InitiativeDetailsData {
@@ -520,8 +523,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   };
 
   // Обработчик клика на заголовок спринта
-  const handleSprintHeaderClick = (sprintId: number) => {
+  const handleSprintHeaderClick = async (sprintId: number) => {
     const sprintInfo = getSprintInfo(sprintId);
+    const isGenerated = isGeneratedSprint(sprintId);
     
     // Рассчитываем распределение SP
     let businessSupportSP = 0;
@@ -574,6 +578,26 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       sprintDates = '';
     }
     
+    // Получаем данные о СПД для сохранённых спринтов
+    let sprintStats: { totalSP?: number; doneSP?: number; deliveryPlanCompliance?: number } = {};
+    if (!isGenerated && sprintId > 0) {
+      try {
+        const response = await fetch(`/api/sprints/${sprintId}/stats`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.stats) {
+            sprintStats = {
+              totalSP: data.stats.totalSP,
+              doneSP: data.stats.doneSP,
+              deliveryPlanCompliance: data.stats.deliveryPlanCompliance
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch sprint stats:', error);
+      }
+    }
+    
     setSprintModalData({
       sprintTitle: sprintInfo?.title || `Спринт ${sprintId}`,
       sprintDates,
@@ -583,7 +607,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       otherInitiativesSP,
       sprintId,
       teamName: team.name,
-      teamId: team.teamId
+      teamId: team.teamId,
+      ...sprintStats
     });
     setSprintModalOpen(true);
   };
@@ -1733,6 +1758,27 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 </div>
                 <div></div>
               </div>
+              {sprintModalData?.deliveryPlanCompliance !== undefined && (
+                <>
+                  <div className="border-l border-border my-3"></div>
+                  <div className="flex-1 px-4 py-3 flex flex-col justify-between">
+                    <div className="text-sm font-bold text-muted-foreground">СПД</div>
+                    <div 
+                      className="text-2xl font-semibold"
+                      style={{ 
+                        color: sprintModalData.deliveryPlanCompliance >= 80 ? '#10b981' : 
+                               sprintModalData.deliveryPlanCompliance >= 60 ? '#f59e0b' : '#ef4444'
+                      }}
+                      data-testid="sprint-delivery-plan-compliance"
+                    >
+                      {sprintModalData.deliveryPlanCompliance}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {roundSP(sprintModalData.doneSP || 0)} / {roundSP(sprintModalData.totalSP || 0)} SP
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             
             {/* Инициативы с прогресс-барами */}
