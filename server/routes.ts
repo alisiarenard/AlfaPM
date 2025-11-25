@@ -1310,6 +1310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tasks = [];
       let totalSP = 0;
       let doneSP = 0;
+      let doneTasksCount = 0;
       
       if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
         log(`[Sprint Info] Processing ${kaitenSprint.cards.length} cards`);
@@ -1331,6 +1332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const isDone = card.state === 3;
             if (isDone) {
               doneSP += cardSize;
+              doneTasksCount++;
               log(`[Sprint Info] ✓ [Done] ${cardSize} SP | "${card.title}"`);
             }
             
@@ -1380,13 +1382,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       log(`[Sprint Info] `);
       log(`[Sprint Info] МЫ ПОСЧИТАЛИ:`);
       log(`[Sprint Info]   Обработано задач: ${tasks.length}`);
+      log(`[Sprint Info]   Задач в Done (state === 3): ${doneTasksCount}`);
       log(`[Sprint Info]   Total SP (все задачи): ${totalSP}`);
-      log(`[Sprint Info]   Done SP (state === 3): ${doneSP}`);
+      log(`[Sprint Info]   Done SP: ${doneSP}`);
       log(`[Sprint Info] `);
-      log(`[Sprint Info] НЕСООТВЕТСТВИЕ:`);
+      log(`[Sprint Info] ⚠️ НЕСООТВЕТСТВИЕ:`);
       log(`[Sprint Info]   Velocity из Kaiten: ${kaitenVelocity}`);
       log(`[Sprint Info]   Done SP (наш расчет): ${doneSP}`);
-      log(`[Sprint Info]   Разница: ${doneSP - kaitenVelocity}`);
+      log(`[Sprint Info]   Разница: ${Math.abs(doneSP - kaitenVelocity)} SP`);
       log(`[Sprint Info] =====================================`);
       
       // Пока используем Done SP / Velocity для СПД
