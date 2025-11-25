@@ -44,10 +44,12 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 
 **API Endpoints:**
 - Standard CRUD endpoints for departments, teams, initiatives, and tasks.
-- Metrics endpoints for Innovation Rate, Cost Structure, and Value/Cost:
-  - Innovation Rate: Calculates percentage of story points from tasks linked to Epic, Compliance, or Enabler initiatives, filtered by selected teams and year
-  - Cost Structure: Breaks down story points by initiative/task types, filtered by selected teams and year
-  - Value/Cost: Calculates planned and actual value-to-cost ratios, filtered by selected teams' sprints
+- Sprint save endpoint `POST /api/sprints/:sprintId/save` saves ALL tasks from sprint (queued, in progress, done) for complete sprint visibility.
+- Metrics endpoints for Innovation Rate, Cost Structure, and Value/Cost calculate ONLY from done tasks (state === '3-done') for accurate velocity and performance tracking:
+  - Innovation Rate: Calculates percentage of story points from done tasks linked to Epic, Compliance, or Enabler initiatives, filtered by selected teams and year
+  - Cost Structure: Breaks down story points by initiative/task types from done tasks, filtered by selected teams and year
+  - Value/Cost: Calculates planned and actual value-to-cost ratios from done tasks in selected teams' sprints
+- Sprint info endpoint `GET /api/sprints/:sprintId/info` returns comprehensive statistics: total SP (all tasks), done SP (done tasks only), and delivery plan compliance percentage (СПД).
 - Kaiten synchronization endpoints, including `PATCH /api/kaiten/update-initiative/:cardId` for updating initiative fields in both Kaiten and the local database.
 - Sprint PDF report generation endpoint `POST /api/sprints/:sprintId/generate-report` that creates AI-processed PDF reports with task summaries.
 
