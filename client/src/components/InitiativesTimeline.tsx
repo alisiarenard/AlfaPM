@@ -578,11 +578,11 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       sprintDates = '';
     }
     
-    // Получаем данные о СПД для сохранённых спринтов
+    // Получаем данные о СПД для сохранённых спринтов из Кайтена
     let sprintStats: { totalSP?: number; doneSP?: number; deliveryPlanCompliance?: number } = {};
     if (!isGenerated && sprintId > 0) {
       try {
-        const response = await fetch(`/api/sprints/${sprintId}/stats`);
+        const response = await fetch(`/api/sprints/${sprintId}/info`);
         if (response.ok) {
           const data = await response.json();
           if (data.stats) {
@@ -594,7 +594,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           }
         }
       } catch (error) {
-        console.error('Failed to fetch sprint stats:', error);
+        console.error('Failed to fetch sprint info:', error);
       }
     }
     
