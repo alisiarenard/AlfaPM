@@ -1293,15 +1293,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Sprint Info] ====== KAITEN SPRINT DATA ======`);
-      log(`[Sprint Info] Sprint ID: ${kaitenSprint.id}`);
-      log(`[Sprint Info] Sprint Title: ${kaitenSprint.title}`);
-      log(`[Sprint Info] Board ID: ${kaitenSprint.board_id}`);
-      log(`[Sprint Info] Velocity: ${kaitenSprint.velocity}`);
-      log(`[Sprint Info] Start Date: ${kaitenSprint.start_date}`);
-      log(`[Sprint Info] Finish Date: ${kaitenSprint.finish_date}`);
-      log(`[Sprint Info] Actual Finish Date: ${kaitenSprint.actual_finish_date || 'null'}`);
-      log(`[Sprint Info] Cards count: ${kaitenSprint.cards?.length || 0}`);
+      log(`[Sprint Info] ====== RAW KAITEN RESPONSE ======`);
+      log(`[Sprint Info] ${JSON.stringify(kaitenSprint, null, 2)}`);
+      log(`[Sprint Info] ====================================`);
       
       const sprint = {
         sprintId: kaitenSprint.id,
@@ -1328,6 +1322,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (!card) {
               continue;
             }
+            
+            log(`[Sprint Info] --- Card ${card.id} RAW DATA ---`);
+            log(`[Sprint Info] ${JSON.stringify(card, null, 2)}`);
+            log(`[Sprint Info] ----------------------------`);
             
             const cardSize = card.size || 0;
             totalSP += cardSize;
