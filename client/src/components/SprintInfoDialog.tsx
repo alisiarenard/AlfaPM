@@ -31,9 +31,15 @@ interface SprintInfo {
     cardId: number;
     title: string;
     size: number;
+    state: number;
     initiativeTitle: string | null;
     initiativeCardId: number | null;
   }>;
+  stats: {
+    totalSP: number;
+    doneSP: number;
+    deliveryPlanCompliance: number;
+  };
 }
 
 export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialogProps) {
@@ -191,6 +197,30 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
                     <div>
                       <span className="text-muted-foreground">Velocity:</span>{' '}
                       <span data-testid="text-sprint-velocity">{Math.round(sprintInfo.sprint.velocity)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Всего SP:</span>{' '}
+                      <span data-testid="text-sprint-total-sp">{roundSP(sprintInfo.stats.totalSP)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Done SP:</span>{' '}
+                      <span data-testid="text-sprint-done-sp">{roundSP(sprintInfo.stats.doneSP)}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Соблюдение плана доставки (СПД):</span>{' '}
+                      <span 
+                        className="font-semibold"
+                        style={{ 
+                          color: sprintInfo.stats.deliveryPlanCompliance >= 80 ? '#10b981' : 
+                                 sprintInfo.stats.deliveryPlanCompliance >= 60 ? '#f59e0b' : '#ef4444'
+                        }}
+                        data-testid="text-sprint-delivery-plan-compliance"
+                      >
+                        {sprintInfo.stats.deliveryPlanCompliance}%
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        ({roundSP(sprintInfo.stats.doneSP)} / {roundSP(sprintInfo.stats.totalSP)} SP)
+                      </span>
                     </div>
                   </div>
                 </div>
