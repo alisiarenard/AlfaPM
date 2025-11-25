@@ -1307,6 +1307,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const tasks = [];
+      let totalSP = 0;
+      let doneSP = 0;
       
       if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
         log(`[Sprint Info] Processing ${kaitenSprint.cards.length} cards`);
@@ -1315,12 +1317,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const card = await kaitenClient.getCard(sprintCard.id);
             
-            // Фильтруем только задачи в статусе "done" (state === 3)
-            if (!card || card.state !== 3) {
-              if (card) {
-                log(`[Sprint Info] Skipping card ${card.id} with state ${card.state} (not done)`);
-              }
+            if (!card) {
               continue;
+            }
+            
+            const cardSize = card.size || 0;
+            totalSP += cardSize;
+            
+            // Считаем done SP отдельно
+            if (card.state === 3) {
+              doneSP += cardSize;
             }
             
             let initiativeTitle: string | null = null;
@@ -1348,7 +1354,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: card.id.toString(),
               cardId: card.id,
               title: card.title,
-              size: card.size || 0,
+              size: cardSize,
+              state: card.state,
               initiativeTitle,
               initiativeCardId,
             });
@@ -1359,11 +1366,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      log(`[Sprint Info] Returning ${tasks.length} done tasks`);
+      const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
+      log(`[Sprint Info] Returning ${tasks.length} tasks (total: ${totalSP} SP, done: ${doneSP} SP, СПД: ${deliveryPlanCompliance}%)`);
       
       res.json({
         sprint,
         tasks,
+        stats: {
+          totalSP,
+          doneSP,
+          deliveryPlanCompliance,
+        },
       });
     } catch (error) {
       console.error("GET /api/sprints/:sprintId/info error:", error);
@@ -1450,13 +1463,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const cards = await Promise.all(cardPromises);
         
-        // Фильтруем только задачи в статусе "done" (state === 3)
+        // Сохраняем все задачи (независимо от статуса)
         const validCards = cards.filter(c => c !== null);
-        const doneCards = validCards.filter(card => card.state === 3);
-        log(`[Sprint Save] Filtered ${doneCards.length} done tasks from ${validCards.length} total tasks`);
+        log(`[Sprint Save] Saving all ${validCards.length} tasks (any state)`);
         
-        // Сохраняем только завершенные карточки
-        for (const card of doneCards) {
+        // Сохраняем все карточки
+        for (const card of validCards) {
           try {
             // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
             let initCardId = 0;
@@ -1474,7 +1486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             // Преобразуем state и condition из number в строку с валидацией
-            let stateStr: "1-queued" | "2-inProgress" | "3-done" = "3-done"; // Всегда done, т.к. отфильтровали
+            let stateStr: "1-queued" | "2-inProgress" | "3-done" = "1-queued";
             if (card.state === 1) stateStr = "1-queued";
             else if (card.state === 2) stateStr = "2-inProgress";
             else if (card.state === 3) stateStr = "3-done";
