@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 interface SprintInfoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  teamId: string;
 }
 
 interface SprintInfo {
@@ -35,7 +36,7 @@ interface SprintInfo {
   }>;
 }
 
-export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) {
+export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialogProps) {
   const [sprintId, setSprintId] = useState("");
   const [searchedSprintId, setSearchedSprintId] = useState<number | null>(null);
   const { toast } = useToast();
@@ -64,10 +65,12 @@ export function SprintInfoDialog({ open, onOpenChange }: SprintInfoDialogProps) 
         title: "Успешно",
         description: "Спринт и задачи сохранены в базу данных",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/sprints"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/initiatives"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      // Инвалидируем timeline для конкретной команды
+      queryClient.invalidateQueries({ queryKey: ["/api/timeline", teamId] });
+      // Инвалидируем метрики
+      queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/metrics/cost-structure'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/metrics/value-cost'] });
       // Закрыть модалку и сбросить состояние
       setSprintId("");
       setSearchedSprintId(null);

@@ -95,6 +95,7 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
       <SprintInfoDialog 
         open={sprintInfoOpen} 
         onOpenChange={setSprintInfoOpen}
+        teamId={team.teamId}
       />
     </div>
   );
