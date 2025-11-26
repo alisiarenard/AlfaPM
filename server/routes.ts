@@ -1330,12 +1330,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               continue;
             }
             
-            // Пропускаем архивированные задачи
-            if (card.archived) {
-              log(`[Sprint Info] ⊘ [Archived] ${card.size || 0} SP | "${card.title}" - пропущена`);
-              continue;
-            }
-            
             const cardSize = card.size || 0;
             totalSP += cardSize;
             
