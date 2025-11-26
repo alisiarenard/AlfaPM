@@ -224,7 +224,7 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
                     </div>
                     <div>
                       <span className="text-muted-foreground">Done SP (сумма задач):</span>{' '}
-                      <span>{roundSP(sprintInfo.tasks.filter(t => t.state === "3-done").reduce((sum, task) => sum + task.size, 0))}</span>
+                      <span>{roundSP(sprintInfo.tasks.filter(t => (t.state as any) === "3-done" || t.state === 3).reduce((sum, task) => sum + task.size, 0))}</span>
                     </div>
                     <div className="col-span-2">
                       <span className="text-muted-foreground">Соблюдение плана доставки (СПД):</span>{' '}
