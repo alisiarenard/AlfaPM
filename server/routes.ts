@@ -1311,9 +1311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // tasksOutside = задачи с doneDate вне дат спринта
       const tasksOutside = tasks.filter(task => {
-        const condition = (task as any).condition;
-        // Исключаем только deleted из tasksOutside
-        if (condition === 3) return false;
+        // No need to filter by condition - all tasks saved are non-deleted
         
         // Если нет doneDate - не считаем вне спринта
         if (!task.doneDate) return false;
@@ -1327,10 +1325,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let totalSP = 0;
       let doneSP = 0;
       
-      // Всего SP = ВСЕ задачи (кроме deleted)
+      // Всего SP = ВСЕ задачи (все уже сохраненные задачи - deleted исключены при сохранении)
       tasks.forEach(task => {
-        const condition = (task as any).condition;
-        if (condition === 3) return; // skip deleted
         totalSP += task.size || 0;
       });
       
