@@ -1338,13 +1338,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const completedAt = card.completed_at || card.last_moved_to_done_at;
             // Если нет даты завершения, считаем что завершена ДО окончания спринта
             // (так как не можем доказать обратное, и задача в состоянии Done)
-            const completedTime = completedAt ? new Date(completedAt).getTime() : sprintEndTime;
-            const wasDoneBeforeSprintEnd = isDone && completedTime <= sprintEndTime;
+            const wasDoneBeforeSprintEnd = isDone && (!completedAt || new Date(completedAt).getTime() <= sprintEndTime);
             
             if (isDone && wasDoneBeforeSprintEnd) {
               doneSP += cardSize;
               doneTasksCount++;
-              log(`[Sprint Info] ✓ [Done] ${cardSize} SP | "${card.title}" (completed: ${completedAt})`);
+              log(`[Sprint Info] ✓ [Done] ${cardSize} SP | "${card.title}" (completed: ${completedAt || 'no date'})`);
             } else if (isDone && !wasDoneBeforeSprintEnd) {
               log(`[Sprint Info] ⏭ [Done AFTER sprint] ${cardSize} SP | "${card.title}" (completed: ${completedAt || 'unknown'})`);
             }
