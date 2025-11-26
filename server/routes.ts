@@ -1434,17 +1434,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // СПД = Done SP / Total SP
       const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
       
-      // IR = Done SP (только Epic/Compliance/Enabler) / Total Done SP
-      let epicComplianceEnablerSP = 0;
-      tasksInside.forEach(task => {
-        if (task.state === '3-done') {
-          // Пока считаем все done SP - инициативные
-          // можно добавить фильтр по типу инициативы если нужно
-          epicComplianceEnablerSP += task.size || 0;
-        }
-      });
-      const innovationRate = doneSP > 0 ? Math.round((epicComplianceEnablerSP / doneSP) * 100) : 0;
-      
       res.json({
         sprint,
         tasks: tasksInside,
@@ -1453,7 +1442,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalSP,
           doneSP,
           deliveryPlanCompliance,
-          innovationRate,
         },
       });
     } catch (error) {

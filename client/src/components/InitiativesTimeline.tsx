@@ -802,7 +802,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     let spWithoutSupport = 0;
 
     initiatives.forEach(init => {
-      const sp = getSprintSPForIR(init, sprintId);
+      const sp = getSprintSP(init, sprintId);
       totalSP += sp;
       
       // Добавляем SP только если это НЕ "Поддержка бизнеса" (cardId !== 0)
