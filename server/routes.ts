@@ -1229,7 +1229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const allSprintTasks = await storage.getTasksBySprint(sprintId);
       
-      // Фильтруем задачи: только те, где completedAt дата <= конца спринта
+      // Фильтруем задачи для отображения в модальном окне: только те, где doneDate <= конца спринта
       const sprintEndDate = sprint.actualFinishDate || sprint.finishDate;
       const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
       
@@ -1241,30 +1241,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return taskDoneTime <= sprintEndTime;
       });
       
-      // Расчет для фильтрованных задач
+      // totalSP = БЕЗ фильтрации (все задачи спринта)
       let totalSP = 0;
-      let doneSP = 0;
-      
-      filteredTasks.forEach(task => {
+      allSprintTasks.forEach(task => {
         totalSP += task.size || 0;
+      });
+      
+      // doneSP = С фильтрацией (только done задачи, завершённые в пределах спринта)
+      let doneSP = 0;
+      filteredTasks.forEach(task => {
         if (task.state === '3-done') {
           doneSP += task.size || 0;
         }
       });
       
-      // Расчет БЕЗ фильтрации по doneDate (используется для СПД)
-      let totalSPUnfiltered = 0;
-      let doneSPUnfiltered = 0;
-      
-      allSprintTasks.forEach(task => {
-        totalSPUnfiltered += task.size || 0;
-        if (task.state === '3-done') {
-          doneSPUnfiltered += task.size || 0;
-        }
-      });
-      
-      // СПД = Done SP / Total SP (без фильтрации по doneDate)
-      const deliveryPlanCompliance = totalSPUnfiltered > 0 ? Math.round((doneSPUnfiltered / totalSPUnfiltered) * 100) : 0;
+      // СПД = Done SP / Total SP
+      const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
       
       res.json({
         sprint,
@@ -1279,8 +1271,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stats: {
           totalSP,
           doneSP,
-          totalSPUnfiltered,
-          doneSPUnfiltered,
           deliveryPlanCompliance,
         },
       });
