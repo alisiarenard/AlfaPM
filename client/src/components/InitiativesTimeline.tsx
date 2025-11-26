@@ -521,8 +521,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
     if (!sprint || !sprint.tasks) return 0;
     
-    const sprintInfo = getSprintInfo(sprintId);
-    if (!sprintInfo) return roundSP(sprint?.sp || 0); // Fallback
+    const sprintInfo = allSprintsWithGenerated.find(s => s.sprintId === sprintId);
+    if (!sprintInfo) return roundSP(sprint?.sp || 0); // Fallback если нет info
     
     const sprintStartTime = new Date(sprintInfo.startDate).getTime();
     const sprintEndTime = new Date(sprintInfo.finishDate).getTime();
