@@ -580,6 +580,10 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     
     // Получаем данные о СПД для сохранённых спринтов из Кайтена
     let sprintStats: { totalSP?: number; doneSP?: number; deliveryPlanCompliance?: number } = {};
+    let finalInitiativesProgress = initiativesProgress;
+    let finalBusinessSupportSP = businessSupportSP;
+    let finalOtherInitiativesSP = otherInitiativesSP;
+    
     if (!isGenerated && sprintId > 0) {
       try {
         const response = await fetch(`/api/sprints/${sprintId}/info`);
@@ -588,14 +592,69 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           console.log("[Sprint Modal DEBUG] Данные с бэка:", data);
           console.log("[Sprint Modal DEBUG] tasks.length:", data.tasks?.length);
           console.log("[Sprint Modal DEBUG] stats:", data.stats);
-          console.log("[Sprint Modal DEBUG] tasks:", data.tasks);
+          
           if (data.stats) {
             sprintStats = {
               totalSP: data.stats.totalSP,
               doneSP: data.stats.doneSP,
               deliveryPlanCompliance: data.stats.deliveryPlanCompliance
             };
-            console.log("[Sprint Modal DEBUG] sprintStats после парсинга:", sprintStats);
+          }
+          
+          // Используем задачи с бэка для реальных спринтов
+          if (data.tasks && data.tasks.length > 0) {
+            console.log("[Sprint Modal DEBUG] Переходим на задачи с бэка:", data.tasks.length);
+            
+            // Группируем задачи по инициативам
+            const tasksByInitiative: { [key: number]: any[] } = {};
+            finalBusinessSupportSP = 0;
+            finalOtherInitiativesSP = 0;
+            
+            data.tasks.forEach((task: any) => {
+              const initiativeId = task.initiativeCardId || 0;
+              if (!tasksByInitiative[initiativeId]) {
+                tasksByInitiative[initiativeId] = [];
+              }
+              tasksByInitiative[initiativeId].push(task);
+              
+              // Суммируем SP по типам инициатив
+              if (initiativeId === 0) {
+                finalBusinessSupportSP += task.size;
+              } else {
+                finalOtherInitiativesSP += task.size;
+              }
+            });
+            
+            const totalBackendSP = finalBusinessSupportSP + finalOtherInitiativesSP;
+            
+            // Перестраиваем initiativesProgress используя задачи с бэка
+            finalInitiativesProgress = initiatives
+              .map(initiative => {
+                const backedTasks = tasksByInitiative[initiative.cardId] || [];
+                if (backedTasks.length === 0) return null;
+                
+                const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
+                const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
+                
+                // Преобразуем задачи в нужный формат
+                const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
+                  id: task.id || task.cardId.toString(),
+                  cardId: task.cardId,
+                  title: task.title,
+                  size: task.size,
+                  archived: false,
+                  type: 'task',
+                  doneDate: null
+                }));
+                
+                return {
+                  title: initiative.title,
+                  sp,
+                  percent,
+                  tasks: formattedTasks
+                };
+              })
+              .filter((item: any): item is InitiativeProgress => item !== null);
           }
         }
       } catch (error) {
@@ -607,9 +666,9 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       sprintTitle: sprintInfo?.title || `Спринт ${sprintId}`,
       sprintDates,
       goal: sprintInfo?.goal || null,
-      initiatives: initiativesProgress,
-      businessSupportSP,
-      otherInitiativesSP,
+      initiatives: finalInitiativesProgress,
+      businessSupportSP: finalBusinessSupportSP,
+      otherInitiativesSP: finalOtherInitiativesSP,
       sprintId,
       teamName: team.name,
       teamId: team.teamId,
