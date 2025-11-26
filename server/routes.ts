@@ -2299,10 +2299,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/kaiten/smart-sync/:teamId", async (req, res) => {
     try {
       const teamId = req.params.teamId;
-      
+      console.log(`\n[SMART-SYNC START] Syncing team ${teamId}`);
       
       // Получаем команду
       const team = await storage.getTeamById(teamId);
+      console.log(`[SMART-SYNC] Team found: ${team?.name}`);
       if (!team) {
         return res.status(404).json({
           success: false,
