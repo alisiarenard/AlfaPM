@@ -35,6 +35,16 @@ interface SprintInfo {
     initiativeTitle: string | null;
     initiativeCardId: number | null;
   }>;
+  tasksOutside: Array<{
+    id: string;
+    cardId: number;
+    title: string;
+    size: number;
+    state: number;
+    initiativeTitle: string | null;
+    initiativeCardId: number | null;
+    doneDate: string | null;
+  }>;
   stats: {
     totalSP: number;
     doneSP: number;
@@ -235,46 +245,84 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="font-semibold mb-2">Задачи ({sprintInfo.tasks.length})</h4>
-                  <div className="border rounded-md">
-                    <table className="w-full">
-                      <thead className="bg-muted">
-                        <tr>
-                          <th className="text-left p-2 text-sm font-medium">Название задачи</th>
-                          <th className="text-left p-2 text-sm font-medium">Инициатива</th>
-                          <th className="text-right p-2 text-sm font-medium">SP</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sprintInfo.tasks.length === 0 ? (
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-2 text-green-600">✓ Внутри спринта ({sprintInfo.tasks.length})</h4>
+                    <div className="border rounded-md">
+                      <table className="w-full">
+                        <thead className="bg-muted">
                           <tr>
-                            <td colSpan={3} className="p-4 text-center text-muted-foreground text-sm">
-                              Задачи не найдены
-                            </td>
+                            <th className="text-left p-2 text-sm font-medium">Название задачи</th>
+                            <th className="text-left p-2 text-sm font-medium">Инициатива</th>
+                            <th className="text-right p-2 text-sm font-medium">SP</th>
                           </tr>
-                        ) : (
-                          sprintInfo.tasks.map((task) => (
-                            <tr 
-                              key={task.id} 
-                              className="border-t hover-elevate"
-                              data-testid={`row-task-${task.cardId}`}
-                            >
-                              <td className="p-2 text-sm" data-testid={`text-task-title-${task.cardId}`}>
-                                {task.title}
-                              </td>
-                              <td className="p-2 text-sm text-muted-foreground" data-testid={`text-task-initiative-${task.cardId}`}>
-                                {task.initiativeTitle || '—'}
-                              </td>
-                              <td className="p-2 text-sm text-right" data-testid={`text-task-sp-${task.cardId}`}>
-                                {roundSP(task.size)}
+                        </thead>
+                        <tbody>
+                          {sprintInfo.tasks.length === 0 ? (
+                            <tr>
+                              <td colSpan={3} className="p-4 text-center text-muted-foreground text-sm">
+                                Задачи не найдены
                               </td>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                          ) : (
+                            sprintInfo.tasks.map((task) => (
+                              <tr 
+                                key={task.id} 
+                                className="border-t hover-elevate"
+                                data-testid={`row-task-inside-${task.cardId}`}
+                              >
+                                <td className="p-2 text-sm" data-testid={`text-task-title-inside-${task.cardId}`}>
+                                  {task.title}
+                                </td>
+                                <td className="p-2 text-sm text-muted-foreground" data-testid={`text-task-initiative-inside-${task.cardId}`}>
+                                  {task.initiativeTitle || '—'}
+                                </td>
+                                <td className="p-2 text-sm text-right" data-testid={`text-task-sp-inside-${task.cardId}`}>
+                                  {roundSP(task.size)}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
+
+                  {sprintInfo.tasksOutside && sprintInfo.tasksOutside.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2 text-orange-600">⚠ Вне спринта ({sprintInfo.tasksOutside.length})</h4>
+                      <div className="border rounded-md">
+                        <table className="w-full">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="text-left p-2 text-sm font-medium">Название задачи</th>
+                              <th className="text-left p-2 text-sm font-medium">Инициатива</th>
+                              <th className="text-right p-2 text-sm font-medium">SP</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sprintInfo.tasksOutside.map((task) => (
+                              <tr 
+                                key={task.id} 
+                                className="border-t hover-elevate opacity-60"
+                                data-testid={`row-task-outside-${task.cardId}`}
+                              >
+                                <td className="p-2 text-sm" data-testid={`text-task-title-outside-${task.cardId}`}>
+                                  {task.title}
+                                </td>
+                                <td className="p-2 text-sm text-muted-foreground" data-testid={`text-task-initiative-outside-${task.cardId}`}>
+                                  {task.initiativeTitle || '—'}
+                                </td>
+                                <td className="p-2 text-sm text-right" data-testid={`text-task-sp-outside-${task.cardId}`}>
+                                  {roundSP(task.size)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

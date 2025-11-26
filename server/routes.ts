@@ -1229,27 +1229,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const allSprintTasks = await storage.getTasksBySprint(sprintId);
       
-      // Фильтруем задачи для отображения в модальном окне: только те, где doneDate <= конца спринта
+      // Разделяем задачи на две группы
       const sprintEndDate = sprint.actualFinishDate || sprint.finishDate;
+      const sprintStartDate = sprint.startDate;
       const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
+      const sprintStartTime = sprintStartDate ? new Date(sprintStartDate).getTime() : 0;
       
-      const filteredTasks = allSprintTasks.filter(task => {
+      const tasksInside: any[] = [];
+      const tasksOutside: any[] = [];
+      
+      for (const task of allSprintTasks) {
+        const taskInfo = {
+          id: task.id,
+          cardId: task.cardId,
+          title: task.title,
+          size: task.size,
+          state: task.state,
+          initiativeCardId: task.initCardId,
+          doneDate: task.doneDate,
+        };
+        
         if (!task.doneDate) {
-          return true; // Если нет doneDate, включаем в список
+          tasksInside.push(taskInfo);
+        } else {
+          const taskDoneTime = new Date(task.doneDate).getTime();
+          if (taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime) {
+            tasksInside.push(taskInfo);
+          } else {
+            tasksOutside.push(taskInfo);
+          }
         }
-        const taskDoneTime = new Date(task.doneDate).getTime();
-        return taskDoneTime <= sprintEndTime;
-      });
+      }
       
-      // totalSP = только по задачам, завершённым в пределах спринта
+      // Подсчитываем SP только по tasksInside
       let totalSP = 0;
-      filteredTasks.forEach(task => {
-        totalSP += task.size || 0;
-      });
-      
-      // doneSP = только done задачи, завершённые в пределах спринта
       let doneSP = 0;
-      filteredTasks.forEach(task => {
+      tasksInside.forEach(task => {
+        totalSP += task.size || 0;
         if (task.state === '3-done') {
           doneSP += task.size || 0;
         }
@@ -1260,14 +1276,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         sprint,
-        tasks: filteredTasks.map(task => ({
-          id: task.id,
-          cardId: task.cardId,
-          title: task.title,
-          size: task.size,
-          state: task.state,
-          initiativeCardId: task.initCardId,
-        })),
+        tasks: tasksInside,
+        tasksOutside: tasksOutside,
         stats: {
           totalSP,
           doneSP,
