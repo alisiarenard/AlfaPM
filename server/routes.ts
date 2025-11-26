@@ -2499,11 +2499,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`[Smart Sync] No cards in sprint ${sprintId}`);
             }
           } else {
-            console.log(`[SMART-SYNC] No active sprint (sprint_id is null). Old sprint ended, new one hasn't started yet.`);
-            // Синхронизируем задачи с инициативной доски, когда спринта нет
-            // Получаем текущий год для фильтрации
-            const currentYear = new Date().getFullYear();
-            const yearStart = new Date(`${currentYear}-01-01`).toISOString();
+            try {
+              console.log(`[SMART-SYNC] No active sprint (sprint_id is null). Old sprint ended, new one hasn't started yet.`);
+              // Синхронизируем задачи с инициативной доски, когда спринта нет
+              // Получаем текущий год для фильтрации
+              const currentYear = new Date().getFullYear();
+              const yearStart = new Date(`${currentYear}-01-01`).toISOString();
+              console.log(`[SMART-SYNC] Fetching tasks from ${yearStart}`);
             
             const initiativeTaskCards = await kaitenClient.getCardsWithDateFilter({
               boardId: team.initBoardId,
@@ -2558,6 +2560,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             console.log(`[SMART-SYNC] Tasks synced from initiative board: ${tasksSynced}`);
+            } catch (sprintlessError) {
+              const msg = sprintlessError instanceof Error ? sprintlessError.message : String(sprintlessError);
+              console.error(`[SMART-SYNC] ERROR in sprintless sync:`, msg);
+              if (sprintlessError instanceof Error) {
+                console.error(`[SMART-SYNC] Stack:`, sprintlessError.stack);
+              }
+              throw sprintlessError;
+            }
           }
         } else {
         }
@@ -2572,9 +2582,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sprint: sprintData ? { ...sprintData, tasksSynced } : null
       });
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`[SMART-SYNC] ERROR:`, errorMsg);
+      if (error instanceof Error) {
+        console.error(`[SMART-SYNC] Stack:`, error.stack);
+      }
       res.status(500).json({ 
         success: false, 
-        error: error instanceof Error ? error.message : "Failed to perform smart sync" 
+        error: errorMsg
       });
     }
   });
