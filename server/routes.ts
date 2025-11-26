@@ -1336,7 +1336,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Проверяем: была ли задача Done ДО окончания спринта
             const isDone = card.state === 3;
             const completedAt = card.completed_at || card.last_moved_to_done_at;
-            const wasDoneBeforeSprintEnd = completedAt && new Date(completedAt).getTime() <= sprintEndTime;
+            // Если нет даты завершения, считаем что завершена ДО окончания спринта
+            // (так как не можем доказать обратное, и задача в состоянии Done)
+            const completedTime = completedAt ? new Date(completedAt).getTime() : sprintEndTime;
+            const wasDoneBeforeSprintEnd = isDone && completedTime <= sprintEndTime;
             
             if (isDone && wasDoneBeforeSprintEnd) {
               doneSP += cardSize;
