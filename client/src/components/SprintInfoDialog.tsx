@@ -54,7 +54,13 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
       if (!response.ok) {
         throw new Error('Sprint not found');
       }
-      return response.json();
+      const data = await response.json();
+      console.log("[Sprint Info] Данные с бэка:", data);
+      console.log("[Sprint Info] Количество задач:", data.tasks.length);
+      console.log("[Sprint Info] Сумма SP задач:", data.tasks.reduce((sum: number, t: any) => sum + t.size, 0));
+      console.log("[Sprint Info] Done SP из stats:", data.stats.doneSP);
+      console.log("[Sprint Info] Все задачи:", data.tasks);
+      return data;
     },
     enabled: searchedSprintId !== null,
   });
