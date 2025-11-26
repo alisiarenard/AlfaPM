@@ -6,6 +6,10 @@ import { kaitenClient } from "./kaiten";
 import { log } from "./vite";
 import { calculateInitiativesInvolvement } from "./utils/involvement";
 
+// Cache for sprint info (5 minutes TTL)
+const sprintInfoCache = new Map<number, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Рекурсивно ищет инициативу в родительской цепочке карточки
  * @param parentCardId - ID родительской карточки
