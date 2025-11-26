@@ -1241,6 +1241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return taskDoneTime <= sprintEndTime;
       });
       
+      // Расчет для фильтрованных задач
       let totalSP = 0;
       let doneSP = 0;
       
@@ -1251,8 +1252,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      const velocity = sprint.velocity || 0;
-      const deliveryPlanCompliance = velocity > 0 ? Math.round((doneSP / velocity) * 100) : 0;
+      // Расчет БЕЗ фильтрации по doneDate (используется для СПД)
+      let totalSPUnfiltered = 0;
+      let doneSPUnfiltered = 0;
+      
+      allSprintTasks.forEach(task => {
+        totalSPUnfiltered += task.size || 0;
+        if (task.state === '3-done') {
+          doneSPUnfiltered += task.size || 0;
+        }
+      });
+      
+      // СПД = Done SP / Total SP (без фильтрации по doneDate)
+      const deliveryPlanCompliance = totalSPUnfiltered > 0 ? Math.round((doneSPUnfiltered / totalSPUnfiltered) * 100) : 0;
       
       res.json({
         sprint,
@@ -1267,6 +1279,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stats: {
           totalSP,
           doneSP,
+          totalSPUnfiltered,
+          doneSPUnfiltered,
           deliveryPlanCompliance,
         },
       });
