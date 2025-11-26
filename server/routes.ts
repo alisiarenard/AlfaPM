@@ -1295,11 +1295,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprintEndTime = new Date(sprintEndDate).getTime();
       const sprintStartTime = new Date(sprintStartDate).getTime();
 
-      // tasksInside = задачи без doneDate ИЛИ задачи с doneDate внутри дат спринта (без deleted/archived)
+      // tasksInside = задачи без doneDate ИЛИ задачи с doneDate внутри дат спринта (кроме deleted)
       const tasksInside = tasks.filter(task => {
         const condition = (task as any).condition;
-        // Исключаем deleted(3) и archived(2)
-        if (condition === 3 || condition === 2) return false;
+        // Исключаем только deleted(3)
+        if (condition === 3) return false;
         
         // Если нет doneDate - включаем (queued/inProgress)
         if (!task.doneDate) return true;
@@ -1312,8 +1312,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // tasksOutside = задачи с doneDate вне дат спринта
       const tasksOutside = tasks.filter(task => {
         const condition = (task as any).condition;
-        // Исключаем deleted/archived из tasksOutside
-        if (condition === 3 || condition === 2) return false;
+        // Исключаем только deleted из tasksOutside
+        if (condition === 3) return false;
         
         // Если нет doneDate - не считаем вне спринта
         if (!task.doneDate) return false;
