@@ -2387,6 +2387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Архивируем инициативы, которых больше нет на доске
       await storage.archiveInitiativesNotInList(team.initBoardId, syncedCardIds);
+      console.log(`[SMART-SYNC] Initiatives synced: ${syncedCount}`);
       
       
       // Шаг 2: Проверяем наличие текущего спринта и синхронизируем его задачи
@@ -2394,7 +2395,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let sprintData = null;
       let tasksSynced = 0;
       
+      console.log(`[SMART-SYNC] Checking for sprint board. hasSprints=${team.hasSprints}, sprintBoardId=${team.sprintBoardId}`);
       if (team.sprintBoardId) {
+        console.log(`[SMART-SYNC] Getting cards from sprint board ${team.sprintBoardId}`);
         
         // Получаем список карточек из sprint board
         const sprintBoardCards = await kaitenClient.getCardsWithDateFilter({
@@ -2402,13 +2405,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           limit: 10  // Берем первые 10 карточек, чтобы наверняка найти хотя бы одну
         });
         
+        console.log(`[SMART-SYNC] Got ${sprintBoardCards.length} cards from sprint board`);
         
         if (sprintBoardCards.length > 0) {
           // Берем первую карточку
           const firstCard = sprintBoardCards[0];
+          console.log(`[SMART-SYNC] First card sprint_id: ${firstCard.sprint_id}`);
           
           if (firstCard.sprint_id) {
             const sprintId = firstCard.sprint_id;
+            console.log(`[SMART-SYNC] Sprint ID: ${sprintId}`);
             
             // Проверяем, есть ли такой спринт в БД
             const existingSprint = await storage.getSprint(sprintId);
