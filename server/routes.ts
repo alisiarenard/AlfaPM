@@ -1309,6 +1309,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
 
+      // Velocity = количество done SP задач
+      sprint.velocity = doneSP;
+
       res.json({
         sprint,
         tasks: tasksInside,
