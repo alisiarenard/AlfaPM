@@ -574,11 +574,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Группируем по sprint_id и собираем задачи
           const sprintsMap = new Map<number, { sp: number; tasks: any[] }>();
-          tasks.forEach(task => {
+          
+          // Кэш для спринтов чтобы не запрашивать дважды
+          const sprintInfoCache = new Map<number, any>();
+          
+          for (const task of tasks) {
             if (task.sprintId !== null) {
-              // Получаем инфо о спринте для проверки дат
-              const sprintInfo = teamSprints.find(s => s.sprintId === task.sprintId);
               const current = sprintsMap.get(task.sprintId) || { sp: 0, tasks: [] };
+              
+              // Получаем инфо о спринте (сначала из teamSprints, потом из БД если нужно)
+              let sprintInfo = teamSprints.find(s => s.sprintId === task.sprintId);
+              
+              // Если спринт не в teamSprints, получаем из БД
+              if (!sprintInfo && !sprintInfoCache.has(task.sprintId)) {
+                sprintInfo = await storage.getSprint(task.sprintId);
+                if (sprintInfo) {
+                  sprintInfoCache.set(task.sprintId, sprintInfo);
+                }
+              } else if (!sprintInfo && sprintInfoCache.has(task.sprintId)) {
+                sprintInfo = sprintInfoCache.get(task.sprintId);
+              }
               
               // Проверяем: добавляем SP для любых задач (без doneDate ИЛИ с doneDate внутри дат спринта)
               let countSP = false;
@@ -592,6 +607,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   countSP = taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime;
                 }
               }
+              
+              console.log(`[Timeline SP] Init: ${initiative.cardId}, Task: ${task.id}, Sprint: ${task.sprintId}, Size: ${task.size}, DoneDate: ${task.doneDate}, CountSP: ${countSP}, SprintInfo: ${sprintInfo ? 'Found' : 'NOT FOUND'}`);
               
               if (countSP) {
                 current.sp += task.size;
@@ -608,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
               sprintsMap.set(task.sprintId, current);
             }
-          });
+          }
           
           // Преобразуем в массив объектов {sprint_id, sp, tasks}
           const sprints = Array.from(sprintsMap.entries()).map(([sprint_id, data]) => ({
