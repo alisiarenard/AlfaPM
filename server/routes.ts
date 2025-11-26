@@ -6,6 +6,23 @@ import { kaitenClient } from "./kaiten";
 import { log } from "./vite";
 import { calculateInitiativesInvolvement } from "./utils/involvement";
 
+// Cache for sprint info (5 minutes)
+const sprintInfoCache = new Map<number, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000;
+
+function getCachedSprintInfo(sprintId: number): any | null {
+  const cached = sprintInfoCache.get(sprintId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  sprintInfoCache.delete(sprintId);
+  return null;
+}
+
+function setCachedSprintInfo(sprintId: number, data: any): void {
+  sprintInfoCache.set(sprintId, { data, timestamp: Date.now() });
+}
+
 /**
  * Рекурсивно ищет инициативу в родительской цепочке карточки
  * @param parentCardId - ID родительской карточки
