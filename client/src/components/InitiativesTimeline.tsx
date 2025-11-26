@@ -543,7 +543,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     });
     
     // Собираем инициативы с их SP, процентами и задачами
-    const initiativesProgress: InitiativeProgress[] = initiatives
+    let initiativesProgress: InitiativeProgress[] = initiatives
       .map(initiative => {
         const tasks = getSprintTasks(initiative, sprintId);
         // Пропускаем инициативы без тасок в этом спринте
