@@ -2474,8 +2474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         initiativesSynced: syncedCount,
-        newSprintSynced,
-        sprint: sprintData ? { ...sprintData, tasksSynced } : null
+        tasksSynced
       });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
