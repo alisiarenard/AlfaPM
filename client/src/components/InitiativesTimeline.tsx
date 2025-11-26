@@ -510,10 +510,38 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return now >= start && now <= end;
   };
 
-  // Получить SP для конкретной инициативы в конкретном спринте
+  // Получить SP для конкретной инициативы в конкретном спринте (для таймлайна - без фильтра doneDate)
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
     const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
     return roundSP(sprint?.sp || 0);
+  };
+
+  // Получить правильный SP для IR (только done задачи с doneDate в дат спринта)
+  const getSprintSPForIR = (initiative: Initiative, sprintId: number): number => {
+    const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
+    if (!sprint || !sprint.tasks) return 0;
+    
+    const sprintInfo = getSprintInfo(sprintId);
+    if (!sprintInfo) return roundSP(sprint?.sp || 0); // Fallback
+    
+    const sprintStartTime = new Date(sprintInfo.startDate).getTime();
+    const sprintEndTime = new Date(sprintInfo.finishDate).getTime();
+    
+    let totalSP = 0;
+    sprint.tasks.forEach(task => {
+      if (task.state === "3-done") {
+        if (!task.doneDate) {
+          totalSP += task.size || 0;
+        } else {
+          const taskDoneTime = new Date(task.doneDate).getTime();
+          if (taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime) {
+            totalSP += task.size || 0;
+          }
+        }
+      }
+    });
+    
+    return roundSP(totalSP);
   };
 
   // Получить задачи для конкретной инициативы в конкретном спринте
@@ -801,7 +829,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     let spWithoutSupport = 0;
 
     initiatives.forEach(init => {
-      const sp = getSprintSP(init, sprintId);
+      const sp = getSprintSPForIR(init, sprintId);
       totalSP += sp;
       
       // Добавляем SP только если это НЕ "Поддержка бизнеса" (cardId !== 0)
