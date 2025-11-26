@@ -49,6 +49,7 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<TaskRow>;
   updateTask(id: string, task: Partial<InsertTask>): Promise<TaskRow | undefined>;
   deleteTask(id: string): Promise<void>;
+  deleteTasksForSprint(sprintId: number): Promise<void>;
   syncTaskFromKaiten(
     cardId: number,
     boardId: number,
@@ -271,6 +272,10 @@ export class MemStorage implements IStorage {
   }
 
   async deleteTask(id: string): Promise<void> {
+    return;
+  }
+
+  async deleteTasksForSprint(sprintId: number): Promise<void> {
     return;
   }
 
@@ -634,6 +639,10 @@ export class DbStorage implements IStorage {
 
   async deleteTask(id: string): Promise<void> {
     await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  async deleteTasksForSprint(sprintId: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.sprintId, sprintId));
   }
 
   async syncTaskFromKaiten(

@@ -1403,6 +1403,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         kaitenSprint.goal || null
       );
 
+      // Удаляем все старые задачи этого спринта перед синхронизацией новых
+      await storage.deleteTasksForSprint(sprintId);
 
       let tasksSaved = 0;
       const errors: string[] = [];
