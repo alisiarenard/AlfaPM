@@ -2168,6 +2168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const kaitenSprints = await kaitenClient.getSprintsFromBoard(boardId);
 
       const syncedSprints = [];
+      let tasksSynced = 0;
       
       for (const kaitenSprint of kaitenSprints) {
         // Получаем детальную информацию о спринте
@@ -2187,13 +2188,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         
         syncedSprints.push(synced);
+        
+        // Синхронизируем задачи спринта
+        if (sprintDetails.cards && Array.isArray(sprintDetails.cards)) {
+          for (const sprintCard of sprintDetails.cards) {
+            try {
+              const card = await kaitenClient.getCard(sprintCard.id);
+              
+              // Ищем инициативу в родительской цепочке
+              let initCardId: number | null = null;
+              
+              if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+              } else {
+                initCardId = 0;
+              }
+              
+              let state: "1-queued" | "2-inProgress" | "3-done";
+              if (card.state === 3) {
+                state = "3-done";
+              } else if (card.state === 2) {
+                state = "2-inProgress";
+              } else {
+                state = "1-queued";
+              }
+              
+              const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+              
+              // Получаем team по board_id для team_id
+              const team = await storage.getTeamBySprintBoardId(boardId);
+              const teamId = team?.teamId || null;
+              
+              await storage.syncTaskFromKaiten(
+                card.id,
+                card.board_id,
+                card.title,
+                card.created || new Date().toISOString(),
+                state,
+                card.size || 0,
+                condition,
+                card.archived || false,
+                initCardId,
+                card.type?.name,
+                card.completed_at ?? undefined,
+                sprintDetails.id,
+                card.last_moved_to_done_at ?? null,
+                teamId
+              );
+              
+              tasksSynced++;
+            } catch (taskError) {
+              console.error(`Error syncing task ${sprintCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
+            }
+          }
+        }
       }
 
       
       res.json({
         success: true,
         count: syncedSprints.length,
-        sprints: syncedSprints
+        sprints: syncedSprints,
+        tasksSynced
       });
     } catch (error) {
       res.status(500).json({ 
