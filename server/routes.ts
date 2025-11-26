@@ -907,8 +907,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const sprintsMap = new Map<number, { sp: number; tasks: any[] }>();
           tasks.forEach(task => {
             if (task.sprintId !== null) {
+              const sprintInfo = teamSprints.find(s => s.sprintId === task.sprintId);
               const current = sprintsMap.get(task.sprintId) || { sp: 0, tasks: [] };
-              current.sp += task.size;
+              
+              // Считаем SP только для задач без doneDate ИЛИ с doneDate внутри дат спринта
+              let countSP = false;
+              if (sprintInfo) {
+                if (!task.doneDate) {
+                  countSP = true;
+                } else {
+                  const sprintStartTime = new Date(sprintInfo.startDate).getTime();
+                  const sprintEndTime = new Date(sprintInfo.finishDate).getTime();
+                  const taskDoneTime = new Date(task.doneDate).getTime();
+                  countSP = taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime;
+                }
+              }
+              
+              if (countSP) {
+                current.sp += task.size;
+              }
+              
               current.tasks.push({
                 id: task.id,
                 cardId: task.cardId,
