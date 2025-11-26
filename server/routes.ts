@@ -2437,6 +2437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Шаг 3: Синхронизируем задачи текущего спринта (всегда, даже если спринт уже существует)
             
             if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
+              console.log(`[Smart Sync] Sprint ${sprintId} has ${sprintDetails.cards.length} cards to sync`);
               
               for (const sprintCard of sprintDetails.cards) {
                 try {
@@ -2450,6 +2451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   } else {
                     initCardId = 0;
                   }
+                  
+                  console.log(`[Smart Sync] Task ${card.id} '${card.title}' -> initiative ${initCardId}, state=${card.state}`);
                   
                   let state: "1-queued" | "2-inProgress" | "3-done";
                   if (card.state === 3) {
@@ -2481,10 +2484,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   tasksSynced++;
                 } catch (taskError) {
+                  console.error(`[Smart Sync] Error syncing task ${sprintCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
                 }
               }
-              
+              console.log(`[Smart Sync] Total tasks synced: ${tasksSynced}`);
             } else {
+              console.log(`[Smart Sync] No cards in sprint ${sprintId}`);
             }
           } else {
           }
