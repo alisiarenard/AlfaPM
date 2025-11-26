@@ -842,6 +842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               if (virtualSprint) {
                 const current = sprintsMap.get(virtualSprint.sprintId) || { sp: 0, tasks: [] };
+                // Все виртуальные спринты уже содержат только done задачи с doneDate в диапазоне спринта
                 current.sp += task.size;
                 current.tasks.push({
                   id: task.id,
