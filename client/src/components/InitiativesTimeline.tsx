@@ -603,8 +603,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
           
           // Используем задачи с бэка для реальных спринтов
           if (data.tasks && data.tasks.length > 0) {
-            console.log("[Sprint Modal DEBUG] Переходим на задачи с бэка:", data.tasks.length);
-            
             // Группируем задачи по инициативам
             const tasksByInitiative: { [key: number]: any[] } = {};
             finalBusinessSupportSP = 0;
@@ -631,14 +629,14 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             finalInitiativesProgress = initiatives
               .map(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
-                if (backedTasks.length === 0) return null;
+                // Не фильтруем пустые инициативы - показываем все
                 
                 const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
                 const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
                 
                 // Преобразуем задачи в нужный формат
                 const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
-                  id: task.id || task.cardId.toString(),
+                  id: task.id,
                   cardId: task.cardId,
                   title: task.title,
                   size: task.size,
@@ -653,8 +651,8 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   percent,
                   tasks: formattedTasks
                 };
-              })
-              .filter((item: any): item is InitiativeProgress => item !== null);
+              });
+            // Не фильтруем - возвращаем все инициативы
           }
         }
       } catch (error) {
