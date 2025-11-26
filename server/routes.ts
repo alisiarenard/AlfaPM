@@ -576,8 +576,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const sprintsMap = new Map<number, { sp: number; tasks: any[] }>();
           tasks.forEach(task => {
             if (task.sprintId !== null) {
+              // Получаем дату спринта
+              const sprintInfo = teamSprints.find(s => s.sprintId === task.sprintId);
+              if (!sprintInfo) return;
+              
+              const sprintStartTime = new Date(sprintInfo.startDate).getTime();
+              const sprintEndTime = new Date(sprintInfo.finishDate).getTime();
+              
+              // Проверяем: done задача с doneDate внутри дат спринта ИЛИ без doneDate
+              let countSP = false;
+              if (task.state === "3-done" && task.doneDate) {
+                const taskDoneTime = new Date(task.doneDate).getTime();
+                countSP = taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime;
+              } else if (task.state === "3-done" && !task.doneDate) {
+                countSP = true;
+              }
+              
               const current = sprintsMap.get(task.sprintId) || { sp: 0, tasks: [] };
-              current.sp += task.size;
+              if (countSP) {
+                current.sp += task.size;
+              }
               current.tasks.push({
                 id: task.id,
                 cardId: task.cardId,
