@@ -1247,37 +1247,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
         for (const sprintCard of kaitenSprint.cards) {
-          const card = await kaitenClient.getCard(sprintCard.id);
-          
-          if (card.condition === 3) {
-            continue;
-          }
+          try {
+            const card = await kaitenClient.getCard(sprintCard.id);
+            
+            if (card.condition === 3) {
+              continue;
+            }
 
-          let initCardId = 0;
-          let initiativeTitle = null;
-          if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-            initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
-            if (initCardId > 0) {
-              const initiative = await storage.getInitiative(initCardId.toString());
-              if (!initiative) {
-                const initiativeCard = await kaitenClient.getCard(initCardId);
-                initiativeTitle = initiativeCard.title;
-              } else {
-                initiativeTitle = initiative.title;
+            let initCardId = 0;
+            let initiativeTitle = null;
+            if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+              try {
+                initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+                if (initCardId > 0) {
+                  const initiative = await storage.getInitiative(initCardId.toString());
+                  if (!initiative) {
+                    const initiativeCard = await kaitenClient.getCard(initCardId);
+                    initiativeTitle = initiativeCard.title;
+                  } else {
+                    initiativeTitle = initiative.title;
+                  }
+                }
+              } catch (parentError) {
+                console.error(`[Sprint Preview] Error finding initiative for card ${sprintCard.id}:`, parentError);
               }
             }
-          }
 
-          tasks.push({
-            id: card.id.toString(),
-            cardId: card.id,
-            title: card.title,
-            size: card.size || 0,
-            state: card.state === 3 ? "3-done" : (card.state === 2 ? "2-inProgress" : "1-queued"),
-            initiativeCardId: initCardId,
-            initiativeTitle: initiativeTitle,
-            doneDate: card.last_moved_to_done_at || null,
-          });
+            tasks.push({
+              id: card.id.toString(),
+              cardId: card.id,
+              title: card.title,
+              size: card.size || 0,
+              state: card.state === 3 ? "3-done" : (card.state === 2 ? "2-inProgress" : "1-queued"),
+              initiativeCardId: initCardId,
+              initiativeTitle: initiativeTitle,
+              doneDate: card.last_moved_to_done_at || null,
+            });
+          } catch (cardError) {
+            console.error(`[Sprint Preview] Error processing card ${sprintCard.id}:`, cardError);
+          }
         }
       }
 
@@ -1323,9 +1331,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     } catch (error) {
+      console.error(`[Sprint Preview] Error retrieving sprint ${sprintId}:`, error);
       res.status(500).json({ 
         success: false, 
-        error: "Failed to retrieve sprint preview from Kaiten" 
+        error: "Failed to retrieve sprint preview from Kaiten",
+        details: error instanceof Error ? error.message : String(error)
       });
     }
   });
