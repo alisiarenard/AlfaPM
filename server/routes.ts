@@ -1282,7 +1282,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               initiativeCardId: initCardId,
               initiativeTitle: initiativeTitle,
               doneDate: card.last_moved_to_done_at || null,
-            });
+              condition: card.condition,
+            } as any);
           } catch (cardError) {
             console.error(`[Sprint Preview] Error processing card ${sprintCard.id}:`, cardError);
           }
@@ -1300,11 +1301,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return taskTime >= sprintStartTime && taskTime <= sprintEndTime;
       });
 
-      const tasksOutside = tasks.filter(task => {
-        if (!task.doneDate) return false;
-        const taskTime = new Date(task.doneDate).getTime();
-        return taskTime < sprintStartTime || taskTime > sprintEndTime;
-      });
+      // tasksOutside это deleted или archived задачи которые не должны считаться
+      const tasksOutside = tasks.filter(task => 
+        (task as any).condition === 3 || (task as any).condition === 2
+      );
 
       let totalSP = 0;
       let doneSP = 0;
