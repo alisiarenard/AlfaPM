@@ -2303,7 +2303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Получаем команду
       const team = await storage.getTeamById(teamId);
-      console.log(`[SMART-SYNC] Team found: ${team?.name}`);
+      console.log(`[SMART-SYNC] Team found: ${team?.teamName}`);
       if (!team) {
         return res.status(404).json({
           success: false,
