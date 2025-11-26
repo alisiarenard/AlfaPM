@@ -2404,11 +2404,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Проходим по каждому спринту
         for (const dbSprint of allSprints) {
           try {
-            console.log(`[SMART-SYNC] Processing sprint ${dbSprint.id} (Kaiten ID: ${dbSprint.id})`);
+            console.log(`[SMART-SYNC] Processing sprint ${dbSprint.sprintId} (Kaiten ID: ${dbSprint.sprintId})`);
             
             // Получаем детали спринта из Kaiten
-            const sprintDetails = await kaitenClient.getSprint(dbSprint.id);
-            console.log(`[SMART-SYNC] Sprint ${dbSprint.id} has ${sprintDetails.cards?.length || 0} cards`);
+            const sprintDetails = await kaitenClient.getSprint(dbSprint.sprintId);
+            console.log(`[SMART-SYNC] Sprint ${dbSprint.sprintId} has ${sprintDetails.cards?.length || 0} cards`);
             
             // Синхронизируем задачи этого спринта
             if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
@@ -2448,7 +2448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     initCardId,
                     card.type?.name,
                     card.completed_at ?? undefined,
-                    dbSprint.id,
+                    dbSprint.sprintId,
                     card.last_moved_to_done_at ?? null,
                     team.teamId
                   );
@@ -2461,7 +2461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } catch (sprintError) {
             const msg = sprintError instanceof Error ? sprintError.message : String(sprintError);
-            console.error(`[SMART-SYNC] Error processing sprint ${dbSprint.id}:`, msg);
+            console.error(`[SMART-SYNC] Error processing sprint ${dbSprint.sprintId}:`, msg);
           }
         }
         
