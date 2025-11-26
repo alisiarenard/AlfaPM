@@ -2390,62 +2390,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[SMART-SYNC] Initiatives synced: ${syncedCount}`);
       
       
-      // Шаг 2: Проверяем наличие текущего спринта и синхронизируем его задачи
-      let newSprintSynced = false;
-      let sprintData = null;
+      // Шаг 2: Синхронизируем все спринты из таблицы спринтов
       let tasksSynced = 0;
       
       console.log(`[SMART-SYNC] Checking for sprint board. hasSprints=${team.hasSprints}, sprintBoardId=${team.sprintBoardId}`);
       if (team.sprintBoardId) {
-        console.log(`[SMART-SYNC] Getting cards from sprint board ${team.sprintBoardId}`);
+        console.log(`[SMART-SYNC] Getting all sprints from database for board ${team.sprintBoardId}`);
         
-        // Получаем список карточек из sprint board
-        const sprintBoardCards = await kaitenClient.getCardsWithDateFilter({
-          boardId: team.sprintBoardId,
-          limit: 10  // Берем первые 10 карточек, чтобы наверняка найти хотя бы одну
-        });
+        // Получаем ВСЕ спринты для этой доски из БД
+        const allSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+        console.log(`[SMART-SYNC] Found ${allSprints.length} sprints in database`);
         
-        console.log(`[SMART-SYNC] Got ${sprintBoardCards.length} cards from sprint board`);
-        
-        if (sprintBoardCards.length > 0) {
-          // Берем первую карточку
-          const firstCard = sprintBoardCards[0];
-          console.log(`[SMART-SYNC] First card sprint_id: ${firstCard.sprint_id}`);
-          
-          if (firstCard.sprint_id) {
-            const sprintId = firstCard.sprint_id;
-            console.log(`[SMART-SYNC] Sprint ID: ${sprintId}`);
+        // Проходим по каждому спринту
+        for (const dbSprint of allSprints) {
+          try {
+            console.log(`[SMART-SYNC] Processing sprint ${dbSprint.id} (Kaiten ID: ${dbSprint.id})`);
             
-            // Проверяем, есть ли такой спринт в БД
-            const existingSprint = await storage.getSprint(sprintId);
+            // Получаем детали спринта из Kaiten
+            const sprintDetails = await kaitenClient.getSprint(dbSprint.id);
+            console.log(`[SMART-SYNC] Sprint ${dbSprint.id} has ${sprintDetails.cards?.length || 0} cards`);
             
-            // Получаем детали спринта из Kaiten (нужны для синхронизации задач)
-            const sprintDetails = await kaitenClient.getSprint(sprintId);
-            
-            if (!existingSprint) {
-              
-              const syncedSprint = await storage.syncSprintFromKaiten(
-                sprintDetails.id,
-                team.sprintBoardId,
-                sprintDetails.title || `Sprint ${sprintDetails.id}`,
-                sprintDetails.velocity || 0,
-                sprintDetails.start_date || new Date().toISOString(),
-                sprintDetails.finish_date || new Date().toISOString(),
-                sprintDetails.actual_finish_date || null,
-                sprintDetails.goal || null
-              );
-              
-              newSprintSynced = true;
-              sprintData = syncedSprint;
-            } else {
-              sprintData = existingSprint;
-            }
-            
-            // Шаг 3: Синхронизируем задачи текущего спринта (всегда, даже если спринт уже существует)
-            
+            // Синхронизируем задачи этого спринта
             if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
-              console.log(`[Smart Sync] Sprint ${sprintId} has ${sprintDetails.cards.length} cards to sync`);
-              
               for (const sprintCard of sprintDetails.cards) {
                 try {
                   const card = await kaitenClient.getCard(sprintCard.id);
@@ -2458,8 +2424,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   } else {
                     initCardId = 0;
                   }
-                  
-                  console.log(`[Smart Sync] Task ${card.id} '${card.title}' -> initiative ${initCardId}, state=${card.state}`);
                   
                   let state: "1-queued" | "2-inProgress" | "3-done";
                   if (card.state === 3) {
@@ -2484,104 +2448,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     initCardId,
                     card.type?.name,
                     card.completed_at ?? undefined,
-                    sprintId,
+                    dbSprint.id,
                     card.last_moved_to_done_at ?? null,
                     team.teamId
                   );
                   
                   tasksSynced++;
                 } catch (taskError) {
-                  console.error(`[Smart Sync] Error syncing task ${sprintCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
+                  console.error(`[SMART-SYNC] Error syncing task ${sprintCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
                 }
               }
-              console.log(`[Smart Sync] Total tasks synced: ${tasksSynced}`);
-            } else {
-              console.log(`[Smart Sync] No cards in sprint ${sprintId}`);
             }
-          } else {
-            try {
-              console.log(`[SMART-SYNC] No active sprint (sprint_id is null). Old sprint ended, new one hasn't started yet.`);
-              // Синхронизируем задачи с инициативной доски, когда спринта нет
-              // Получаем текущий год для фильтрации
-              const currentYear = new Date().getFullYear();
-              const yearStart = new Date(`${currentYear}-01-01`).toISOString();
-              console.log(`[SMART-SYNC] Fetching tasks from ${yearStart}`);
-            
-            const initiativeTaskCards = await kaitenClient.getCardsWithDateFilter({
-              boardId: team.initBoardId,
-              lastMovedToDoneAtAfter: yearStart,
-              limit: 1000
-            });
-            
-            console.log(`[SMART-SYNC] Got ${initiativeTaskCards.length} tasks from initiative board for current year`);
-            
-            let tasksWithoutInitiative = 0;
-            let tasksWithInitiative = 0;
-            
-            for (const taskCard of initiativeTaskCards) {
-              try {
-                // Ищем инициативу в родительской цепочке
-                let initCardId: number | null = null;
-                
-                if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
-                  initCardId = await findInitiativeInParentChain(taskCard.parents_ids[0]);
-                } else {
-                  initCardId = 0;
-                }
-                
-                if (initCardId === 0) {
-                  tasksWithoutInitiative++;
-                } else {
-                  tasksWithInitiative++;
-                }
-                
-                let state: "1-queued" | "2-inProgress" | "3-done";
-                if (taskCard.state === 3) {
-                  state = "3-done";
-                } else if (taskCard.state === 2) {
-                  state = "2-inProgress";
-                } else {
-                  state = "1-queued";
-                }
-                
-                const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
-                
-                await storage.syncTaskFromKaiten(
-                  taskCard.id,
-                  taskCard.board_id,
-                  taskCard.title,
-                  taskCard.created || new Date().toISOString(),
-                  state,
-                  taskCard.size || 0,
-                  condition,
-                  taskCard.archived || false,
-                  initCardId,
-                  taskCard.type?.name,
-                  taskCard.completed_at ?? undefined,
-                  null, // Нет спринта
-                  taskCard.last_moved_to_done_at ?? null,
-                  team.teamId
-                );
-                
-                tasksSynced++;
-              } catch (taskError) {
-                console.error(`[SMART-SYNC] Error syncing task ${taskCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
-              }
-            }
-            console.log(`[SMART-SYNC] Tasks synced from initiative board: ${tasksSynced} (${tasksWithInitiative} with initiative, ${tasksWithoutInitiative} without)`);
-            console.log(`[SMART-SYNC] IMPORTANT: Total fetched from Kaiten: ${initiativeTaskCards.length}, might need pagination for more`);
-            } catch (sprintlessError) {
-              const msg = sprintlessError instanceof Error ? sprintlessError.message : String(sprintlessError);
-              console.error(`[SMART-SYNC] ERROR in sprintless sync:`, msg);
-              if (sprintlessError instanceof Error) {
-                console.error(`[SMART-SYNC] Stack:`, sprintlessError.stack);
-              }
-              throw sprintlessError;
-            }
+          } catch (sprintError) {
+            const msg = sprintError instanceof Error ? sprintError.message : String(sprintError);
+            console.error(`[SMART-SYNC] Error processing sprint ${dbSprint.id}:`, msg);
           }
-        } else {
         }
+        
+        console.log(`[SMART-SYNC] Total tasks synced from all sprints: ${tasksSynced}`);
       } else {
+        console.log(`[SMART-SYNC] No sprint board configured for this team`);
       }
       
       
