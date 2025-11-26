@@ -1227,12 +1227,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const tasks = await storage.getTasksBySprint(sprintId);
+      const allSprintTasks = await storage.getTasksBySprint(sprintId);
+      
+      // Фильтруем задачи: только те, где completedAt дата <= конца спринта
+      const sprintEndDate = sprint.actualFinishDate || sprint.finishDate;
+      const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
+      
+      const filteredTasks = allSprintTasks.filter(task => {
+        if (!task.doneDate) {
+          return true; // Если нет doneDate, включаем в список
+        }
+        const taskDoneTime = new Date(task.doneDate).getTime();
+        return taskDoneTime <= sprintEndTime;
+      });
       
       let totalSP = 0;
       let doneSP = 0;
       
-      tasks.forEach(task => {
+      filteredTasks.forEach(task => {
         totalSP += task.size || 0;
         if (task.state === '3-done') {
           doneSP += task.size || 0;
@@ -1244,7 +1256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         sprint,
-        tasks: tasks.map(task => ({
+        tasks: filteredTasks.map(task => ({
           id: task.id,
           cardId: task.cardId,
           title: task.title,
