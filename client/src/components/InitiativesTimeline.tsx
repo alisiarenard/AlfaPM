@@ -627,9 +627,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
             
             // Перестраиваем initiativesProgress используя задачи с бэка
             finalInitiativesProgress = initiatives
+              .filter(initiative => {
+                const backedTasks = tasksByInitiative[initiative.cardId] || [];
+                // Показываем только инициативы "Поддержка бизнеса" или те, у которых есть таски
+                return initiative.cardId === 0 || backedTasks.length > 0;
+              })
               .map(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
-                // Не фильтруем пустые инициативы - показываем все
                 
                 const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
                 const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
@@ -652,7 +656,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                   tasks: formattedTasks
                 };
               });
-            // Не фильтруем - возвращаем все инициативы
           }
         }
       } catch (error) {
