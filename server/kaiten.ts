@@ -94,7 +94,6 @@ export class KaitenClient {
   }): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
-    log(`[Kaiten API] Making ${options?.method || 'GET'} request to: ${url}`);
     
     const { statusCode, body } = await request(url, {
       method: options?.method || 'GET',
@@ -107,11 +106,8 @@ export class KaitenClient {
 
     const responseText = await body.text();
     
-    log(`[Kaiten API] Response status: ${statusCode}`);
-    log(`[Kaiten API] Response body: ${responseText.substring(0, 500)}`);
 
     if (statusCode !== 200) {
-      log(`[Kaiten API] Error ${statusCode}: ${responseText}`);
       throw new Error(`Kaiten API error: ${statusCode} - ${responseText}`);
     }
 
@@ -119,32 +115,24 @@ export class KaitenClient {
   }
 
   async getCard(cardId: number): Promise<KaitenCard> {
-    log(`[Kaiten API] Fetching card ${cardId}`);
     return this.makeRequest<KaitenCard>(`/cards/${cardId}`);
   }
 
   async getCardsFromBoard(boardId: number): Promise<KaitenCard[]> {
-    log(`[Kaiten API] Fetching board ${boardId} using /api/latest/boards/${boardId}`);
     const response = await this.makeRequest<KaitenBoardResponse>(`/boards/${boardId}`);
-    log(`[Kaiten API] Board response keys: ${Object.keys(response).join(', ')}`);
-    log(`[Kaiten API] Raw response (first 800 chars): ${JSON.stringify(response).substring(0, 800)}`);
     
     // Try different possible card locations in response
     if (response.cards && Array.isArray(response.cards)) {
-      log(`[Kaiten API] Found ${response.cards.length} cards in response.cards`);
       if (response.cards.length > 0) {
-        log(`[Kaiten API] Sample card (first card):`, JSON.stringify(response.cards[0], null, 2));
       }
       return response.cards;
     }
     
     // Check if response itself is an array
     if (Array.isArray(response)) {
-      log(`[Kaiten API] Response is array with ${response.length} items`);
       return response as unknown as KaitenCard[];
     }
     
-    log(`[Kaiten API] No cards found in response`);
     return [];
   }
 
@@ -168,46 +156,37 @@ export class KaitenClient {
     }
     
     const url = `/cards?${queryParams.toString()}`;
-    log(`[Kaiten API] Fetching cards with query: ${url}`);
     
     const response = await this.makeRequest<{ data?: KaitenCard[]; [key: string]: any }>(url);
     
     // Kaiten API returns an object wrapper: { data: [...], meta: {...} }
     if (response.data && Array.isArray(response.data)) {
-      log(`[Kaiten API] Found ${response.data.length} cards in response.data`);
       return response.data;
     }
     
     // Fallback: if response is directly an array
     if (Array.isArray(response)) {
-      log(`[Kaiten API] Found ${response.length} cards (direct array)`);
       return response as unknown as KaitenCard[];
     }
     
-    log(`[Kaiten API] No cards found in response`);
     return [];
   }
 
   async getSprint(sprintId: number): Promise<KaitenSprintResponse> {
-    log(`[Kaiten API] Fetching sprint ${sprintId}`);
     return this.makeRequest<KaitenSprintResponse>(`/sprints/${sprintId}`);
   }
 
   async getSprintsFromBoard(boardId: number): Promise<KaitenSprintResponse[]> {
-    log(`[Kaiten API] Fetching sprints for board ${boardId}`);
     const response = await this.makeRequest<KaitenBoardResponse>(`/boards/${boardId}`);
     
     if (response.sprints && Array.isArray(response.sprints)) {
-      log(`[Kaiten API] Found ${response.sprints.length} sprints in board ${boardId}`);
       return response.sprints;
     }
     
-    log(`[Kaiten API] No sprints found in board ${boardId}`);
     return [];
   }
 
   async getAllSprints(params?: { active?: boolean; limit?: number; offset?: number }): Promise<KaitenSprintListItem[]> {
-    log(`[Kaiten API] Fetching all sprints with params: ${JSON.stringify(params)}`);
     
     const queryParams = new URLSearchParams();
     if (params?.active !== undefined) {
@@ -224,18 +203,14 @@ export class KaitenClient {
     const response = await this.makeRequest<KaitenSprintListItem[]>(url);
     
     // Выводим полный ответ от Kaiten в лог
-    log(`[Kaiten API] Raw sprint response: ${JSON.stringify(response, null, 2)}`);
     
     if (Array.isArray(response)) {
-      log(`[Kaiten API] Found ${response.length} sprints`);
       // Выводим каждый спринт с его данными
       response.forEach((sprint, index) => {
-        log(`[Kaiten API] Sprint ${index + 1}: id=${sprint.id}, board_id=${sprint.board_id}, title="${sprint.title}", start_date=${sprint.start_date}, finish_date=${sprint.finish_date}`);
       });
       return response;
     }
     
-    log(`[Kaiten API] No sprints found`);
     return [];
   }
 
@@ -245,7 +220,6 @@ export class KaitenClient {
       log('[Kaiten API] Connection test successful');
       return true;
     } catch (error) {
-      log(`[Kaiten API] Connection test failed: ${error}`);
       return false;
     }
   }
@@ -253,10 +227,8 @@ export class KaitenClient {
   async validateBoard(boardId: number, boardType: 'initiatives' | 'sprints' = 'initiatives'): Promise<{ valid: boolean; error?: string }> {
     try {
       await this.makeRequest(`/boards/${boardId}`);
-      log(`[Kaiten API] Board ${boardId} validated successfully`);
       return { valid: true };
     } catch (error: any) {
-      log(`[Kaiten API] Failed to validate board ${boardId}:`, error);
       // Kaiten API returns 403 Forbidden for non-existent boards or boards without access
       if (error.message?.includes('403') || error.message?.includes('404') || error.message?.toLowerCase().includes('not found')) {
         const errorMessage = boardType === 'initiatives' 
@@ -272,7 +244,6 @@ export class KaitenClient {
     size?: number;
     properties?: Record<string, any>;
   }): Promise<KaitenCard> {
-    log(`[Kaiten API] Updating card ${cardId} with:`, JSON.stringify(updates));
     return this.makeRequest<KaitenCard>(`/cards/${cardId}`, {
       method: 'PATCH',
       body: updates,

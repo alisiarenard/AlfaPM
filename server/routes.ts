@@ -15,7 +15,6 @@ import { calculateInitiativesInvolvement } from "./utils/involvement";
 async function findInitiativeInParentChain(parentCardId: number, depth = 0): Promise<number> {
   // Защита от бесконечной рекурсии
   if (depth > 5) {
-    log(`[findInitiativeInParentChain] Max depth reached for card ${parentCardId}`);
     return 0;
   }
   
@@ -28,11 +27,9 @@ async function findInitiativeInParentChain(parentCardId: number, depth = 0): Pro
     
     if (validTypes.includes(initiativeType)) {
       // Тип подходит - возвращаем этот ID
-      log(`[findInitiativeInParentChain] Found valid initiative ${parentCardId} (type: ${initiativeType}) at depth ${depth}`);
       return parentCardId;
     } else {
       // Тип НЕ подходит - продолжаем поиск вверх по цепочке
-      log(`[findInitiativeInParentChain] Initiative ${parentCardId} has invalid type '${initiativeType}', searching parent chain`);
       
       try {
         const parentCard = await kaitenClient.getCard(parentCardId);
@@ -40,14 +37,11 @@ async function findInitiativeInParentChain(parentCardId: number, depth = 0): Pro
         // Проверяем, есть ли у этой инициативы свой родитель
         if (parentCard.parents_ids && Array.isArray(parentCard.parents_ids) && parentCard.parents_ids.length > 0) {
           const grandParentId = parentCard.parents_ids[0];
-          log(`[findInitiativeInParentChain] Invalid-type initiative ${parentCardId} has parent ${grandParentId}, checking recursively (depth ${depth + 1})`);
           return await findInitiativeInParentChain(grandParentId, depth + 1);
         } else {
-          log(`[findInitiativeInParentChain] Invalid-type initiative ${parentCardId} has no parent, stopping search`);
           return 0;
         }
       } catch (error) {
-        log(`[findInitiativeInParentChain] Error fetching invalid-type initiative card ${parentCardId}: ${error}`);
         return 0;
       }
     }
@@ -60,15 +54,12 @@ async function findInitiativeInParentChain(parentCardId: number, depth = 0): Pro
     // Проверяем, есть ли у родительской карточки свой родитель
     if (parentCard.parents_ids && Array.isArray(parentCard.parents_ids) && parentCard.parents_ids.length > 0) {
       const grandParentId = parentCard.parents_ids[0];
-      log(`[findInitiativeInParentChain] Card ${parentCardId} has parent ${grandParentId}, checking recursively (depth ${depth + 1})`);
       return await findInitiativeInParentChain(grandParentId, depth + 1);
     }
   } catch (error) {
-    log(`[findInitiativeInParentChain] Error fetching card ${parentCardId}: ${error}`);
   }
   
   // Не нашли инициативу в цепочке
-  log(`[findInitiativeInParentChain] No initiative found in chain for card ${parentCardId}`);
   return 0;
 }
 
@@ -78,7 +69,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const departments = await storage.getDepartments();
       res.json(departments);
     } catch (error) {
-      console.error("GET /api/departments error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve departments" 
@@ -92,7 +82,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const department = await storage.createDepartment(validatedData);
       res.status(201).json(department);
     } catch (error) {
-      console.error("POST /api/departments error:", error);
       
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ 
@@ -139,7 +128,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(department);
     } catch (error) {
-      console.error("PATCH /api/departments/:id error:", error);
       
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ 
@@ -161,7 +149,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teams = await storage.getTeamsByDepartment(departmentId);
       res.json(teams);
     } catch (error) {
-      console.error("GET /api/teams/:departmentId error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve teams" 
@@ -193,14 +180,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 1. Синхронизация инициатив
       if (teamData.initBoardId) {
         try {
-          log(`[Team Creation] Step 1: Syncing initiatives from board ${teamData.initBoardId}`);
           
           const allCards = await kaitenClient.getCardsFromBoard(teamData.initBoardId);
           
           // Фильтруем: сохраняем только неархивные инициативы
           const cards = allCards.filter(card => !card.archived);
           
-          log(`[Team Creation] Found ${allCards.length} total cards, will sync ${cards.length} non-archived initiatives (skipped ${allCards.length - cards.length} archived)`);
           
           const plannedValueId = "id_237";
           const factValueId = "id_510";
@@ -246,9 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Архивируем инициативы, которых больше нет на доске
           await storage.archiveInitiativesNotInList(teamData.initBoardId, syncedCardIds);
           
-          log(`[Team Creation] Successfully synced ${cards.length} initiatives`);
         } catch (syncError) {
-          console.error("[Team Creation] Initiative sync error:", syncError);
         }
       }
       
@@ -260,7 +243,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (teamData.hasSprints && teamData.sprintIds) {
         // РЕЖИМ: Реальные спринты
         try {
-          log(`[Team Creation] Step 2: Syncing REAL sprints from IDs: ${teamData.sprintIds}`);
           
           // Парсим sprint IDs из строки (разделитель - запятая)
           const sprintIdArray = teamData.sprintIds
@@ -270,14 +252,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .map((id: string) => parseInt(id))
             .filter((id: number) => !isNaN(id));
           
-          log(`[Team Creation] Parsed ${sprintIdArray.length} sprint IDs: ${sprintIdArray.join(', ')}`);
           
           // Получаем summary каждого спринта через getSprint API
           const syncedSprints: any[] = [];
           
           for (const sprintId of sprintIdArray) {
             try {
-              log(`[Team Creation] Fetching sprint ${sprintId}`);
               const sprint = await kaitenClient.getSprint(sprintId);
               
               // Сохраняем спринт в БД
@@ -295,19 +275,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               syncedSprints.push(sprint);
             } catch (sprintError: unknown) {
               const errorMessage = sprintError instanceof Error ? sprintError.message : String(sprintError);
-              log(`[Team Creation] Error syncing sprint ${sprintId}: ${errorMessage}`);
             }
           }
           
-          log(`[Team Creation] Successfully synced ${syncedSprints.length} real sprints`);
           
           // 3. Синхронизация тасок из реальных спринтов
-          log(`[Team Creation] Step 3: Syncing tasks from real sprints`);
           let totalTasks = 0;
           
           if (syncedSprints.length > 0) {
             // Есть спринты - синхронизируем задачи из них
-            log(`[Team Creation] Syncing tasks from ${syncedSprints.length} sprints`);
             for (const sprint of syncedSprints) {
               try {
                 const kaitenSprint = await kaitenClient.getSprint(sprint.id);
@@ -355,24 +331,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               } catch (sprintError: unknown) {
                 const errorMessage = sprintError instanceof Error ? sprintError.message : String(sprintError);
-                log(`[Team Creation] Error syncing tasks for sprint ${sprint.id}: ${errorMessage}`);
               }
             }
-            log(`[Team Creation] Successfully synced ${totalTasks} tasks from real sprints`);
           }
         } catch (syncError) {
-          console.error("[Team Creation] Real sprints sync error:", syncError);
         }
       } else if (teamData.initBoardId) {
         // РЕЖИМ: Виртуальные спринты (hasSprints === false)
         // Синхронизируем дочерние карточки инициатив (children)
         // Виртуальные спринты создадутся автоматически в /api/timeline на основе sprintDuration
         try {
-          log(`[Team Creation] Step 2: VIRTUAL sprints mode - syncing children of initiatives`);
           
           // Получаем все инициативы, которые были синхронизированы на шаге 1
           const initiatives = await storage.getInitiativesByBoardId(teamData.initBoardId);
-          log(`[Team Creation] Found ${initiatives.length} initiatives to sync children for`);
           
           let totalTasks = 0;
           
@@ -383,7 +354,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const initiativeCard = await kaitenClient.getCard(initiative.cardId);
               
               if (initiativeCard.children_ids && Array.isArray(initiativeCard.children_ids) && initiativeCard.children_ids.length > 0) {
-                log(`[Team Creation] Initiative ${initiative.cardId} "${initiative.title}" has ${initiativeCard.children_ids.length} children`);
                 
                 // Синхронизируем каждую дочернюю карточку
                 for (const childId of initiativeCard.children_ids) {
@@ -392,7 +362,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     
                     // Пропускаем архивные
                     if (childCard.archived) {
-                      log(`[Team Creation] Skipping archived child ${childId}`);
                       continue;
                     }
                     
@@ -437,25 +406,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     totalTasks++;
                   } catch (childError: unknown) {
                     const errorMessage = childError instanceof Error ? childError.message : String(childError);
-                    log(`[Team Creation] Error syncing child ${childId}: ${errorMessage}`);
                   }
                 }
               }
             } catch (initError: unknown) {
               const errorMessage = initError instanceof Error ? initError.message : String(initError);
-              log(`[Team Creation] Error processing initiative ${initiative.cardId}: ${errorMessage}`);
             }
           }
           
-          log(`[Team Creation] Successfully synced ${totalTasks} tasks (children) for virtual sprints`);
         } catch (syncError) {
-          console.error("[Team Creation] Virtual sprints task sync error:", syncError);
         }
       }
       
       res.json(team);
     } catch (error) {
-      console.error("POST /api/teams error:", error);
       
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ 
@@ -520,7 +484,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(team);
     } catch (error) {
-      console.error("PATCH /api/teams/:teamId error:", error);
       
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ 
@@ -544,7 +507,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ success: true });
     } catch (error) {
-      console.error("DELETE /api/teams/:teamId error:", error);
       
       if (error instanceof Error && error.message === "Team not found") {
         return res.status(404).json({ 
@@ -565,7 +527,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const initiatives = await storage.getAllInitiatives();
       res.json(initiatives);
     } catch (error) {
-      console.error("GET /api/initiatives error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve initiatives" 
@@ -586,7 +547,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const initiatives = await storage.getInitiativesByBoardId(initBoardId);
-      log(`[Initiatives Filter] Got ${initiatives.length} initiatives from DB for board ${initBoardId}`);
       
       // Если передан sprintBoardId, получаем sprint_id спринтов этой команды
       let teamSprintIds: Set<number> | null = null;
@@ -594,7 +554,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (sprintBoardId !== null && !isNaN(sprintBoardId)) {
         teamSprints = await storage.getSprintsByBoardId(sprintBoardId);
         teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
-        log(`[Initiatives Filter] Team sprint IDs for board ${sprintBoardId}: ${Array.from(teamSprintIds).join(', ')}`);
       }
       
       // Добавляем массив sprints для каждой инициативы
@@ -651,7 +610,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const pass = hasSprints || isSupport || isQueued;
             
             if (isQueued) {
-              log(`[Initiatives Filter] Init ${init.cardId} "${init.title}" state=${init.state} isQueued=${isQueued} pass=${pass}`);
             }
             
             return pass;
@@ -670,7 +628,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(initiativesWithInvolvement);
     } catch (error) {
-      console.error("GET /api/initiatives/board/:initBoardId error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve initiatives" 
@@ -701,11 +658,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Timeline] Team ${teamId} - initBoardId: ${initBoardId}, sprintBoardId: ${sprintBoardId}, sprintDuration: ${sprintDuration}, hasSprints: ${team.hasSprints}`);
 
       // Получаем инициативы
       let initiatives = await storage.getInitiativesByBoardId(initBoardId);
-      log(`[Timeline] Got ${initiatives.length} initiatives from DB for board ${initBoardId}`);
       
       // Добавляем "Поддержка бизнеса" (cardId=0) если её нет
       const hasBusinessSupport = initiatives.some(init => init.cardId === 0);
@@ -713,7 +668,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const businessSupport = await storage.getInitiativeByCardId(0);
         if (businessSupport) {
           initiatives = [businessSupport, ...initiatives];
-          log(`[Timeline] Added "Поддержка бизнеса" to initiatives`);
         }
       }
       
@@ -722,7 +676,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       initiatives = initiatives.filter(init => 
         init.cardId === 0 || init.type === 'Epic' || init.type === 'Compliance' || init.type === 'Enabler'
       );
-      log(`[Timeline] Filtered initiatives: ${initiatives.length} Epic/Compliance/Enabler/Support from ${allInitiatives.length} total`);
 
       // Загружаем все задачи один раз (избегаем N+1)
       // Используем allInitiatives для загрузки задач (включая задачи из других типов)
@@ -734,7 +687,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         allInitiativeCardIds.has(task.initCardId) &&
         task.teamId === teamId
       );
-      log(`[Timeline] Loaded ${initiativeTasks.length} tasks for ${allInitiatives.length} initiatives (team: ${teamId})`);
       
       // Создаем Map для быстрого поиска типа инициативы по cardId
       const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
@@ -744,13 +696,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const initType = initiativeTypeMap.get(task.initCardId || 0);
         // Если инициатива не Epic, не Compliance, не Enabler и не "Поддержка бизнеса" (cardId=0), перенаправляем в "Поддержку бизнеса"
         if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
-          log(`[Timeline] Redirecting task ${task.cardId} from init type ${initType} to Business Support, preserving type for cost structure`);
           // ВАЖНО: Сохраняем тип инициативы в task.type для правильного подсчета в Cost Structure
           return { ...task, initCardId: 0, type: initType || task.type };
         }
         return task;
       });
-      log(`[Timeline] Redirected tasks from non-Epic/Compliance/Enabler initiatives to Business Support`);
 
       // Логика зависит от флага hasSprints:
       // - Если hasSprints === true: используем реальные спринты из БД
@@ -760,11 +710,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // РЕЖИМ: Реальные спринты
         const teamSprints = await storage.getSprintsByBoardId(sprintBoardId);
         const teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
-        log(`[Timeline] REAL sprints mode: Team has ${teamSprints.length} sprints in DB`);
 
         // Если спринтов нет в БД - возвращаем пустой результат с предупреждением
         if (teamSprints.length === 0) {
-          log(`[Timeline] No real sprints found. Creating virtual sprints for team with sprintBoardId`);
 
           // Фильтруем задачи с doneDate
           const tasksForVirtual = initiativeTasks.filter(task => 
@@ -772,7 +720,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             task.doneDate !== ''
           );
 
-          log(`[Timeline] Found ${tasksForVirtual.length} tasks with doneDate`);
 
           if (tasksForVirtual.length === 0) {
             // Нет задач - возвращаем пустые спринты
@@ -969,7 +916,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // РЕЖИМ: Виртуальные спринты (hasSprints === false)
         // Создаём виртуальные спринты на основе sprintDuration
-        log(`[Timeline] VIRTUAL sprints mode: creating sprints based on sprintDuration=${sprintDuration} days`);
 
         // Фильтруем задачи с doneDate (для виртуальных спринтов берём ВСЕ задачи с датой закрытия)
         const tasksForVirtual = initiativeTasks.filter(task => 
@@ -977,7 +923,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           task.doneDate !== ''
         );
 
-        log(`[Timeline] Found ${tasksForVirtual.length} tasks without sprint (with doneDate)`);
 
         if (tasksForVirtual.length === 0) {
           // Нет задач - возвращаем пустые спринты
@@ -1037,7 +982,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sprintNumber++;
         }
 
-        log(`[Timeline] Created ${virtualSprints.length} virtual sprints`);
 
         // Группируем задачи по инициативам и виртуальным спринтам
         const initiativesWithSprints = initiatives.map(initiative => {
@@ -1096,7 +1040,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({ initiatives: initiativesWithInvolvement, sprints: virtualSprints });
       }
     } catch (error) {
-      console.error("GET /api/timeline/:teamId error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve timeline data" 
@@ -1116,7 +1059,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(initiative);
     } catch (error) {
-      console.error("GET /api/initiatives/:id error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve initiative" 
@@ -1130,7 +1072,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const initiative = await storage.createInitiative(validatedData);
       res.status(201).json(initiative);
     } catch (error) {
-      console.error("POST /api/initiatives error:", error);
       
       // Check if it's a validation error
       if (error instanceof Error && error.name === 'ZodError') {
@@ -1181,7 +1122,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(initiative);
     } catch (error) {
-      console.error("PATCH /api/initiatives/:id error:", error);
       
       // Check if it's a validation error
       if (error instanceof Error && error.name === 'ZodError') {
@@ -1205,7 +1145,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteInitiative(id);
       res.json({ success: true });
     } catch (error) {
-      console.error("DELETE /api/initiatives/:id error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to delete initiative" 
@@ -1219,7 +1158,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprints = await storage.getAllSprints();
       res.json(sprints);
     } catch (error) {
-      console.error("GET /api/sprints error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve sprints" 
@@ -1239,7 +1177,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprints = await storage.getSprintsByBoardId(boardId);
       res.json(sprints);
     } catch (error) {
-      console.error("GET /api/sprints/board/:boardId error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve sprints" 
@@ -1265,7 +1202,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(sprint);
     } catch (error) {
-      console.error("GET /api/sprints/:sprintId error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve sprint" 
@@ -1283,7 +1219,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Sprint Info] Fetching sprint ${sprintId} from Kaiten`);
       const kaitenSprint = await kaitenClient.getSprint(sprintId);
       
       if (!kaitenSprint) {
@@ -1293,8 +1228,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Sprint Info] ====== SPRINT ${sprintId}: ${kaitenSprint.title} ======`);
-      log(`[Sprint Info] Board: ${kaitenSprint.board_id} | Velocity: ${kaitenSprint.velocity} | Cards: ${kaitenSprint.cards?.length || 0}`);
       
       const sprint = {
         sprintId: kaitenSprint.id,
@@ -1317,16 +1250,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
       
       if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
-        log(`[Sprint Info] Processing ${kaitenSprint.cards.length} cards`);
-        log(`[Sprint Info] Sprint end date: ${sprintEndDate}`);
-        log(`[Sprint Info] --- Задачи Done ДО окончания спринта ---`);
         
         for (const sprintCard of kaitenSprint.cards) {
           try {
             const card = await kaitenClient.getCard(sprintCard.id);
             
             if (!card) {
-              log(`[Sprint Info] ⚠️ Card ${sprintCard.id} не найдена`);
               continue;
             }
             
@@ -1343,9 +1272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (isDone && wasDoneBeforeSprintEnd) {
               doneSP += cardSize;
               doneTasksCount++;
-              log(`[Sprint Info] ✓ [Done] ${cardSize} SP | "${card.title}" (completed: ${completedAt || 'no date'})`);
             } else if (isDone && !wasDoneBeforeSprintEnd) {
-              log(`[Sprint Info] ⏭ [Done AFTER sprint] ${cardSize} SP | "${card.title}" (completed: ${completedAt || 'unknown'})`);
             }
             
             let initiativeTitle: string | null = null;
@@ -1383,29 +1310,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } catch (cardError) {
             const errorMessage = cardError instanceof Error ? cardError.message : String(cardError);
-            log(`[Sprint Info] Error fetching card ${sprintCard.id}: ${errorMessage}`);
           }
         }
       }
 
       const kaitenVelocity = kaitenSprint.velocity || 0;
       
-      log(`[Sprint Info] =====================================`);
-      log(`[Sprint Info] КАЙТЕН ВЕРНУЛ:`);
-      log(`[Sprint Info]   Карточек в спринте: ${kaitenSprint.cards?.length || 0}`);
-      log(`[Sprint Info]   Velocity: ${kaitenVelocity}`);
-      log(`[Sprint Info] `);
-      log(`[Sprint Info] МЫ ПОСЧИТАЛИ:`);
-      log(`[Sprint Info]   Обработано задач: ${tasks.length}`);
-      log(`[Sprint Info]   Задач в Done (state === 3): ${doneTasksCount}`);
-      log(`[Sprint Info]   Total SP (все задачи): ${totalSP}`);
-      log(`[Sprint Info]   Done SP: ${doneSP}`);
-      log(`[Sprint Info] `);
-      log(`[Sprint Info] ⚠️ НЕСООТВЕТСТВИЕ:`);
-      log(`[Sprint Info]   Velocity из Kaiten: ${kaitenVelocity}`);
-      log(`[Sprint Info]   Done SP (наш расчет): ${doneSP}`);
-      log(`[Sprint Info]   Разница: ${Math.abs(doneSP - kaitenVelocity)} SP`);
-      log(`[Sprint Info] =====================================`);
       
       // Пока используем Done SP / Velocity для СПД
       const deliveryPlanCompliance = kaitenVelocity > 0 ? Math.round((doneSP / kaitenVelocity) * 100) : 0;
@@ -1420,7 +1330,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     } catch (error) {
-      console.error("GET /api/sprints/:sprintId/info error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve sprint info from Kaiten" 
@@ -1450,8 +1359,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Получаем все задачи спринта из БД
       const tasks = await storage.getTasksBySprint(sprintId);
       
-      log(`[Sprint Stats] ====== DATABASE STATS FOR SPRINT ${sprintId} ======`);
-      log(`[Sprint Stats] Total tasks in DB: ${tasks.length}`);
       
       // Подсчитываем статистику
       let totalSP = 0;
@@ -1464,15 +1371,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isDone) {
           doneSP += taskSize;
         }
-        log(`[Sprint Stats] Task ${task.cardId}: "${task.title}" | Size: ${taskSize} SP | State: ${task.state} | Done: ${isDone}`);
       });
       
       const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
       
-      log(`[Sprint Stats] Total SP: ${totalSP}`);
-      log(`[Sprint Stats] Done SP: ${doneSP}`);
-      log(`[Sprint Stats] СПД: ${deliveryPlanCompliance}%`);
-      log(`[Sprint Stats] ================================================`);
       
       res.json({
         success: true,
@@ -1483,7 +1385,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     } catch (error) {
-      console.error("GET /api/sprints/:sprintId/stats error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve sprint stats" 
@@ -1501,7 +1402,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Sprint Save] Fetching sprint ${sprintId} from Kaiten`);
       const kaitenSprint = await kaitenClient.getSprint(sprintId);
       
       if (!kaitenSprint) {
@@ -1511,7 +1411,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Sprint Save] Validating sprint ${sprintId}`);
       
       // Валидируем обязательные поля
       if (!kaitenSprint.board_id || !kaitenSprint.start_date || !kaitenSprint.finish_date) {
@@ -1524,7 +1423,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Проверяем наличие команды ДО сохранения спринта
       const team = await storage.getTeamBySprintBoardId(kaitenSprint.board_id);
       if (!team) {
-        log(`[Sprint Save] No team found for board ${kaitenSprint.board_id}`);
         return res.status(400).json({
           success: false,
           error: `Team with sprint board ID ${kaitenSprint.board_id} not found. Please create a team with this sprint board ID first.`
@@ -1532,10 +1430,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const teamId = team.teamId;
-      log(`[Sprint Save] Found team ${team.teamName} (${teamId})`);
 
       // Сохраняем спринт
-      log(`[Sprint Save] Saving sprint ${sprintId} to database`);
       await storage.syncSprintFromKaiten(
         kaitenSprint.id,
         kaitenSprint.board_id,
@@ -1547,19 +1443,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         kaitenSprint.goal || null
       );
 
-      log(`[Sprint Save] Sprint ${sprintId} saved`);
 
       let tasksSaved = 0;
       const errors: string[] = [];
       
       if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
-        log(`[Sprint Save] Saving ${kaitenSprint.cards.length} tasks`);
         
         // Параллельно получаем все карточки
         const cardPromises = kaitenSprint.cards.map(sprintCard => 
           kaitenClient.getCard(sprintCard.id).catch(err => {
             const errorMessage = err instanceof Error ? err.message : String(err);
-            log(`[Sprint Save] Error fetching card ${sprintCard.id}: ${errorMessage}`);
             errors.push(`Card ${sprintCard.id}: ${errorMessage}`);
             return null;
           })
@@ -1569,7 +1462,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Сохраняем все задачи (независимо от статуса)
         const validCards = cards.filter(c => c !== null);
-        log(`[Sprint Save] Saving all ${validCards.length} tasks (any state)`);
         
         // Сохраняем все карточки
         for (const card of validCards) {
@@ -1581,12 +1473,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               initCardId = await findInitiativeInParentChain(parentCardId);
               
               if (initCardId !== 0) {
-                log(`[Sprint Save] Task ${card.id} linked to initiative ${initCardId} (via parent chain)`);
               } else {
-                log(`[Sprint Save] Task ${card.id} has parent ${parentCardId} but no initiative found in chain`);
               }
             } else {
-              log(`[Sprint Save] Task ${card.id} has no parent_id - will be saved as Business Support`);
             }
 
             // Преобразуем state и condition из number в строку с валидацией
@@ -1595,14 +1484,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             else if (card.state === 2) stateStr = "2-inProgress";
             else if (card.state === 3) stateStr = "3-done";
             else {
-              log(`[Sprint Save] Warning: Unknown state ${card.state} for card ${card.id}, defaulting to queued`);
             }
 
             let conditionStr: "1-live" | "2-archived" = "1-live";
             if (card.condition === 1) conditionStr = "1-live";
             else if (card.condition === 2) conditionStr = "2-archived";
             else {
-              log(`[Sprint Save] Warning: Unknown condition ${card.condition} for card ${card.id}, defaulting to live`);
             }
 
             // Сохраняем задачу
@@ -1626,15 +1513,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             tasksSaved++;
           } catch (cardError) {
             const errorMessage = cardError instanceof Error ? cardError.message : String(cardError);
-            log(`[Sprint Save] Error saving card ${card.id}: ${errorMessage}`);
             errors.push(`Card ${card.id}: ${errorMessage}`);
           }
         }
       }
 
-      log(`[Sprint Save] Saved ${tasksSaved} tasks`);
       if (errors.length > 0) {
-        log(`[Sprint Save] Encountered ${errors.length} errors`);
       }
       
       res.json({
@@ -1647,7 +1531,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errors: errors.length > 0 ? errors : undefined,
       });
     } catch (error) {
-      console.error("POST /api/sprints/:sprintId/save error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to save sprint to database" 
@@ -1661,7 +1544,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tasks = await storage.getAllTasks();
       res.json(tasks);
     } catch (error) {
-      console.error("GET /api/tasks error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve tasks" 
@@ -1681,7 +1563,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tasks = await storage.getTasksByBoardId(boardId);
       res.json(tasks);
     } catch (error) {
-      console.error("GET /api/tasks/board/:boardId error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve tasks" 
@@ -1701,7 +1582,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(task);
     } catch (error) {
-      console.error("GET /api/tasks/:id error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve task" 
@@ -1721,7 +1601,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Grouped Tasks] Fetching tasks for initBoardId=${initBoardId}, sprintDuration=${sprintDuration} days`);
 
       // Получаем все задачи без sprintId для этой доски
       const allTasks = await storage.getAllTasks();
@@ -1731,7 +1610,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         task.doneDate !== ''
       );
 
-      log(`[Grouped Tasks] Found ${initiativeTasks.length} tasks without sprint (with doneDate)`);
 
       if (initiativeTasks.length === 0) {
         return res.json([]);
@@ -1785,11 +1663,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sprintNumber++;
       }
 
-      log(`[Grouped Tasks] Created ${virtualSprints.length} virtual sprints`);
 
       res.json(virtualSprints);
     } catch (error) {
-      console.error("GET /api/tasks/grouped/:initBoardId/:sprintDuration error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to retrieve grouped tasks" 
@@ -1803,7 +1679,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const task = await storage.createTask(validatedData);
       res.status(201).json(task);
     } catch (error) {
-      console.error("POST /api/tasks error:", error);
       
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ 
@@ -1850,7 +1725,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(task);
     } catch (error) {
-      console.error("PATCH /api/tasks/:id error:", error);
       
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ 
@@ -1872,7 +1746,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteTask(id);
       res.json({ success: true });
     } catch (error) {
-      console.error("DELETE /api/tasks/:id error:", error);
       res.status(500).json({ 
         success: false, 
         error: "Failed to delete task" 
@@ -1890,14 +1763,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Sync] Starting sync for board ${boardId}`);
       
       const allCards = await kaitenClient.getCardsFromBoard(boardId);
       
       // Фильтруем: сохраняем только неархивные инициативы
       const cards = allCards.filter(card => !card.archived);
       
-      log(`[Kaiten Sync] Found ${allCards.length} total cards, will sync ${cards.length} non-archived initiatives (skipped ${allCards.length - cards.length} archived)`);
 
       const syncedInitiatives = [];
       const syncedCardIds: number[] = [];
@@ -1920,12 +1791,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
 
-        log(`[Kaiten Sync] Card ${card.id} "${card.title}" - type object:`, JSON.stringify(card.type));
-        log(`[Kaiten Sync] Card ${card.id} - type.name value: ${card.type?.name}`);
         
         // Логируем всю структуру properties для диагностики
-        log(`[Kaiten Sync] Card ${card.id} - all properties:`, JSON.stringify(card.properties));
-        log(`[Kaiten Sync] Card ${card.id} - properties keys:`, card.properties ? Object.keys(card.properties).join(', ') : 'no properties');
         
         // Получаем plannedValue из properties по ключу plannedValueId
         const rawPlanned = card.properties?.[plannedValueId];
@@ -1942,9 +1809,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // log(`[Kaiten Sync] Card ${card.id} - factValue (converted to string):`, factValue);
         
         // Логируем даты для отладки
-        log(`[Kaiten Sync] Card ${card.id} "${card.title}" - due_date:`, card.due_date || 'null');
-        log(`[Kaiten Sync] Card ${card.id} "${card.title}" - last_moved_to_done_at:`, card.last_moved_to_done_at || 'null');
-        log(`[Kaiten Sync] Card ${card.id} "${card.title}" - completed_at:`, card.completed_at || 'null');
 
         const synced = await storage.syncInitiativeFromKaiten(
           card.id,
@@ -1969,7 +1833,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Архивируем инициативы, которых больше нет на доске
       await storage.archiveInitiativesNotInList(boardId, syncedCardIds);
 
-      log(`[Kaiten Sync] Successfully synced ${syncedInitiatives.length} initiatives`);
       
       // Для инициатив типа Compliance и Enabler автоматически проставляем planned_value = planned_cost и fact_value = fact_cost
       const allTeams = await storage.getAllTeams();
@@ -1980,7 +1843,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const team = relevantTeams[0];
         const spPrice = team.spPrice || 0;
         
-        log(`[Kaiten Sync] Processing Compliance/Enabler initiatives for team "${team.teamName}" with spPrice=${spPrice}`);
         
         for (const initiative of syncedInitiatives) {
           if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
@@ -2009,7 +1871,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         initiatives: syncedInitiatives
       });
     } catch (error) {
-      console.error("POST /api/kaiten/sync-board/:boardId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to sync initiatives from Kaiten" 
@@ -2027,22 +1888,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Sync Tasks] Starting sync for board ${boardId}`);
       
       // Lookup team by initBoardId
       const team = await storage.getTeamByInitBoardId(boardId);
       if (!team) {
-        log(`[Kaiten Sync Tasks] No team found for board ${boardId}`);
         return res.status(404).json({
           success: false,
           error: `No team found with initBoardId=${boardId}`
         });
       }
-      log(`[Kaiten Sync Tasks] Found team ${team.teamName} (${team.teamId})`);
       
       // Step 1: Get list of cards from board
       const boardCards = await kaitenClient.getCardsFromBoard(boardId);
-      log(`[Kaiten Sync Tasks] Found ${boardCards.length} cards on board`);
 
       const syncedTasks = [];
       
@@ -2058,7 +1915,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Синхронизируем таски с state === 3 (done)
         if (card.state === 3) {
-          log(`[Kaiten Sync Tasks]   ✓ Syncing task ${card.id}, sprint_id=${card.sprint_id}, init_card_id=${initCardId}`);
           
           let state: "1-queued" | "2-inProgress" | "3-done";
           
@@ -2072,7 +1928,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
 
-          log(`[Kaiten Sync Tasks] Task ${card.id} "${card.title}" - type.name value: ${card.type?.name}`);
 
           const synced = await storage.syncTaskFromKaiten(
             card.id,
@@ -2095,7 +1950,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      log(`[Kaiten Sync Tasks] Synced ${syncedTasks.length} tasks from ${boardCards.length} cards`);
       
       res.json({
         success: true,
@@ -2103,7 +1957,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tasks: syncedTasks
       });
     } catch (error) {
-      console.error("POST /api/kaiten/sync-tasks/:boardId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to sync tasks from Kaiten" 
@@ -2121,13 +1974,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Update Sprint] Fetching sprint ${sprintId} from Kaiten`);
       
       // Получаем данные спринта из Kaiten
       const sprint = await kaitenClient.getSprint(sprintId);
       
       if (!sprint.cards || !Array.isArray(sprint.cards)) {
-        log(`[Kaiten Update Sprint] No cards found in sprint ${sprintId}`);
         return res.json({
           success: true,
           updated: 0,
@@ -2135,13 +1986,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Update Sprint] Sprint has ${sprint.cards.length} cards`);
-      log(`[Kaiten Update Sprint] Sprint card IDs: ${sprint.cards.map(c => c.id).join(', ')}`);
       
       // Получаем все tasks из базы данных
       const allTasks = await storage.getAllTasks();
-      log(`[Kaiten Update Sprint] Found ${allTasks.length} tasks in database`);
-      log(`[Kaiten Update Sprint] Task card IDs: ${allTasks.map(t => t.cardId).join(', ')}`);
       
       // Создаем Set с card_id из спринта для быстрого поиска
       const sprintCardIds = new Set(sprint.cards.map(card => card.id));
@@ -2151,14 +1998,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Обновляем sprint_id для tasks, у которых card_id совпадает с card_id из спринта
       for (const task of allTasks) {
         if (sprintCardIds.has(task.cardId)) {
-          log(`[Kaiten Update Sprint] Updating task ${task.id} (card_id: ${task.cardId}) with sprint_id: ${sprintId}`);
           
           await storage.updateTask(task.id, { sprintId });
           updatedCount++;
         }
       }
 
-      log(`[Kaiten Update Sprint] Updated ${updatedCount} tasks with sprint_id ${sprintId}`);
       
       res.json({
         success: true,
@@ -2168,7 +2013,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalTasksInDb: allTasks.length
       });
     } catch (error) {
-      console.error("POST /api/kaiten/update-sprint/:sprintId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to update sprint info" 
@@ -2188,7 +2032,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { size, plannedValue, factValue } = req.body;
       
-      log(`[Kaiten Update Initiative] Updating card ${cardId} with size=${size}, plannedValue=${plannedValue}, factValue=${factValue}`);
       
       // Подготовка обновлений для Kaiten
       const kaitenUpdates: { size?: number; properties?: Record<string, any> } = {};
@@ -2215,7 +2058,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      log(`[Kaiten Update Initiative] Kaiten updates:`, JSON.stringify(kaitenUpdates));
       
       // Обновляем в Kaiten
       await kaitenClient.updateCard(cardId, kaitenUpdates);
@@ -2235,7 +2077,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dbUpdates.factValue = factValue === null || factValue === '' ? null : String(factValue);
       }
       
-      log(`[Kaiten Update Initiative] DB updates:`, JSON.stringify(dbUpdates));
       
       // Находим инициативу в БД по cardId
       const initiative = await storage.getInitiativeByCardId(cardId);
@@ -2250,14 +2091,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Обновляем в БД
       const updated = await storage.updateInitiative(initiative.id, dbUpdates);
       
-      log(`[Kaiten Update Initiative] Successfully updated card ${cardId}`);
       
       res.json({
         success: true,
         initiative: updated
       });
     } catch (error) {
-      console.error("PATCH /api/kaiten/update-initiative/:cardId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to update initiative" 
@@ -2275,13 +2114,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Sync Sprint] Fetching sprint ${sprintId} from Kaiten`);
       
       // Получаем данные спринта из Kaiten
       const sprint = await kaitenClient.getSprint(sprintId);
       
       if (!sprint.cards || !Array.isArray(sprint.cards)) {
-        log(`[Kaiten Sync Sprint] No cards found in sprint ${sprintId}`);
         return res.json({
           success: true,
           synced: 0,
@@ -2289,7 +2126,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Sync Sprint] Sprint has ${sprint.cards.length} cards`);
       
       // Lookup team once before processing cards
       const dbSprint = await storage.getSprint(sprintId);
@@ -2300,7 +2136,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!team) {
         throw new Error(`No team found for sprint board ${dbSprint.boardId}`);
       }
-      log(`[Kaiten Sync Sprint] Found team ${team.teamName} (${team.teamId})`);
       
       const syncedTasks = [];
       
@@ -2308,26 +2143,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const sprintCard of sprint.cards) {
         // Получаем детальную информацию по карточке чтобы получить parents_ids
         const card = await kaitenClient.getCard(sprintCard.id);
-        log(`[Kaiten Sync Sprint] Syncing card ${card.id}: ${card.title}`);
         
         // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
         let initCardId: number | null = null;
         
         if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
           const parentCardId = card.parents_ids[0];
-          log(`[Kaiten Sync Sprint]   Parent card_id: ${parentCardId}`);
           
           // Ищем инициативу в родительской цепочке
           initCardId = await findInitiativeInParentChain(parentCardId);
           
           if (initCardId !== 0) {
-            log(`[Kaiten Sync Sprint]   ✓ Found initiative in chain, init_card_id=${initCardId}`);
           } else {
-            log(`[Kaiten Sync Sprint]   ✗ No initiative found in chain, setting init_card_id=0`);
           }
         } else {
           initCardId = 0;
-          log(`[Kaiten Sync Sprint]   No parents_ids, setting init_card_id=0`);
         }
         
         let state: "1-queued" | "2-inProgress" | "3-done";
@@ -2342,7 +2172,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
 
-        log(`[Kaiten Sync Sprint] Task ${card.id} "${card.title}" - type.name value: ${card.type?.name}`);
 
         const synced = await storage.syncTaskFromKaiten(
           card.id,
@@ -2364,7 +2193,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         syncedTasks.push(synced);
       }
 
-      log(`[Kaiten Sync Sprint] Synced ${syncedTasks.length} tasks from sprint ${sprintId}`);
       
       res.json({
         success: true,
@@ -2373,7 +2201,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tasks: syncedTasks
       });
     } catch (error) {
-      console.error("POST /api/kaiten/sync-sprint/:sprintId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to sync sprint" 
@@ -2391,11 +2218,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Sync Sprints] Starting sync for sprints on board ${boardId}`);
       
       // Получаем все спринты с доски из Kaiten
       const kaitenSprints = await kaitenClient.getSprintsFromBoard(boardId);
-      log(`[Kaiten Sync Sprints] Found ${kaitenSprints.length} sprints in Kaiten`);
 
       const syncedSprints = [];
       
@@ -2403,8 +2228,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Получаем детальную информацию о спринте
         const sprintDetails = await kaitenClient.getSprint(kaitenSprint.id);
         
-        log(`[Kaiten Sync Sprints] Syncing sprint ${sprintDetails.id}: "${sprintDetails.title}"`);
-        log(`[Kaiten Sync Sprints] Sprint details:`, JSON.stringify(sprintDetails, null, 2));
         
         // Синхронизируем спринт
         const synced = await storage.syncSprintFromKaiten(
@@ -2421,7 +2244,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         syncedSprints.push(synced);
       }
 
-      log(`[Kaiten Sync Sprints] Successfully synced ${syncedSprints.length} sprints`);
       
       res.json({
         success: true,
@@ -2429,7 +2251,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sprints: syncedSprints
       });
     } catch (error) {
-      console.error("POST /api/kaiten/sync-sprints/:boardId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to sync sprints from Kaiten" 
@@ -2447,13 +2268,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Sync Initiative Tasks] Starting sync for initiative board ${initBoardId}`);
       
       // Получаем начало текущего года
       const currentYear = new Date().getFullYear();
       const yearStart = new Date(currentYear, 0, 1).toISOString();
       
-      log(`[Kaiten Sync Initiative Tasks] Fetching tasks completed after ${yearStart} from board ${initBoardId}`);
       
       // Получаем все задачи с фильтром по дате
       const tasks = await kaitenClient.getCardsWithDateFilter({
@@ -2462,7 +2281,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: 1000
       });
       
-      log(`[Kaiten Sync Initiative Tasks] Found ${tasks.length} tasks completed after ${yearStart}`);
       
       let totalTasksSynced = 0;
       const syncedTasks = [];
@@ -2477,12 +2295,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             initCardId = await findInitiativeInParentChain(parentId);
             
             if (initCardId !== 0) {
-              log(`[Kaiten Sync Initiative Tasks] Task ${taskCard.id} linked to initiative ${initCardId} (via parent chain)`);
             } else {
-              log(`[Kaiten Sync Initiative Tasks] Task ${taskCard.id} has parent ${parentId} but no initiative found in chain`);
             }
           } else {
-            log(`[Kaiten Sync Initiative Tasks] Task ${taskCard.id} has no parent_id`);
           }
           
           let state: "1-queued" | "2-inProgress" | "3-done";
@@ -2523,11 +2338,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalTasksSynced++;
         } catch (taskError: unknown) {
           const errorMessage = taskError instanceof Error ? taskError.message : String(taskError);
-          log(`[Kaiten Sync Initiative Tasks] Error syncing task ${taskCard.id}: ${errorMessage}`);
         }
       }
       
-      log(`[Kaiten Sync Initiative Tasks] Successfully synced ${totalTasksSynced} tasks from Kaiten API`);
       
       res.json({
         success: true,
@@ -2535,7 +2348,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tasks: syncedTasks
       });
     } catch (error) {
-      console.error("POST /api/kaiten/sync-initiative-tasks/:initBoardId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to sync initiative tasks" 
@@ -2547,7 +2359,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const teamId = req.params.teamId;
       
-      log(`[Kaiten Smart Sync] Starting smart sync for team ${teamId}`);
       
       // Получаем команду
       const team = await storage.getTeamById(teamId);
@@ -2558,17 +2369,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      log(`[Kaiten Smart Sync] Found team: ${team.teamName}, initBoardId: ${team.initBoardId}, sprintBoardId: ${team.sprintBoardId || 'none'}`);
       
       // Шаг 1: Синхронизируем инициативы
-      log(`[Kaiten Smart Sync] Step 1: Syncing initiatives from board ${team.initBoardId}`);
       const allCards = await kaitenClient.getCardsFromBoard(team.initBoardId);
-      log(`[Kaiten Smart Sync] Total cards from Kaiten: ${allCards.length}`);
       
       // Фильтруем: сохраняем только неархивные инициативы
       const cardsToSync = allCards.filter(card => !card.archived);
       
-      log(`[Kaiten Smart Sync] Total from Kaiten: ${allCards.length}, will sync: ${cardsToSync.length} non-archived initiatives (skipped ${allCards.length - cardsToSync.length} archived)`);
       
       const plannedValueId = "id_237";
       const factValueId = "id_510";
@@ -2578,7 +2385,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const card of cardsToSync) {
         try {
           // Детальное логирование для отладки
-          log(`[Kaiten Smart Sync] Card ${card.id}: "${card.title.substring(0, 50)}..." - Kaiten state=${card.state}, archived=${card.archived}`);
           
           let state: "1-queued" | "2-inProgress" | "3-done";
           if (card.state === 3) {
@@ -2589,7 +2395,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             state = "1-queued";
           }
           
-          log(`[Kaiten Smart Sync] Card ${card.id}: Mapped to state="${state}"`);
           
           const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
           
@@ -2614,7 +2419,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Логируем дату для отладки
           if (card.last_moved_to_done_at) {
-            log(`[Kaiten Smart Sync] Card ${card.id} "${card.title}" - last_moved_to_done_at from Kaiten:`, card.last_moved_to_done_at);
           }
           
           await storage.syncInitiativeFromKaiten(
@@ -2636,14 +2440,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           syncedCardIds.push(card.id);
           syncedCount++;
         } catch (error) {
-          log(`[Kaiten Smart Sync] Error syncing initiative ${card.id}: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
       
       // Архивируем инициативы, которых больше нет на доске
       await storage.archiveInitiativesNotInList(team.initBoardId, syncedCardIds);
       
-      log(`[Kaiten Smart Sync] Step 1 completed: ${syncedCount} of ${cardsToSync.length} initiatives synced successfully`);
       
       // Шаг 2: Проверяем наличие текущего спринта и синхронизируем его задачи
       let newSprintSynced = false;
@@ -2651,7 +2453,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let tasksSynced = 0;
       
       if (team.sprintBoardId) {
-        log(`[Kaiten Smart Sync] Step 2: Checking for current sprint in board ${team.sprintBoardId}`);
         
         // Получаем список карточек из sprint board
         const sprintBoardCards = await kaitenClient.getCardsWithDateFilter({
@@ -2659,12 +2460,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           limit: 10  // Берем первые 10 карточек, чтобы наверняка найти хотя бы одну
         });
         
-        log(`[Kaiten Smart Sync] Found ${sprintBoardCards.length} cards in sprint board`);
         
         if (sprintBoardCards.length > 0) {
           // Берем первую карточку
           const firstCard = sprintBoardCards[0];
-          log(`[Kaiten Smart Sync] First card: id=${firstCard.id}, title="${firstCard.title}", sprint_id=${firstCard.sprint_id || 'none'}`);
           
           if (firstCard.sprint_id) {
             const sprintId = firstCard.sprint_id;
@@ -2674,10 +2473,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Получаем детали спринта из Kaiten (нужны для синхронизации задач)
             const sprintDetails = await kaitenClient.getSprint(sprintId);
-            log(`[Kaiten Smart Sync] Sprint ${sprintId} details fetched`);
             
             if (!existingSprint) {
-              log(`[Kaiten Smart Sync] Sprint ${sprintId} is NEW, saving to DB...`);
               
               const syncedSprint = await storage.syncSprintFromKaiten(
                 sprintDetails.id,
@@ -2692,17 +2489,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               newSprintSynced = true;
               sprintData = syncedSprint;
-              log(`[Kaiten Smart Sync] New sprint ${sprintId} saved successfully`);
             } else {
-              log(`[Kaiten Smart Sync] Sprint ${sprintId} already exists in DB`);
               sprintData = existingSprint;
             }
             
             // Шаг 3: Синхронизируем задачи текущего спринта (всегда, даже если спринт уже существует)
-            log(`[Kaiten Smart Sync] Step 3: Syncing tasks for sprint ${sprintId}`);
             
             if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
-              log(`[Kaiten Smart Sync] Found ${sprintDetails.cards.length} cards in sprint`);
               
               for (const sprintCard of sprintDetails.cards) {
                 try {
@@ -2747,25 +2540,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   tasksSynced++;
                 } catch (taskError) {
-                  log(`[Kaiten Smart Sync] Error syncing task ${sprintCard.id}: ${taskError instanceof Error ? taskError.message : String(taskError)}`);
                 }
               }
               
-              log(`[Kaiten Smart Sync] Step 3 completed: ${tasksSynced} tasks synced`);
             } else {
-              log(`[Kaiten Smart Sync] No cards in sprint, skipping task sync`);
             }
           } else {
-            log(`[Kaiten Smart Sync] First card has no sprint_id`);
           }
         } else {
-          log(`[Kaiten Smart Sync] No cards found in sprint board`);
         }
       } else {
-        log(`[Kaiten Smart Sync] Team has no sprint board, skipping sprint check`);
       }
       
-      log(`[Kaiten Smart Sync] Completed for team ${teamId}`);
       
       res.json({
         success: true,
@@ -2774,7 +2560,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sprint: sprintData ? { ...sprintData, tasksSynced } : null
       });
     } catch (error) {
-      console.error("POST /api/kaiten/smart-sync/:teamId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to perform smart sync" 
@@ -2804,7 +2589,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Innovation Rate] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
 
       // Получаем команды и департамент
       const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
@@ -2863,7 +2647,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
             });
-            log(`[Innovation Rate] Team ${team.teamId}: found ${teamSprintTasks.length} done tasks in ${yearSprints.length} sprints`);
           } else {
             // Команда не имеет реальных спринтов в этом году - берем по doneDate
             const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
@@ -2872,7 +2655,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
             });
-            log(`[Innovation Rate] Team ${team.teamId}: found ${newTasks.length} tasks by doneDate (no sprints in year)`);
           }
         } else {
           // Команда вообще без спринтовой доски - берем по doneDate
@@ -2882,11 +2664,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             relevantTasks.push(task);
             processedTaskIds.add(task.cardId);
           });
-          log(`[Innovation Rate] Team ${team.teamId}: found ${newTasks.length} tasks by doneDate (no sprint board)`);
         }
       }
       
-      log(`[Innovation Rate] Found total ${relevantTasks.length} unique tasks across all teams`);
 
       // Получаем все инициативы для выбранных команд
       const allInitiatives = await Promise.all(
@@ -2897,7 +2677,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Создаем мапу инициатив по cardId для быстрого поиска
       const initiativesMap = new Map(initiatives.map(init => [init.cardId, init]));
       
-      log(`[Innovation Rate] Found ${initiatives.length} initiatives`);
 
       // Подсчитываем SP по типам (как в Cost Structure)
       const typeStats: Record<string, number> = {};
@@ -2925,15 +2704,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const actualIR = epicPercent + compliancePercent + enablerPercent;
       const innovationSP = (typeStats['Epic'] || 0) + (typeStats['Compliance'] || 0) + (typeStats['Enabler'] || 0);
 
-      log(`[Innovation Rate] Total SP: ${totalSP}, Epic: ${typeStats['Epic'] || 0}, Compliance: ${typeStats['Compliance'] || 0}, Enabler: ${typeStats['Enabler'] || 0}`);
-      log(`[Innovation Rate] Epic: ${epicPercent}%, Compliance: ${compliancePercent}%, Enabler: ${enablerPercent}%`);
-      log(`[Innovation Rate] Actual IR (sum of rounded %): ${actualIR}%`);
       
       // Расчитываем разницу с плановым IR
       const plannedIR = department.plannedIr || 0;
       const diffFromPlanned = actualIR - plannedIR;
 
-      log(`[Innovation Rate] Actual IR: ${actualIR}%, Planned IR: ${plannedIR}%, Diff: ${diffFromPlanned}%`);
 
       res.json({
         success: true,
@@ -2944,7 +2719,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         innovationSP
       });
     } catch (error) {
-      console.error("GET /api/metrics/innovation-rate error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to calculate innovation rate" 
@@ -2974,7 +2748,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Cost Structure] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
 
       // Получаем команды
       const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
@@ -3021,7 +2794,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
             });
-            log(`[Cost Structure] Team ${team.teamId}: found ${teamSprintTasks.length} done tasks in ${yearSprints.length} sprints`);
           } else {
             // Команда не имеет реальных спринтов в этом году - берем по doneDate
             const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
@@ -3030,7 +2802,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
             });
-            log(`[Cost Structure] Team ${team.teamId}: found ${newTasks.length} tasks by doneDate (no sprints in year)`);
           }
         } else {
           // Команда вообще без спринтовой доски - берем по doneDate
@@ -3040,11 +2811,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             relevantTasks.push(task);
             processedTaskIds.add(task.cardId);
           });
-          log(`[Cost Structure] Team ${team.teamId}: found ${newTasks.length} tasks by doneDate (no sprint board)`);
         }
       }
       
-      log(`[Cost Structure] Found total ${relevantTasks.length} unique tasks across all teams`);
 
       // Получаем все инициативы для выбранных команд
       const allInitiatives = await Promise.all(
@@ -3055,7 +2824,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Создаем мапу инициатив по cardId для быстрого поиска
       const initiativesMap = new Map(initiatives.map(init => [init.cardId, init]));
       
-      log(`[Cost Structure] Found ${initiatives.length} initiatives`);
 
       // Маппинг различных вариантов написания типов (применяется ко ВСЕМ задачам)
       const typeMapping: Record<string, string> = {
@@ -3089,10 +2857,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let displayType = initiative.type;
             if (typeMapping[initiative.type]) {
               displayType = typeMapping[initiative.type];
-              log(`[Cost Structure DEBUG] ✓ Initiative type mapped: "${initiative.type}" → "${displayType}", size: ${taskSize}`);
             } else {
               // Тип НЕ в маппинге - используем как есть
-              log(`[Cost Structure DEBUG] ✗ Initiative type NOT in mapping: "${initiative.type}" (length: ${initiative.type.length}, charCodes: ${Array.from(initiative.type).map(c => c.charCodeAt(0)).join(',')}), size: ${taskSize}`);
             }
             typeStats[displayType] = (typeStats[displayType] || 0) + taskSize;
           } else {
@@ -3103,13 +2869,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tasksWithoutInitiative++;
           // Таск не привязан к инициативе - используем тип задачи
           if (task.type) {
-            log(`[Cost Structure DEBUG] Task ${task.cardId} "${task.title.substring(0, 40)}..." has type: "${task.type}", initCardId: ${task.initCardId}, size: ${taskSize}`);
             
             // Применяем маппинг к типу задачи
             let displayType = task.type;
             if (typeMapping[task.type]) {
               displayType = typeMapping[task.type];
-              log(`[Cost Structure DEBUG] ✓ Mapped "${task.type}" → "${displayType}"`);
               if (displayType === 'Tech debt') {
                 techDebtCandidates++;
               }
@@ -3120,27 +2884,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             if (knownTypes.includes(displayType)) {
               typeStats[displayType] = (typeStats[displayType] || 0) + taskSize;
-              log(`[Cost Structure DEBUG] ✓ Added ${taskSize} SP to "${displayType}"`);
             } else {
               // Неизвестный тип - в "Др. доработки"
               typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
-              log(`[Cost Structure DEBUG] ✗ Unknown type "${displayType}" → "Др. доработки"`);
             }
           } else {
             // Нет типа - в "Др. доработки"
             typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
-            log(`[Cost Structure DEBUG] Task ${task.cardId} has NO type → "Др. доработки"`);
           }
         }
       }
       
-      log(`[Cost Structure DEBUG] Summary:`);
-      log(`  - Total tasks: ${relevantTasks.length}`);
-      log(`  - Tasks WITH initiative: ${tasksWithInitiative}`);
-      log(`  - Tasks WITHOUT initiative: ${tasksWithoutInitiative}`);
-      log(`  - Tech debt candidates found: ${techDebtCandidates}`);
-      log(`  - Tech debt SP: ${typeStats['Tech debt'] || 0}`);
-      log(`  - All types: ${JSON.stringify(typeStats, null, 2)}`);
 
       // Рассчитываем проценты
       const typePercentages: Record<string, number> = {};
@@ -3148,7 +2902,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         typePercentages[type] = totalSP > 0 ? Math.round((sp / totalSP) * 100) : 0;
       }
 
-      log(`[Cost Structure] Total SP: ${totalSP}, Types: ${Object.keys(typeStats).length}`);
 
       res.json({
         success: true,
@@ -3159,7 +2912,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         teams: validTeams.map(t => ({ id: t.teamId, name: t.teamName }))
       });
     } catch (error) {
-      console.error("GET /api/metrics/cost-structure error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to calculate cost structure" 
@@ -3410,7 +3162,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sumFactCost
       });
     } catch (error) {
-      console.error("GET /api/metrics/value-cost error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to calculate value/cost" 
@@ -3428,16 +3179,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      log(`[Kaiten Raw Sprint] Fetching sprint ${sprintId} from Kaiten`);
       
       const sprint = await kaitenClient.getSprint(sprintId);
       
-      log(`[Kaiten Raw Sprint] Sprint response keys: ${Object.keys(sprint).join(', ')}`);
-      log(`[Kaiten Raw Sprint] Full response:`, JSON.stringify(sprint, null, 2));
       
       res.json(sprint);
     } catch (error) {
-      console.error("GET /api/kaiten/sprint-raw/:sprintId error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to fetch sprint from Kaiten" 
@@ -3454,7 +3201,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: isConnected ? "Kaiten API connection successful" : "Kaiten API connection failed"
       });
     } catch (error) {
-      console.error("GET /api/kaiten/test error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to test Kaiten connection" 
@@ -3547,7 +3293,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename=Sprint_Report_${sprintId}.pdf`);
       res.send(pdfBuffer);
     } catch (error) {
-      console.error("POST /api/sprints/:sprintId/generate-report error:", error);
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to generate report" 
