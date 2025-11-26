@@ -510,10 +510,37 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return now >= start && now <= end;
   };
 
-  // Получить SP для конкретной инициативы в конкретном спринте (для таймлайна - без фильтра doneDate)
+  // Получить SP для конкретной инициативы в конкретном спринте (кэшированное значение)
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
     const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
     return roundSP(sprint?.sp || 0);
+  };
+
+  // Получить SP для конкретной инициативы в конкретном спринте (только done задачи с doneDate внутри дат спринта)
+  const getFilteredSprintSP = (initiative: Initiative, sprintId: number): number => {
+    const sprintInfo = getSprintInfo(sprintId);
+    if (!sprintInfo) return 0;
+    
+    const sprintStartTime = new Date(sprintInfo.startDate).getTime();
+    const sprintEndTime = new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate).getTime();
+    
+    const tasks = getSprintTasks(initiative, sprintId);
+    let totalSP = 0;
+    
+    tasks.forEach(task => {
+      let countSP = false;
+      if (!task.doneDate) {
+        countSP = true;
+      } else {
+        const taskTime = new Date(task.doneDate).getTime();
+        countSP = taskTime >= sprintStartTime && taskTime <= sprintEndTime;
+      }
+      if (countSP) {
+        totalSP += task.size;
+      }
+    });
+    
+    return roundSP(totalSP);
   };
 
 
@@ -1474,7 +1501,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
                 const tooltipData = getInitiativeTooltip(initiative);
                 
                 return allSprintIds.map((sprintId, idx) => {
-                  const sp = getSprintSP(initiative, sprintId);
+                  const sp = getFilteredSprintSP(initiative, sprintId);
                   const showBlock = shouldShowColorBlock(initiative, sprintId);
                   const isFirst = idx === firstBlockIdx;
                   const isLast = idx === lastBlockIdx;
