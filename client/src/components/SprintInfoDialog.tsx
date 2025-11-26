@@ -58,9 +58,9 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
   const { toast } = useToast();
 
   const { data: sprintInfo, isLoading, error } = useQuery<SprintInfo>({
-    queryKey: ["/api/sprints", searchedSprintId, "info"],
+    queryKey: ["/api/sprints", searchedSprintId, "preview"],
     queryFn: async () => {
-      const response = await fetch(`/api/sprints/${searchedSprintId}/info`);
+      const response = await fetch(`/api/sprints/${searchedSprintId}/preview`);
       if (!response.ok) {
         throw new Error('Sprint not found');
       }

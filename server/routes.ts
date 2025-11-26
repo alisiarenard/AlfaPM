@@ -1214,6 +1214,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/sprints/:sprintId/preview", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Invalid sprint ID" 
+        });
+      }
+
+      const kaitenSprint = await kaitenClient.getSprint(sprintId);
+      if (!kaitenSprint) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Sprint not found in Kaiten" 
+        });
+      }
+
+      const sprint = {
+        sprintId: kaitenSprint.id,
+        boardId: kaitenSprint.board_id,
+        title: kaitenSprint.title,
+        velocity: kaitenSprint.velocity || 0,
+        startDate: kaitenSprint.start_date,
+        finishDate: kaitenSprint.finish_date,
+        actualFinishDate: kaitenSprint.actual_finish_date || null,
+        goal: kaitenSprint.goal || null,
+      };
+
+      const tasks: any[] = [];
+      
+      if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
+        for (const sprintCard of kaitenSprint.cards) {
+          const card = await kaitenClient.getCard(sprintCard.id);
+          
+          if (card.condition === 3) {
+            continue;
+          }
+
+          let initCardId = 0;
+          let initiativeTitle = null;
+          if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+            initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+            if (initCardId > 0) {
+              const initiative = await storage.getInitiative(initCardId.toString());
+              if (!initiative) {
+                const initiativeCard = await kaitenClient.getCard(initCardId);
+                initiativeTitle = initiativeCard.title;
+              } else {
+                initiativeTitle = initiative.title;
+              }
+            }
+          }
+
+          tasks.push({
+            id: card.id.toString(),
+            cardId: card.id,
+            title: card.title,
+            size: card.size || 0,
+            state: card.state === 3 ? "3-done" : (card.state === 2 ? "2-inProgress" : "1-queued"),
+            initiativeCardId: initCardId,
+            initiativeTitle: initiativeTitle,
+            doneDate: card.last_moved_to_done_at || null,
+          });
+        }
+      }
+
+      const sprintEndDate = kaitenSprint.actual_finish_date || kaitenSprint.finish_date;
+      const sprintStartDate = kaitenSprint.start_date;
+      const sprintEndTime = new Date(sprintEndDate).getTime();
+      const sprintStartTime = new Date(sprintStartDate).getTime();
+
+      const tasksInside = tasks.filter(task => {
+        if (!task.doneDate) return true;
+        const taskTime = new Date(task.doneDate).getTime();
+        return taskTime >= sprintStartTime && taskTime <= sprintEndTime;
+      });
+
+      const tasksOutside = tasks.filter(task => {
+        if (!task.doneDate) return false;
+        const taskTime = new Date(task.doneDate).getTime();
+        return taskTime < sprintStartTime || taskTime > sprintEndTime;
+      });
+
+      let totalSP = 0;
+      let doneSP = 0;
+      tasksInside.forEach(task => {
+        totalSP += task.size || 0;
+        if (task.state === "3-done") {
+          doneSP += task.size || 0;
+        }
+      });
+
+      const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
+
+      res.json({
+        sprint,
+        tasks: tasksInside,
+        tasksOutside: tasksOutside,
+        stats: {
+          totalSP,
+          doneSP,
+          deliveryPlanCompliance,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to retrieve sprint preview from Kaiten" 
+      });
+    }
+  });
+
   app.get("/api/sprints/:sprintId/info", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);
