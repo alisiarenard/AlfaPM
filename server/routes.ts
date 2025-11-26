@@ -1295,26 +1295,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprintEndTime = new Date(sprintEndDate).getTime();
       const sprintStartTime = new Date(sprintStartDate).getTime();
 
-      // tasksInside = задачи планировавшиеся в спринт (без deleted/archived)
+      // tasksInside = задачи без doneDate ИЛИ задачи с doneDate внутри дат спринта (без deleted/archived)
       const tasksInside = tasks.filter(task => {
         const condition = (task as any).condition;
         // Исключаем deleted(3) и archived(2)
         if (condition === 3 || condition === 2) return false;
-        // Остальные считаем внутри спринта
-        return true;
+        
+        // Если нет doneDate - включаем (queued/inProgress)
+        if (!task.doneDate) return true;
+        
+        // Если doneDate внутри дат спринта - включаем
+        const taskTime = new Date(task.doneDate).getTime();
+        return taskTime >= sprintStartTime && taskTime <= sprintEndTime;
       });
 
-      // tasksOutside = deleted/archived задачи (для информации, но не считаются в СПД)
+      // tasksOutside = задачи с doneDate вне дат спринта
       const tasksOutside = tasks.filter(task => {
         const condition = (task as any).condition;
-        return condition === 3 || condition === 2;
+        // Исключаем deleted/archived из tasksOutside
+        if (condition === 3 || condition === 2) return false;
+        
+        // Если нет doneDate - не считаем вне спринта
+        if (!task.doneDate) return false;
+        
+        // Если doneDate вне дат спринта - включаем
+        const taskTime = new Date(task.doneDate).getTime();
+        return taskTime < sprintStartTime || taskTime > sprintEndTime;
       });
 
-      // СПД = Done SP / (Done SP + Queued/InProgress SP)
+      // СПД = Done SP (в даты спринта) / Total SP (всех планируемых)
       let totalSP = 0;
       let doneSP = 0;
       tasksInside.forEach(task => {
         totalSP += task.size || 0;
+        // Done только если state=3-done И находится внутри дат спринта или без doneDate
         if (task.state === "3-done") {
           doneSP += task.size || 0;
         }
