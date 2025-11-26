@@ -798,16 +798,38 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
   // Рассчитать Investment Ratio для спринта (процент SP всех инициатив кроме "Поддержка бизнеса" от всех SP спринта)
   const calculateSprintIR = (sprintId: number): string => {
+    const sprintInfo = getSprintInfo(sprintId);
+    if (!sprintInfo) return '—';
+    
+    const sprintStartTime = new Date(sprintInfo.startDate).getTime();
+    const sprintEndTime = new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate).getTime();
+    
     let totalSP = 0;
     let spWithoutSupport = 0;
 
     initiatives.forEach(init => {
-      const sp = getSprintSP(init, sprintId);
-      totalSP += sp;
+      const tasks = getSprintTasks(init, sprintId);
+      
+      // Считаем SP только для задач без doneDate ИЛИ с doneDate внутри дат спринта
+      let initSP = 0;
+      tasks.forEach(task => {
+        let countSP = false;
+        if (!task.doneDate) {
+          countSP = true;
+        } else {
+          const taskTime = new Date(task.doneDate).getTime();
+          countSP = taskTime >= sprintStartTime && taskTime <= sprintEndTime;
+        }
+        if (countSP) {
+          initSP += task.size;
+        }
+      });
+      
+      totalSP += initSP;
       
       // Добавляем SP только если это НЕ "Поддержка бизнеса" (cardId !== 0)
       if (init.cardId !== 0) {
-        spWithoutSupport += sp;
+        spWithoutSupport += initSP;
       }
     });
 
