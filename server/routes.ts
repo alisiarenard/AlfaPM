@@ -1323,12 +1323,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return taskTime < sprintStartTime || taskTime > sprintEndTime;
       });
 
-      // СПД = Done SP (в даты спринта) / Total SP (всех планируемых)
+      // СПД = Done SP (в даты спринта) / Total SP (всех планируемых без deleted)
       let totalSP = 0;
       let doneSP = 0;
-      tasksInside.forEach(task => {
+      
+      // Всего SP = ВСЕ задачи (кроме deleted)
+      tasks.forEach(task => {
+        const condition = (task as any).condition;
+        if (condition === 3) return; // skip deleted
         totalSP += task.size || 0;
-        // Done только если state=3-done И находится внутри дат спринта или без doneDate
+      });
+      
+      // Done SP = только done задачи с doneDate внутри дат спринта
+      tasksInside.forEach(task => {
         if (task.state === "3-done") {
           doneSP += task.size || 0;
         }
