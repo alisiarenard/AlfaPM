@@ -580,9 +580,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const sprintInfo = teamSprints.find(s => s.sprintId === task.sprintId);
               const current = sprintsMap.get(task.sprintId) || { sp: 0, tasks: [] };
               
-              // Проверяем: добавляем SP только для done задач с doneDate внутри дат спринта
+              // Проверяем: добавляем SP для любых задач (без doneDate ИЛИ с doneDate внутри дат спринта)
               let countSP = false;
-              if (task.state === "3-done" && sprintInfo) {
+              if (sprintInfo) {
                 if (!task.doneDate) {
                   countSP = true;
                 } else {
