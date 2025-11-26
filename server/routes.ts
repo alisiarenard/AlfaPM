@@ -1241,13 +1241,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return taskDoneTime <= sprintEndTime;
       });
       
-      // totalSP = БЕЗ фильтрации (все задачи спринта)
+      // totalSP = только по задачам, завершённым в пределах спринта
       let totalSP = 0;
-      allSprintTasks.forEach(task => {
+      filteredTasks.forEach(task => {
         totalSP += task.size || 0;
       });
       
-      // doneSP = С фильтрацией (только done задачи, завершённые в пределах спринта)
+      // doneSP = только done задачи, завершённые в пределах спринта
       let doneSP = 0;
       filteredTasks.forEach(task => {
         if (task.state === '3-done') {
