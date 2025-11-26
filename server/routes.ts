@@ -2499,6 +2499,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`[Smart Sync] No cards in sprint ${sprintId}`);
             }
           } else {
+            console.log(`[SMART-SYNC] No active sprint (sprint_id is null). Old sprint ended, new one hasn't started yet.`);
+            // Синхронизируем задачи с инициативной доски, когда спринта нет
+            // Получаем текущий год для фильтрации
+            const currentYear = new Date().getFullYear();
+            const yearStart = new Date(`${currentYear}-01-01`).toISOString();
+            
+            const initiativeTaskCards = await kaitenClient.getCardsWithDateFilter({
+              boardId: team.initBoardId,
+              lastMovedToDoneAtAfter: yearStart,
+              limit: 1000
+            });
+            
+            console.log(`[SMART-SYNC] Got ${initiativeTaskCards.length} tasks from initiative board for current year`);
+            
+            for (const taskCard of initiativeTaskCards) {
+              try {
+                // Ищем инициативу в родительской цепочке
+                let initCardId: number | null = null;
+                
+                if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
+                  initCardId = await findInitiativeInParentChain(taskCard.parents_ids[0]);
+                } else {
+                  initCardId = 0;
+                }
+                
+                let state: "1-queued" | "2-inProgress" | "3-done";
+                if (taskCard.state === 3) {
+                  state = "3-done";
+                } else if (taskCard.state === 2) {
+                  state = "2-inProgress";
+                } else {
+                  state = "1-queued";
+                }
+                
+                const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
+                
+                await storage.syncTaskFromKaiten(
+                  taskCard.id,
+                  taskCard.board_id,
+                  taskCard.title,
+                  taskCard.created || new Date().toISOString(),
+                  state,
+                  taskCard.size || 0,
+                  condition,
+                  taskCard.archived || false,
+                  initCardId,
+                  taskCard.type?.name,
+                  taskCard.completed_at ?? undefined,
+                  null, // Нет спринта
+                  taskCard.last_moved_to_done_at ?? null,
+                  team.teamId
+                );
+                
+                tasksSynced++;
+              } catch (taskError) {
+                console.error(`[SMART-SYNC] Error syncing task ${taskCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
+              }
+            }
+            console.log(`[SMART-SYNC] Tasks synced from initiative board: ${tasksSynced}`);
           }
         } else {
         }
