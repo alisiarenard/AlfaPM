@@ -292,6 +292,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   for (const sprintCard of kaitenSprint.cards) {
                     const card = await kaitenClient.getCard(sprintCard.id);
                     
+                    // Пропускаем удаленные карточки (condition === 3)
+                    if (card.condition === 3) {
+                      continue;
+                    }
+                    
                     // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
                     let initCardId = 0;
                     if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
@@ -1421,6 +1426,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Сохраняем все карточки
         for (const card of validCards) {
           try {
+            // Пропускаем удаленные карточки (condition === 3)
+            if (card.condition === 3) {
+              continue;
+            }
+            
             // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
             let initCardId = 0;
             if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
@@ -2205,6 +2215,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               const card = await kaitenClient.getCard(sprintCard.id);
               
+              // Пропускаем удаленные карточки (condition === 3)
+              if (card.condition === 3) {
+                continue;
+              }
+              
               // Ищем инициативу в родительской цепочке
               let initCardId: number | null = null;
               
@@ -2485,6 +2500,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               for (const sprintCard of sprintDetails.cards) {
                 try {
                   const card = await kaitenClient.getCard(sprintCard.id);
+                  
+                  // Пропускаем удаленные карточки (condition === 3)
+                  if (card.condition === 3) {
+                    continue;
+                  }
                   
                   // Ищем инициативу в родительской цепочке
                   let initCardId: number | null = null;
