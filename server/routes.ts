@@ -1295,17 +1295,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprintEndTime = new Date(sprintEndDate).getTime();
       const sprintStartTime = new Date(sprintStartDate).getTime();
 
+      // tasksInside = задачи планировавшиеся в спринт (без deleted/archived)
       const tasksInside = tasks.filter(task => {
-        if (!task.doneDate) return true;
-        const taskTime = new Date(task.doneDate).getTime();
-        return taskTime >= sprintStartTime && taskTime <= sprintEndTime;
+        const condition = (task as any).condition;
+        // Исключаем deleted(3) и archived(2)
+        if (condition === 3 || condition === 2) return false;
+        // Остальные считаем внутри спринта
+        return true;
       });
 
-      // tasksOutside это deleted или archived задачи которые не должны считаться
-      const tasksOutside = tasks.filter(task => 
-        (task as any).condition === 3 || (task as any).condition === 2
-      );
+      // tasksOutside = deleted/archived задачи (для информации, но не считаются в СПД)
+      const tasksOutside = tasks.filter(task => {
+        const condition = (task as any).condition;
+        return condition === 3 || condition === 2;
+      });
 
+      // СПД = Done SP / (Done SP + Queued/InProgress SP)
       let totalSP = 0;
       let doneSP = 0;
       tasksInside.forEach(task => {
