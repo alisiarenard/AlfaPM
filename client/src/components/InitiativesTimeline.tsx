@@ -516,33 +516,6 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     return roundSP(sprint?.sp || 0);
   };
 
-  // Получить правильный SP для IR (только done задачи с doneDate в дат спринта)
-  const getSprintSPForIR = (initiative: Initiative, sprintId: number): number => {
-    const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
-    if (!sprint || !sprint.tasks) return 0;
-    
-    const sprintInfo = allSprintsWithGenerated.find(s => s.sprintId === sprintId);
-    if (!sprintInfo) return roundSP(sprint?.sp || 0); // Fallback если нет info
-    
-    const sprintStartTime = new Date(sprintInfo.startDate).getTime();
-    const sprintEndTime = new Date(sprintInfo.finishDate).getTime();
-    
-    let totalSP = 0;
-    sprint.tasks.forEach(task => {
-      if (task.state === "3-done") {
-        if (!task.doneDate) {
-          totalSP += task.size || 0;
-        } else {
-          const taskDoneTime = new Date(task.doneDate).getTime();
-          if (taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime) {
-            totalSP += task.size || 0;
-          }
-        }
-      }
-    });
-    
-    return roundSP(totalSP);
-  };
 
   // Получить задачи для конкретной инициативы в конкретном спринте
   const getSprintTasks = (initiative: Initiative, sprintId: number): TaskInSprint[] => {
