@@ -10,9 +10,10 @@ import { calculateInitiativesInvolvement } from "./utils/involvement";
  * Рекурсивно ищет инициативу в родительской цепочке карточки
  * @param parentCardId - ID родительской карточки
  * @param depth - глубина рекурсии (защита от бесконечных циклов)
+ * @param originalTaskId - ID исходной задачи (для логирования)
  * @returns ID инициативы или 0, если не найдена
  */
-async function findInitiativeInParentChain(parentCardId: number, depth = 0): Promise<number> {
+async function findInitiativeInParentChain(parentCardId: number, depth = 0, originalTaskId?: number): Promise<number> {
   // Защита от бесконечной рекурсии
   if (depth > 5) {
     return 0;
@@ -30,14 +31,13 @@ async function findInitiativeInParentChain(parentCardId: number, depth = 0): Pro
       return parentCardId;
     } else {
       // Тип НЕ подходит - продолжаем поиск вверх по цепочке
-      
       try {
         const parentCard = await kaitenClient.getCard(parentCardId);
         
         // Проверяем, есть ли у этой инициативы свой родитель
         if (parentCard.parents_ids && Array.isArray(parentCard.parents_ids) && parentCard.parents_ids.length > 0) {
           const grandParentId = parentCard.parents_ids[0];
-          return await findInitiativeInParentChain(grandParentId, depth + 1);
+          return await findInitiativeInParentChain(grandParentId, depth + 1, originalTaskId);
         } else {
           return 0;
         }
@@ -54,7 +54,7 @@ async function findInitiativeInParentChain(parentCardId: number, depth = 0): Pro
     // Проверяем, есть ли у родительской карточки свой родитель
     if (parentCard.parents_ids && Array.isArray(parentCard.parents_ids) && parentCard.parents_ids.length > 0) {
       const grandParentId = parentCard.parents_ids[0];
-      return await findInitiativeInParentChain(grandParentId, depth + 1);
+      return await findInitiativeInParentChain(grandParentId, depth + 1, originalTaskId);
     }
   } catch (error) {
   }
@@ -2515,6 +2515,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             console.log(`[SMART-SYNC] Got ${initiativeTaskCards.length} tasks from initiative board for current year`);
             
+            let tasksWithoutInitiative = 0;
+            let tasksWithInitiative = 0;
+            
             for (const taskCard of initiativeTaskCards) {
               try {
                 // Ищем инициативу в родительской цепочке
@@ -2524,6 +2527,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   initCardId = await findInitiativeInParentChain(taskCard.parents_ids[0]);
                 } else {
                   initCardId = 0;
+                }
+                
+                if (initCardId === 0) {
+                  tasksWithoutInitiative++;
+                } else {
+                  tasksWithInitiative++;
                 }
                 
                 let state: "1-queued" | "2-inProgress" | "3-done";
@@ -2559,7 +2568,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.error(`[SMART-SYNC] Error syncing task ${taskCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
               }
             }
-            console.log(`[SMART-SYNC] Tasks synced from initiative board: ${tasksSynced}`);
+            console.log(`[SMART-SYNC] Tasks synced from initiative board: ${tasksSynced} (${tasksWithInitiative} with initiative, ${tasksWithoutInitiative} without)`);
+            console.log(`[SMART-SYNC] IMPORTANT: Total fetched from Kaiten: ${initiativeTaskCards.length}, might need pagination for more`);
             } catch (sprintlessError) {
               const msg = sprintlessError instanceof Error ? sprintlessError.message : String(sprintlessError);
               console.error(`[SMART-SYNC] ERROR in sprintless sync:`, msg);
