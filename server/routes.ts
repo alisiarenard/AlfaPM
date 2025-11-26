@@ -6,10 +6,6 @@ import { kaitenClient } from "./kaiten";
 import { log } from "./vite";
 import { calculateInitiativesInvolvement } from "./utils/involvement";
 
-// Cache for sprint info (5 minutes TTL)
-const sprintInfoCache = new Map<number, { data: any; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 /**
  * Рекурсивно ищет инициативу в родительской цепочке карточки
  * @param parentCardId - ID родительской карточки
@@ -1223,110 +1219,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const kaitenSprint = await kaitenClient.getSprint(sprintId);
-      
-      if (!kaitenSprint) {
+      // Получаем спринт из БД
+      const sprint = await storage.getSprint(sprintId);
+      if (!sprint) {
         return res.status(404).json({ 
           success: false, 
-          error: "Sprint not found in Kaiten" 
+          error: "Sprint not found in database" 
         });
       }
 
+      // Получаем все задачи спринта из БД
+      const tasks = await storage.getTasksBySprint(sprintId);
       
-      const sprint = {
-        sprintId: kaitenSprint.id,
-        boardId: kaitenSprint.board_id || 0,
-        title: kaitenSprint.title,
-        velocity: kaitenSprint.velocity || 0,
-        startDate: kaitenSprint.start_date || '',
-        finishDate: kaitenSprint.finish_date || '',
-        actualFinishDate: kaitenSprint.actual_finish_date || null,
-        goal: kaitenSprint.goal || null,
-      };
-
-      const tasks = [];
+      // Подсчитываем статистику
       let totalSP = 0;
       let doneSP = 0;
-      let doneTasksCount = 0;
       
-      // Дата окончания спринта для фильтрации
-      const sprintEndDate = kaitenSprint.actual_finish_date || kaitenSprint.finish_date;
-      const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
-      
-      if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
-        
-        for (const sprintCard of kaitenSprint.cards) {
-          try {
-            const card = await kaitenClient.getCard(sprintCard.id);
-            
-            if (!card) {
-              continue;
-            }
-            
-            const cardSize = card.size || 0;
-            totalSP += cardSize;
-            
-            // Проверяем: была ли задача Done ДО окончания спринта
-            const isDone = card.state === 3;
-            const completedAt = card.completed_at || card.last_moved_to_done_at;
-            // Если нет даты завершения, считаем что завершена ДО окончания спринта
-            // (так как не можем доказать обратное, и задача в состоянии Done)
-            const wasDoneBeforeSprintEnd = isDone && (!completedAt || new Date(completedAt).getTime() <= sprintEndTime);
-            
-            if (isDone && wasDoneBeforeSprintEnd) {
-              doneSP += cardSize;
-              doneTasksCount++;
-            } else if (isDone && !wasDoneBeforeSprintEnd) {
-            }
-            
-            let initiativeTitle: string | null = null;
-            let initiativeCardId: number | null = null;
-
-            // Проверяем parents_ids для определения инициативы
-            if (card.parents_ids && card.parents_ids.length > 0) {
-              const parentCardId = card.parents_ids[0];
-              
-              // Проверяем, является ли родитель инициативой
-              const initiative = await storage.getInitiativeByCardId(parentCardId);
-              if (initiative) {
-                initiativeTitle = initiative.title;
-                initiativeCardId = initiative.cardId;
-              }
-            }
-            
-            // Если инициатива не найдена, это задача "Поддержка бизнеса"
-            if (!initiativeCardId) {
-              initiativeTitle = "Поддержка бизнеса";
-              initiativeCardId = 0;
-            }
-
-            // Добавляем в список задач ТОЛЬКО те, которые были Done до окончания спринта
-            if (isDone && wasDoneBeforeSprintEnd) {
-              tasks.push({
-                id: card.id.toString(),
-                cardId: card.id,
-                title: card.title,
-                size: cardSize,
-                state: card.state,
-                initiativeTitle,
-                initiativeCardId,
-              });
-            }
-          } catch (cardError) {
-            const errorMessage = cardError instanceof Error ? cardError.message : String(cardError);
-          }
+      tasks.forEach(task => {
+        const taskSize = task.size || 0;
+        totalSP += taskSize;
+        const isDone = task.state === '3-done';
+        if (isDone) {
+          doneSP += taskSize;
         }
-      }
-
-      const kaitenVelocity = kaitenSprint.velocity || 0;
+      });
       
+      const deliveryPlanCompliance = sprint.velocity > 0 ? Math.round((doneSP / sprint.velocity) * 100) : 0;
       
-      // Пока используем Done SP / Velocity для СПД
-      const deliveryPlanCompliance = kaitenVelocity > 0 ? Math.round((doneSP / kaitenVelocity) * 100) : 0;
+      // Преобразуем задачи в нужный формат для фронта
+      const formattedTasks = tasks.map(task => ({
+        id: task.id,
+        cardId: task.cardId,
+        title: task.title,
+        size: task.size,
+        state: task.state,
+        initiativeCardId: task.initCardId,
+      }));
       
       res.json({
         sprint,
-        tasks,
+        tasks: formattedTasks,
         stats: {
           totalSP,
           doneSP,
@@ -1336,7 +1268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ 
         success: false, 
-        error: "Failed to retrieve sprint info from Kaiten" 
+        error: "Failed to retrieve sprint info" 
       });
     }
   });
