@@ -1418,11 +1418,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Подсчитываем SP только по tasksInside
+      // СПД = Done SP (в даты спринта) / Total SP (всех планируемых)
       let totalSP = 0;
       let doneSP = 0;
-      tasksInside.forEach(task => {
+      
+      // Всего SP = ВСЕ задачи
+      allSprintTasks.forEach(task => {
         totalSP += task.size || 0;
+      });
+      
+      // Done SP = только done задачи с doneDate внутри дат спринта
+      tasksInside.forEach(task => {
         if (task.state === '3-done') {
           doneSP += task.size || 0;
         }
