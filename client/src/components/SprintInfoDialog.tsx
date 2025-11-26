@@ -203,8 +203,12 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
                       <span data-testid="text-sprint-total-sp">{roundSP(sprintInfo.stats.totalSP)}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Done SP:</span>{' '}
+                      <span className="text-muted-foreground">Done SP (от бэка):</span>{' '}
                       <span data-testid="text-sprint-done-sp">{roundSP(sprintInfo.stats.doneSP)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Done SP (сумма задач):</span>{' '}
+                      <span>{roundSP(sprintInfo.tasks.reduce((sum, task) => sum + task.size, 0))}</span>
                     </div>
                     <div className="col-span-2">
                       <span className="text-muted-foreground">Соблюдение плана доставки (СПД):</span>{' '}
