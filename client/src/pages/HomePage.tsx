@@ -778,7 +778,16 @@ export default function HomePage() {
       // Создаем лист "Инициативы"
       const initiativesWorksheet = workbook.addWorksheet('Инициативы');
       
-      // Устанавливаем ширину колонок
+      // Получаем уникальные команды и сортируем их
+      const uniqueTeamsMap = new Map<string, any>();
+      allInitiatives.forEach((initiative: any) => {
+        if (initiative.team && initiative.team.teamId && !uniqueTeamsMap.has(initiative.team.teamId)) {
+          uniqueTeamsMap.set(initiative.team.teamId, initiative.team);
+        }
+      });
+      const sortedTeams = Array.from(uniqueTeamsMap.values()).sort((a, b) => a.teamName.localeCompare(b.teamName));
+      
+      // Устанавливаем ширину колонок (базовые 13 + одна на каждую команду)
       initiativesWorksheet.columns = [
         { width: 15 }, // Тип
         { width: 40 }, // Инициативы
@@ -792,15 +801,18 @@ export default function HomePage() {
         { width: 15 }, // Эффект (план)
         { width: 15 }, // Эффект (факт)
         { width: 18 }, // Value/Cost (план)
-        { width: 18 }  // Value/Cost (факт)
+        { width: 18 }, // Value/Cost (факт)
+        ...sortedTeams.map(() => ({ width: 12 })) // Колонки для каждой команды
       ];
 
       // Добавляем заголовок
-      const headerRow = initiativesWorksheet.addRow([
+      const headerValues = [
         'Тип', 'Инициативы', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 
         'Затраты (план)', 'Затраты (факт)', 'Тип эффект', 'эффект по данным', 
-        'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)'
-      ]);
+        'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)',
+        ...sortedTeams.map(team => team.teamName)
+      ];
+      const headerRow = initiativesWorksheet.addRow(headerValues);
       
       // Применяем форматирование к заголовку
       headerRow.eachCell((cell, colNumber) => {
@@ -857,12 +869,18 @@ export default function HomePage() {
         let totalPlannedCost = 0;
         let totalActualCost = 0;
         
+        // Подсчитываем SP по каждой команде
+        const spByTeamId = new Map<string, number>();
+        
         initiatives.forEach((initiative: any) => {
           const team = initiative.team;
           const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
           const plannedSize = initiative.size || 0;
           totalPlannedCost += plannedSize * team.spPrice;
           totalActualCost += actualSize * team.spPrice;
+          
+          // Сохраняем SP по команде
+          spByTeamId.set(team.teamId, (spByTeamId.get(team.teamId) || 0) + actualSize);
         });
 
         // Для Compliance и Enabler эффект = затратам
@@ -903,7 +921,8 @@ export default function HomePage() {
           plannedValue,
           factValue,
           plannedValueCost,
-          factValueCost
+          factValueCost,
+          spByTeamId
         });
       });
 
@@ -942,7 +961,15 @@ export default function HomePage() {
           ? Math.round((sumFactValue / sumActualCost) * 10) / 10
           : '—';
 
-        const totalRow = initiativesWorksheet.addRow([
+        // Суммируем SP по командам для итоговой строки
+        const teamSpTotals = new Map<string, number>();
+        initiativesWithActualCosts.forEach((init) => {
+          init.spByTeamId?.forEach((sp: number, teamId: string) => {
+            teamSpTotals.set(teamId, (teamSpTotals.get(teamId) || 0) + sp);
+          });
+        });
+        
+        const totalRowValues = [
           'Всего',
           typeName, // Тип инициативы
           '',
@@ -955,8 +982,11 @@ export default function HomePage() {
           sumPlannedValue || '—',
           sumFactValue || '—',
           totalPlannedValueCost,
-          totalFactValueCost
-        ]);
+          totalFactValueCost,
+          ...sortedTeams.map(team => teamSpTotals.get(team.teamId) || 0)
+        ];
+        
+        const totalRow = initiativesWorksheet.addRow(totalRowValues);
         
         // Применяем светлый фон, шрифт и выравнивание к строке "Всего"
         totalRow.eachCell((cell, colNumber) => {
@@ -984,7 +1014,7 @@ export default function HomePage() {
 
         // Потом добавляем детали инициатив (только с фактическими затратами)
         initiativesWithActualCosts.forEach((init) => {
-          const row = initiativesWorksheet.addRow([
+          const rowValues = [
             init.type,
             init.title,
             formatDate(init.dueDate),
@@ -997,8 +1027,10 @@ export default function HomePage() {
             init.plannedValue ?? '—',
             init.factValue ?? '—',
             init.plannedValueCost ?? '—',
-            init.factValueCost ?? '—'
-          ]);
+            init.factValueCost ?? '—',
+            ...sortedTeams.map(team => init.spByTeamId?.get(team.teamId) || 0)
+          ];
+          const row = initiativesWorksheet.addRow(rowValues);
           
           // Применяем шрифт, выравнивание и числовой формат к обычным строкам
           row.eachCell((cell, colNumber) => {
