@@ -1,5 +1,6 @@
 import { InitiativesTimeline } from "@/components/InitiativesTimeline";
 import { TeamHeader } from "@/components/TeamHeader";
+import { MetricsCharts } from "@/components/MetricsCharts";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -2342,9 +2343,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         {viewTab === "initiatives" ? (
           <InitiativesTimeline initiatives={sortedInitiatives} team={teamData} sprints={sprints || []} />
         ) : (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            {/* Здесь будут метрики */}
-          </div>
+          <MetricsCharts team={team} selectedYear={selectedYear} />
         )}
       </div>
     </div>

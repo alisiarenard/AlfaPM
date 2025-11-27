@@ -3410,6 +3410,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Динамика метрик по спринтам для графиков
+  app.get("/api/metrics/dynamics", async (req, res) => {
+    try {
+      const teamId = req.query.teamId as string;
+      const yearParam = req.query.year as string;
+      
+      if (!teamId) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "teamId parameter is required" 
+        });
+      }
+
+      const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
+      
+      const team = await storage.getTeamById(teamId);
+      if (!team) {
+        return res.status(404).json({ 
+          success: false, 
+          error: "Team not found" 
+        });
+      }
+
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+
+      // Получаем инициативы команды
+      const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+      const initiativesMap = new Map(initiatives.map(init => [init.cardId, init]));
+      
+      const metricsData: Array<{
+        sprintId: number;
+        sprintTitle: string;
+        startDate: string;
+        finishDate: string;
+        velocity: number;
+        innovationRate: number;
+        deliveryPlanCompliance: number;
+      }> = [];
+
+      if (team.sprintBoardId) {
+        // Команда со спринтами
+        const sprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+        const yearSprints = sprints
+          .filter(sprint => {
+            const sprintStart = new Date(sprint.startDate);
+            return sprintStart >= yearStart && sprintStart <= yearEnd;
+          })
+          .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+        for (const sprint of yearSprints) {
+          const allTasks = await storage.getTasksBySprint(sprint.sprintId);
+          
+          // Фильтруем задачи по doneDate внутри спринта
+          const sprintEndDate = sprint.actualFinishDate || sprint.finishDate;
+          const sprintStartTime = new Date(sprint.startDate).getTime();
+          const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
+          
+          let totalSP = 0;
+          let doneSP = 0;
+          let innovationSP = 0;
+          
+          for (const task of allTasks) {
+            const taskSize = task.size || 0;
+            totalSP += taskSize;
+            
+            // Done tasks inside sprint dates
+            if (task.state === '3-done' && task.condition !== '3 - deleted') {
+              if (task.doneDate) {
+                const taskDoneTime = new Date(task.doneDate).getTime();
+                if (taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime) {
+                  doneSP += taskSize;
+                  
+                  // Check if task is from innovation initiative
+                  if (task.initCardId) {
+                    const init = initiativesMap.get(task.initCardId);
+                    if (init && (init.type === 'Epic' || init.type === 'Compliance' || init.type === 'Enabler')) {
+                      innovationSP += taskSize;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+          const velocity = doneSP;
+          const innovationRate = doneSP > 0 ? Math.round((innovationSP / doneSP) * 100) : 0;
+          const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
+          
+          metricsData.push({
+            sprintId: sprint.sprintId,
+            sprintTitle: sprint.title || `Sprint ${sprint.sprintId}`,
+            startDate: sprint.startDate,
+            finishDate: sprint.finishDate,
+            velocity,
+            innovationRate,
+            deliveryPlanCompliance
+          });
+        }
+      } else {
+        // Команда без спринтов - группируем по месяцам
+        const tasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
+        const doneTasks = tasks.filter(t => t.state === '3-done' && t.condition !== '3 - deleted');
+        
+        // Группируем по месяцам
+        const monthlyData = new Map<string, { totalSP: number; doneSP: number; innovationSP: number }>();
+        
+        for (let month = 0; month < 12; month++) {
+          const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+          monthlyData.set(monthKey, { totalSP: 0, doneSP: 0, innovationSP: 0 });
+        }
+        
+        for (const task of doneTasks) {
+          if (task.doneDate) {
+            const doneDate = new Date(task.doneDate);
+            const monthKey = `${doneDate.getFullYear()}-${String(doneDate.getMonth() + 1).padStart(2, '0')}`;
+            const data = monthlyData.get(monthKey);
+            if (data) {
+              const taskSize = task.size || 0;
+              data.totalSP += taskSize;
+              data.doneSP += taskSize;
+              
+              if (task.initCardId) {
+                const init = initiativesMap.get(task.initCardId);
+                if (init && (init.type === 'Epic' || init.type === 'Compliance' || init.type === 'Enabler')) {
+                  data.innovationSP += taskSize;
+                }
+              }
+            }
+          }
+        }
+        
+        const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        
+        for (const [monthKey, data] of monthlyData.entries()) {
+          const [yearStr, monthStr] = monthKey.split('-');
+          const monthIndex = parseInt(monthStr) - 1;
+          
+          const velocity = data.doneSP;
+          const innovationRate = data.doneSP > 0 ? Math.round((data.innovationSP / data.doneSP) * 100) : 0;
+          const deliveryPlanCompliance = data.totalSP > 0 ? Math.round((data.doneSP / data.totalSP) * 100) : 100;
+          
+          metricsData.push({
+            sprintId: -monthIndex - 1,
+            sprintTitle: monthNames[monthIndex],
+            startDate: new Date(parseInt(yearStr), monthIndex, 1).toISOString(),
+            finishDate: new Date(parseInt(yearStr), monthIndex + 1, 0).toISOString(),
+            velocity,
+            innovationRate,
+            deliveryPlanCompliance
+          });
+        }
+      }
+
+      res.json({
+        success: true,
+        teamId,
+        year,
+        hasSprints: !!team.sprintBoardId,
+        data: metricsData
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to get metrics dynamics" 
+      });
+    }
+  });
+
   app.get("/api/kaiten/sprint-raw/:sprintId", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);
