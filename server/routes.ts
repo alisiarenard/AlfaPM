@@ -595,18 +595,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 sprintInfo = sprintInfoCache.get(task.sprintId);
               }
               
-              // Проверяем: добавляем SP для любых задач (без doneDate ИЛИ с doneDate внутри дат спринта)
-              // И НЕ добавляем SP для удаленных задач
+              // Считаем SP только для done-задач (как в cost-structure API)
               let countSP = false;
-              if (sprintInfo && task.condition !== '3 - deleted') {
-                if (!task.doneDate) {
-                  countSP = true;
-                } else {
-                  const sprintStartTime = new Date(sprintInfo.startDate).getTime();
-                  const sprintEndTime = new Date(sprintInfo.finishDate).getTime();
-                  const taskDoneTime = new Date(task.doneDate).getTime();
-                  countSP = taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime;
-                }
+              if (task.state === '3-done' && task.condition !== '3 - deleted') {
+                countSP = true;
               }
               
               console.log(`[Timeline SP] Init: ${initiative.cardId}, Task: ${task.id}, Sprint: ${task.sprintId}, Size: ${task.size}, DoneDate: ${task.doneDate}, CountSP: ${countSP}, SprintInfo: ${sprintInfo ? 'Found' : 'NOT FOUND'}`);
