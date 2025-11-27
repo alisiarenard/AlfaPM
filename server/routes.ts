@@ -3544,7 +3544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
         
-        for (const [monthKey, data] of monthlyData.entries()) {
+        Array.from(monthlyData.entries()).forEach(([monthKey, data]) => {
           const [yearStr, monthStr] = monthKey.split('-');
           const monthIndex = parseInt(monthStr) - 1;
           
@@ -3561,7 +3561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             innovationRate,
             deliveryPlanCompliance
           });
-        }
+        });
       }
 
       res.json({
