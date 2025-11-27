@@ -543,6 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const initBoardId = parseInt(req.params.initBoardId);
       const sprintBoardId = req.query.sprintBoardId ? parseInt(req.query.sprintBoardId as string) : null;
+      const teamId = req.query.teamId as string | null;
       
       if (isNaN(initBoardId)) {
         return res.status(400).json({ 
@@ -567,10 +568,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Получаем все таски для данной инициативы
           const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
           
-          // Если указан sprintBoardId - фильтруем только задачи из спринтов команды
-          const tasks = teamSprintIds 
-            ? allTasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId))
-            : allTasks;
+          // Фильтруем задачи:
+          // 1. По спринтам команды (если указан sprintBoardId)
+          // 2. По teamId (если указан) - для соответствия логике cost-structure
+          let tasks = allTasks;
+          if (teamSprintIds) {
+            tasks = tasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId));
+          }
+          if (teamId) {
+            tasks = tasks.filter(task => task.teamId === teamId);
+          }
           
           // Группируем по sprint_id и собираем задачи
           const sprintsMap = new Map<number, { sp: number; tasks: any[] }>();

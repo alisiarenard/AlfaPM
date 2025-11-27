@@ -700,7 +700,7 @@ export default function HomePage() {
       // Получаем инициативы для всех выбранных команд
       const selectedTeamsData = departmentTeams?.filter(t => selectedTeams.has(t.teamId)) || [];
       const initiativesPromises = selectedTeamsData.map(async (team) => {
-        const url = `/api/initiatives/board/${team.initBoardId}?sprintBoardId=${team.sprintBoardId}&_t=${Date.now()}`;
+        const url = `/api/initiatives/board/${team.initBoardId}?sprintBoardId=${team.sprintBoardId}&teamId=${team.teamId}&_t=${Date.now()}`;
         const response = await fetch(url);
         if (!response.ok) return [];
         const initiatives = await response.json();
