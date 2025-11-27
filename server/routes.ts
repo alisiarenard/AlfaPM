@@ -3079,17 +3079,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tasksWithInitiative++;
           const initiative = initiativesMap.get(task.initCardId);
           if (initiative && initiative.type) {
-            // Применяем маппинг к типу инициативы
-            let displayType = initiative.type;
-            if (typeMapping[initiative.type]) {
-              displayType = typeMapping[initiative.type];
-            } else {
-              // Тип НЕ в маппинге - используем как есть
+            // ТОЛЬКО считаем Epic, Compliance, Enabler инициативы (как в Excel)
+            if (initiative.type === 'Epic' || initiative.type === 'Compliance' || initiative.type === 'Enabler') {
+              typeStats[initiative.type] = (typeStats[initiative.type] || 0) + taskSize;
             }
-            typeStats[displayType] = (typeStats[displayType] || 0) + taskSize;
-          } else {
-            // Инициатива не найдена или нет типа - в "Др. доработки"
-            typeStats['Др. доработки'] = (typeStats['Др. доработки'] || 0) + taskSize;
           }
         } else {
           tasksWithoutInitiative++;
