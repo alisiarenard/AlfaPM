@@ -1696,13 +1696,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           kaitenSprint.goal || null
         );
         
-        console.log(`[CHECK-SYNC] Sprint ${sprintId} synced successfully!`);
+        console.error(`[CHECK-SYNC] Sprint ${sprintId} synced successfully!`);
+        console.error(`[CHECK-SYNC] Sprint data saved:`, JSON.stringify({
+          id: kaitenSprint.id,
+          title: kaitenSprint.title,
+          board_id: kaitenSprint.board_id,
+          start_date: kaitenSprint.start_date,
+          finish_date: kaitenSprint.finish_date,
+          cards_count: kaitenSprint.cards?.length || 0
+        }));
         
         return res.json({
           success: true,
           synced: true,
           sprintId,
-          sprintTitle: kaitenSprint.title
+          sprintTitle: kaitenSprint.title,
+          sprintData: {
+            id: kaitenSprint.id,
+            title: kaitenSprint.title,
+            board_id: kaitenSprint.board_id,
+            start_date: kaitenSprint.start_date,
+            finish_date: kaitenSprint.finish_date,
+            actual_finish_date: kaitenSprint.actual_finish_date,
+            velocity: kaitenSprint.velocity,
+            cards_count: kaitenSprint.cards?.length || 0,
+            cards: kaitenSprint.cards?.slice(0, 5).map((c: any) => ({ id: c.id, title: c.title, sprint_id: c.sprint_id })) || []
+          }
         });
         
       } catch (kaitenError) {
