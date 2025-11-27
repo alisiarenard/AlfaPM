@@ -2,12 +2,9 @@ import { Users, RefreshCw, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import type { Team, Initiative, TeamRow } from "@shared/schema";
 import { SprintInfoDialog } from "@/components/SprintInfoDialog";
-
-export type ViewTab = "initiatives" | "metrics";
 
 interface TeamHeaderProps {
   team: Team;
@@ -17,11 +14,9 @@ interface TeamHeaderProps {
   onFilterChange: (checked: boolean) => void;
   onSync?: () => void;
   isSyncing?: boolean;
-  viewTab: ViewTab;
-  onViewTabChange: (tab: ViewTab) => void;
 }
 
-export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilterChange, onSync, isSyncing, viewTab, onViewTabChange }: TeamHeaderProps) {
+export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilterChange, onSync, isSyncing }: TeamHeaderProps) {
   const [sprintInfoOpen, setSprintInfoOpen] = useState(false);
 
   const calculateInnovationRate = (): string => {

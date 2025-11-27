@@ -112,6 +112,7 @@ export default function HomePage() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState<string>("");
+  const [viewTab, setViewTab] = useState<"initiatives" | "metrics">("initiatives");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
@@ -1474,21 +1475,47 @@ export default function HomePage() {
                   </DropdownMenu>
                 </div>
               </div>
-              <TabsList data-testid="tabs-teams">
-                {departmentTeams.map((team) => (
-                  <TabsTrigger 
-                    key={team.teamId} 
-                    value={team.teamId}
-                    data-testid={`tab-team-${team.teamId}`}
+              <div className="flex items-center justify-between">
+                <TabsList data-testid="tabs-teams">
+                  {departmentTeams.map((team) => (
+                    <TabsTrigger 
+                      key={team.teamId} 
+                      value={team.teamId}
+                      data-testid={`tab-team-${team.teamId}`}
+                    >
+                      {team.teamName}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <div className="flex gap-1 bg-muted rounded-md p-1">
+                  <button
+                    onClick={() => setViewTab("initiatives")}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      viewTab === "initiatives" 
+                        ? "bg-background text-foreground shadow-sm" 
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-testid="tab-view-initiatives"
                   >
-                    {team.teamName}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+                    Инициативы
+                  </button>
+                  <button
+                    onClick={() => setViewTab("metrics")}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                      viewTab === "metrics" 
+                        ? "bg-background text-foreground shadow-sm" 
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-testid="tab-view-metrics"
+                  >
+                    Метрики
+                  </button>
+                </div>
+              </div>
               
               {departmentTeams.map((team) => (
                 <TabsContent key={team.teamId} value={team.teamId}>
-                  <TeamInitiativesTab team={team} showActiveOnly={showActiveOnly} setShowActiveOnly={setShowActiveOnly} selectedYear={selectedYear} />
+                  <TeamInitiativesTab team={team} showActiveOnly={showActiveOnly} setShowActiveOnly={setShowActiveOnly} selectedYear={selectedYear} viewTab={viewTab} />
                 </TabsContent>
               ))}
             </Tabs>
@@ -2039,7 +2066,7 @@ export default function HomePage() {
   );
 }
 
-function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedYear }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void; selectedYear: string }) {
+function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedYear, viewTab }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void; selectedYear: string; viewTab: "initiatives" | "metrics" }) {
   const { toast } = useToast();
   
   const { data: timelineData, isLoading: timelineLoading, error: initiativesError } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
@@ -2312,7 +2339,13 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         isSyncing={syncAllMutation.isPending}
       />
       <div className="overflow-auto custom-scrollbar pr-4" style={{ height: 'calc(100vh - 400px)' }}>
-        <InitiativesTimeline initiatives={sortedInitiatives} team={teamData} sprints={sprints || []} />
+        {viewTab === "initiatives" ? (
+          <InitiativesTimeline initiatives={sortedInitiatives} team={teamData} sprints={sprints || []} />
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            {/* Здесь будут метрики */}
+          </div>
+        )}
       </div>
     </div>
   );
