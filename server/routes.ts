@@ -2883,7 +2883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // Команда вообще без спринтовой доски - берем по doneDate
           const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
-          const newTasks = teamTasks.filter(task => !processedTaskIds.has(task.cardId));
+          const newTasks = teamTasks.filter(task => task.condition !== '3 - deleted' && !processedTaskIds.has(task.cardId));
           newTasks.forEach(task => {
             relevantTasks.push(task);
             processedTaskIds.add(task.cardId);
@@ -3031,7 +3031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           // Команда вообще без спринтовой доски - берем по doneDate
           const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
-          const newTasks = teamTasks.filter(task => !processedTaskIds.has(task.cardId));
+          const newTasks = teamTasks.filter(task => task.condition !== '3 - deleted' && !processedTaskIds.has(task.cardId));
           newTasks.forEach(task => {
             relevantTasks.push(task);
             processedTaskIds.add(task.cardId);
