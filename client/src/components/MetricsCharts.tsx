@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { TeamRow } from "@shared/schema";
 
 interface MetricsChartsProps {
@@ -25,6 +24,8 @@ interface MetricsDynamicsResponse {
   hasSprints: boolean;
   data: MetricDataPoint[];
 }
+
+const CHART_COLOR = "#cd253d";
 
 export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const { data: metricsData, isLoading, error } = useQuery<MetricsDynamicsResponse>({
@@ -60,7 +61,6 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   }
 
   const chartData = metricsData?.data || [];
-  const hasSprints = metricsData?.hasSprints;
 
   if (chartData.length === 0) {
     return (
@@ -70,142 +70,134 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     );
   }
 
-  const xAxisLabel = hasSprints ? "Спринт" : "Месяц";
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Innovation Rate</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="sprintTitle" 
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  tickLine={{ stroke: 'hsl(var(--border))' }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <YAxis 
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  tickLine={{ stroke: 'hsl(var(--border))' }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
-                  }}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  formatter={(value: number) => [`${value}%`, 'IR']}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="innovationRate" 
-                  stroke="#cd253d" 
-                  strokeWidth={2}
-                  dot={{ fill: '#cd253d', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: '#cd253d' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col">
+        <div className="h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis 
+                dataKey="sprintTitle" 
+                tick={false}
+                tickLine={false}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+              />
+              <YAxis 
+                domain={[0, 100]}
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={{ stroke: 'hsl(var(--border))' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '6px'
+                }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                formatter={(value: number) => [`${value}%`, 'IR']}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="innovationRate" 
+                stroke={CHART_COLOR} 
+                strokeWidth={2}
+                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
+                activeDot={{ r: 4, fill: CHART_COLOR }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="text-center text-sm font-medium text-muted-foreground mt-2">
+          Innovation Rate
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Velocity (SP)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="sprintTitle" 
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  tickLine={{ stroke: 'hsl(var(--border))' }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <YAxis 
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  tickLine={{ stroke: 'hsl(var(--border))' }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
-                  }}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  formatter={(value: number) => [`${value} SP`, 'Velocity']}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="velocity" 
-                  stroke="#2563eb" 
-                  strokeWidth={2}
-                  dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: '#2563eb' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col">
+        <div className="h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis 
+                dataKey="sprintTitle" 
+                tick={false}
+                tickLine={false}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+              />
+              <YAxis 
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={{ stroke: 'hsl(var(--border))' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '6px'
+                }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                formatter={(value: number) => [`${value} SP`, 'Velocity']}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="velocity" 
+                stroke={CHART_COLOR} 
+                strokeWidth={2}
+                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
+                activeDot={{ r: 4, fill: CHART_COLOR }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="text-center text-sm font-medium text-muted-foreground mt-2">
+          Velocity (SP)
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">СПД (Соответствие Плану Доставки)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="sprintTitle" 
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  tickLine={{ stroke: 'hsl(var(--border))' }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                />
-                <YAxis 
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                  tickLine={{ stroke: 'hsl(var(--border))' }}
-                  axisLine={{ stroke: 'hsl(var(--border))' }}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
-                  }}
-                  labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  formatter={(value: number) => [`${value}%`, 'СПД']}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="deliveryPlanCompliance" 
-                  stroke="#16a34a" 
-                  strokeWidth={2}
-                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: '#16a34a' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col">
+        <div className="h-[250px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis 
+                dataKey="sprintTitle" 
+                tick={false}
+                tickLine={false}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+              />
+              <YAxis 
+                domain={[0, 100]}
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={{ stroke: 'hsl(var(--border))' }}
+                axisLine={{ stroke: 'hsl(var(--border))' }}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '6px'
+                }}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                formatter={(value: number) => [`${value}%`, 'СПД']}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="deliveryPlanCompliance" 
+                stroke={CHART_COLOR} 
+                strokeWidth={2}
+                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
+                activeDot={{ r: 4, fill: CHART_COLOR }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="text-center text-sm font-medium text-muted-foreground mt-2">
+          СПД (Соответствие Плану Доставки)
+        </div>
+      </div>
     </div>
   );
 }
