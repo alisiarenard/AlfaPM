@@ -30,9 +30,14 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const { data: metricsData, isLoading, error } = useQuery<MetricsDynamicsResponse>({
     queryKey: ["/api/metrics/dynamics", team.teamId, selectedYear],
     queryFn: async () => {
+      console.log(`[MetricsCharts] Fetching metrics for team ${team.teamId}, year ${selectedYear}`);
       const response = await fetch(`/api/metrics/dynamics?teamId=${team.teamId}&year=${selectedYear}`);
-      if (!response.ok) throw new Error('Failed to fetch metrics dynamics');
-      return response.json();
+      const data = await response.json();
+      console.log(`[MetricsCharts] Response:`, data);
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to fetch metrics dynamics');
+      }
+      return data;
     },
     enabled: !!team.teamId,
   });
@@ -46,9 +51,10 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   }
 
   if (error) {
+    console.error('[MetricsCharts] Error:', error);
     return (
       <div className="flex items-center justify-center h-full text-destructive">
-        Ошибка загрузки данных
+        Ошибка загрузки данных: {error instanceof Error ? error.message : 'Unknown error'}
       </div>
     );
   }
