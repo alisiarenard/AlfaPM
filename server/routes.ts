@@ -1582,6 +1582,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/sprints/check-sync/:teamId", async (req, res) => {
+    try {
+      const teamId = req.params.teamId;
+      console.log(`[CHECK-SYNC] Checking current sprint for team ${teamId}`);
+      
+      const team = await storage.getTeamById(teamId);
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          error: "Team not found"
+        });
+      }
+      
+      if (!team.sprintBoardId || !team.spaceId) {
+        console.log(`[CHECK-SYNC] Team ${teamId} has no sprint board or space configured`);
+        return res.json({
+          success: true,
+          synced: false,
+          reason: "No sprint board or space configured"
+        });
+      }
+      
+      try {
+        console.log(`[CHECK-SYNC] Fetching cards from space ${team.spaceId}, board ${team.sprintBoardId}`);
+        const cards = await kaitenClient.getBoardCardsFromSpace(team.spaceId, team.sprintBoardId);
+        
+        if (!cards || cards.length === 0) {
+          console.log(`[CHECK-SYNC] No cards found on sprint board`);
+          return res.json({
+            success: true,
+            synced: false,
+            reason: "No cards on sprint board"
+          });
+        }
+        
+        const firstCard = cards[0];
+        const sprintId = firstCard.sprint_id;
+        
+        if (!sprintId) {
+          console.log(`[CHECK-SYNC] First card has no sprint_id`);
+          return res.json({
+            success: true,
+            synced: false,
+            reason: "First card has no sprint"
+          });
+        }
+        
+        console.log(`[CHECK-SYNC] First card sprint_id: ${sprintId}`);
+        
+        const existingSprint = await storage.getSprint(sprintId);
+        if (existingSprint) {
+          console.log(`[CHECK-SYNC] Sprint ${sprintId} already exists in DB`);
+          return res.json({
+            success: true,
+            synced: false,
+            sprintExists: true,
+            sprintId
+          });
+        }
+        
+        console.log(`[CHECK-SYNC] Sprint ${sprintId} not in DB, fetching from Kaiten...`);
+        const kaitenSprint = await kaitenClient.getSprint(sprintId);
+        
+        if (!kaitenSprint || !kaitenSprint.board_id || !kaitenSprint.start_date || !kaitenSprint.finish_date) {
+          console.log(`[CHECK-SYNC] Sprint ${sprintId} missing required fields`);
+          return res.json({
+            success: true,
+            synced: false,
+            reason: "Sprint missing required fields"
+          });
+        }
+        
+        await storage.syncSprintFromKaiten(
+          kaitenSprint.id,
+          kaitenSprint.board_id,
+          kaitenSprint.title,
+          kaitenSprint.velocity || 0,
+          kaitenSprint.start_date,
+          kaitenSprint.finish_date,
+          kaitenSprint.actual_finish_date || null,
+          kaitenSprint.goal || null
+        );
+        
+        console.log(`[CHECK-SYNC] Sprint ${sprintId} synced successfully!`);
+        
+        return res.json({
+          success: true,
+          synced: true,
+          sprintId,
+          sprintTitle: kaitenSprint.title
+        });
+        
+      } catch (kaitenError) {
+        console.error(`[CHECK-SYNC] Kaiten API error:`, kaitenError instanceof Error ? kaitenError.message : kaitenError);
+        return res.json({
+          success: true,
+          synced: false,
+          reason: "Kaiten API error",
+          fromDb: true
+        });
+      }
+      
+    } catch (error) {
+      console.error(`[CHECK-SYNC] Error:`, error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to check sprint sync"
+      });
+    }
+  });
+
   app.post("/api/sprints/:sprintId/save", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);
