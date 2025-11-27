@@ -130,7 +130,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
       <div className="flex flex-col">
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="sprintTitle" 
@@ -173,7 +173,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
       <div className="flex flex-col">
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="sprintTitle" 
@@ -214,7 +214,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
       <div className="flex flex-col">
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="sprintTitle" 
