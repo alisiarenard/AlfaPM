@@ -1696,21 +1696,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
           kaitenSprint.goal || null
         );
         
-        console.error(`[CHECK-SYNC] Sprint ${sprintId} synced successfully!`);
-        console.error(`[CHECK-SYNC] Sprint data saved:`, JSON.stringify({
-          id: kaitenSprint.id,
-          title: kaitenSprint.title,
-          board_id: kaitenSprint.board_id,
-          start_date: kaitenSprint.start_date,
-          finish_date: kaitenSprint.finish_date,
-          cards_count: kaitenSprint.cards?.length || 0
-        }));
+        console.log(`[CHECK-SYNC] Sprint ${sprintId} saved. Now syncing tasks...`);
+        
+        let tasksSynced = 0;
+        if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards) && kaitenSprint.cards.length > 0) {
+          for (const sprintCard of kaitenSprint.cards) {
+            try {
+              const card = await kaitenClient.getCard(sprintCard.id);
+              
+              if (card.condition === 3) {
+                continue;
+              }
+              
+              let initCardId: number | null = null;
+              if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+              } else {
+                initCardId = 0;
+              }
+              
+              let state: "1-queued" | "2-inProgress" | "3-done";
+              if (card.state === 3) {
+                state = "3-done";
+              } else if (card.state === 2) {
+                state = "2-inProgress";
+              } else {
+                state = "1-queued";
+              }
+              
+              const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+              
+              await storage.syncTaskFromKaiten(
+                card.id,
+                card.board_id,
+                card.title,
+                card.created || new Date().toISOString(),
+                state,
+                card.size || 0,
+                condition,
+                card.archived || false,
+                initCardId,
+                card.type?.name,
+                card.completed_at ?? undefined,
+                sprintId,
+                card.last_moved_to_done_at ?? null,
+                team.teamId
+              );
+              
+              tasksSynced++;
+            } catch (taskError) {
+              console.error(`[CHECK-SYNC] Error syncing task ${sprintCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
+            }
+          }
+        }
+        
+        console.log(`[CHECK-SYNC] Sprint ${sprintId} synced successfully! Tasks: ${tasksSynced}`);
         
         return res.json({
           success: true,
           synced: true,
           sprintId,
           sprintTitle: kaitenSprint.title,
+          tasksSynced,
           sprintData: {
             id: kaitenSprint.id,
             title: kaitenSprint.title,
@@ -1719,8 +1766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             finish_date: kaitenSprint.finish_date,
             actual_finish_date: kaitenSprint.actual_finish_date,
             velocity: kaitenSprint.velocity,
-            cards_count: kaitenSprint.cards?.length || 0,
-            cards: kaitenSprint.cards?.slice(0, 5).map((c: any) => ({ id: c.id, title: c.title, sprint_id: c.sprint_id })) || []
+            cards_count: kaitenSprint.cards?.length || 0
           }
         });
         
