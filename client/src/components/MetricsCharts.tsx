@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import type { TeamRow } from "@shared/schema";
 
 interface MetricsChartsProps {
@@ -26,6 +26,7 @@ interface MetricsDynamicsResponse {
 }
 
 const CHART_COLOR = "#cd253d";
+const AVG_LINE_COLOR = "#888888";
 
 export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const { data: metricsData, isLoading, error } = useQuery<MetricsDynamicsResponse>({
@@ -70,6 +71,18 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     );
   }
 
+  const avgInnovationRate = chartData.length > 0 
+    ? Math.round(chartData.reduce((sum, d) => sum + d.innovationRate, 0) / chartData.length)
+    : 0;
+  
+  const avgVelocity = chartData.length > 0 
+    ? Math.round(chartData.reduce((sum, d) => sum + d.velocity, 0) / chartData.length)
+    : 0;
+  
+  const avgDeliveryPlanCompliance = chartData.length > 0 
+    ? Math.round(chartData.reduce((sum, d) => sum + d.deliveryPlanCompliance, 0) / chartData.length)
+    : 0;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
       <div className="flex flex-col">
@@ -98,6 +111,12 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number) => [`${value}%`, 'IR']}
+              />
+              <ReferenceLine 
+                y={avgInnovationRate} 
+                stroke={AVG_LINE_COLOR} 
+                strokeDasharray="5 5"
+                strokeWidth={1}
               />
               <Line 
                 type="monotone" 
@@ -139,6 +158,12 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number) => [`${value} SP`, 'Velocity']}
+              />
+              <ReferenceLine 
+                y={avgVelocity} 
+                stroke={AVG_LINE_COLOR} 
+                strokeDasharray="5 5"
+                strokeWidth={1}
               />
               <Line 
                 type="monotone" 
@@ -182,6 +207,12 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number) => [`${value}%`, 'СПД']}
+              />
+              <ReferenceLine 
+                y={avgDeliveryPlanCompliance} 
+                stroke={AVG_LINE_COLOR} 
+                strokeDasharray="5 5"
+                strokeWidth={1}
               />
               <Line 
                 type="monotone" 
