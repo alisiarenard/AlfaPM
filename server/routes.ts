@@ -859,14 +859,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               if (virtualSprint) {
                 const current = sprintsMap.get(virtualSprint.sprintId) || { sp: 0, tasks: [] };
-                // Все виртуальные спринты уже содержат только done задачи с doneDate в диапазоне спринта
-                current.sp += task.size;
+                // Считаем SP только для done-задач (как в cost-structure)
+                if (task.state === '3-done' && task.condition !== '3 - deleted') {
+                  current.sp += task.size;
+                }
                 current.tasks.push({
                   id: task.id,
                   cardId: task.cardId,
                   title: task.title,
                   type: task.type,
                   size: task.size,
+                  state: task.state,
+                  condition: task.condition,
                   archived: task.archived,
                   doneDate: task.doneDate
                 });
@@ -928,17 +932,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const sprintInfo = teamSprints.find(s => s.sprintId === task.sprintId);
               const current = sprintsMap.get(task.sprintId) || { sp: 0, tasks: [] };
               
-              // Считаем SP только для задач без doneDate ИЛИ с doneDate внутри дат спринта
+              // Считаем SP только для done-задач (как в cost-structure и initiatives/board)
               let countSP = false;
-              if (sprintInfo) {
-                if (!task.doneDate) {
-                  countSP = true;
-                } else {
-                  const sprintStartTime = new Date(sprintInfo.startDate).getTime();
-                  const sprintEndTime = new Date(sprintInfo.finishDate).getTime();
-                  const taskDoneTime = new Date(task.doneDate).getTime();
-                  countSP = taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime;
-                }
+              if (task.state === '3-done' && task.condition !== '3 - deleted') {
+                countSP = true;
               }
               
               if (countSP) {
@@ -1069,7 +1066,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           virtualSprintTasksMap.forEach((tasks, virtualSprintId) => {
             const tasksForInit = tasks.filter(task => task.initCardId === initiative.cardId);
             if (tasksForInit.length > 0) {
-              const sp = tasksForInit.reduce((sum, task) => sum + task.size, 0);
+              // Считаем SP только для done-задач (как в cost-structure)
+              const sp = tasksForInit
+                .filter(task => task.state === '3-done' && task.condition !== '3 - deleted')
+                .reduce((sum, task) => sum + task.size, 0);
               sprintsMap.set(virtualSprintId, {
                 sp,
                 tasks: tasksForInit.map(task => ({
@@ -1078,6 +1078,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   title: task.title,
                   type: task.type,
                   size: task.size,
+                  state: task.state,
+                  condition: task.condition,
                   archived: task.archived,
                   doneDate: task.doneDate
                 }))
