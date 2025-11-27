@@ -595,10 +595,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 sprintInfo = sprintInfoCache.get(task.sprintId);
               }
               
-              // Проверяем: добавляем SP для любых задач (без doneDate ИЛИ с doneDate внутри дат спринта)
-              // И НЕ добавляем SP для удаленных задач
+              // Проверяем: добавляем SP только для done-задач (не удаленных)
+              // Используем ту же логику, что и metrics/cost-structure
               let countSP = false;
-              if (sprintInfo && task.condition !== '3 - deleted') {
+              if (sprintInfo && task.state === '3-done' && task.condition !== '3 - deleted') {
                 if (!task.doneDate) {
                   countSP = true;
                 } else {
