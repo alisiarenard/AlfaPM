@@ -7,6 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
@@ -1266,60 +1267,105 @@ export default function HomePage() {
                   <div className="w-[66%] pl-4 py-3 flex flex-col justify-between">
                     <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
                     <div className="flex gap-2 items-end flex-1">
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-epic">
-                          {displayCostStructure?.typePercentages?.['Epic'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Epic</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-compliance">
-                          {displayCostStructure?.typePercentages?.['Compliance'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Compliance</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-enabler">
-                          {displayCostStructure?.typePercentages?.['Enabler'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Enabler</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-security">
-                          {displayCostStructure?.typePercentages?.['Security'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Security</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-service-desk">
-                          {displayCostStructure?.typePercentages?.['Service Desk'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-postmortem">
-                          {displayCostStructure?.typePercentages?.['Postmortem'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-tech-debt">
-                          {displayCostStructure?.typePercentages?.['Tech debt'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-bug">
-                          {displayCostStructure?.typePercentages?.['Bug'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Bug</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px]">
-                        <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-other">
-                          {displayCostStructure?.typePercentages?.['Др. доработки'] || 0}%
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
+                            <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-epic">
+                              {displayCostStructure?.typePercentages?.['Epic'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Epic</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Epic'] || 0} SP</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
+                            <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-compliance">
+                              {displayCostStructure?.typePercentages?.['Compliance'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Compliance</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Compliance'] || 0} SP</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
+                            <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-enabler">
+                              {displayCostStructure?.typePercentages?.['Enabler'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Enabler</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Enabler'] || 0} SP</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
+                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-security">
+                              {displayCostStructure?.typePercentages?.['Security'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Security</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Security'] || 0} SP</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
+                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-service-desk">
+                              {displayCostStructure?.typePercentages?.['Service Desk'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Service Desk'] || 0} SP</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
+                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-postmortem">
+                              {displayCostStructure?.typePercentages?.['Postmortem'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Postmortem'] || 0} SP</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
+                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-tech-debt">
+                              {displayCostStructure?.typePercentages?.['Tech debt'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Tech debt'] || 0} SP</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
+                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-bug">
+                              {displayCostStructure?.typePercentages?.['Bug'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Bug</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Bug'] || 0} SP</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px] cursor-help">
+                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-other">
+                              {displayCostStructure?.typePercentages?.['Др. доработки'] || 0}%
+                            </div>
+                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayCostStructure?.typeStats?.['Др. доработки'] || 0} SP</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                   <DropdownMenu>
