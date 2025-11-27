@@ -2184,8 +2184,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
   if (isLoading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">{checkSyncLoading ? 'Проверка спринтов...' : 'Загрузка данных...'}</p>
+        <span className="loader mb-4"></span>
+        <p className="text-muted-foreground mt-4">{checkSyncLoading ? 'Проверка спринтов...' : 'Загрузка данных...'}</p>
       </div>
     );
   }

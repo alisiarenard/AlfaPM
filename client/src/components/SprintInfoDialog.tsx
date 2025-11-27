@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
 import { roundSP } from "@shared/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -167,7 +166,7 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="loader loader-sm mr-2"></span>
                   Загрузка...
                 </>
               ) : (
@@ -341,7 +340,7 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
             >
               {saveMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="loader loader-sm mr-2"></span>
                   Сохранение...
                 </>
               ) : (
