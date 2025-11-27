@@ -1618,10 +1618,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         const firstCard = cards[0];
+        console.log(`[CHECK-SYNC] Cards received: ${cards.length}`);
+        console.log(`[CHECK-SYNC] First card:`, JSON.stringify({
+          id: firstCard.id,
+          title: firstCard.title,
+          sprint_id: firstCard.sprint_id,
+          state: firstCard.state,
+          column_id: firstCard.column_id
+        }, null, 2));
+        
         const sprintId = firstCard.sprint_id;
         
         if (!sprintId) {
-          console.log(`[CHECK-SYNC] First card has no sprint_id`);
+          console.log(`[CHECK-SYNC] First card has no sprint_id, checking other cards...`);
+          const cardWithSprint = cards.find((c: any) => c.sprint_id);
+          if (cardWithSprint) {
+            console.log(`[CHECK-SYNC] Found card with sprint_id:`, JSON.stringify({
+              id: cardWithSprint.id,
+              title: cardWithSprint.title,
+              sprint_id: cardWithSprint.sprint_id
+            }));
+          } else {
+            console.log(`[CHECK-SYNC] No cards have sprint_id assigned`);
+          }
           return res.json({
             success: true,
             synced: false,
@@ -1645,8 +1664,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[CHECK-SYNC] Sprint ${sprintId} not in DB, fetching from Kaiten...`);
         const kaitenSprint = await kaitenClient.getSprint(sprintId);
         
+        console.log(`[CHECK-SYNC] Kaiten sprint response:`, JSON.stringify({
+          id: kaitenSprint?.id,
+          title: kaitenSprint?.title,
+          board_id: kaitenSprint?.board_id,
+          start_date: kaitenSprint?.start_date,
+          finish_date: kaitenSprint?.finish_date,
+          actual_finish_date: kaitenSprint?.actual_finish_date,
+          velocity: kaitenSprint?.velocity,
+          cards_count: kaitenSprint?.cards?.length || 0
+        }, null, 2));
+        
         if (!kaitenSprint || !kaitenSprint.board_id || !kaitenSprint.start_date || !kaitenSprint.finish_date) {
-          console.log(`[CHECK-SYNC] Sprint ${sprintId} missing required fields`);
+          console.log(`[CHECK-SYNC] Sprint ${sprintId} missing required fields - board_id: ${kaitenSprint?.board_id}, start: ${kaitenSprint?.start_date}, finish: ${kaitenSprint?.finish_date}`);
           return res.json({
             success: true,
             synced: false,
@@ -1654,6 +1684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
+        console.log(`[CHECK-SYNC] Saving sprint ${sprintId} to DB...`);
         await storage.syncSprintFromKaiten(
           kaitenSprint.id,
           kaitenSprint.board_id,
