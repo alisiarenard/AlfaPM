@@ -187,7 +187,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <Tooltip 
-                content={<CustomTooltip formatter={(v) => `${v} SP`} metricName="Velocity" />}
+                content={<CustomTooltip formatter={(v) => `${(v).toFixed(1)} SP`} metricName="Velocity" />}
               />
               <ReferenceLine 
                 y={avgVelocity} 
