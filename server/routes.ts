@@ -188,7 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           
           const plannedValueId = "id_237";
-          const factValueId = "id_510";
+          const factValueId = "id_238";
           const syncedCardIds: number[] = [];
           
           for (const card of cards) {
@@ -1949,7 +1949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const syncedInitiatives = [];
       const syncedCardIds: number[] = [];
       const plannedValueId = "id_237";
-      const factValueId = "id_510";
+      const factValueId = "id_238";
       
       for (const card of cards) {
         let state: "1-queued" | "2-inProgress" | "3-done";
@@ -2221,7 +2221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         kaitenUpdates.properties = {};
         
         const plannedValueId = "id_237";
-        const factValueId = "id_510";
+        const factValueId = "id_238";
         
         if (plannedValue !== undefined) {
           // Kaiten expects numeric values for custom properties
@@ -2616,7 +2616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       
       const plannedValueId = "id_237";
-      const factValueId = "id_510";
+      const factValueId = "id_238";
       const syncedCardIds: number[] = [];
       
       let syncedCount = 0;
