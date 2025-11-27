@@ -621,6 +621,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 title: task.title,
                 type: task.type,
                 size: task.size,
+                state: task.state,
+                condition: task.condition,
                 archived: task.archived,
                 doneDate: task.doneDate
               });
@@ -935,6 +937,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 title: task.title,
                 type: task.type,
                 size: task.size,
+                state: task.state,
+                condition: task.condition,
                 archived: task.archived,
                 doneDate: task.doneDate
               });

@@ -877,7 +877,23 @@ export default function HomePage() {
         
         initiatives.forEach((initiative: any) => {
           const team = initiative.team;
-          const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + (sprint.sp || 0), 0) || 0;
+          // Считаем SP только для done-задач (как на главной странице)
+          let actualSize = 0;
+          if (initiative.sprints && Array.isArray(initiative.sprints)) {
+            for (const sprint of initiative.sprints) {
+              if (sprint.tasks && Array.isArray(sprint.tasks)) {
+                for (const task of sprint.tasks) {
+                  // Только done-задачи, не удаленные
+                  if (task.state === '3-done' && task.condition !== '3 - deleted') {
+                    actualSize += task.size || 0;
+                  }
+                }
+              } else {
+                // Fallback если нет tasks - используем sp
+                actualSize += sprint.sp || 0;
+              }
+            }
+          }
           const plannedSize = initiative.size || 0;
           totalPlannedCost += plannedSize * team.spPrice;
           totalActualCost += actualSize * team.spPrice;
