@@ -1475,7 +1475,7 @@ export default function HomePage() {
                   </DropdownMenu>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <TabsList data-testid="tabs-teams">
                   {departmentTeams.map((team) => (
                     <TabsTrigger 
@@ -1487,10 +1487,10 @@ export default function HomePage() {
                     </TabsTrigger>
                   ))}
                 </TabsList>
-                <div className="flex gap-1 bg-muted rounded-md p-1">
+                <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
                   <button
                     onClick={() => setViewTab("initiatives")}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
                       viewTab === "initiatives" 
                         ? "bg-background text-foreground shadow-sm" 
                         : "text-muted-foreground hover:text-foreground"
@@ -1501,7 +1501,7 @@ export default function HomePage() {
                   </button>
                   <button
                     onClick={() => setViewTab("metrics")}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
                       viewTab === "metrics" 
                         ? "bg-background text-foreground shadow-sm" 
                         : "text-muted-foreground hover:text-foreground"
