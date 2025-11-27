@@ -848,9 +848,6 @@ export default function HomePage() {
         // Пропускаем "Поддержку бизнеса"
         if (initiative.cardId === 0) return;
         
-        // Пропускаем архивные инициативы
-        if (initiative.condition === "2-archived") return;
-        
         // Оставляем только Epic, Compliance, Enabler
         if (initiative.type !== 'Epic' && initiative.type !== 'Compliance' && initiative.type !== 'Enabler') {
           return;
@@ -877,23 +874,7 @@ export default function HomePage() {
         
         initiatives.forEach((initiative: any) => {
           const team = initiative.team;
-          // Считаем SP только для done-задач из каждого спринта
-          let actualSize = 0;
-          if (initiative.sprints && Array.isArray(initiative.sprints)) {
-            for (const sprint of initiative.sprints) {
-              if (sprint.tasks && Array.isArray(sprint.tasks)) {
-                // Суммируем SP только done-задач (без удаленных)
-                for (const task of sprint.tasks) {
-                  if (task.state === '3-done' && task.condition !== '3 - deleted') {
-                    actualSize += task.size || 0;
-                  }
-                }
-              } else {
-                // Если нет массива tasks, используем уже подсчитанный sp
-                actualSize += sprint.sp || 0;
-              }
-            }
-          }
+          const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + (sprint.sp || 0), 0) || 0;
           const plannedSize = initiative.size || 0;
           totalPlannedCost += plannedSize * team.spPrice;
           totalActualCost += actualSize * team.spPrice;
