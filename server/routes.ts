@@ -646,6 +646,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Инициативы в очереди показываем всегда
       const filteredInitiatives = teamSprintIds
         ? initiativesWithSprints.filter(init => {
+            // Пропускаем архивные инициативы
+            if (init.condition === "2-archived") return false;
+            
             const hasSprints = init.sprints.length > 0;
             const isSupport = init.cardId === 0;
             const isQueued = init.state === "1-queued";
@@ -656,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             return pass;
           })
-        : initiativesWithSprints;
+        : initiativesWithSprints.filter(init => init.condition !== "2-archived");
       
       // Рассчитываем involvement для каждой инициативы
       const sprintPeriods = new Map(
