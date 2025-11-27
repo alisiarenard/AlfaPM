@@ -2070,6 +2070,24 @@ export default function HomePage() {
 function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedYear, viewTab }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void; selectedYear: string; viewTab: "initiatives" | "metrics" }) {
   const { toast } = useToast();
   
+  const { data: checkSyncData, isLoading: checkSyncLoading, isFetched: checkSyncFetched } = useQuery<{
+    success: boolean;
+    synced: boolean;
+    sprintId?: number;
+    sprintTitle?: string;
+    reason?: string;
+  }>({
+    queryKey: ["/api/sprints/check-sync", team.teamId],
+    queryFn: async () => {
+      const response = await fetch(`/api/sprints/check-sync/${team.teamId}`);
+      if (!response.ok) throw new Error('Failed to check sprint sync');
+      return response.json();
+    },
+    enabled: !!team.teamId && !!team.sprintBoardId && !!team.spaceId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
+  
   const { data: timelineData, isLoading: timelineLoading, error: initiativesError } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
     queryKey: ["/api/timeline", team.teamId],
     queryFn: async () => {
@@ -2077,7 +2095,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       if (!response.ok) throw new Error('Failed to fetch timeline');
       return response.json();
     },
-    enabled: !!team.teamId && !!team.initBoardId,
+    enabled: !!team.teamId && !!team.initBoardId && (checkSyncFetched || !team.sprintBoardId || !team.spaceId),
   });
 
   const initiativeRows = timelineData?.initiatives;
@@ -2161,13 +2179,13 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     },
   });
 
-  const isLoading = initiativesLoading || sprintsLoading;
+  const isLoading = checkSyncLoading || initiativesLoading || sprintsLoading;
 
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Загрузка данных...</p>
+        <p className="text-muted-foreground">{checkSyncLoading ? 'Проверка спринтов...' : 'Загрузка данных...'}</p>
       </div>
     );
   }
