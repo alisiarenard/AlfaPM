@@ -249,6 +249,25 @@ export class KaitenClient {
       body: updates,
     });
   }
+
+  async getBoardCardsFromSpace(spaceId: number, boardId: number): Promise<KaitenCard[]> {
+    try {
+      const response = await this.makeRequest<{ cards?: KaitenCard[]; [key: string]: any }>(`/spaces/${spaceId}/boards/${boardId}`);
+      
+      if (response.cards && Array.isArray(response.cards)) {
+        return response.cards;
+      }
+      
+      if (Array.isArray(response)) {
+        return response as unknown as KaitenCard[];
+      }
+      
+      return [];
+    } catch (error) {
+      console.error(`[Kaiten API] Error getting board cards from space ${spaceId}, board ${boardId}:`, error);
+      throw error;
+    }
+  }
 }
 
 export const kaitenClient = new KaitenClient();
