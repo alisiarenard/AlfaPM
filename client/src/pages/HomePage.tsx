@@ -1276,7 +1276,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Epic</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Epic'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Epic'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1287,7 +1287,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Compliance</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Compliance'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Compliance'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1298,7 +1298,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Enabler</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Enabler'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Enabler'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1309,7 +1309,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Security</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Security'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Security'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1320,7 +1320,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Service Desk'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Service Desk'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1331,7 +1331,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Postmortem'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Postmortem'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1342,7 +1342,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Tech debt'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Tech debt'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1353,7 +1353,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Bug</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Bug'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Bug'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1364,7 +1364,7 @@ export default function HomePage() {
                             <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>{displayCostStructure?.typeStats?.['Др. доработки'] || 0} SP</TooltipContent>
+                        <TooltipContent>{(displayCostStructure?.typeStats?.['Др. доработки'] || 0).toFixed(1)} SP</TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
