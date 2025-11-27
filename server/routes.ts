@@ -596,8 +596,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               
               // Проверяем: добавляем SP для любых задач (без doneDate ИЛИ с doneDate внутри дат спринта)
+              // И НЕ добавляем SP для удаленных задач
               let countSP = false;
-              if (sprintInfo) {
+              if (sprintInfo && task.condition !== '3 - deleted') {
                 if (!task.doneDate) {
                   countSP = true;
                 } else {
