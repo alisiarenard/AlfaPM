@@ -848,6 +848,9 @@ export default function HomePage() {
         // Пропускаем "Поддержку бизнеса"
         if (initiative.cardId === 0) return;
         
+        // Пропускаем архивные инициативы
+        if (initiative.condition === "2-archived") return;
+        
         // Оставляем только Epic, Compliance, Enabler
         if (initiative.type !== 'Epic' && initiative.type !== 'Compliance' && initiative.type !== 'Enabler') {
           return;
