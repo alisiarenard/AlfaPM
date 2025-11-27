@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 import type { TeamRow } from "@shared/schema";
 
 interface MetricsChartsProps {
@@ -27,6 +29,46 @@ interface MetricsDynamicsResponse {
 
 const CHART_COLOR = "#cd253d";
 const AVG_LINE_COLOR = "#888888";
+
+function formatDateRange(startDate: string, finishDate: string): string {
+  const start = new Date(startDate);
+  const finish = new Date(finishDate);
+  return `${format(start, 'd MMM', { locale: ru })} - ${format(finish, 'd MMM yyyy', { locale: ru })}`;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: MetricDataPoint; value: number }>;
+  label?: string;
+  formatter: (value: number) => string;
+  metricName: string;
+}
+
+function CustomTooltip({ active, payload, formatter, metricName }: CustomTooltipProps) {
+  if (!active || !payload || payload.length === 0) return null;
+  
+  const data = payload[0].payload;
+  const value = payload[0].value;
+  const dateRange = formatDateRange(data.startDate, data.finishDate);
+  
+  return (
+    <div 
+      style={{ 
+        backgroundColor: 'hsl(var(--card))',
+        border: '1px solid hsl(var(--border))',
+        borderRadius: '6px',
+        padding: '8px 12px'
+      }}
+    >
+      <p style={{ color: 'hsl(var(--foreground))', margin: 0, marginBottom: '4px', fontSize: '12px' }}>
+        {dateRange}
+      </p>
+      <p style={{ color: 'hsl(var(--foreground))', margin: 0, fontSize: '14px', fontWeight: 500 }}>
+        {metricName}: {formatter(value)}
+      </p>
+    </div>
+  );
+}
 
 export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const { data: metricsData, isLoading, error } = useQuery<MetricsDynamicsResponse>({
@@ -104,13 +146,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 tickFormatter={(value) => `${value}%`}
               />
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '6px'
-                }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number) => [`${value}%`, 'IR']}
+                content={<CustomTooltip formatter={(v) => `${v}%`} metricName="IR" />}
               />
               <ReferenceLine 
                 y={avgInnovationRate} 
@@ -151,13 +187,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '6px'
-                }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number) => [`${value} SP`, 'Velocity']}
+                content={<CustomTooltip formatter={(v) => `${v} SP`} metricName="Velocity" />}
               />
               <ReferenceLine 
                 y={avgVelocity} 
@@ -200,13 +230,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 tickFormatter={(value) => `${value}%`}
               />
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '6px'
-                }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number) => [`${value}%`, 'СПД']}
+                content={<CustomTooltip formatter={(v) => `${v}%`} metricName="СПД" />}
               />
               <ReferenceLine 
                 y={avgDeliveryPlanCompliance} 
@@ -226,7 +250,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
           </ResponsiveContainer>
         </div>
         <div className="text-center text-sm font-medium text-muted-foreground mt-2">
-          СПД (Соответствие Плану Доставки)
+          Соблюдение плана доставки (СПД)
         </div>
       </div>
     </div>
