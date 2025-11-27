@@ -3453,10 +3453,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (team.sprintBoardId) {
         // Команда со спринтами
         const sprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+        const now = new Date();
         const yearSprints = sprints
           .filter(sprint => {
             const sprintStart = new Date(sprint.startDate);
-            return sprintStart >= yearStart && sprintStart <= yearEnd;
+            const sprintFinish = new Date(sprint.finishDate);
+            return sprintStart >= yearStart && sprintStart <= yearEnd && sprintFinish < now;
           })
           .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
@@ -3543,10 +3545,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        const now = new Date();
         
         Array.from(monthlyData.entries()).forEach(([monthKey, data]) => {
           const [yearStr, monthStr] = monthKey.split('-');
           const monthIndex = parseInt(monthStr) - 1;
+          const monthFinishDate = new Date(parseInt(yearStr), monthIndex + 1, 0);
+          
+          if (monthFinishDate >= now) {
+            return;
+          }
           
           const velocity = data.doneSP;
           const innovationRate = data.doneSP > 0 ? Math.round((data.innovationSP / data.doneSP) * 100) : 0;
