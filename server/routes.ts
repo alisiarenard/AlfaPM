@@ -544,6 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const initBoardId = parseInt(req.params.initBoardId);
       const sprintBoardId = req.query.sprintBoardId ? parseInt(req.query.sprintBoardId as string) : null;
       const teamId = req.query.teamId as string | null;
+      const year = req.query.year ? parseInt(req.query.year as string) : null;
       
       if (isNaN(initBoardId)) {
         return res.status(400).json({ 
@@ -555,10 +556,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const initiatives = await storage.getInitiativesByBoardId(initBoardId);
       
       // Если передан sprintBoardId, получаем sprint_id спринтов этой команды
+      // Если передан year, фильтруем спринты по году (как в cost-structure)
       let teamSprintIds: Set<number> | null = null;
       let teamSprints: any[] = [];
       if (sprintBoardId !== null && !isNaN(sprintBoardId)) {
-        teamSprints = await storage.getSprintsByBoardId(sprintBoardId);
+        let allTeamSprints = await storage.getSprintsByBoardId(sprintBoardId);
+        
+        // Фильтруем спринты по году, если указан (как в cost-structure API)
+        if (year) {
+          const yearStart = new Date(year, 0, 1);
+          const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+          teamSprints = allTeamSprints.filter(sprint => {
+            const sprintStart = new Date(sprint.startDate);
+            return sprintStart >= yearStart && sprintStart <= yearEnd;
+          });
+        } else {
+          teamSprints = allTeamSprints;
+        }
+        
         teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
       }
       
