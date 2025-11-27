@@ -1387,7 +1387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Done SP = только done задачи с doneDate внутри дат спринта
       tasksInside.forEach(task => {
-        if (task.state === "3-done") {
+        if (task.state === "3-done" && task.condition !== '3 - deleted') {
           doneSP += task.size || 0;
         }
       });
@@ -1480,7 +1480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Done SP = только done задачи с doneDate внутри дат спринта
       tasksInside.forEach(task => {
-        if (task.state === '3-done') {
+        if (task.state === '3-done' && task.condition !== '3 - deleted') {
           doneSP += task.size || 0;
         }
       });
@@ -1536,7 +1536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       tasks.forEach(task => {
         const taskSize = task.size || 0;
         totalSP += taskSize;
-        const isDone = task.state === '3-done';
+        const isDone = task.state === '3-done' && task.condition !== '3 - deleted';
         if (isDone) {
           doneSP += taskSize;
         }
@@ -2864,6 +2864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               task.sprintId !== null && 
               sprintIds.has(task.sprintId) && 
               task.state === '3-done' &&  // Только done-задачи
+              task.condition !== '3 - deleted' &&  // Исключаем удаленные
               !processedTaskIds.has(task.cardId)
             );
             teamSprintTasks.forEach(task => {
@@ -2873,7 +2874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             // Команда не имеет реальных спринтов в этом году - берем по doneDate
             const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
-            const newTasks = teamTasks.filter(task => !processedTaskIds.has(task.cardId));
+            const newTasks = teamTasks.filter(task => task.condition !== '3 - deleted' && !processedTaskIds.has(task.cardId));
             newTasks.forEach(task => {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
@@ -3011,6 +3012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               task.sprintId !== null && 
               sprintIds.has(task.sprintId) && 
               task.state === '3-done' &&  // Только done-задачи
+              task.condition !== '3 - deleted' &&  // Исключаем удаленные
               !processedTaskIds.has(task.cardId)
             );
             teamSprintTasks.forEach(task => {
@@ -3020,7 +3022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             // Команда не имеет реальных спринтов в этом году - берем по doneDate
             const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
-            const newTasks = teamTasks.filter(task => !processedTaskIds.has(task.cardId));
+            const newTasks = teamTasks.filter(task => task.condition !== '3 - deleted' && !processedTaskIds.has(task.cardId));
             newTasks.forEach(task => {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
@@ -3218,7 +3220,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 tasks = allTasks.filter(task => 
                   task.sprintId !== null && 
                   teamSprintIds.has(task.sprintId) &&
-                  task.state === '3-done'  // Только done-задачи
+                  task.state === '3-done' &&  // Только done-задачи
+                  task.condition !== '3 - deleted'  // Исключаем удаленные
                 );
               } else {
                 // Команда без спринтов - фильтруем по doneDate и teamId (doneDate уже означает done)
@@ -3227,7 +3230,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   task.doneDate !== null &&
                   task.doneDate !== '' &&
                   new Date(task.doneDate) >= yearStart &&
-                  new Date(task.doneDate) <= yearEnd
+                  new Date(task.doneDate) <= yearEnd &&
+                  task.condition !== '3 - deleted'  // Исключаем удаленные
                 );
               }
               
