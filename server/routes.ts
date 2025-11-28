@@ -2948,10 +2948,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   // Ищем инициативу в родительской цепочке
                   let initCardId: number | null = null;
                   
+                  console.log(`[SMART-SYNC] Task ${card.id} "${card.title.substring(0, 30)}..." parents_ids:`, card.parents_ids);
+                  
                   if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
                     initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+                    console.log(`[SMART-SYNC] Task ${card.id} found initCardId: ${initCardId}`);
                   } else {
                     initCardId = 0;
+                    console.log(`[SMART-SYNC] Task ${card.id} has no parents, setting initCardId: 0`);
                   }
                   
                   let state: "1-queued" | "2-inProgress" | "3-done";
