@@ -26,6 +26,11 @@ interface InitiativeWithTasks {
   tasks: Task[];
 }
 
+// Проверяет, нужно ли исключить задачу из отчета (содержит [QA], [AQA], [Design])
+function shouldExcludeTask(title: string): boolean {
+  return /\[(QA|AQA|Design)\]/i.test(title);
+}
+
 export async function generateSprintReportPDF(
   teamName: string,
   sprintDates: string | { start: string; end: string },
@@ -70,12 +75,20 @@ export async function generateSprintReportPDF(
 
       // Обрабатываем каждую инициативу
       for (const initiative of initiatives) {
+        // Фильтруем задачи - исключаем [QA], [AQA], [Design]
+        const filteredTasks = initiative.tasks.filter(task => !shouldExcludeTask(task.title));
+        
+        // Пропускаем инициативу если после фильтрации не осталось задач
+        if (filteredTasks.length === 0) {
+          continue;
+        }
+        
         // Название инициативы
         doc.font('DejaVu-Bold').fontSize(14).text(initiative.title);
         doc.moveDown(0.5);
 
         // Сокращаем формулировки задач через AI
-        const shortenedTasks = await shortenTasksWithAI(initiative.tasks);
+        const shortenedTasks = await shortenTasksWithAI(filteredTasks);
 
         // Выводим задачи
         for (const task of shortenedTasks) {
