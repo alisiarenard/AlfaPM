@@ -126,7 +126,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     : 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 px-8 py-4">
       <div className="flex flex-col">
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">

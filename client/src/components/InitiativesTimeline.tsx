@@ -1259,7 +1259,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
 
   return (
     <TooltipProvider>
-      <div className="w-full max-w-full">
+      <div className="w-full max-w-full px-4">
         <table className="w-full border-collapse">
         <thead className="sticky top-0 z-[110] bg-background border-b border-border">
           <tr className="border-b border-border">
