@@ -914,7 +914,12 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return false;
     }
     
-    // Проверяем фактический эффект для всех типов инициатив
+    // Для типов Compliance и Enabler достаточно только size > 0
+    if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
+      return true;
+    }
+    
+    // Для остальных типов (включая Epic) проверяем фактический эффект
     if (!initiative.factValue || initiative.factValue.trim() === '') {
       return false;
     }
@@ -924,12 +929,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
       return false;
     }
     
-    // Для типов Compliance и Enabler плановый эффект рассчитывается автоматически
-    if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
-      return true;
-    }
-    
-    // Для остальных типов (включая Epic) проверяем плановый эффект
+    // Для Epic и других типов проверяем плановый эффект
     if (!initiative.plannedValue || initiative.plannedValue.trim() === '') {
       return false;
     }
