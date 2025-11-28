@@ -42,7 +42,7 @@ export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilter
   };
 
   return (
-    <div className="px-6 py-4 border-b border-border bg-card">
+    <div className="px-4 py-4 border-b border-border bg-card">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-md" style={{ backgroundColor: 'rgba(205, 37, 61, 0.1)' }}>
