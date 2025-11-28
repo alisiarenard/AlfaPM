@@ -1491,7 +1491,7 @@ export default function HomePage() {
                 <div className="flex gap-0.5 bg-muted rounded-md p-0.5 mb-3">
                   <button
                     onClick={() => setViewTab("initiatives")}
-                    className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                    className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
                       viewTab === "initiatives" 
                         ? "bg-background text-foreground shadow-sm" 
                         : "text-muted-foreground hover:text-foreground"
@@ -1502,7 +1502,7 @@ export default function HomePage() {
                   </button>
                   <button
                     onClick={() => setViewTab("metrics")}
-                    className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                    className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
                       viewTab === "metrics" 
                         ? "bg-background text-foreground shadow-sm" 
                         : "text-muted-foreground hover:text-foreground"
