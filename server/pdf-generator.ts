@@ -81,12 +81,12 @@ export async function generateSprintReportPDF(
         for (const task of shortenedTasks) {
           let taskText = `• ${task.shortened}`;
           
-          // Добавляем метки (back)/(front)
+          // Добавляем метки (бэк)/(фронт)
           if (task.hasBack) {
-            taskText += ' (back)';
+            taskText += ' (бэк)';
           }
           if (task.hasFront) {
-            taskText += ' (front)';
+            taskText += ' (фронт)';
           }
 
           doc.font('DejaVu').fontSize(11).text(taskText, { indent: 20 });
@@ -106,15 +106,55 @@ async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Предобработка названия задачи: убирает теги [BACK], [FRONT] и возвращает очищенный текст + флаги
+function preprocessTaskTitle(title: string): { cleanTitle: string; hasBack: boolean; hasFront: boolean } {
+  let cleanTitle = title;
+  let hasBack = false;
+  let hasFront = false;
+  
+  // Проверяем наличие тегов [BACK], [Back], [back]
+  if (/\[back\]/i.test(cleanTitle)) {
+    hasBack = true;
+    cleanTitle = cleanTitle.replace(/\[back\]/gi, '').trim();
+  }
+  
+  // Проверяем наличие тегов [FRONT], [Front], [front]
+  if (/\[front\]/i.test(cleanTitle)) {
+    hasFront = true;
+    cleanTitle = cleanTitle.replace(/\[front\]/gi, '').trim();
+  }
+  
+  // Также проверяем другие варианты в тексте (без скобок)
+  const titleLower = title.toLowerCase();
+  if (titleLower.includes('бэк') || (titleLower.includes('back') && !hasBack)) {
+    hasBack = true;
+  }
+  if (titleLower.includes('фронт') || (titleLower.includes('front') && !hasFront)) {
+    hasFront = true;
+  }
+  
+  // Убираем лишние пробелы
+  cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+  
+  return { cleanTitle, hasBack, hasFront };
+}
+
 async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: string; hasBack: boolean; hasFront: boolean }>> {
   try {
+    // Предобрабатываем все задачи
+    const preprocessedTasks = tasks.map(task => ({
+      original: task,
+      ...preprocessTaskTitle(task.title)
+    }));
+    
     // Если задач мало, обрабатываем все сразу; если много - батчами по 20
     const batchSize = 20;
     const results: Array<{ shortened: string; hasBack: boolean; hasFront: boolean }> = [];
     
-    for (let i = 0; i < tasks.length; i += batchSize) {
-      const batch = tasks.slice(i, i + batchSize);
-      const tasksText = batch.map(t => t.title).join('\n');
+    for (let i = 0; i < preprocessedTasks.length; i += batchSize) {
+      const batch = preprocessedTasks.slice(i, i + batchSize);
+      // Отправляем в AI уже очищенные названия
+      const tasksText = batch.map(t => t.cleanTitle).join('\n');
       
       const prompt = `Сократи задачи до 5-7 слов каждую, сохраняя суть. Отвечай только сокращенными формулировками (одна на строке, без нумерации):\n\n${tasksText}`;
 
@@ -155,18 +195,18 @@ async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: str
       const shortenedLines = shortenedText.split('\n').filter(line => line.trim());
 
       batch.forEach((task, idx) => {
-        const shortened = shortenedLines[idx] || task.title;
-        const titleLower = task.title.toLowerCase();
+        // Используем очищенное название как fallback если AI не вернул результат
+        const shortened = shortenedLines[idx] || task.cleanTitle;
         
         results.push({
           shortened,
-          hasBack: titleLower.includes('back') || titleLower.includes('бэк'),
-          hasFront: titleLower.includes('front') || titleLower.includes('фронт'),
+          hasBack: task.hasBack,
+          hasFront: task.hasFront,
         });
       });
       
       // Задержка между батчами, чтобы не превысить rate limit
-      if (i + batchSize < tasks.length) {
+      if (i + batchSize < preprocessedTasks.length) {
         await sleep(21000); // 21 секунда между батчами
       }
     }
@@ -174,13 +214,13 @@ async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: str
     return results;
   } catch (error) {
     console.error('AI shortening error:', error);
-    // Fallback: возвращаем оригинальные тексты
+    // Fallback: возвращаем очищенные тексты с флагами из предобработки
     return tasks.map(task => {
-      const titleLower = task.title.toLowerCase();
+      const { cleanTitle, hasBack, hasFront } = preprocessTaskTitle(task.title);
       return {
-        shortened: task.title,
-        hasBack: titleLower.includes('back') || titleLower.includes('бэк'),
-        hasFront: titleLower.includes('front') || titleLower.includes('фронт'),
+        shortened: cleanTitle,
+        hasBack,
+        hasFront,
       };
     });
   }
