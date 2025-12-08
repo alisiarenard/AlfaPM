@@ -125,6 +125,32 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     ? Math.round(chartData.reduce((sum, d) => sum + d.deliveryPlanCompliance, 0) / chartData.length)
     : 0;
 
+  // Данные для графика velocity - среднее за 2 спринта
+  const velocityChartData: Array<{ sprintTitle: string; velocity: number; sprints: string }> = [];
+  for (let i = 0; i < chartData.length; i += 2) {
+    if (i + 1 < chartData.length) {
+      // Есть пара спринтов - берём среднее
+      const avgVel = (chartData[i].velocity + chartData[i + 1].velocity) / 2;
+      velocityChartData.push({
+        sprintTitle: `${chartData[i].sprintTitle} - ${chartData[i + 1].sprintTitle}`,
+        velocity: Math.round(avgVel * 10) / 10,
+        sprints: `${chartData[i].sprintTitle}, ${chartData[i + 1].sprintTitle}`
+      });
+    } else {
+      // Нечётное количество - последний спринт как есть
+      velocityChartData.push({
+        sprintTitle: chartData[i].sprintTitle,
+        velocity: chartData[i].velocity,
+        sprints: chartData[i].sprintTitle
+      });
+    }
+  }
+
+  // Среднее velocity пересчитываем по усреднённым данным
+  const avgVelocityForChart = velocityChartData.length > 0 
+    ? Math.round(velocityChartData.reduce((sum, d) => sum + d.velocity, 0) / velocityChartData.length)
+    : 0;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 px-8 py-4">
       <div className="flex flex-col">
@@ -173,7 +199,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
       <div className="flex flex-col">
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+            <LineChart data={velocityChartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="sprintTitle" 
@@ -187,10 +213,10 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <Tooltip 
-                content={<CustomTooltip formatter={(v) => `${(v).toFixed(1)} SP`} metricName="Velocity" />}
+                content={<CustomTooltip formatter={(v) => `${(v).toFixed(1)} SP`} metricName="Velocity (avg 2 sprints)" />}
               />
               <ReferenceLine 
-                y={avgVelocity} 
+                y={avgVelocityForChart} 
                 stroke={AVG_LINE_COLOR} 
                 strokeDasharray="5 5"
                 strokeWidth={1}
@@ -200,8 +226,8 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 dataKey="velocity" 
                 stroke={CHART_COLOR} 
                 strokeWidth={2}
-                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
-                activeDot={{ r: 4, fill: CHART_COLOR }}
+                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 3 }}
+                activeDot={{ r: 5, fill: CHART_COLOR }}
               />
             </LineChart>
           </ResponsiveContainer>
