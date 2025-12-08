@@ -103,7 +103,13 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     );
   }
 
-  const chartData = metricsData?.data || [];
+  const rawChartData = metricsData?.data || [];
+  
+  // Добавляем месяц к каждой точке для оси X
+  const chartData = rawChartData.map(d => ({
+    ...d,
+    month: format(new Date(d.finishDate), 'LLL', { locale: ru })
+  }));
 
   if (chartData.length === 0) {
     return (
@@ -165,9 +171,9 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
             <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
-                dataKey="sprintTitle" 
-                tick={false}
-                tickLine={false}
+                dataKey="month" 
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={{ stroke: 'hsl(var(--border))' }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <YAxis 
@@ -249,9 +255,9 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
             <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
-                dataKey="sprintTitle" 
-                tick={false}
-                tickLine={false}
+                dataKey="month" 
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={{ stroke: 'hsl(var(--border))' }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <YAxis 
