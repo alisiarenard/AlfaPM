@@ -38,7 +38,7 @@ function formatDateRange(startDate: string, finishDate: string): string {
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: Array<{ payload: MetricDataPoint; value: number }>;
+  payload?: Array<{ payload: { startDate: string; finishDate: string }; value: number }>;
   label?: string;
   formatter: (value: number) => string;
   metricName: string;
@@ -126,7 +126,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     : 0;
 
   // Данные для графика velocity - среднее за 2 спринта
-  const velocityChartData: Array<{ sprintTitle: string; velocity: number; sprints: string }> = [];
+  const velocityChartData: Array<{ sprintTitle: string; velocity: number; startDate: string; finishDate: string }> = [];
   for (let i = 0; i < chartData.length; i += 2) {
     if (i + 1 < chartData.length) {
       // Есть пара спринтов - берём среднее
@@ -134,14 +134,16 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
       velocityChartData.push({
         sprintTitle: `${chartData[i].sprintTitle} - ${chartData[i + 1].sprintTitle}`,
         velocity: Math.round(avgVel * 10) / 10,
-        sprints: `${chartData[i].sprintTitle}, ${chartData[i + 1].sprintTitle}`
+        startDate: chartData[i].startDate,
+        finishDate: chartData[i + 1].finishDate
       });
     } else {
       // Нечётное количество - последний спринт как есть
       velocityChartData.push({
         sprintTitle: chartData[i].sprintTitle,
         velocity: chartData[i].velocity,
-        sprints: chartData[i].sprintTitle
+        startDate: chartData[i].startDate,
+        finishDate: chartData[i].finishDate
       });
     }
   }
