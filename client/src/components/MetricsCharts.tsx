@@ -126,24 +126,28 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     : 0;
 
   // Данные для графика velocity - среднее за 2 спринта
-  const velocityChartData: Array<{ sprintTitle: string; velocity: number; startDate: string; finishDate: string }> = [];
+  const velocityChartData: Array<{ sprintTitle: string; velocity: number; startDate: string; finishDate: string; month: string }> = [];
   for (let i = 0; i < chartData.length; i += 2) {
     if (i + 1 < chartData.length) {
       // Есть пара спринтов - берём среднее
       const avgVel = (chartData[i].velocity + chartData[i + 1].velocity) / 2;
+      const finishDate = chartData[i + 1].finishDate;
       velocityChartData.push({
         sprintTitle: `${chartData[i].sprintTitle} - ${chartData[i + 1].sprintTitle}`,
         velocity: Math.round(avgVel * 10) / 10,
         startDate: chartData[i].startDate,
-        finishDate: chartData[i + 1].finishDate
+        finishDate: finishDate,
+        month: format(new Date(finishDate), 'LLL', { locale: ru })
       });
     } else {
       // Нечётное количество - последний спринт как есть
+      const finishDate = chartData[i].finishDate;
       velocityChartData.push({
         sprintTitle: chartData[i].sprintTitle,
         velocity: chartData[i].velocity,
         startDate: chartData[i].startDate,
-        finishDate: chartData[i].finishDate
+        finishDate: finishDate,
+        month: format(new Date(finishDate), 'LLL', { locale: ru })
       });
     }
   }
@@ -204,9 +208,9 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
             <LineChart data={velocityChartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
-                dataKey="sprintTitle" 
-                tick={false}
-                tickLine={false}
+                dataKey="month" 
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                tickLine={{ stroke: 'hsl(var(--border))' }}
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <YAxis 
