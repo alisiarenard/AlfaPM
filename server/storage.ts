@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, users, departments, teams, initiatives, tasks, sprints } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, sql, asc, and, gte, lt } from "drizzle-orm";
+import { eq, sql, asc, desc, and, gte, lt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -69,6 +69,7 @@ export interface IStorage {
   getAllSprints(): Promise<SprintRow[]>;
   getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
   getSprint(sprintId: number): Promise<SprintRow | undefined>;
+  getLatestSprintByBoardId(boardId: number): Promise<SprintRow | undefined>;
   getTasksBySprint(sprintId: number): Promise<TaskRow[]>;
   getTasksByTeamAndDoneDateRange(teamId: string, startDate: Date, endDate: Date): Promise<TaskRow[]>;
   getSprintInfo(sprintId: number): Promise<{
@@ -324,6 +325,10 @@ export class MemStorage implements IStorage {
   }
 
   async getSprint(sprintId: number): Promise<SprintRow | undefined> {
+    return undefined;
+  }
+
+  async getLatestSprintByBoardId(boardId: number): Promise<SprintRow | undefined> {
     return undefined;
   }
 
@@ -725,6 +730,14 @@ export class DbStorage implements IStorage {
       where: eq(sprints.sprintId, sprintId),
     });
     return result;
+  }
+
+  async getLatestSprintByBoardId(boardId: number): Promise<SprintRow | undefined> {
+    const result = await db.select().from(sprints)
+      .where(eq(sprints.boardId, boardId))
+      .orderBy(desc(sprints.startDate))
+      .limit(1);
+    return result[0];
   }
 
   async getTasksBySprint(sprintId: number): Promise<TaskRow[]> {
