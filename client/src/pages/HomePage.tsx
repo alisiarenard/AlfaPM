@@ -1020,9 +1020,6 @@ export default function HomePage() {
           });
         });
         
-        // Вычисляем % вклада для итоговой строки (100% так как это сумма по типу)
-        const totalContributionPercent = '100%';
-
         const totalRowValues = [
           'Всего',
           typeName, // Тип инициативы
@@ -1035,7 +1032,7 @@ export default function HomePage() {
           '', // эффект по данным - пусто для итоговой строки
           sumPlannedValue || '—',
           sumFactValue || '—',
-          totalContributionPercent, // % вклада
+          '', // % вклада - пусто
           totalPlannedValueCost,
           totalFactValueCost,
           ...sortedTeams.map(team => teamSpTotals.get(team.teamId) || 0)
@@ -1070,13 +1067,6 @@ export default function HomePage() {
         // Потом добавляем детали инициатив (только с фактическими затратами)
         let rowNumber = 1;
         initiativesWithActualCosts.forEach((init) => {
-          // Вычисляем % вклада: factValue / sumFactValue * 100
-          let contributionPercent = '—';
-          if (sumFactValue > 0 && init.factValue !== null && init.factValue > 0) {
-            const percent = Math.round((init.factValue / sumFactValue) * 100);
-            contributionPercent = `${percent}%`;
-          }
-
           const rowValues = [
             rowNumber++, // # (номер строки)
             init.title,
@@ -1089,7 +1079,7 @@ export default function HomePage() {
             '', // эффект по данным - оставляем пустым
             init.plannedValue ?? '—',
             init.factValue ?? '—',
-            contributionPercent, // % вклада
+            '', // % вклада - пусто
             init.plannedValueCost ?? '—',
             init.factValueCost ?? '—',
             ...sortedTeams.map(team => init.spByTeamId?.get(team.teamId) || 0)
