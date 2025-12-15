@@ -26,7 +26,7 @@ The frontend is built with React 18+ and TypeScript, utilizing Vite for tooling,
 - **Initiative Details Modal:** Displays initiative details, progress bars, and allows inline editing for "Epic" type initiatives. Value calculations are automated for Compliance and Enabler types.
 - **Sprint Tasks Modal:** Shows tasks for a given sprint with clickable links to Kaiten cards.
 - **Team Management:** Full CRUD operations for teams and departments with Kaiten board validation, including atomic deletion of teams and associated data.
-- **Initiative Filtering:** Server-side filtering via `filterInitiativesForTimeline()` in `server/routes.ts`. Filters based on status, year, and completion for Epic, Compliance, Enabler, and "Поддержка бизнеса" initiatives. Frontend passes `year` and `showActiveOnly` query parameters to the timeline API.
+- **Initiative Filtering:** Server-side filtering via `filterInitiativesForTimeline()` in `server/routes.ts`. Filters based on status, year, and completion for Epic, Compliance, Enabler, and "Поддержка бизнеса" initiatives. Frontend passes `year` and `showActiveOnly` query parameters to the timeline API. Excel report filtering is also server-side via `forReport=true` parameter on `/api/initiatives/board` endpoint.
 - **Calculations:** Dynamically calculates Innovation Rate, Value/Cost, Cost Structure, Involvement, Forecasted Sprint Count, and automatically generates sprints.
 
 ### Backend Architecture
