@@ -1585,18 +1585,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sprints/check-sync/:teamId", async (req, res) => {
     try {
       const teamId = req.params.teamId;
-      console.log(`[CHECK-SYNC] Checking current sprint for team ${teamId}`);
+      console.log(`\n========================================`);
+      console.log(`[CHECK-SYNC] === START === Team: ${teamId}`);
+      console.log(`========================================`);
       
+      console.log(`[CHECK-SYNC] Step 0: Loading team from DB...`);
       const team = await storage.getTeamById(teamId);
       if (!team) {
+        console.log(`[CHECK-SYNC] Team not found!`);
         return res.status(404).json({
           success: false,
           error: "Team not found"
         });
       }
+      console.log(`[CHECK-SYNC] Team loaded: ${team.name}, sprintBoardId: ${team.sprintBoardId}, spaceId: ${team.spaceId}`);
       
       if (!team.sprintBoardId || !team.spaceId) {
-        console.log(`[CHECK-SYNC] Team ${teamId} has no sprint board or space configured`);
+        console.log(`[CHECK-SYNC] Team has no sprint board or space configured - SKIPPING SYNC`);
         return res.json({
           success: true,
           synced: false,
@@ -1605,14 +1610,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Шаг 1: Смотрим последний спринт в БД по дате начала
+      console.log(`[CHECK-SYNC] Step 1: Looking for latest sprint in DB (boardId: ${team.sprintBoardId})...`);
       const latestSprint = await storage.getLatestSprintByBoardId(team.sprintBoardId);
-      console.log(`[CHECK-SYNC] Latest sprint in DB:`, latestSprint ? {
-        id: latestSprint.sprintId,
-        title: latestSprint.title,
-        startDate: latestSprint.startDate,
-        finishDate: latestSprint.finishDate,
-        actualFinishDate: latestSprint.actualFinishDate
-      } : 'none');
+      if (latestSprint) {
+        console.log(`[CHECK-SYNC] Found latest sprint in DB:`);
+        console.log(`[CHECK-SYNC]   - ID: ${latestSprint.sprintId}`);
+        console.log(`[CHECK-SYNC]   - Title: ${latestSprint.title}`);
+        console.log(`[CHECK-SYNC]   - StartDate: ${latestSprint.startDate}`);
+        console.log(`[CHECK-SYNC]   - FinishDate: ${latestSprint.finishDate}`);
+        console.log(`[CHECK-SYNC]   - ActualFinishDate: ${latestSprint.actualFinishDate || 'NULL (sprint is active)'}`);
+      } else {
+        console.log(`[CHECK-SYNC] No sprints found in DB for this board`);
+      }
       
       // Хелпер для синхронизации задач спринта
       const syncSprintTasks = async (sprintId: number, kaitenSprint: any): Promise<number> => {
@@ -1698,17 +1707,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Шаг 2: Если есть последний спринт и у него нет actualFinishDate - обновляем его
         if (latestSprint && !latestSprint.actualFinishDate) {
-          console.log(`[CHECK-SYNC] Latest sprint ${latestSprint.sprintId} has no actualFinishDate, refreshing from Kaiten...`);
+          console.log(`[CHECK-SYNC] Step 2: Sprint is ACTIVE (no actualFinishDate) - will refresh from Kaiten API`);
+          console.log(`[CHECK-SYNC] >>> CALLING KAITEN API: getSprint(${latestSprint.sprintId})...`);
           
           const refreshedSprint = await kaitenClient.getSprint(latestSprint.sprintId);
           
           if (refreshedSprint) {
-            console.log(`[CHECK-SYNC] Refreshed sprint data:`, {
-              id: refreshedSprint.id,
-              actualFinishDate: refreshedSprint.actual_finish_date
-            });
+            console.log(`[CHECK-SYNC] <<< KAITEN RESPONSE received for sprint ${refreshedSprint.id}`);
+            console.log(`[CHECK-SYNC]   - ActualFinishDate from Kaiten: ${refreshedSprint.actual_finish_date || 'NULL (still active)'}`);
+            console.log(`[CHECK-SYNC]   - Cards count: ${refreshedSprint.cards?.length || 0}`);
             
             // Обновляем спринт в БД
+            console.log(`[CHECK-SYNC] Saving sprint to DB...`);
             await storage.syncSprintFromKaiten(
               refreshedSprint.id,
               refreshedSprint.board_id,
@@ -1721,12 +1731,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
             
             // Обновляем задачи спринта
+            console.log(`[CHECK-SYNC] Syncing tasks for sprint ${refreshedSprint.id}...`);
             previousSprintTasksSynced = await syncSprintTasks(refreshedSprint.id, refreshedSprint);
             previousSprintUpdated = true;
-            console.log(`[CHECK-SYNC] Updated sprint ${refreshedSprint.id} tasks: ${previousSprintTasksSynced}`);
+            console.log(`[CHECK-SYNC] Tasks synced: ${previousSprintTasksSynced}`);
             
             // Если actualFinishDate так и не появилась - возвращаем что есть, спринт ещё активен
             if (!refreshedSprint.actual_finish_date) {
+              console.log(`[CHECK-SYNC] Sprint is STILL ACTIVE - returning early`);
+              console.log(`[CHECK-SYNC] === END === (sprint still active)\n`);
               return res.json({
                 success: true,
                 synced: true,
@@ -1737,17 +1750,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
             
-            console.log(`[CHECK-SYNC] Sprint ${refreshedSprint.id} now has actualFinishDate, will check for new sprint...`);
+            console.log(`[CHECK-SYNC] Sprint ${refreshedSprint.id} is now FINISHED - will check for new sprint...`);
           }
+        } else if (latestSprint && latestSprint.actualFinishDate) {
+          console.log(`[CHECK-SYNC] Step 2: Sprint is already FINISHED (has actualFinishDate) - skipping refresh, will check for new sprint`);
+        } else {
+          console.log(`[CHECK-SYNC] Step 2: No sprint in DB - will check board for current sprint`);
         }
         
         // Шаг 3: Всегда проверяем доску на наличие нового/текущего спринта
         // (если последний спринт завершён или его нет в БД)
-        console.log(`[CHECK-SYNC] Checking board for current sprint...`);
+        console.log(`[CHECK-SYNC] Step 3: Checking board for current sprint...`);
+        console.log(`[CHECK-SYNC] >>> CALLING KAITEN API: getBoardCardsFromSpace(${team.spaceId}, ${team.sprintBoardId})...`);
         const cards = await kaitenClient.getBoardCardsFromSpace(team.spaceId, team.sprintBoardId);
+        console.log(`[CHECK-SYNC] <<< KAITEN RESPONSE: ${cards?.length || 0} cards received`);
         
         if (!cards || cards.length === 0) {
-          console.log(`[CHECK-SYNC] No cards found on sprint board`);
+          console.log(`[CHECK-SYNC] No cards found on sprint board - nothing to sync`);
+          console.log(`[CHECK-SYNC] === END === (no cards)\n`);
           return res.json({
             success: true,
             synced: previousSprintUpdated,
@@ -1759,9 +1779,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const cardWithSprint = cards.find((c: any) => c.sprint_id);
         const sprintId = cardWithSprint?.sprint_id;
+        console.log(`[CHECK-SYNC] Looking for card with sprint_id...`);
         
         if (!sprintId) {
           console.log(`[CHECK-SYNC] No cards have sprint_id assigned`);
+          console.log(`[CHECK-SYNC] === END === (no sprint on cards)\n`);
           return res.json({
             success: true,
             synced: previousSprintUpdated,
@@ -1771,10 +1793,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
+        console.log(`[CHECK-SYNC] Found sprint_id: ${sprintId} on card ${cardWithSprint.id}`);
+        
         // Проверяем есть ли этот спринт в БД
+        console.log(`[CHECK-SYNC] Checking if sprint ${sprintId} exists in DB...`);
         const existingSprint = await storage.getSprint(sprintId);
         if (existingSprint) {
-          console.log(`[CHECK-SYNC] Sprint ${sprintId} already exists in DB`);
+          console.log(`[CHECK-SYNC] Sprint ${sprintId} already exists in DB - no sync needed`);
+          console.log(`[CHECK-SYNC] === END === (sprint exists)\n`);
           return res.json({
             success: true,
             synced: previousSprintUpdated,
@@ -1786,12 +1812,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Новый спринт - сохраняем
-        console.log(`[CHECK-SYNC] Sprint ${sprintId} not in DB, fetching from Kaiten...`);
+        console.log(`[CHECK-SYNC] Step 4: Sprint ${sprintId} NOT in DB - fetching and saving...`);
+        console.log(`[CHECK-SYNC] >>> CALLING KAITEN API: getSprint(${sprintId})...`);
         const kaitenSprint = await kaitenClient.getSprint(sprintId);
+        console.log(`[CHECK-SYNC] <<< KAITEN RESPONSE: Sprint ${kaitenSprint?.id || 'null'} received`);
+        
         const result = await saveNewSprint(kaitenSprint);
         
         if (result) {
-          console.log(`[CHECK-SYNC] Sprint ${sprintId} synced! Tasks: ${result.tasksSynced}`);
+          console.log(`[CHECK-SYNC] NEW SPRINT SYNCED! ID: ${result.sprintId}, Tasks: ${result.tasksSynced}`);
+          console.log(`[CHECK-SYNC] === END === (new sprint synced)\n`);
           return res.json({
             success: true,
             synced: true,
@@ -1802,6 +1832,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
+        console.log(`[CHECK-SYNC] Failed to save new sprint`);
+        console.log(`[CHECK-SYNC] === END === (failed)\n`);
         return res.json({
           success: true,
           synced: previousSprintUpdated,
