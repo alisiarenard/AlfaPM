@@ -3704,10 +3704,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allInitiatives = initiativesWithSprints.flat();
       
       // Группируем инициативы по cardId для исключения дубликатов
+      // Применяем такую же фильтрацию, как в Excel отчёте (forReport=true)
       const initiativesByCardId = new Map<number, any[]>();
       allInitiatives.forEach((initiative) => {
         // Пропускаем "Поддержку бизнеса"
         if (initiative.cardId === 0) return;
+        
+        // Пропускаем архивные инициативы
+        if (initiative.condition === "2-archived") return;
+        
+        // Оставляем только Epic, Compliance, Enabler
+        if (initiative.type !== 'Epic' && initiative.type !== 'Compliance' && initiative.type !== 'Enabler') {
+          return;
+        }
         
         if (!initiativesByCardId.has(initiative.cardId)) {
           initiativesByCardId.set(initiative.cardId, []);
