@@ -63,6 +63,74 @@ async function findInitiativeInParentChain(parentCardId: number, depth = 0, orig
   return 0;
 }
 
+/**
+ * Фильтрует инициативы для timeline endpoint
+ * Логика фильтрации:
+ * 1. "Поддержка бизнеса" (cardId === 0) показываем всегда
+ * 2. Не показываем архивные (condition === "2-archived")
+ * 3. Показываем только Epic, Compliance, Enabler
+ * 4. Если showActiveOnly - только state === "2-inProgress"
+ * 5. Если done/inProgress и totalSp === 0 - не показываем
+ * 6. Фильтр по году: проверяем есть ли задачи с doneDate в выбранном году
+ */
+function filterInitiativesForTimeline(
+  initiatives: any[],
+  year: number | null,
+  showActiveOnly: boolean
+): any[] {
+  return initiatives.filter(init => {
+    // "Поддержка бизнеса" показываем всегда (независимо от года и других фильтров)
+    const isSupport = init.cardId === 0;
+    if (isSupport) {
+      return true;
+    }
+    
+    // Не показываем архивные инициативы
+    if (init.condition === "2-archived") {
+      return false;
+    }
+    
+    // Показываем только Epic, Compliance и Enabler
+    if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') {
+      return false;
+    }
+    
+    // Фильтр "Активные" - показываем только inProgress
+    if (showActiveOnly && init.state !== "2-inProgress") {
+      return false;
+    }
+    
+    // Если инициатива в статусе done или inProgress
+    if (init.state === "2-inProgress" || init.state === "3-done") {
+      // Считаем общее количество выполненных SP
+      const totalSp = init.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
+      
+      // Не показываем если выполнено 0 SP
+      if (totalSp === 0) {
+        return false;
+      }
+      
+      // Фильтр по году: проверяем, есть ли задачи, закрытые в выбранном году
+      if (year) {
+        const hasTasksInSelectedYear = init.sprints?.some((sprint: any) => 
+          sprint.tasks?.some((task: any) => {
+            if (!task.doneDate) return false;
+            const taskYear = new Date(task.doneDate).getFullYear();
+            return taskYear === year;
+          })
+        ) || false;
+        
+        // Не показываем если нет задач в выбранном году
+        if (!hasTasksInSelectedYear) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/departments", async (req, res) => {
     try {
@@ -792,7 +860,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               sprints: [],
               involvement: null
             }));
-            return res.json({ initiatives: initiativesWithEmpty, sprints: [] });
+            // Применяем фильтрацию по году и активности
+            const finalInitiatives = filterInitiativesForTimeline(initiativesWithEmpty, year, showActiveOnly);
+            return res.json({ initiatives: finalInitiatives, sprints: [] });
           }
 
           // Создаём виртуальные спринты (копия логики из else ветки)
@@ -913,8 +983,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
           
           const initiativesWithInvolvement = calculateInitiativesInvolvement(filteredInitiatives, sprintPeriods);
+          
+          // Применяем фильтрацию по году и активности
+          const finalInitiatives = filterInitiativesForTimeline(initiativesWithInvolvement, year, showActiveOnly);
 
-          return res.json({ initiatives: initiativesWithInvolvement, sprints: virtualSprints });
+          return res.json({ initiatives: finalInitiatives, sprints: virtualSprints });
         }
 
         // Группируем задачи по инициативам в памяти
@@ -993,8 +1066,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         
         const initiativesWithInvolvement = calculateInitiativesInvolvement(filteredInitiatives, sprintPeriods);
+        
+        // Применяем фильтрацию по году и активности
+        const finalInitiatives = filterInitiativesForTimeline(initiativesWithInvolvement, year, showActiveOnly);
 
-        res.json({ initiatives: initiativesWithInvolvement, sprints: teamSprints });
+        res.json({ initiatives: finalInitiatives, sprints: teamSprints });
       } else {
         // РЕЖИМ: Виртуальные спринты (hasSprints === false)
         // Создаём виртуальные спринты на основе sprintDuration
@@ -1013,7 +1089,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sprints: [],
             involvement: null
           }));
-          return res.json({ initiatives: initiativesWithEmpty, sprints: [] });
+          // Применяем фильтрацию по году и активности
+          const finalInitiatives = filterInitiativesForTimeline(initiativesWithEmpty, year, showActiveOnly);
+          return res.json({ initiatives: finalInitiatives, sprints: [] });
         }
 
         // Создаём виртуальные спринты
@@ -1123,8 +1201,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         
         const initiativesWithInvolvement = calculateInitiativesInvolvement(filteredInitiatives, sprintPeriods);
+        
+        // Применяем фильтрацию по году и активности
+        const finalInitiatives = filterInitiativesForTimeline(initiativesWithInvolvement, year, showActiveOnly);
 
-        res.json({ initiatives: initiativesWithInvolvement, sprints: virtualSprints });
+        res.json({ initiatives: finalInitiatives, sprints: virtualSprints });
       }
     } catch (error) {
       res.status(500).json({ 

@@ -2089,9 +2089,9 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
   });
   
   const { data: timelineData, isLoading: timelineLoading, error: initiativesError } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
-    queryKey: ["/api/timeline", team.teamId],
+    queryKey: ["/api/timeline", team.teamId, selectedYear, showActiveOnly],
     queryFn: async () => {
-      const response = await fetch(`/api/timeline/${team.teamId}`);
+      const response = await fetch(`/api/timeline/${team.teamId}?year=${selectedYear}&showActiveOnly=${showActiveOnly}`);
       if (!response.ok) throw new Error('Failed to fetch timeline');
       return response.json();
     },
@@ -2209,80 +2209,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     );
   }
 
-  // Данные уже приходят в правильном формате Initiative с сервера
-  const allInitiatives: Initiative[] = initiativeRows || [];
-  
-  console.log(`[Initiatives Filter] Received ${allInitiatives.length} initiatives from backend for team ${team.teamName}`);
-  console.log(`[Initiatives Filter] All initiatives:`, allInitiatives.map(i => ({ 
-    cardId: i.cardId, 
-    title: i.title, 
-    type: i.type, 
-    state: i.state,
-    sprintsCount: i.sprints?.length || 0,
-    totalSp: i.sprints?.reduce((sum, s) => sum + s.sp, 0) || 0
-  })));
-  
-  // Фильтруем инициативы:
-  // 1. "Поддержка бизнеса" (cardId === 0) показываем всегда независимо от года
-  // 2. Показываем только типы Epic, Compliance и Enabler
-  // 3. Если включен фильтр "Активные" - только inProgress (скрываем queued и done)
-  // 4. Если инициатива done или inProgress и выполнено 0 SP - не показываем
-  // 5. Если выбран год, для инициатив done или inProgress показываем только те, у которых есть задачи, закрытые в этом году
-  const initiatives = allInitiatives.filter(init => {
-    // "Поддержка бизнеса" показываем всегда (независимо от года и других фильтров)
-    const isSupport = init.cardId === 0;
-    if (isSupport) {
-      return true;
-    }
-    
-    // Не показываем архивные инициативы
-    if (init.condition === "2-archived") {
-      console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - archived`);
-      return false;
-    }
-    
-    // Показываем только Epic, Compliance и Enabler
-    if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') {
-      console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - type: ${init.type} (не Epic/Compliance/Enabler)`);
-      return false;
-    }
-    
-    // Фильтр "Активные" - показываем только inProgress
-    if (showActiveOnly && init.state !== "2-inProgress") {
-      console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - state: ${init.state} (showActiveOnly=${showActiveOnly})`);
-      return false;
-    }
-    
-    // Если инициатива в статусе done или inProgress
-    if (init.state === "2-inProgress" || init.state === "3-done") {
-      // Считаем общее количество выполненных SP
-      const totalSp = init.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
-      
-      // Не показываем если выполнено 0 SP
-      if (totalSp === 0) {
-        console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - totalSp: ${totalSp} (done/inProgress с 0 SP)`);
-        return false;
-      }
-      
-      // Фильтр по году: проверяем, есть ли задачи, закрытые в выбранном году
-      const hasTasksInSelectedYear = init.sprints.some(sprint => 
-        sprint.tasks.some(task => {
-          if (!task.doneDate) return false;
-          const taskYear = new Date(task.doneDate).getFullYear();
-          return taskYear.toString() === selectedYear;
-        })
-      );
-      
-      // Не показываем если нет задач в выбранном году
-      if (!hasTasksInSelectedYear) {
-        console.log(`[Initiatives Filter] Filtered out initiative ${init.cardId} "${init.title}" - no tasks in year ${selectedYear} (state: ${init.state})`);
-        return false;
-      }
-    }
-    
-    console.log(`[Initiatives Filter] Initiative ${init.cardId} "${init.title}" PASSED all filters`);
-    return true;
-  });
+  // Данные уже приходят отфильтрованными с сервера (фильтрация по году, активности, типу и SP)
+  const initiatives: Initiative[] = initiativeRows || [];
   
   // Сортируем инициативы:
   // 1. "Поддержка бизнеса" всегда первая
