@@ -70,14 +70,18 @@ async function findInitiativeInParentChain(parentCardId: number, depth = 0, orig
  * 2. Не показываем архивные (condition === "2-archived")
  * 3. Показываем только Epic, Compliance, Enabler
  * 4. Если showActiveOnly - только state === "2-inProgress"
- * 5. Если done/inProgress и totalSp === 0 - не показываем
- * 6. Фильтр по году: проверяем есть ли задачи с doneDate в выбранном году
+ * 5. Если done и totalSp === 0 - не показываем (inProgress всегда показываем)
+ * 6. Фильтр по году (только для done): проверяем есть ли задачи с doneDate в выбранном году
+ * 7. Queued инициативы показываем всегда (если не фильтр активных)
  */
 function filterInitiativesForTimeline(
   initiatives: any[],
   year: number | null,
   showActiveOnly: boolean
 ): any[] {
+  // Нормализация year - если NaN или невалидное значение, используем null
+  const validYear = (year !== null && !isNaN(year) && year > 0) ? year : null;
+  
   return initiatives.filter(init => {
     // "Поддержка бизнеса" показываем всегда (независимо от года и других фильтров)
     const isSupport = init.cardId === 0;
@@ -100,8 +104,19 @@ function filterInitiativesForTimeline(
       return false;
     }
     
-    // Если инициатива в статусе done или inProgress
-    if (init.state === "2-inProgress" || init.state === "3-done") {
+    // Queued инициативы показываем всегда (если прошли предыдущие фильтры)
+    if (init.state === "1-queued") {
+      return true;
+    }
+    
+    // InProgress инициативы показываем всегда (если прошли предыдущие фильтры)
+    // Для них не применяем фильтр по году, т.к. это текущая работа
+    if (init.state === "2-inProgress") {
+      return true;
+    }
+    
+    // Для Done инициатив применяем строгие фильтры
+    if (init.state === "3-done") {
       // Считаем общее количество выполненных SP
       const totalSp = init.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
       
@@ -111,12 +126,12 @@ function filterInitiativesForTimeline(
       }
       
       // Фильтр по году: проверяем, есть ли задачи, закрытые в выбранном году
-      if (year) {
+      if (validYear) {
         const hasTasksInSelectedYear = init.sprints?.some((sprint: any) => 
           sprint.tasks?.some((task: any) => {
             if (!task.doneDate) return false;
             const taskYear = new Date(task.doneDate).getFullYear();
-            return taskYear === year;
+            return taskYear === validYear;
           })
         ) || false;
         
