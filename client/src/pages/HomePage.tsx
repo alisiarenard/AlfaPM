@@ -2246,7 +2246,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     return getStartDate(a) - getStartDate(b);
   });
   
-  console.log(`[Initiatives Filter] Final count: ${sortedInitiatives.length} initiatives shown (from ${allInitiatives.length} total)`);
+  console.log(`[Initiatives Filter] Final count: ${sortedInitiatives.length} initiatives shown (from ${initiatives.length} total)`);
 
   const teamData: Team = {
     boardId: team.initBoardId.toString(),
@@ -2268,7 +2268,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     <div className="border border-border rounded-lg overflow-hidden">
       <TeamHeader 
         team={teamData} 
-        initiatives={allInitiatives} 
+        initiatives={initiatives} 
         dbTeam={team} 
         showActiveOnly={showActiveOnly}
         onFilterChange={setShowActiveOnly}
