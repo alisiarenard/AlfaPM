@@ -3579,7 +3579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // log(`[Value/Cost] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
+      console.log(`[Value/Cost] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
 
       // Получаем команды
       const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
@@ -3760,7 +3760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalActualCost += actualSize * (initiative.spPrice || 0);
         }
         
-        // log(`[Value/Cost] Init ${cardId} total costs: planned=${totalPlannedCost}, actual=${totalActualCost}`);
+        console.log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type}: planned=${totalPlannedCost}, actual=${totalActualCost}`);
         
         // Для Epic получаем plannedValue и factValue из БД
         // Для Compliance и Enabler: plannedValue = plannedCost, factValue = actualCost
@@ -3787,7 +3787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sumPlannedCost += totalPlannedCost;
           sumFactValue += factValue;
           sumFactCost += totalActualCost;
-          // log(`[Value/Cost] Added to totals: plannedValue=${plannedValue}, factValue=${factValue}, plannedCost=${totalPlannedCost}, actualCost=${totalActualCost}`);
+          console.log(`[Value/Cost] Added to totals: plannedValue=${plannedValue}, factValue=${factValue}, plannedCost=${totalPlannedCost}, actualCost=${totalActualCost}`);
         }
       }
 
@@ -3799,7 +3799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? Math.round((sumFactValue / sumFactCost) * 10) / 10
         : 0;
 
-      // log(`[Value/Cost] Planned: ${plannedValueCost} (${sumPlannedValue}/${sumPlannedCost}), Fact: ${factValueCost} (${sumFactValue}/${sumFactCost})`);
+      console.log(`[Value/Cost] FINAL: Planned: ${plannedValueCost} (${sumPlannedValue}/${sumPlannedCost}), Fact: ${factValueCost} (${sumFactValue}/${sumFactCost})`);
 
       res.json({
         success: true,
