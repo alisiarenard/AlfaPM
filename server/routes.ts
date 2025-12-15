@@ -770,12 +770,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Фильтрация для Excel отчетов (forReport=true)
       // 1. Исключаем "Поддержка бизнеса" (cardId === 0)
-      // 2. Исключаем архивные (condition === "2-archived")
+      // 2. Показываем только инициативы в статусе "done" (condition === "4-done")
       // 3. Показываем только Epic, Compliance, Enabler
       const result = forReport
         ? initiativesWithInvolvement.filter((init: any) => {
             if (init.cardId === 0) return false;
-            if (init.condition === "2-archived") return false;
+            if (init.condition !== "4-done") return false;
             if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') return false;
             return true;
           })
