@@ -702,7 +702,7 @@ export default function HomePage() {
       // Получаем инициативы для всех выбранных команд
       const selectedTeamsData = departmentTeams?.filter(t => selectedTeams.has(t.teamId)) || [];
       const initiativesPromises = selectedTeamsData.map(async (team) => {
-        const url = `/api/initiatives/board/${team.initBoardId}?sprintBoardId=${team.sprintBoardId}&teamId=${team.teamId}&year=${selectedYear}&_t=${Date.now()}`;
+        const url = `/api/initiatives/board/${team.initBoardId}?sprintBoardId=${team.sprintBoardId}&teamId=${team.teamId}&year=${selectedYear}&forReport=true&_t=${Date.now()}`;
         const response = await fetch(url);
         if (!response.ok) return [];
         const initiatives = await response.json();
@@ -845,19 +845,9 @@ export default function HomePage() {
       };
 
       // Группируем инициативы по cardId для исключения дубликатов
+      // Фильтрация (cardId=0, archived, type) выполняется на бэкенде (forReport=true)
       const initiativesByCardId = new Map<number, any[]>();
       allInitiatives.forEach((initiative: any) => {
-        // Пропускаем "Поддержку бизнеса"
-        if (initiative.cardId === 0) return;
-        
-        // Пропускаем архивные инициативы
-        if (initiative.condition === "2-archived") return;
-        
-        // Оставляем только Epic, Compliance, Enabler
-        if (initiative.type !== 'Epic' && initiative.type !== 'Compliance' && initiative.type !== 'Enabler') {
-          return;
-        }
-        
         if (!initiativesByCardId.has(initiative.cardId)) {
           initiativesByCardId.set(initiative.cardId, []);
         }

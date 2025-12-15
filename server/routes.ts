@@ -628,6 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprintBoardId = req.query.sprintBoardId ? parseInt(req.query.sprintBoardId as string) : null;
       const teamId = req.query.teamId as string | null;
       const year = req.query.year ? parseInt(req.query.year as string) : null;
+      const forReport = req.query.forReport === 'true';
       
       if (isNaN(initBoardId)) {
         return res.status(400).json({ 
@@ -767,7 +768,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const initiativesWithInvolvement = calculateInitiativesInvolvement(filteredInitiatives, sprintPeriods);
       
-      res.json(initiativesWithInvolvement);
+      // Фильтрация для Excel отчетов (forReport=true)
+      // 1. Исключаем "Поддержка бизнеса" (cardId === 0)
+      // 2. Исключаем архивные (condition === "2-archived")
+      // 3. Показываем только Epic, Compliance, Enabler
+      const result = forReport
+        ? initiativesWithInvolvement.filter((init: any) => {
+            if (init.cardId === 0) return false;
+            if (init.condition === "2-archived") return false;
+            if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') return false;
+            return true;
+          })
+        : initiativesWithInvolvement;
+      
+      res.json(result);
     } catch (error) {
       res.status(500).json({ 
         success: false, 
