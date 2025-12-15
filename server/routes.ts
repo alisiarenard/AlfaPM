@@ -3579,8 +3579,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log(`[Value/Cost] Calculating for teams: ${teamIds.join(', ')}, year: ${year}`);
-
       // Получаем команды
       const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
       const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
@@ -3760,8 +3758,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalActualCost += actualSize * (initiative.spPrice || 0);
         }
         
-        console.log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type}: planned=${totalPlannedCost}, actual=${totalActualCost}`);
-        
         // Для Epic получаем plannedValue и factValue из БД
         // Для Compliance и Enabler: plannedValue = plannedCost, factValue = actualCost
         let plannedValue = 0;
@@ -3787,7 +3783,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sumPlannedCost += totalPlannedCost;
           sumFactValue += factValue;
           sumFactCost += totalActualCost;
-          console.log(`[Value/Cost] Added to totals: plannedValue=${plannedValue}, factValue=${factValue}, plannedCost=${totalPlannedCost}, actualCost=${totalActualCost}`);
         }
       }
 
@@ -3798,8 +3793,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const factValueCost = sumFactCost > 0 
         ? Math.round((sumFactValue / sumFactCost) * 10) / 10
         : 0;
-
-      console.log(`[Value/Cost] FINAL: Planned: ${plannedValueCost} (${sumPlannedValue}/${sumPlannedCost}), Fact: ${factValueCost} (${sumFactValue}/${sumFactCost})`);
 
       res.json({
         success: true,

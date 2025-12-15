@@ -789,46 +789,85 @@ export default function HomePage() {
       });
       const sortedTeams = Array.from(uniqueTeamsMap.values()).sort((a, b) => a.teamName.localeCompare(b.teamName));
       
-      // Устанавливаем ширину колонок (базовые 13 + одна на каждую команду)
+      // Устанавливаем ширину колонок (базовые 14 + одна на каждую команду)
+      // Структура: #, инициативы, сроки(план,прод,эффект), затраты(план,факт текущего), тип эффекта, эффект по данным, эффект(план,факт,% вклада), V/C(план,факт)
       initiativesWorksheet.columns = [
-        { width: 15 }, // Тип
+        { width: 6 },  // # (номер строки)
         { width: 40 }, // Инициативы
-        { width: 15 }, // Срок (план)
-        { width: 15 }, // Срок (прод)
-        { width: 15 }, // Срок (эффект)
-        { width: 15 }, // Затраты (план)
-        { width: 15 }, // Затраты (факт)
-        { width: 15 }, // Тип эффект
+        { width: 12 }, // Сроки: план
+        { width: 12 }, // Сроки: прод
+        { width: 12 }, // Сроки: эффект
+        { width: 15 }, // Затраты: план
+        { width: 15 }, // Затраты: факт текущего
+        { width: 15 }, // Тип эффекта
         { width: 18 }, // эффект по данным
-        { width: 15 }, // Эффект (план)
-        { width: 15 }, // Эффект (факт)
-        { width: 18 }, // Value/Cost (план)
-        { width: 18 }, // Value/Cost (факт)
+        { width: 15 }, // Эффект: план
+        { width: 15 }, // Эффект: факт
+        { width: 12 }, // Эффект: % вклада
+        { width: 12 }, // V/C: план
+        { width: 12 }, // V/C: факт
         ...sortedTeams.map(() => ({ width: 12 })) // Колонки для каждой команды
       ];
 
-      // Добавляем заголовок
-      const headerValues = [
-        'Тип', 'Инициативы', 'Срок (план)', 'Срок (прод)', 'Срок (эффект)', 
-        'Затраты (план)', 'Затраты (факт)', 'Тип эффект', 'эффект по данным', 
-        'Эффект (план)', 'Эффект (факт)', 'Value/Cost (план)', 'Value/Cost (факт)',
+      // Создаем двухуровневый заголовок с объединенными ячейками
+      // Строка 1: родительские заголовки с объединениями
+      const headerRow1Values = [
+        '#', 'инициативы', 'сроки', '', '', 'затраты', '', 'тип эффекта', 'эффект по данным', 'эффект', '', '', 'V/C', '',
         ...sortedTeams.map(team => team.teamName)
       ];
-      const headerRow = initiativesWorksheet.addRow(headerValues);
+      const headerRow1 = initiativesWorksheet.addRow(headerRow1Values);
       
-      // Применяем форматирование к заголовку
-      headerRow.eachCell((cell, colNumber) => {
-        cell.font = { name: 'Akrobat', size: 14, color: { argb: 'FFFFFFFF' } }; // Белый текст
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFC00000' } // Красный фон RGB(192, 0, 0)
-        };
-        
-        // Выравнивание по центру для всех столбцов кроме первых двух
-        if (colNumber > 2) {
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      // Строка 2: подзаголовки
+      const headerRow2Values = [
+        '', '', 'план', 'прод', 'эффект', 'план', 'факт текущего', '', '', 'план', 'факт', '% вклада', 'план', 'факт',
+        ...sortedTeams.map(() => '')
+      ];
+      const headerRow2 = initiativesWorksheet.addRow(headerRow2Values);
+      
+      // Объединяем ячейки для родительских заголовков
+      // #: A1:A2 (строки 1-2)
+      initiativesWorksheet.mergeCells('A1:A2');
+      // инициативы: B1:B2
+      initiativesWorksheet.mergeCells('B1:B2');
+      // сроки: C1:E1 (план, прод, эффект)
+      initiativesWorksheet.mergeCells('C1:E1');
+      // затраты: F1:G1 (план, факт текущего)
+      initiativesWorksheet.mergeCells('F1:G1');
+      // тип эффекта: H1:H2
+      initiativesWorksheet.mergeCells('H1:H2');
+      // эффект по данным: I1:I2
+      initiativesWorksheet.mergeCells('I1:I2');
+      // эффект: J1:L1 (план, факт, % вклада)
+      initiativesWorksheet.mergeCells('J1:L1');
+      // V/C: M1:N1 (план, факт)
+      initiativesWorksheet.mergeCells('M1:N1');
+      
+      // Объединяем ячейки для колонок команд (каждая команда в 2 строках)
+      const teamsStartCol = 15; // O колонка
+      sortedTeams.forEach((_, index) => {
+        const col = teamsStartCol + index;
+        const colLetter = String.fromCharCode(64 + col > 90 ? 64 + col - 26 : 64 + col);
+        // Для колонок после Z нужна другая логика
+        let colName: string;
+        if (col <= 26) {
+          colName = String.fromCharCode(64 + col);
+        } else {
+          colName = String.fromCharCode(64 + Math.floor((col - 1) / 26)) + String.fromCharCode(64 + ((col - 1) % 26) + 1);
         }
+        initiativesWorksheet.mergeCells(`${colName}1:${colName}2`);
+      });
+      
+      // Применяем форматирование к обоим рядам заголовков
+      [headerRow1, headerRow2].forEach(headerRow => {
+        headerRow.eachCell((cell) => {
+          cell.font = { name: 'Akrobat', size: 14, color: { argb: 'FFFFFFFF' } }; // Белый текст
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFC00000' } // Красный фон RGB(192, 0, 0)
+          };
+          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        });
       });
 
       // Функция для форматирования даты в формат "dd.MM"
@@ -846,7 +885,6 @@ export default function HomePage() {
 
       // Группируем инициативы по cardId для исключения дубликатов
       // Фильтрация (cardId=0, archived, type) выполняется на бэкенде (forReport=true)
-      console.log(`[Excel] Total initiatives received: ${allInitiatives.length}`);
       const initiativesByCardId = new Map<number, any[]>();
       allInitiatives.forEach((initiative: any) => {
         if (!initiativesByCardId.has(initiative.cardId)) {
@@ -854,7 +892,6 @@ export default function HomePage() {
         }
         initiativesByCardId.get(initiative.cardId)!.push(initiative);
       });
-      console.log(`[Excel] Unique initiatives by cardId: ${initiativesByCardId.size}`);
 
       // Обрабатываем уникальные инициативы и собираем их данные
       const processedInitiatives: any[] = [];
@@ -923,8 +960,6 @@ export default function HomePage() {
 
         // Срок (прод): показываем срок план только если инициатива в статусе done
         const productionDate = firstInit.state === '3-done' ? firstInit.dueDate : null;
-
-        console.log(`[Excel] Init ${firstInit.cardId} "${firstInit.title}" type=${firstInit.type}: plannedCost=${totalPlannedCost}, actualCost=${totalActualCost}, plannedValue=${plannedValue}, factValue=${factValue}`);
         
         processedInitiatives.push({
           type: firstInit.type || '—',
@@ -967,10 +1002,7 @@ export default function HomePage() {
           sumActualCost += init.totalActualCost;
           if (init.plannedValue !== null) sumPlannedValue += init.plannedValue;
           if (init.factValue !== null) sumFactValue += init.factValue;
-          console.log(`[Excel ${typeName}] Adding init ${init.cardId}: plannedCost+=${init.totalPlannedCost}, actualCost+=${init.totalActualCost}, plannedValue+=${init.plannedValue}, factValue+=${init.factValue}`);
         });
-
-        console.log(`[Excel ${typeName}] TOTALS: sumPlannedCost=${sumPlannedCost}, sumActualCost=${sumActualCost}, sumPlannedValue=${sumPlannedValue}, sumFactValue=${sumFactValue}`);
 
         // Добавляем строку "Всего" СНАЧАЛА
         const totalPlannedValueCost = sumPlannedValue > 0 && sumPlannedCost > 0
@@ -979,8 +1011,6 @@ export default function HomePage() {
         const totalFactValueCost = sumFactValue > 0 && sumActualCost > 0
           ? Math.round((sumFactValue / sumActualCost) * 10) / 10
           : '—';
-        
-        console.log(`[Excel ${typeName}] Value/Cost: plan=${totalPlannedValueCost}, fact=${totalFactValueCost}`);
 
         // Суммируем SP по командам для итоговой строки
         const teamSpTotals = new Map<string, number>();
@@ -990,6 +1020,9 @@ export default function HomePage() {
           });
         });
         
+        // Вычисляем % вклада для итоговой строки (100% так как это сумма по типу)
+        const totalContributionPercent = '100%';
+
         const totalRowValues = [
           'Всего',
           typeName, // Тип инициативы
@@ -998,10 +1031,11 @@ export default function HomePage() {
           '',
           sumPlannedCost,
           sumActualCost,
-          '', // Тип эффект - пусто для итоговой строки
+          '', // Тип эффекта - пусто для итоговой строки
           '', // эффект по данным - пусто для итоговой строки
           sumPlannedValue || '—',
           sumFactValue || '—',
+          totalContributionPercent, // % вклада
           totalPlannedValueCost,
           totalFactValueCost,
           ...sortedTeams.map(team => teamSpTotals.get(team.teamId) || 0)
@@ -1023,30 +1057,39 @@ export default function HomePage() {
             cell.alignment = { horizontal: 'center', vertical: 'middle' };
           }
           
-          // Числовой формат для столбцов с затратами и эффектами
+          // Числовой формат для столбцов с затратами и эффектами (колонки 6,7 и 10,11)
           if ([6, 7, 10, 11].includes(colNumber)) {
             cell.numFmt = '#,##0';
           }
-          // Value/Cost округляем до одной десятой
-          if ([12, 13].includes(colNumber)) {
+          // Value/Cost округляем до одной десятой (колонки 13,14)
+          if ([13, 14].includes(colNumber)) {
             cell.numFmt = '#,##0.0';
           }
         });
 
         // Потом добавляем детали инициатив (только с фактическими затратами)
+        let rowNumber = 1;
         initiativesWithActualCosts.forEach((init) => {
+          // Вычисляем % вклада: factValue / sumFactValue * 100
+          let contributionPercent = '—';
+          if (sumFactValue > 0 && init.factValue !== null && init.factValue > 0) {
+            const percent = Math.round((init.factValue / sumFactValue) * 100);
+            contributionPercent = `${percent}%`;
+          }
+
           const rowValues = [
-            init.type,
+            rowNumber++, // # (номер строки)
             init.title,
             formatDate(init.dueDate),
             formatDate(init.doneDate),
             '—', // Срок (эффект) - пока не определено
             init.totalPlannedCost,
             init.totalActualCost,
-            '', // Тип эффект - оставляем пустым
+            init.type || '', // Тип эффекта
             '', // эффект по данным - оставляем пустым
             init.plannedValue ?? '—',
             init.factValue ?? '—',
+            contributionPercent, // % вклада
             init.plannedValueCost ?? '—',
             init.factValueCost ?? '—',
             ...sortedTeams.map(team => init.spByTeamId?.get(team.teamId) || 0)
@@ -1062,12 +1105,12 @@ export default function HomePage() {
               cell.alignment = { horizontal: 'center', vertical: 'middle' };
             }
             
-            // Числовой формат для столбцов с затратами и эффектами
+            // Числовой формат для столбцов с затратами и эффектами (колонки 6,7 и 10,11)
             if ([6, 7, 10, 11].includes(colNumber)) {
               cell.numFmt = '#,##0';
             }
-            // Value/Cost округляем до одной десятой
-            if ([12, 13].includes(colNumber)) {
+            // Value/Cost округляем до одной десятой (колонки 13,14)
+            if ([13, 14].includes(colNumber)) {
               cell.numFmt = '#,##0.0';
             }
           });
