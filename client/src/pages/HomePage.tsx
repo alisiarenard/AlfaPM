@@ -1085,7 +1085,7 @@ export default function HomePage() {
             '—', // Срок (эффект) - пока не определено
             init.totalPlannedCost,
             init.totalActualCost,
-            init.type || '', // Тип эффекта
+            '', // Тип эффекта - пусто
             '', // эффект по данным - оставляем пустым
             init.plannedValue ?? '—',
             init.factValue ?? '—',
