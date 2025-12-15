@@ -696,6 +696,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/timeline/:teamId", async (req, res) => {
     try {
       const { teamId } = req.params;
+      // Получаем параметры фильтрации из query string
+      const year = req.query.year ? parseInt(req.query.year as string) : null;
+      const showActiveOnly = req.query.showActiveOnly === 'true';
+      
+      console.log(`[TIMELINE] Fetching timeline for team ${teamId}, year=${year}, showActiveOnly=${showActiveOnly}`);
+      
       const team = await storage.getTeamById(teamId);
       
       if (!team) {
