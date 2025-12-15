@@ -63,6 +63,14 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
   - Returns: `{ success, initiativesSynced, newSprintSynced, sprint: { ...sprintData, tasksSynced } | null }`
   - Preserves `doneDate` via `card.last_moved_to_done_at` for accurate year-based filtering
   - For teams without sprint boards: only syncs initiatives, frontend calls separate endpoint for tasks
+- **Automatic Sprint Check Endpoint:** `GET /api/sprints/check-sync/:teamId` provides intelligent sprint detection on tab open:
+  - Step 1: Finds latest sprint in DB by startDate using `getLatestSprintByBoardId`
+  - Step 2: If latest sprint has no `actualFinishDate` — refreshes it from Kaiten API and updates tasks
+  - Step 3: If sprint is still active (no actualFinishDate after refresh) — returns current state
+  - Step 4: If sprint finished OR no sprints in DB — checks sprint board for cards with `sprint_id`
+  - Step 5: If new sprint found on board (not in DB) — syncs it with all tasks
+  - Returns: `{ success, synced, newSprintSynced, previousSprintUpdated, sprintId, tasksSynced }`
+  - Optimized to minimize Kaiten API calls: only refreshes when needed
 - **Initiative Type Validation:** `findInitiativeInParentChain` recursively searches parent chain and validates initiative types (Epic/Compliance/Enabler only), preventing incorrect task-initiative associations
 - **New Sprint API:** Uses Kaiten's `/api/latest/sprints` endpoint to fetch all company sprints in a single request, filtering by team `board_id` for efficiency.
 - **Synchronization Sequence:** 
