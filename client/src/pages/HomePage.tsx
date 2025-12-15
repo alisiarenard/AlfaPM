@@ -846,6 +846,7 @@ export default function HomePage() {
 
       // Группируем инициативы по cardId для исключения дубликатов
       // Фильтрация (cardId=0, archived, type) выполняется на бэкенде (forReport=true)
+      console.log(`[Excel] Total initiatives received: ${allInitiatives.length}`);
       const initiativesByCardId = new Map<number, any[]>();
       allInitiatives.forEach((initiative: any) => {
         if (!initiativesByCardId.has(initiative.cardId)) {
@@ -853,6 +854,7 @@ export default function HomePage() {
         }
         initiativesByCardId.get(initiative.cardId)!.push(initiative);
       });
+      console.log(`[Excel] Unique initiatives by cardId: ${initiativesByCardId.size}`);
 
       // Обрабатываем уникальные инициативы и собираем их данные
       const processedInitiatives: any[] = [];
@@ -922,9 +924,12 @@ export default function HomePage() {
         // Срок (прод): показываем срок план только если инициатива в статусе done
         const productionDate = firstInit.state === '3-done' ? firstInit.dueDate : null;
 
+        console.log(`[Excel] Init ${firstInit.cardId} "${firstInit.title}" type=${firstInit.type}: plannedCost=${totalPlannedCost}, actualCost=${totalActualCost}, plannedValue=${plannedValue}, factValue=${factValue}`);
+        
         processedInitiatives.push({
           type: firstInit.type || '—',
           title: firstInit.title,
+          cardId: firstInit.cardId,
           dueDate: firstInit.dueDate,
           doneDate: productionDate,
           totalPlannedCost,
@@ -962,7 +967,10 @@ export default function HomePage() {
           sumActualCost += init.totalActualCost;
           if (init.plannedValue !== null) sumPlannedValue += init.plannedValue;
           if (init.factValue !== null) sumFactValue += init.factValue;
+          console.log(`[Excel ${typeName}] Adding init ${init.cardId}: plannedCost+=${init.totalPlannedCost}, actualCost+=${init.totalActualCost}, plannedValue+=${init.plannedValue}, factValue+=${init.factValue}`);
         });
+
+        console.log(`[Excel ${typeName}] TOTALS: sumPlannedCost=${sumPlannedCost}, sumActualCost=${sumActualCost}, sumPlannedValue=${sumPlannedValue}, sumFactValue=${sumFactValue}`);
 
         // Добавляем строку "Всего" СНАЧАЛА
         const totalPlannedValueCost = sumPlannedValue > 0 && sumPlannedCost > 0
@@ -971,6 +979,8 @@ export default function HomePage() {
         const totalFactValueCost = sumFactValue > 0 && sumActualCost > 0
           ? Math.round((sumFactValue / sumActualCost) * 10) / 10
           : '—';
+        
+        console.log(`[Excel ${typeName}] Value/Cost: plan=${totalPlannedValueCost}, fact=${totalFactValueCost}`);
 
         // Суммируем SP по командам для итоговой строки
         const teamSpTotals = new Map<string, number>();
