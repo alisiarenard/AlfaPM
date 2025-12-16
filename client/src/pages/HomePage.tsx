@@ -899,9 +899,13 @@ export default function HomePage() {
         // Используем данные из первой инициативы для общих полей
         const firstInit = initiatives[0];
         
-        // Суммируем затраты по всем командам
-        let totalPlannedCost = 0;
+        // Плановый размер указывается один раз на весь эпик, не на каждую команду
+        const plannedSize = firstInit.size || 0;
+        
+        // Суммируем фактические затраты по всем командам
         let totalActualCost = 0;
+        let totalActualSp = 0;
+        let weightedSpPrice = 0; // Для расчета средневзвешенной цены SP
         
         // Подсчитываем SP по каждой команде
         const spByTeamId = new Map<string, number>();
@@ -925,13 +929,20 @@ export default function HomePage() {
               }
             }
           }
-          const plannedSize = initiative.size || 0;
-          totalPlannedCost += plannedSize * team.spPrice;
           totalActualCost += actualSize * team.spPrice;
+          totalActualSp += actualSize;
+          weightedSpPrice += actualSize * team.spPrice;
           
           // Сохраняем SP по команде
           spByTeamId.set(team.teamId, (spByTeamId.get(team.teamId) || 0) + actualSize);
         });
+        
+        // Плановая стоимость = плановый размер * средневзвешенная цена SP
+        // Если нет фактических затрат, используем цену первой команды
+        const avgSpPrice = totalActualSp > 0 
+          ? weightedSpPrice / totalActualSp 
+          : firstInit.team?.spPrice || 0;
+        const totalPlannedCost = plannedSize * avgSpPrice;
 
         // Для Compliance и Enabler эффект = затратам
         let plannedValue: number | null;

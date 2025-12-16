@@ -3739,24 +3739,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Если после фильтрации не осталось инициатив - пропускаем
         if (teamFilteredInitiatives.length === 0) continue;
         
-        // Суммируем затраты только по выбранным командам
-        // Плановые затраты считаем только для команд с фактическими затратами
-        let totalPlannedCost = 0;
+        // Плановый размер указывается один раз на весь эпик, не на каждую команду
+        const plannedSize = firstInit.size || 0;
+        
+        // Суммируем фактические затраты по всем командам
         let totalActualCost = 0;
+        let totalActualSp = 0;
+        let weightedSpPrice = 0;
         
         for (const initiative of teamFilteredInitiatives) {
           // Actual size уже рассчитан в initiative.sprints
           const actualSize = initiative.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
-          const plannedSize = initiative.size || 0;
           
-          // log(`[Value/Cost] Init ${cardId} "${firstInit.title}" type=${firstInit.type} team=${initiative.teamName}: plannedSize=${plannedSize}, actualSize=${actualSize}, spPrice=${initiative.spPrice}`);
-          
-          // Плановые затраты считаем только для команд с фактическими затратами
-          if (actualSize > 0) {
-            totalPlannedCost += plannedSize * (initiative.spPrice || 0);
-          }
           totalActualCost += actualSize * (initiative.spPrice || 0);
+          totalActualSp += actualSize;
+          weightedSpPrice += actualSize * (initiative.spPrice || 0);
         }
+        
+        // Плановая стоимость = плановый размер * средневзвешенная цена SP
+        const avgSpPrice = totalActualSp > 0 
+          ? weightedSpPrice / totalActualSp 
+          : firstInit.spPrice || 0;
+        const totalPlannedCost = plannedSize * avgSpPrice;
         
         // Для Epic получаем plannedValue и factValue из БД
         // Для Compliance и Enabler: plannedValue = plannedCost, factValue = actualCost
