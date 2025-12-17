@@ -9,6 +9,7 @@ import { SprintInfoDialog } from "@/components/SprintInfoDialog";
 interface TeamHeaderProps {
   team: Team;
   initiatives: Initiative[];
+  allInitiatives?: Initiative[]; // Все инициативы без фильтра для ИР
   dbTeam?: TeamRow;
   showActiveOnly: boolean;
   onFilterChange: (checked: boolean) => void;
@@ -16,14 +17,16 @@ interface TeamHeaderProps {
   isSyncing?: boolean;
 }
 
-export function TeamHeader({ team, initiatives, dbTeam, showActiveOnly, onFilterChange, onSync, isSyncing }: TeamHeaderProps) {
+export function TeamHeader({ team, initiatives, allInitiatives, dbTeam, showActiveOnly, onFilterChange, onSync, isSyncing }: TeamHeaderProps) {
   const [sprintInfoOpen, setSprintInfoOpen] = useState(false);
 
   const calculateInnovationRate = (): string => {
     let totalStoryPoints = 0;
     let innovationStoryPoints = 0;
 
-    initiatives.forEach(initiative => {
+    // Используем allInitiatives для расчёта ИР, чтобы он не менялся при фильтрации
+    const dataForIR = allInitiatives || initiatives;
+    dataForIR.forEach(initiative => {
       const initiativePoints = initiative.sprints.reduce((sum, sprint) => sum + sprint.sp, 0);
       totalStoryPoints += initiativePoints;
       

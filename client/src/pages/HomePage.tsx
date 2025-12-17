@@ -2338,7 +2338,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     <div className="border border-border rounded-lg overflow-hidden">
       <TeamHeader 
         team={teamData} 
-        initiatives={initiatives} 
+        initiatives={initiatives}
+        allInitiatives={allInitiatives}
         dbTeam={team} 
         showActiveOnly={showActiveOnly}
         onFilterChange={setShowActiveOnly}
