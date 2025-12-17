@@ -2176,6 +2176,15 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/cost-structure'] });
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/value-cost'] });
+          
+          // Показываем уведомление об обновлении данных
+          if (isMounted) {
+            const taskCount = syncData.sprint?.tasksSynced || 0;
+            toast({
+              title: "Данные обновлены",
+              description: `Спринт "${checkData.sprintTitle || 'текущий'}" синхронизирован: ${taskCount} задач`,
+            });
+          }
         }
       } catch (error) {
         // Игнорируем ошибки отмены запроса
