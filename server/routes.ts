@@ -2699,6 +2699,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/kaiten/sync-sprint/:sprintId", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);
+      console.log(`[SYNC-SPRINT] Starting sync for sprint ${sprintId}`);
+      
       if (isNaN(sprintId)) {
         return res.status(400).json({ 
           success: false, 
@@ -2706,9 +2708,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      
       // Получаем данные спринта из Kaiten
+      console.log(`[SYNC-SPRINT] Fetching sprint from Kaiten...`);
       const sprint = await kaitenClient.getSprint(sprintId);
+      console.log(`[SYNC-SPRINT] Got sprint with ${sprint.cards?.length || 0} cards`);
       
       if (!sprint.cards || !Array.isArray(sprint.cards)) {
         return res.json({
@@ -2718,7 +2721,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      
       // Lookup team once before processing cards
       const dbSprint = await storage.getSprint(sprintId);
       if (!dbSprint) {
@@ -2730,69 +2732,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const syncedTasks = [];
+      let errorCount = 0;
       
       // Создаем записи в tasks для каждой карточки из спринта
-      for (const sprintCard of sprint.cards) {
-        // Получаем детальную информацию по карточке чтобы получить parents_ids
-        const card = await kaitenClient.getCard(sprintCard.id);
+      for (let i = 0; i < sprint.cards.length; i++) {
+        const sprintCard = sprint.cards[i];
         
-        // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
-        let initCardId: number | null = null;
-        
-        if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-          const parentCardId = card.parents_ids[0];
+        try {
+          // Получаем детальную информацию по карточке чтобы получить parents_ids
+          const card = await kaitenClient.getCard(sprintCard.id);
           
-          // Ищем инициативу в родительской цепочке
-          initCardId = await findInitiativeInParentChain(parentCardId);
+          // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
+          let initCardId: number | null = null;
           
-          if (initCardId !== 0) {
+          if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+            const parentCardId = card.parents_ids[0];
+            initCardId = await findInitiativeInParentChain(parentCardId);
           } else {
+            initCardId = 0;
           }
-        } else {
-          initCardId = 0;
-        }
-        
-        let state: "1-queued" | "2-inProgress" | "3-done";
-        
-        if (card.state === 3) {
-          state = "3-done";
-        } else if (card.state === 2) {
-          state = "2-inProgress";
-        } else {
-          state = "1-queued";
-        }
-        
-        const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+          
+          let state: "1-queued" | "2-inProgress" | "3-done";
+          
+          if (card.state === 3) {
+            state = "3-done";
+          } else if (card.state === 2) {
+            state = "2-inProgress";
+          } else {
+            state = "1-queued";
+          }
+          
+          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
 
-
-        const synced = await storage.syncTaskFromKaiten(
-          card.id,
-          card.board_id,
-          card.title,
-          card.created || new Date().toISOString(),
-          state,
-          card.size || 0,
-          condition,
-          card.archived || false,
-          initCardId,
-          card.type?.name,
-          card.completed_at ?? undefined,
-          sprintId,
-          card.last_moved_to_done_at ?? null,
-          team.teamId
-        );
-        
-        syncedTasks.push(synced);
+          const synced = await storage.syncTaskFromKaiten(
+            card.id,
+            card.board_id,
+            card.title,
+            card.created || new Date().toISOString(),
+            state,
+            card.size || 0,
+            condition,
+            card.archived || false,
+            initCardId,
+            card.type?.name,
+            card.completed_at ?? undefined,
+            sprintId,
+            card.last_moved_to_done_at ?? null,
+            team.teamId
+          );
+          
+          syncedTasks.push(synced);
+          
+          // Логируем прогресс каждые 10 карточек
+          if ((i + 1) % 10 === 0) {
+            console.log(`[SYNC-SPRINT] Processed ${i + 1}/${sprint.cards.length} cards`);
+          }
+        } catch (cardError) {
+          errorCount++;
+          console.error(`[SYNC-SPRINT] Error syncing card ${sprintCard.id}:`, cardError instanceof Error ? cardError.message : String(cardError));
+          // Продолжаем синхронизацию остальных карточек
+        }
       }
 
+      console.log(`[SYNC-SPRINT] Completed: ${syncedTasks.length} synced, ${errorCount} errors`);
       
       res.json({
         success: true,
         synced: syncedTasks.length,
+        errors: errorCount,
         sprintId,
         tasks: syncedTasks
       });
     } catch (error) {
+      console.error(`[SYNC-SPRINT] Error:`, error instanceof Error ? error.message : String(error));
       res.status(500).json({ 
         success: false, 
         error: error instanceof Error ? error.message : "Failed to sync sprint" 
