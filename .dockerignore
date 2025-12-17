@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.gitignore
+*.md
+.env
+.env.*
+.replit
+replit.nix
+.config
+.upm
+.cache
+*.log
+npm-debug.log*
