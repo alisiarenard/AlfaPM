@@ -2139,6 +2139,9 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
   
   // Фоновая синхронизация спринта - запускается после загрузки данных
   useEffect(() => {
+    let isMounted = true;
+    const abortController = new AbortController();
+    
     const runBackgroundSync = async () => {
       // Только для команд со спринтами
       if (!team.teamId || !team.sprintBoardId || !team.spaceId) return;
@@ -2146,11 +2149,14 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       if (isBackgroundSyncing) return;
       
       try {
+        if (!isMounted) return;
         setIsBackgroundSyncing(true);
         
         // Проверяем нужна ли синхронизация
-        const checkResponse = await fetch(`/api/sprints/check-sync/${team.teamId}`);
-        if (!checkResponse.ok) return;
+        const checkResponse = await fetch(`/api/sprints/check-sync/${team.teamId}`, {
+          signal: abortController.signal
+        });
+        if (!checkResponse.ok || !isMounted) return;
         
         const checkData = await checkResponse.json();
         
@@ -2159,20 +2165,29 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
           console.log(`[Background Sync] Starting sync for team ${team.teamId}, sprint ${checkData.sprintId}`);
           
           const syncResponse = await apiRequest("POST", `/api/kaiten/smart-sync/${team.teamId}`, {});
+          if (!isMounted) return;
+          
           const syncData = await syncResponse.json();
           
           console.log(`[Background Sync] Completed for team ${team.teamId}:`, syncData);
           
-          // Обновляем данные на фронте
+          // Обновляем данные на фронте (queryClient глобальный, работает даже после размонтирования)
           queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/cost-structure'] });
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/value-cost'] });
         }
       } catch (error) {
+        // Игнорируем ошибки отмены запроса
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log(`[Background Sync] Cancelled for team ${team.teamId}`);
+          return;
+        }
         console.error('[Background Sync] Error:', error);
       } finally {
-        setIsBackgroundSyncing(false);
+        if (isMounted) {
+          setIsBackgroundSyncing(false);
+        }
       }
     };
     
@@ -2180,6 +2195,12 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     if (timelineData && !timelineLoading) {
       runBackgroundSync();
     }
+    
+    // Очистка при размонтировании компонента
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, [team.teamId, team.sprintBoardId, team.spaceId, timelineData, timelineLoading]);
 
   const initiativeRows = timelineData?.initiatives;
