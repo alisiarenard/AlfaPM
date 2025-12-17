@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 
 interface InitiativesTimelineProps {
   initiatives: Initiative[];
+  allInitiatives: Initiative[]; // Все инициативы без фильтра для расчёта ИР
   team: Team;
   sprints: SprintRow[];
 }
@@ -78,7 +79,7 @@ interface InitiativeDetailsData {
 
 type EditableField = 'plannedSize' | 'plannedValue' | 'factValue';
 
-export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesTimelineProps) {
+export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints }: InitiativesTimelineProps) {
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
   const [initiativeDetailsOpen, setInitiativeDetailsOpen] = useState(false);
@@ -555,12 +556,13 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     const sprintInfo = getSprintInfo(sprintId);
     const isGenerated = isGeneratedSprint(sprintId);
     
-    // Рассчитываем распределение SP
+    // Рассчитываем распределение SP для ИР используя allInitiatives
+    // чтобы ИР не менялся при фильтрации
     let businessSupportSP = 0;
     let otherInitiativesSP = 0;
     let totalSP = 0;
     
-    initiatives.forEach(initiative => {
+    allInitiatives.forEach(initiative => {
       const sp = getSprintSP(initiative, sprintId);
       totalSP += sp;
       if (initiative.cardId === 0) {
@@ -824,6 +826,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
   };
 
   // Рассчитать Investment Ratio для спринта (процент SP всех инициатив кроме "Поддержка бизнеса" от всех SP спринта)
+  // Используем allInitiatives чтобы ИР не менялся при фильтрации
   const calculateSprintIR = (sprintId: number): string => {
     const sprintInfo = getSprintInfo(sprintId);
     if (!sprintInfo) return '—';
@@ -834,7 +837,7 @@ export function InitiativesTimeline({ initiatives, team, sprints }: InitiativesT
     let totalSP = 0;
     let spWithoutSupport = 0;
 
-    initiatives.forEach(init => {
+    allInitiatives.forEach(init => {
       const tasks = getSprintTasks(init, sprintId);
       
       // Считаем SP только для задач без doneDate ИЛИ с doneDate внутри дат спринта

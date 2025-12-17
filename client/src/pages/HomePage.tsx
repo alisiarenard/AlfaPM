@@ -2141,8 +2141,22 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     },
     enabled: !!team.teamId && !!team.initBoardId && (checkSyncFetched || !team.sprintBoardId || !team.spaceId),
   });
+  
+  // Отдельный запрос для всех инициатив (без фильтра) для расчёта ИР
+  // ИР должен всегда показывать полное значение независимо от фильтра "Активные"
+  const { data: allTimelineData } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
+    queryKey: ["/api/timeline", team.teamId, selectedYear, false], // всегда false для ИР
+    queryFn: async () => {
+      const response = await fetch(`/api/timeline/${team.teamId}?year=${selectedYear}&showActiveOnly=false`);
+      if (!response.ok) throw new Error('Failed to fetch all timeline');
+      return response.json();
+    },
+    enabled: !!team.teamId && !!team.initBoardId && (checkSyncFetched || !team.sprintBoardId || !team.spaceId) && showActiveOnly,
+    // Загружаем только когда фильтр активен, иначе используем основной запрос
+  });
 
   const initiativeRows = timelineData?.initiatives;
+  const allInitiativeRows = showActiveOnly ? (allTimelineData?.initiatives || initiativeRows) : initiativeRows;
   const sprints = timelineData?.sprints;
   const initiativesLoading = timelineLoading;
   const sprintsLoading = timelineLoading;
@@ -2255,6 +2269,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
 
   // Данные уже приходят отфильтрованными с сервера (фильтрация по году, активности, типу и SP)
   const initiatives: Initiative[] = initiativeRows || [];
+  // Все инициативы без фильтра "Активные" для расчёта ИР
+  const allInitiatives: Initiative[] = allInitiativeRows || [];
   
   // Сортируем инициативы:
   // 1. "Поддержка бизнеса" всегда первая
@@ -2331,7 +2347,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       />
       <div className="overflow-auto custom-scrollbar pr-6" style={{ height: 'calc(100vh - 400px)' }}>
         {viewTab === "initiatives" ? (
-          <InitiativesTimeline initiatives={sortedInitiatives} team={teamData} sprints={sprints || []} />
+          <InitiativesTimeline initiatives={sortedInitiatives} allInitiatives={allInitiatives} team={teamData} sprints={sprints || []} />
         ) : (
           <MetricsCharts team={team} selectedYear={selectedYear} />
         )}
