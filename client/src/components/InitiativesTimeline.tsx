@@ -1874,7 +1874,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                     const businessSP = sprintModalData?.businessSupportSP || 0;
                     const otherSP = sprintModalData?.otherInitiativesSP || 0;
                     const totalSP = businessSP + otherSP;
-                    return totalSP || '-';
+                    return totalSP ? Math.round(totalSP) : '-';
                   })()}
                 </div>
                 <div></div>
