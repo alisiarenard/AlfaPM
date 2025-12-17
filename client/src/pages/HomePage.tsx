@@ -2114,6 +2114,7 @@ export default function HomePage() {
 function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedYear, viewTab }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void; selectedYear: string; viewTab: "initiatives" | "metrics" }) {
   const { toast } = useToast();
   const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
+  const hasSyncedRef = useRef(false);
   
   // Загружаем данные из БД сразу, без ожидания проверки синхронизации
   const { data: timelineData, isLoading: timelineLoading, error: initiativesError } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
@@ -2137,7 +2138,12 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     enabled: !!team.teamId && !!team.initBoardId && showActiveOnly,
   });
   
-  // Фоновая синхронизация спринта - запускается после загрузки данных
+  // Сбрасываем флаг синхронизации при смене команды
+  useEffect(() => {
+    hasSyncedRef.current = false;
+  }, [team.teamId]);
+  
+  // Фоновая синхронизация спринта - запускается после загрузки данных (только один раз)
   useEffect(() => {
     let isMounted = true;
     const abortController = new AbortController();
@@ -2145,8 +2151,11 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     const runBackgroundSync = async () => {
       // Только для команд со спринтами
       if (!team.teamId || !team.sprintBoardId || !team.spaceId) return;
-      // Не запускать повторно
-      if (isBackgroundSyncing) return;
+      // Не запускать повторно (ни во время синхронизации, ни если уже синхронизировали)
+      if (isBackgroundSyncing || hasSyncedRef.current) return;
+      
+      // Помечаем что синхронизация началась
+      hasSyncedRef.current = true;
       
       try {
         if (!isMounted) return;
