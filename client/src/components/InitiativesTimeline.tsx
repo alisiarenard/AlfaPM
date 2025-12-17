@@ -22,7 +22,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
-import { ExternalLink, Check } from "lucide-react";
+import { ExternalLink, Check, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -80,6 +81,7 @@ interface InitiativeDetailsData {
 type EditableField = 'plannedSize' | 'plannedValue' | 'factValue';
 
 export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints }: InitiativesTimelineProps) {
+  const { toast } = useToast();
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
   const [initiativeDetailsOpen, setInitiativeDetailsOpen] = useState(false);
@@ -95,6 +97,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
   const [editingFieldValue, setEditingFieldValue] = useState<string>("");
   const [savingField, setSavingField] = useState<EditableField | null>(null);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const [isSyncingSprintData, setIsSyncingSprintData] = useState(false);
   const fieldInputRef = useRef<HTMLInputElement>(null);
   const currentSprintRef = useRef<HTMLTableCellElement>(null);
 
@@ -1976,8 +1979,54 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             </div>
           </div>
           
-          {/* Footer с кнопкой */}
-          <div className="p-4 flex items-center justify-end">
+          {/* Footer с кнопками */}
+          <div className="p-4 flex items-center justify-end gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={async () => {
+                if (!sprintModalData || isSyncingSprintData) return;
+                
+                setIsSyncingSprintData(true);
+                
+                try {
+                  const response = await fetch(`/api/kaiten/sync-sprint/${sprintModalData.sprintId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error('Failed to sync sprint data');
+                  }
+                  
+                  const result = await response.json();
+                  console.log('[Sprint Sync] Completed:', result);
+                  
+                  // Инвалидируем кэш и закрываем модалку
+                  queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
+                  setSprintModalOpen(false);
+                  
+                  toast({
+                    title: "Данные обновлены",
+                    description: `Синхронизировано ${result.synced || 0} задач`,
+                  });
+                } catch (error) {
+                  console.error('Error syncing sprint:', error);
+                  toast({
+                    title: "Ошибка",
+                    description: "Не удалось синхронизировать данные спринта",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsSyncingSprintData(false);
+                }
+              }}
+              disabled={isSyncingSprintData}
+              title="Обновить данные спринта из Kaiten"
+              data-testid="button-sync-sprint"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncingSprintData ? 'animate-spin' : ''}`} />
+            </Button>
             <Button
               style={{ backgroundColor: 'rgb(205, 37, 61)', borderColor: 'rgb(185, 27, 51)' }}
               className="text-white hover-elevate active-elevate-2"
