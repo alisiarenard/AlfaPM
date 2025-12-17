@@ -62,3 +62,42 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 - `xlsx` (SheetJS)
 - `openai` (for AI task summarization)
 - `pdfkit` (PDF generation)
+
+## Docker Deployment
+
+The application can be deployed using Docker for environments outside of Replit.
+
+**Files:**
+- `Dockerfile` - Multi-stage build (builder + production) for optimized image size
+- `docker-compose.yml` - Orchestration with PostgreSQL database
+- `.dockerignore` - Excludes unnecessary files from build context
+
+**Quick Start:**
+
+1. Create `.env` file with required secrets:
+```bash
+SESSION_SECRET=your-session-secret
+KAITEN_API_KEY=your-kaiten-api-key
+KAITEN_DOMAIN=your-kaiten-domain
+VITE_KAITEN_DOMAIN=your-kaiten-domain
+OPENAI_API_KEY=your-openai-key
+```
+
+2. Build and run:
+```bash
+docker-compose up -d --build
+```
+
+3. Run database migration (first time only):
+```bash
+docker-compose exec app npm run db:push
+```
+
+4. Access the application at `http://localhost:5000`
+
+**Environment Variables:**
+- `DATABASE_URL` - PostgreSQL connection string (auto-configured in docker-compose)
+- `SESSION_SECRET` - Secret key for session encryption
+- `KAITEN_API_KEY` - API key for Kaiten integration
+- `KAITEN_DOMAIN` / `VITE_KAITEN_DOMAIN` - Kaiten domain for API calls
+- `OPENAI_API_KEY` - OpenAI API key for AI-powered features
