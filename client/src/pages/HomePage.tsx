@@ -2160,18 +2160,36 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         
         const checkData = await checkResponse.json();
         
-        // Если спринт не синхронизирован - синхронизируем в фоне
-        if (!checkData.synced && checkData.sprintId) {
-          console.log(`[Background Sync] Starting sync for team ${team.teamId}, sprint ${checkData.sprintId}`);
+        // check-sync endpoint уже синхронизирует данные и возвращает tasksSynced
+        // Если данные были синхронизированы - обновляем UI
+        if (checkData.synced && checkData.tasksSynced > 0) {
+          console.log(`[Background Sync] check-sync completed for team ${team.teamId}:`, checkData);
+          
+          // Обновляем данные на фронте
+          queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/cost-structure'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/value-cost'] });
+          
+          // Показываем уведомление об обновлении данных
+          if (isMounted) {
+            toast({
+              title: "Данные обновлены",
+              description: `Синхронизировано ${checkData.tasksSynced} задач`,
+            });
+          }
+        } else if (!checkData.synced && checkData.sprintId) {
+          // Если нужна полная синхронизация нового спринта
+          console.log(`[Background Sync] Starting smart-sync for team ${team.teamId}, sprint ${checkData.sprintId}`);
           
           const syncResponse = await apiRequest("POST", `/api/kaiten/smart-sync/${team.teamId}`, {});
           if (!isMounted) return;
           
           const syncData = await syncResponse.json();
           
-          console.log(`[Background Sync] Completed for team ${team.teamId}:`, syncData);
+          console.log(`[Background Sync] smart-sync completed for team ${team.teamId}:`, syncData);
           
-          // Обновляем данные на фронте (queryClient глобальный, работает даже после размонтирования)
+          // Обновляем данные на фронте
           queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/cost-structure'] });
