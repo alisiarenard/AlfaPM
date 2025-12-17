@@ -238,7 +238,7 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
                         {sprintInfo.stats.deliveryPlanCompliance}%
                       </span>
                       <span className="text-xs text-muted-foreground ml-2">
-                        ({roundSP(sprintInfo.stats.doneSP)} / {roundSP(sprintInfo.sprint.velocity)} SP)
+                        ({Math.round(sprintInfo.stats.doneSP)} / {Math.round(sprintInfo.sprint.velocity)} SP)
                       </span>
                     </div>
                   </div>
