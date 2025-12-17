@@ -2152,8 +2152,12 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       // Только для команд со спринтами
       if (!team.teamId || !team.sprintBoardId || !team.spaceId) return;
       // Не запускать повторно (ни во время синхронизации, ни если уже синхронизировали)
-      if (isBackgroundSyncing || hasSyncedRef.current) return;
+      if (isBackgroundSyncing || hasSyncedRef.current) {
+        console.log(`[Background Sync] SKIPPED for team ${team.teamId} - hasSyncedRef=${hasSyncedRef.current}, isBackgroundSyncing=${isBackgroundSyncing}`);
+        return;
+      }
       
+      console.log(`[Background Sync] STARTING for team ${team.teamId}`);
       // Помечаем что синхронизация началась
       hasSyncedRef.current = true;
       
