@@ -238,8 +238,8 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 dataKey="velocity" 
                 stroke={CHART_COLOR} 
                 strokeWidth={2}
-                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 3 }}
-                activeDot={{ r: 5, fill: CHART_COLOR }}
+                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
+                activeDot={{ r: 4, fill: CHART_COLOR }}
               />
             </LineChart>
           </ResponsiveContainer>
