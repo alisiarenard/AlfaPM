@@ -2002,23 +2002,28 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   const result = await response.json();
                   console.log('[Sprint Sync] Completed:', result);
                   
-                  // Инвалидируем кэш и закрываем модалку
-                  queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
-                  setSprintModalOpen(false);
+                  // Сначала сбрасываем лоадер
+                  setIsSyncingSprintData(false);
                   
+                  // Инвалидируем кэш
+                  queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
+                  
+                  // Показываем тост
                   toast({
                     title: "Данные обновлены",
                     description: `Синхронизировано ${result.synced || 0} задач`,
                   });
+                  
+                  // Закрываем модалку последним
+                  setSprintModalOpen(false);
                 } catch (error) {
                   console.error('Error syncing sprint:', error);
+                  setIsSyncingSprintData(false);
                   toast({
                     title: "Ошибка",
                     description: "Не удалось синхронизировать данные спринта",
                     variant: "destructive",
                   });
-                } finally {
-                  setIsSyncingSprintData(false);
                 }
               }}
               disabled={isSyncingSprintData}
