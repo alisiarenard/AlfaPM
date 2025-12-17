@@ -2113,25 +2113,9 @@ export default function HomePage() {
 
 function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedYear, viewTab }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void; selectedYear: string; viewTab: "initiatives" | "metrics" }) {
   const { toast } = useToast();
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
   
-  const { data: checkSyncData, isLoading: checkSyncLoading, isFetched: checkSyncFetched } = useQuery<{
-    success: boolean;
-    synced: boolean;
-    sprintId?: number;
-    sprintTitle?: string;
-    reason?: string;
-  }>({
-    queryKey: ["/api/sprints/check-sync", team.teamId],
-    queryFn: async () => {
-      const response = await fetch(`/api/sprints/check-sync/${team.teamId}`);
-      if (!response.ok) throw new Error('Failed to check sprint sync');
-      return response.json();
-    },
-    enabled: !!team.teamId && !!team.sprintBoardId && !!team.spaceId,
-    staleTime: 30000,
-    refetchOnWindowFocus: false,
-  });
-  
+  // Загружаем данные из БД сразу, без ожидания проверки синхронизации
   const { data: timelineData, isLoading: timelineLoading, error: initiativesError } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
     queryKey: ["/api/timeline", team.teamId, selectedYear, showActiveOnly],
     queryFn: async () => {
@@ -2139,21 +2123,64 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       if (!response.ok) throw new Error('Failed to fetch timeline');
       return response.json();
     },
-    enabled: !!team.teamId && !!team.initBoardId && (checkSyncFetched || !team.sprintBoardId || !team.spaceId),
+    enabled: !!team.teamId && !!team.initBoardId,
   });
   
   // Отдельный запрос для всех инициатив (без фильтра) для расчёта ИР
-  // ИР должен всегда показывать полное значение независимо от фильтра "Активные"
   const { data: allTimelineData } = useQuery<{initiatives: Initiative[], sprints: SprintRow[]}>({
-    queryKey: ["/api/timeline", team.teamId, selectedYear, false], // всегда false для ИР
+    queryKey: ["/api/timeline", team.teamId, selectedYear, false],
     queryFn: async () => {
       const response = await fetch(`/api/timeline/${team.teamId}?year=${selectedYear}&showActiveOnly=false`);
       if (!response.ok) throw new Error('Failed to fetch all timeline');
       return response.json();
     },
-    enabled: !!team.teamId && !!team.initBoardId && (checkSyncFetched || !team.sprintBoardId || !team.spaceId) && showActiveOnly,
-    // Загружаем только когда фильтр активен, иначе используем основной запрос
+    enabled: !!team.teamId && !!team.initBoardId && showActiveOnly,
   });
+  
+  // Фоновая синхронизация спринта - запускается после загрузки данных
+  useEffect(() => {
+    const runBackgroundSync = async () => {
+      // Только для команд со спринтами
+      if (!team.teamId || !team.sprintBoardId || !team.spaceId) return;
+      // Не запускать повторно
+      if (isBackgroundSyncing) return;
+      
+      try {
+        setIsBackgroundSyncing(true);
+        
+        // Проверяем нужна ли синхронизация
+        const checkResponse = await fetch(`/api/sprints/check-sync/${team.teamId}`);
+        if (!checkResponse.ok) return;
+        
+        const checkData = await checkResponse.json();
+        
+        // Если спринт не синхронизирован - синхронизируем в фоне
+        if (!checkData.synced && checkData.sprintId) {
+          console.log(`[Background Sync] Starting sync for team ${team.teamId}, sprint ${checkData.sprintId}`);
+          
+          const syncResponse = await apiRequest("POST", `/api/kaiten/smart-sync/${team.teamId}`, {});
+          const syncData = await syncResponse.json();
+          
+          console.log(`[Background Sync] Completed for team ${team.teamId}:`, syncData);
+          
+          // Обновляем данные на фронте
+          queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/cost-structure'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/value-cost'] });
+        }
+      } catch (error) {
+        console.error('[Background Sync] Error:', error);
+      } finally {
+        setIsBackgroundSyncing(false);
+      }
+    };
+    
+    // Запускаем фоновую синхронизацию когда данные уже загружены
+    if (timelineData && !timelineLoading) {
+      runBackgroundSync();
+    }
+  }, [team.teamId, team.sprintBoardId, team.spaceId, timelineData, timelineLoading]);
 
   const initiativeRows = timelineData?.initiatives;
   const allInitiativeRows = showActiveOnly ? (allTimelineData?.initiatives || initiativeRows) : initiativeRows;
@@ -2237,13 +2264,13 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     },
   });
 
-  const isLoading = checkSyncLoading || initiativesLoading || sprintsLoading;
+  const isLoading = initiativesLoading || sprintsLoading;
 
   if (isLoading) {
     return (
       <div className="text-center py-12">
         <span className="loader mb-4"></span>
-        <p className="text-muted-foreground mt-4">{checkSyncLoading ? 'Проверка спринтов...' : 'Загрузка данных...'}</p>
+        <p className="text-muted-foreground mt-4">Загрузка данных...</p>
       </div>
     );
   }
