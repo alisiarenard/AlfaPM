@@ -187,6 +187,63 @@ npm run dev
 
 > **Примечание:** Переменные из `.env` файла загружаются автоматически при запуске. Убедитесь, что файл `.env` настроен правильно.
 
+## Запуск через Docker
+
+Альтернативный способ запуска приложения с использованием Docker.
+
+### Файлы Docker
+
+- `Dockerfile` - многоэтапная сборка (builder + production) для оптимального размера образа
+- `docker-compose.yml` - оркестрация с PostgreSQL базой данных
+- `.dockerignore` - исключение ненужных файлов из контекста сборки
+
+### Быстрый старт
+
+1. Создайте файл `.env` с необходимыми переменными:
+
+```bash
+SESSION_SECRET=ваш-секретный-ключ
+KAITEN_API_KEY=ваш-kaiten-api-key
+KAITEN_DOMAIN=your-company.kaiten.ru
+VITE_KAITEN_DOMAIN=your-company.kaiten.ru
+OPENAI_API_KEY=ваш-openai-ключ
+```
+
+2. Соберите и запустите контейнеры:
+
+```bash
+docker-compose up -d --build
+```
+
+3. Выполните миграцию базы данных (только при первом запуске):
+
+```bash
+docker-compose exec app npm run db:push
+```
+
+4. Приложение будет доступно по адресу `http://localhost:5000`
+
+### Остановка и удаление
+
+```bash
+# Остановить контейнеры
+docker-compose down
+
+# Остановить и удалить данные (включая БД)
+docker-compose down -v
+```
+
+### Переменные окружения Docker
+
+| Переменная | Описание |
+|------------|----------|
+| `DATABASE_URL` | Строка подключения PostgreSQL (настроена автоматически) |
+| `SESSION_SECRET` | Секретный ключ для шифрования сессий |
+| `KAITEN_API_KEY` | API ключ для интеграции с Kaiten |
+| `KAITEN_DOMAIN` | Домен Kaiten для API вызовов |
+| `VITE_KAITEN_DOMAIN` | Домен Kaiten для frontend |
+| `OPENAI_API_KEY` | API ключ OpenAI для AI-функций |
+
 ## Структура проекта
 
 ```
