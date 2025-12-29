@@ -43,7 +43,7 @@
 - TanStack React Query - управление состоянием сервера
 - Shadcn/ui + Radix UI - UI компоненты
 - Tailwind CSS - стилизация
-- ExcelJS - формирование Excel отчетов
+- SheetJS (xlsx) - формирование Excel отчетов
 - Lucide React - иконки
 
 ### Backend

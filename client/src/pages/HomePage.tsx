@@ -712,11 +712,11 @@ export default function HomePage() {
       const initiativesArrays = await Promise.all(initiativesPromises);
       const allInitiatives = initiativesArrays.flat();
 
-      // Динамически импортируем библиотеку exceljs
-      const ExcelJS = (await import('exceljs')).default;
+      // Динамически импортируем библиотеку xlsx (SheetJS)
+      const XLSX = await import('xlsx');
 
-      // Создаем рабочую книгу ExcelJS
-      const workbook = new ExcelJS.Workbook();
+      // Создаем рабочую книгу
+      const workbook = XLSX.utils.book_new();
       
       // Получаем название департамента
       const departmentName = departments?.find(d => d.id === selectedDepartment)?.department || 'Не указан';
@@ -731,55 +731,32 @@ export default function HomePage() {
       // Получаем названия команд
       const teamNames = data.teams.map((t: { name: string }) => t.name).join(', ');
 
-      // Создаем лист "Структура затрат"
-      const worksheet = workbook.addWorksheet('Структура затрат');
-      
-      // Устанавливаем ширину колонок
-      worksheet.columns = [
-        { width: 25 },
-        { width: 15 }
+      // Создаем данные для листа "Структура затрат"
+      const costStructureData: any[][] = [
+        ['Год', data.year],
+        ['Блок', departmentName],
+        ['Команды', teamNames],
+        [''],
+        ['РАЗВИТИЕ', `${developmentPercent}%`],
+        ['Epic', `${epicPercent}%`],
+        ['Compliance', `${compliancePercent}%`],
+        ['Enabler', `${enablerPercent}%`],
+        [''],
+        ['ПОДДЕРЖКА', `${supportPercent}%`]
       ];
-
-      // Добавляем данные
-      worksheet.addRow(['Год', data.year]);
-      worksheet.addRow(['Блок', departmentName]);
-      worksheet.addRow(['Команды', teamNames]);
-      worksheet.addRow(['']);
-      const razvitieRow = worksheet.addRow(['РАЗВИТИЕ', `${developmentPercent}%`]);
-      worksheet.addRow(['Epic', `${epicPercent}%`]);
-      worksheet.addRow(['Compliance', `${compliancePercent}%`]);
-      worksheet.addRow(['Enabler', `${enablerPercent}%`]);
-      worksheet.addRow(['']);
-      const podderzhkaRow = worksheet.addRow(['ПОДДЕРЖКА', `${supportPercent}%`]);
 
       // Добавляем остальные типы (кроме Epic, Compliance, Enabler)
       const supportTypes = ['Service Desk', 'Bug', 'Security', 'Tech debt', 'Postmortem', 'Др. доработки'];
       for (const type of supportTypes) {
         const percentage = data.typePercentages[type] || 0;
-        worksheet.addRow([type, `${percentage}%`]);
+        costStructureData.push([type, `${percentage}%`]);
       }
 
-      // Применяем шрифт Akrobat 14 и выравнивание ко всем ячейкам
-      worksheet.eachRow((row) => {
-        row.eachCell((cell, colNumber) => {
-          cell.font = { name: 'Akrobat', size: 14 };
-          // Выравнивание по центру для ячеек с процентами (второй столбец)
-          if (colNumber === 2 && cell.value && typeof cell.value === 'string' && cell.value.includes('%')) {
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          }
-        });
-      });
+      // Создаем лист "Структура затрат"
+      const costSheet = XLSX.utils.aoa_to_sheet(costStructureData);
+      costSheet['!cols'] = [{ wch: 25 }, { wch: 15 }];
+      XLSX.utils.book_append_sheet(workbook, costSheet, 'Структура затрат');
 
-      // Выделяем жирным строки "РАЗВИТИЕ" и "ПОДДЕРЖКА"
-      [razvitieRow, podderzhkaRow].forEach(row => {
-        row.eachCell((cell) => {
-          cell.font = { name: 'Akrobat', size: 14, bold: true };
-        });
-      });
-
-      // Создаем лист "Инициативы"
-      const initiativesWorksheet = workbook.addWorksheet('Инициативы');
-      
       // Получаем уникальные команды и сортируем их
       const uniqueTeamsMap = new Map<string, any>();
       allInitiatives.forEach((initiative: any) => {
@@ -788,87 +765,23 @@ export default function HomePage() {
         }
       });
       const sortedTeams = Array.from(uniqueTeamsMap.values()).sort((a, b) => a.teamName.localeCompare(b.teamName));
-      
-      // Устанавливаем ширину колонок (базовые 14 + одна на каждую команду)
-      // Структура: #, инициативы, сроки(план,прод,эффект), затраты(план,факт текущего), тип эффекта, эффект по данным, эффект(план,факт,% вклада), V/C(план,факт)
-      initiativesWorksheet.columns = [
-        { width: 6 },  // # (номер строки)
-        { width: 40 }, // Инициативы
-        { width: 12 }, // Сроки: план
-        { width: 12 }, // Сроки: прод
-        { width: 12 }, // Сроки: эффект
-        { width: 15 }, // Затраты: план
-        { width: 15 }, // Затраты: факт текущего
-        { width: 15 }, // Тип эффекта
-        { width: 18 }, // эффект по данным
-        { width: 15 }, // Эффект: план
-        { width: 15 }, // Эффект: факт
-        { width: 12 }, // Эффект: % вклада
-        { width: 12 }, // V/C: план
-        { width: 12 }, // V/C: факт
-        ...sortedTeams.map(() => ({ width: 12 })) // Колонки для каждой команды
-      ];
 
-      // Создаем двухуровневый заголовок с объединенными ячейками
-      // Строка 1: родительские заголовки с объединениями
+      // Создаем данные для листа "Инициативы"
+      const initiativesSheetData: any[][] = [];
+      
+      // Строка 1: родительские заголовки
       const headerRow1Values = [
         '#', 'инициативы', 'сроки', '', '', 'затраты', '', 'тип эффекта', 'эффект по данным', 'эффект', '', '', 'V/C', '',
         ...sortedTeams.map(team => team.teamName)
       ];
-      const headerRow1 = initiativesWorksheet.addRow(headerRow1Values);
+      initiativesSheetData.push(headerRow1Values);
       
       // Строка 2: подзаголовки
       const headerRow2Values = [
         '', '', 'план', 'прод', 'эффект', 'план', 'факт текущего', '', '', 'план', 'факт', '% вклада', 'план', 'факт',
         ...sortedTeams.map(() => '')
       ];
-      const headerRow2 = initiativesWorksheet.addRow(headerRow2Values);
-      
-      // Объединяем ячейки для родительских заголовков
-      // #: A1:A2 (строки 1-2)
-      initiativesWorksheet.mergeCells('A1:A2');
-      // инициативы: B1:B2
-      initiativesWorksheet.mergeCells('B1:B2');
-      // сроки: C1:E1 (план, прод, эффект)
-      initiativesWorksheet.mergeCells('C1:E1');
-      // затраты: F1:G1 (план, факт текущего)
-      initiativesWorksheet.mergeCells('F1:G1');
-      // тип эффекта: H1:H2
-      initiativesWorksheet.mergeCells('H1:H2');
-      // эффект по данным: I1:I2
-      initiativesWorksheet.mergeCells('I1:I2');
-      // эффект: J1:L1 (план, факт, % вклада)
-      initiativesWorksheet.mergeCells('J1:L1');
-      // V/C: M1:N1 (план, факт)
-      initiativesWorksheet.mergeCells('M1:N1');
-      
-      // Объединяем ячейки для колонок команд (каждая команда в 2 строках)
-      const teamsStartCol = 15; // O колонка
-      sortedTeams.forEach((_, index) => {
-        const col = teamsStartCol + index;
-        const colLetter = String.fromCharCode(64 + col > 90 ? 64 + col - 26 : 64 + col);
-        // Для колонок после Z нужна другая логика
-        let colName: string;
-        if (col <= 26) {
-          colName = String.fromCharCode(64 + col);
-        } else {
-          colName = String.fromCharCode(64 + Math.floor((col - 1) / 26)) + String.fromCharCode(64 + ((col - 1) % 26) + 1);
-        }
-        initiativesWorksheet.mergeCells(`${colName}1:${colName}2`);
-      });
-      
-      // Применяем форматирование к обоим рядам заголовков
-      [headerRow1, headerRow2].forEach(headerRow => {
-        headerRow.eachCell((cell) => {
-          cell.font = { name: 'Akrobat', size: 14, color: { argb: 'FFFFFFFF' } }; // Белый текст
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFC00000' } // Красный фон RGB(192, 0, 0)
-          };
-          cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-        });
-      });
+      initiativesSheetData.push(headerRow2Values);
 
       // Функция для форматирования даты в формат "dd.MM"
       const formatDate = (dateString: string | null | undefined): string => {
@@ -1033,88 +946,45 @@ export default function HomePage() {
         
         const totalRowValues = [
           'Всего',
-          typeName, // Тип инициативы
+          typeName,
           '',
           '',
           '',
           sumPlannedCost,
           sumActualCost,
-          '', // Тип эффекта - пусто для итоговой строки
-          '', // эффект по данным - пусто для итоговой строки
+          '',
+          '',
           sumPlannedValue || '—',
           sumFactValue || '—',
-          '', // % вклада - пусто
+          '',
           totalPlannedValueCost,
           totalFactValueCost,
           ...sortedTeams.map(team => teamSpTotals.get(team.teamId) || 0)
         ];
         
-        const totalRow = initiativesWorksheet.addRow(totalRowValues);
-        
-        // Применяем светлый фон, шрифт и выравнивание к строке "Всего"
-        totalRow.eachCell((cell, colNumber) => {
-          cell.font = { name: 'Akrobat', size: 14, bold: true }; // Жирный шрифт
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFE8E8E8' } // Светло-серый фон
-          };
-          
-          // Выравнивание по центру для всех столбцов кроме первых двух
-          if (colNumber > 2) {
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          }
-          
-          // Числовой формат для столбцов с затратами и эффектами (колонки 6,7 и 10,11)
-          if ([6, 7, 10, 11].includes(colNumber)) {
-            cell.numFmt = '#,##0';
-          }
-          // Value/Cost округляем до одной десятой (колонки 13,14)
-          if ([13, 14].includes(colNumber)) {
-            cell.numFmt = '#,##0.0';
-          }
-        });
+        initiativesSheetData.push(totalRowValues);
 
         // Потом добавляем детали инициатив (только с фактическими затратами)
         let rowNumber = 1;
         initiativesWithActualCosts.forEach((init) => {
           const rowValues = [
-            rowNumber++, // # (номер строки)
+            rowNumber++,
             init.title,
             formatDate(init.dueDate),
             formatDate(init.doneDate),
-            '—', // Срок (эффект) - пока не определено
+            '—',
             init.totalPlannedCost,
             init.totalActualCost,
-            '', // Тип эффекта - пусто
-            '', // эффект по данным - оставляем пустым
+            '',
+            '',
             init.plannedValue ?? '—',
             init.factValue ?? '—',
-            '', // % вклада - пусто
+            '',
             init.plannedValueCost ?? '—',
             init.factValueCost ?? '—',
             ...sortedTeams.map(team => init.spByTeamId?.get(team.teamId) || 0)
           ];
-          const row = initiativesWorksheet.addRow(rowValues);
-          
-          // Применяем шрифт, выравнивание и числовой формат к обычным строкам
-          row.eachCell((cell, colNumber) => {
-            cell.font = { name: 'Akrobat', size: 14 };
-            
-            // Выравнивание по центру для всех столбцов кроме первых двух
-            if (colNumber > 2) {
-              cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            }
-            
-            // Числовой формат для столбцов с затратами и эффектами (колонки 6,7 и 10,11)
-            if ([6, 7, 10, 11].includes(colNumber)) {
-              cell.numFmt = '#,##0';
-            }
-            // Value/Cost округляем до одной десятой (колонки 13,14)
-            if ([13, 14].includes(colNumber)) {
-              cell.numFmt = '#,##0.0';
-            }
-          });
+          initiativesSheetData.push(rowValues);
         });
       };
 
@@ -1123,18 +993,35 @@ export default function HomePage() {
       addInitiativesGroup(complianceInitiatives, 'Compliance');
       addInitiativesGroup(enablerInitiatives, 'Enabler');
 
+      // Создаем лист "Инициативы"
+      const initiativesSheet = XLSX.utils.aoa_to_sheet(initiativesSheetData);
+      
+      // Устанавливаем ширину колонок
+      initiativesSheet['!cols'] = [
+        { wch: 6 },   // #
+        { wch: 40 },  // Инициативы
+        { wch: 12 },  // Сроки: план
+        { wch: 12 },  // Сроки: прод
+        { wch: 12 },  // Сроки: эффект
+        { wch: 15 },  // Затраты: план
+        { wch: 15 },  // Затраты: факт
+        { wch: 15 },  // Тип эффекта
+        { wch: 18 },  // эффект по данным
+        { wch: 15 },  // Эффект: план
+        { wch: 15 },  // Эффект: факт
+        { wch: 12 },  // % вклада
+        { wch: 12 },  // V/C: план
+        { wch: 12 },  // V/C: факт
+        ...sortedTeams.map(() => ({ wch: 12 }))
+      ];
+      
+      XLSX.utils.book_append_sheet(workbook, initiativesSheet, 'Инициативы');
+
       // Генерируем имя файла
       const fileName = `Cost_Structure_${data.year}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-      // Сохраняем файл через ExcelJS
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      link.click();
-      window.URL.revokeObjectURL(url);
+      // Сохраняем файл через SheetJS
+      XLSX.writeFile(workbook, fileName);
 
       toast({
         title: "Успешно",
