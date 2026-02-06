@@ -226,17 +226,19 @@ export class KaitenClient {
 
   async validateBoard(boardId: number, boardType: 'initiatives' | 'sprints' = 'initiatives'): Promise<{ valid: boolean; error?: string }> {
     try {
+      log(`[Kaiten] Validating board ${boardId} (type: ${boardType}), domain: ${this.domain}`);
       await this.makeRequest(`/boards/${boardId}`);
+      log(`[Kaiten] Board ${boardId} validation successful`);
       return { valid: true };
     } catch (error: any) {
-      // Kaiten API returns 403 Forbidden for non-existent boards or boards without access
+      log(`[Kaiten] Board ${boardId} validation failed: ${error.message || error}`);
       if (error.message?.includes('403') || error.message?.includes('404') || error.message?.toLowerCase().includes('not found')) {
         const errorMessage = boardType === 'initiatives' 
           ? 'Доска инициатив с таким ID не найдена в Kaiten'
           : 'Доска спринтов с таким ID не найдена в Kaiten';
         return { valid: false, error: errorMessage };
       }
-      return { valid: false, error: 'Ошибка при проверке доски в Kaiten' };
+      return { valid: false, error: `Ошибка при проверке доски в Kaiten: ${error.message || 'неизвестная ошибка'}` };
     }
   }
 
