@@ -69,6 +69,7 @@ export interface KaitenSprintListItem {
 export class KaitenClient {
   private baseUrl: string;
   private apiKey: string;
+  private domain: string;
 
   constructor() {
     const domain = process.env.KAITEN_DOMAIN;
@@ -79,6 +80,7 @@ export class KaitenClient {
     }
 
     const normalizedDomain = domain.replace(/^https?:\/\//, '');
+    this.domain = normalizedDomain;
     
     if (normalizedDomain.includes('.')) {
       this.baseUrl = `https://${normalizedDomain}/api/latest`;
@@ -226,12 +228,14 @@ export class KaitenClient {
 
   async validateBoard(boardId: number, boardType: 'initiatives' | 'sprints' = 'initiatives'): Promise<{ valid: boolean; error?: string }> {
     try {
-      log(`[Kaiten] Validating board ${boardId} (type: ${boardType}), domain: ${this.domain}`);
+      const maskedKey = this.apiKey ? `${this.apiKey.slice(0, 4)}...${this.apiKey.slice(-4)}` : 'NOT SET';
+      log(`[Kaiten] Validating board ${boardId} (type: ${boardType}), domain: ${this.domain}, baseUrl: ${this.baseUrl}, apiKey: ${maskedKey}`);
       await this.makeRequest(`/boards/${boardId}`);
       log(`[Kaiten] Board ${boardId} validation successful`);
       return { valid: true };
     } catch (error: any) {
-      log(`[Kaiten] Board ${boardId} validation failed: ${error.message || error}`);
+      const maskedKey = this.apiKey ? `${this.apiKey.slice(0, 4)}...${this.apiKey.slice(-4)}` : 'NOT SET';
+      log(`[Kaiten] Board ${boardId} validation failed: ${error.message || error}, domain: ${this.domain}, baseUrl: ${this.baseUrl}, apiKey: ${maskedKey}`);
       if (error.message?.includes('403') || error.message?.includes('404') || error.message?.toLowerCase().includes('not found')) {
         const errorMessage = boardType === 'initiatives' 
           ? 'Доска инициатив с таким ID не найдена в Kaiten'
