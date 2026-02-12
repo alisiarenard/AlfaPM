@@ -230,6 +230,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { departmentId } = req.params;
       const teams = await storage.getTeamsByDepartment(departmentId);
+
+      for (const team of teams) {
+        if (!team.spaceName && team.spaceId) {
+          const spaceInfo = await kaitenClient.getSpaceInfo(team.spaceId);
+          if (spaceInfo) {
+            team.spaceName = spaceInfo.title;
+            await storage.updateTeam(team.teamId, { spaceName: spaceInfo.title });
+          }
+        }
+      }
+
       res.json(teams);
     } catch (error) {
       res.status(500).json({ 
