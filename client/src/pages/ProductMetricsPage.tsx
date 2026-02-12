@@ -442,7 +442,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                   </thead>
                 </table>
               </div>
-              <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
                 <table className="w-full text-sm table-fixed">
                   <tbody>
                     {displayTableData?.initiatives && displayTableData.initiatives.length > 0 ? (
