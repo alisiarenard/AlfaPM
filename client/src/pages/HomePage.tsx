@@ -1,6 +1,7 @@
 import { InitiativesTimeline } from "@/components/InitiativesTimeline";
 import { TeamHeader } from "@/components/TeamHeader";
 import { MetricsCharts } from "@/components/MetricsCharts";
+import { TeamMetricsPanel } from "@/components/TeamMetricsPanel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -700,6 +701,10 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
                   </button>
                 </div>
               </div>
+
+              {activeTab && (
+                <TeamMetricsPanel teamId={activeTab} selectedYear={selectedYear} />
+              )}
               
               {departmentTeams.map((team) => (
                 <TabsContent key={team.teamId} value={team.teamId}>

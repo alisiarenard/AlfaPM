@@ -3828,6 +3828,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/metrics/team-sprint-stats", async (req, res) => {
+    try {
+      const teamId = req.query.teamId as string;
+      const yearParam = req.query.year as string;
+
+      if (!teamId) {
+        return res.status(400).json({ success: false, error: "teamId parameter is required" });
+      }
+
+      const team = await storage.getTeamById(teamId);
+      if (!team) {
+        return res.status(404).json({ success: false, error: "Team not found" });
+      }
+
+      const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+
+      let avgVelocity: number | null = null;
+      let avgSPD: number | null = null;
+
+      if (team.sprintBoardId !== null) {
+        const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+        const yearSprints = teamSprints.filter(sprint => {
+          const sprintStart = new Date(sprint.startDate);
+          return sprintStart >= yearStart && sprintStart <= yearEnd;
+        });
+
+        if (yearSprints.length > 0) {
+          let totalVelocity = 0;
+          let totalSPD = 0;
+          let sprintsWithSPD = 0;
+
+          for (const sprint of yearSprints) {
+            totalVelocity += sprint.velocity || 0;
+
+            const sprintTasks = await storage.getTasksBySprint(sprint.sprintId);
+            const sprintEndDate = sprint.actualFinishDate || sprint.finishDate;
+            const sprintStartTime = new Date(sprint.startDate).getTime();
+            const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
+
+            let totalSP = 0;
+            let doneSP = 0;
+
+            for (const task of sprintTasks) {
+              totalSP += task.size || 0;
+              if (task.state === '3-done' && task.condition !== '3 - deleted') {
+                if (task.doneDate) {
+                  const taskDoneTime = new Date(task.doneDate).getTime();
+                  if (taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime) {
+                    doneSP += task.size || 0;
+                  }
+                }
+              }
+            }
+
+            if (totalSP > 0) {
+              totalSPD += Math.round((doneSP / totalSP) * 100);
+              sprintsWithSPD++;
+            }
+          }
+
+          avgVelocity = Math.round(totalVelocity / yearSprints.length * 10) / 10;
+          avgSPD = sprintsWithSPD > 0 ? Math.round(totalSPD / sprintsWithSPD) : 0;
+        }
+      }
+
+      res.json({
+        success: true,
+        avgVelocity,
+        avgSPD,
+        year,
+        teamId,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to calculate team sprint stats",
+      });
+    }
+  });
+
   // Динамика метрик по спринтам для графиков
   app.get("/api/metrics/dynamics", async (req, res) => {
     try {
