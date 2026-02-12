@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
@@ -33,20 +33,35 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
   const teamIdsArray = Array.from(selectedTeams);
   const teamIdsParam = teamIdsArray.sort().join(',');
 
-  const handleTeamToggle = (teamId: string) => {
+  const spaceGroups = useMemo(() => {
+    if (!departmentTeams) return [];
+    const groups = new Map<string, { spaceName: string; teamIds: string[] }>();
+    for (const team of departmentTeams) {
+      const key = String(team.spaceId);
+      if (!groups.has(key)) {
+        groups.set(key, { spaceName: team.spaceName || `Пространство ${team.spaceId}`, teamIds: [] });
+      }
+      groups.get(key)!.teamIds.push(team.teamId);
+    }
+    return Array.from(groups.values());
+  }, [departmentTeams]);
+
+  const handleSpaceToggle = (teamIds: string[]) => {
     const newSelectedTeams = new Set(selectedTeams);
-    if (newSelectedTeams.has(teamId)) {
-      if (newSelectedTeams.size <= 1) {
+    const allSelected = teamIds.every(id => newSelectedTeams.has(id));
+    if (allSelected) {
+      const remaining = new Set(Array.from(newSelectedTeams).filter(id => !teamIds.includes(id)));
+      if (remaining.size === 0) {
         toast({
           title: "Ошибка",
-          description: "Должна быть выбрана хотя бы одна команда",
+          description: "Должно быть выбрано хотя бы одно пространство",
           variant: "destructive",
         });
         return;
       }
-      newSelectedTeams.delete(teamId);
+      teamIds.forEach(id => newSelectedTeams.delete(id));
     } else {
-      newSelectedTeams.add(teamId);
+      teamIds.forEach(id => newSelectedTeams.add(id));
     }
     setSelectedTeams(newSelectedTeams);
   };
@@ -314,7 +329,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                     data-testid="button-menu"
                   >
                     <MoreVertical className="h-4 w-4" />
-                    {departmentTeams && selectedTeams.size < departmentTeams.length && (
+                    {spaceGroups.length > 0 && spaceGroups.some(g => !g.teamIds.every(id => selectedTeams.has(id))) && (
                       <span
                         className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full"
                         style={{ backgroundColor: '#cd253d' }}
@@ -323,20 +338,20 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-white z-[250]">
-                  {departmentTeams && departmentTeams.length > 0 ? (
+                  {spaceGroups.length > 0 ? (
                     <>
                       <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                        Команды
+                        Пространства
                       </div>
-                      {departmentTeams.map((team) => (
+                      {spaceGroups.map((group) => (
                         <DropdownMenuCheckboxItem
-                          key={team.teamId}
-                          checked={selectedTeams.has(team.teamId)}
-                          onCheckedChange={() => handleTeamToggle(team.teamId)}
+                          key={group.spaceName}
+                          checked={group.teamIds.every(id => selectedTeams.has(id))}
+                          onCheckedChange={() => handleSpaceToggle(group.teamIds)}
                           onSelect={(e) => e.preventDefault()}
-                          data-testid={`menu-team-${team.teamId}`}
+                          data-testid={`menu-space-${group.spaceName}`}
                         >
-                          {team.teamName}
+                          {group.spaceName}
                         </DropdownMenuCheckboxItem>
                       ))}
                       <DropdownMenuSeparator />
@@ -351,7 +366,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                     </>
                   ) : (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      Нет команд
+                      Нет пространств
                     </div>
                   )}
                 </DropdownMenuContent>
