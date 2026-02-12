@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Download } from "lucide-react";
+import { MoreVertical, Download, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import type { DepartmentWithTeamCount, TeamRow } from "@shared/schema";
@@ -17,6 +17,7 @@ interface ProductMetricsPageProps {
 export default function ProductMetricsPage({ selectedDepartment, selectedYear, departments }: ProductMetricsPageProps) {
   const { toast } = useToast();
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
+  const [initiativeFilter, setInitiativeFilter] = useState<string>("all");
 
   const { data: departmentTeams } = useQuery<TeamRow[]>({
     queryKey: ["/api/teams", selectedDepartment],
@@ -371,8 +372,29 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50">
-                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border w-[30%]" data-testid="th-initiative">
-                        Инициатива
+                      <th className="text-left px-4 py-3 border-b border-border w-[30%]" data-testid="th-initiative">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="font-semibold text-muted-foreground gap-1" data-testid="button-initiative-filter">
+                              {initiativeFilter === 'all' ? 'Все инициативы' : initiativeFilter === 'done' ? 'Завершенные инициативы' : initiativeFilter === 'active' ? 'Активные инициативы' : 'Бэклог'}
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            <DropdownMenuItem onClick={() => setInitiativeFilter('all')} data-testid="filter-all">
+                              Все инициативы
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setInitiativeFilter('done')} data-testid="filter-done">
+                              Завершенные инициативы
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setInitiativeFilter('active')} data-testid="filter-active">
+                              Активные инициативы
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setInitiativeFilter('backlog')} data-testid="filter-backlog">
+                              Бэклог
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </th>
                       <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-cost">
                         Затраты (план)
