@@ -1136,12 +1136,15 @@ export default function HomePage() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
+      <div className="w-[70px] min-w-[70px] h-screen sticky top-0 border-r border-border bg-card flex flex-col items-center py-4">
+        <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
+      </div>
+      <div className="flex-1 min-w-0">
       <div className="bg-card">
         <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto">
           <div className="flex items-center justify-between px-6 py-3">
             <div className="flex items-center gap-3">
-              <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
               <h2 className="text-2xl font-bold text-foreground">AlfaPM</h2>
             </div>
             <div className="flex items-center gap-3">
@@ -1994,6 +1997,7 @@ export default function HomePage() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 }
