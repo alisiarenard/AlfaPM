@@ -548,7 +548,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       return (
                         <Fragment key={group.type}>
                           <tr
-                            className="cursor-pointer select-none hover-elevate"
+                            className="cursor-pointer select-none"
                             style={{ backgroundColor: 'rgba(205, 37, 61, 0.08)' }}
                             onClick={() => toggleType(group.type)}
                             data-testid={`row-group-${group.type}`}
@@ -572,18 +572,18 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
                               {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground">—</td>
-                            <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground">—</td>
-                            <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground">—</td>
-                            <td className="px-4 py-2.5 border-b border-border text-muted-foreground">—</td>
-                            <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground">—</td>
-                            <td className="px-4 py-2.5 border-b border-border text-muted-foreground">—</td>
-                            <td className="px-4 py-2.5 border-b border-border text-muted-foreground">—</td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
                           </tr>
                           {isExpanded && group.items.map((init, index) => (
                             <tr
                               key={init.cardId}
-                              className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
+                              className={index % 2 === 0 ? '' : 'bg-muted/20'}
                               data-testid={`row-initiative-${init.cardId}`}
                             >
                               <td className="px-4 py-2.5 border-b border-border w-[20%] max-w-0">
