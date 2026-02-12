@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/lib/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Users, LayoutDashboard, Settings } from "lucide-react";
 import HomePage from "@/pages/HomePage";
-import DashboardPage from "@/pages/DashboardPage";
+import ProductMetricsPage from "@/pages/ProductMetricsPage";
 import NotFound from "@/pages/not-found";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 
@@ -17,7 +17,7 @@ function Sidebar() {
 
   const navItems = [
     { path: "/", icon: Users, label: "Команды" },
-    { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/product-metrics", icon: LayoutDashboard, label: "ProductMetrics" },
   ];
 
   return (
@@ -62,7 +62,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
-      <Route path="/dashboard" component={DashboardPage} />
+      <Route path="/product-metrics" component={ProductMetricsPage} />
       <Route component={NotFound} />
     </Switch>
   );
