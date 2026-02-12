@@ -470,22 +470,15 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                                 {init.type.charAt(0)}
                               </span>
                             )}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <a
-                                  href={getKaitenCardUrl(init.spaceId, init.cardId, init.archived)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="truncate text-foreground hover:text-primary hover:underline"
-                                  data-testid={`text-title-${init.cardId}`}
-                                >
-                                  {init.title}
-                                </a>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="max-w-xs">
-                                {init.title}
-                              </TooltipContent>
-                            </Tooltip>
+                            <a
+                              href={getKaitenCardUrl(init.spaceId, init.cardId, init.archived)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="truncate text-foreground hover:text-primary hover:underline"
+                              data-testid={`text-title-${init.cardId}`}
+                            >
+                              {init.title}
+                            </a>
                           </div>
                         </td>
                         <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
