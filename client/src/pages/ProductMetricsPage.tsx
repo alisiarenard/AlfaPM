@@ -548,7 +548,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       return (
                         <Fragment key={group.type}>
                           <tr
-                            className="cursor-pointer select-none bg-muted/40 hover-elevate"
+                            className="cursor-pointer select-none hover-elevate"
+                            style={{ backgroundColor: 'rgba(205, 37, 61, 0.08)' }}
                             onClick={() => toggleType(group.type)}
                             data-testid={`row-group-${group.type}`}
                           >
