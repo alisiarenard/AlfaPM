@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
 import type { DepartmentWithTeamCount, TeamRow } from "@shared/schema";
+import { getKaitenCardUrl } from "@shared/kaiten.config";
 
 interface ProductMetricsPageProps {
   selectedDepartment: string;
@@ -71,6 +72,8 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
     title: string;
     type: string | null;
     cardId: number;
+    spaceId: number;
+    archived: boolean;
     plannedCost: number;
     actualCost: number;
     plannedEffect: number | null;
@@ -469,7 +472,15 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                             )}
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="truncate cursor-default" data-testid={`text-title-${init.cardId}`}>{init.title}</span>
+                                <a
+                                  href={getKaitenCardUrl(init.spaceId, init.cardId, init.archived)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="truncate text-foreground hover:text-primary hover:underline"
+                                  data-testid={`text-title-${init.cardId}`}
+                                >
+                                  {init.title}
+                                </a>
                               </TooltipTrigger>
                               <TooltipContent side="top" className="max-w-xs">
                                 {init.title}

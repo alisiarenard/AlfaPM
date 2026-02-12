@@ -3948,6 +3948,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               size: initiative.size,
               state: initiative.state,
               cardId: initiative.cardId,
+              spaceId: team.spaceId,
+              archived: initiative.archived,
               plannedValue: initiative.plannedValue,
               factValue: initiative.factValue,
               totalPlannedCost: 0,
@@ -3967,6 +3969,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: string;
         type: string | null;
         cardId: number;
+        spaceId: number;
+        archived: boolean;
         plannedCost: number;
         actualCost: number;
         plannedEffect: number | null;
@@ -4006,6 +4010,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: init.title,
           type: init.type,
           cardId: init.cardId,
+          spaceId: init.spaceId,
+          archived: init.archived,
           plannedCost: Math.round(plannedCost),
           actualCost: Math.round(actualCost),
           plannedEffect,
