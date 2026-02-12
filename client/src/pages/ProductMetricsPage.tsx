@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Download, ChevronDown, ChevronRight, Columns } from "lucide-react";
+import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
@@ -496,11 +496,41 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-end gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" data-testid="button-team-selection" title="Выбрать команды">
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-white dark:bg-card">
+                    {departmentTeams?.map((team) => (
+                      <DropdownMenuCheckboxItem
+                        key={team.teamId}
+                        checked={selectedTeams.has(team.teamId)}
+                        onCheckedChange={() => {
+                          setSelectedTeams(prev => {
+                            const next = new Set(prev);
+                            if (next.has(team.teamId)) {
+                              next.delete(team.teamId);
+                            } else {
+                              next.add(team.teamId);
+                            }
+                            return next;
+                          });
+                        }}
+                        onSelect={(e) => e.preventDefault()}
+                        data-testid={`toggle-team-${team.teamId}`}
+                      >
+                        {team.teamName}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button size="icon" variant="ghost" data-testid="button-column-visibility" title="Настроить колонки">
                       <Columns className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="bg-white dark:bg-card">
                     <DropdownMenuCheckboxItem checked={visibleColumns.has('ar')} onCheckedChange={() => toggleColumn('ar')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-ar">
                       % АР
                     </DropdownMenuCheckboxItem>
