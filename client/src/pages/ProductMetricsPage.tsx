@@ -63,7 +63,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       const urlParams = parseUrlParams();
       if (urlParams.spaces.length > 0) {
         const spaceIdSet = new Set(urlParams.spaces);
-        const teamsToSelect = departmentTeams.filter(t => spaceIdSet.has(String(t.spaceId)));
+        const teamsToSelect = departmentTeams.filter(t => spaceIdSet.has(String(t.initSpaceId || t.initBoardId)));
         if (teamsToSelect.length > 0) {
           setSelectedTeams(new Set(teamsToSelect.map(t => t.teamId)));
         } else {
@@ -85,9 +85,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     if (!departmentTeams) return [];
     const groups = new Map<string, { spaceId: string; spaceName: string; teamIds: string[] }>();
     for (const team of departmentTeams) {
-      const key = String(team.spaceId);
+      const key = String(team.initSpaceId || team.initBoardId);
       if (!groups.has(key)) {
-        groups.set(key, { spaceId: key, spaceName: team.spaceName || `Пространство ${team.spaceId}`, teamIds: [] });
+        groups.set(key, { spaceId: key, spaceName: team.initSpaceName || `Пространство ${team.initSpaceId || team.initBoardId}`, teamIds: [] });
       }
       groups.get(key)!.teamIds.push(team.teamId);
     }

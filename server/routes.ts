@@ -239,6 +239,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.updateTeam(team.teamId, { spaceName: spaceInfo.title });
           }
         }
+        if (!team.initSpaceName && team.initBoardId) {
+          const boardInfo = await kaitenClient.getBoardInfo(team.initBoardId);
+          if (boardInfo && boardInfo.space_id) {
+            team.initSpaceId = boardInfo.space_id;
+            const spaceInfo = await kaitenClient.getSpaceInfo(boardInfo.space_id);
+            if (spaceInfo) {
+              team.initSpaceName = spaceInfo.title;
+              await storage.updateTeam(team.teamId, { initSpaceId: boardInfo.space_id, initSpaceName: spaceInfo.title });
+            }
+          }
+        }
       }
 
       res.json(teams);
@@ -270,6 +281,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const spaceInfo = await kaitenClient.getSpaceInfo(teamData.spaceId);
         if (spaceInfo) {
           teamData.spaceName = spaceInfo.title;
+        }
+      }
+
+      // Запрашиваем пространство доски инициатив
+      if (teamData.initBoardId) {
+        const boardInfo = await kaitenClient.getBoardInfo(teamData.initBoardId);
+        if (boardInfo && boardInfo.space_id) {
+          teamData.initSpaceId = boardInfo.space_id;
+          const spaceInfo = await kaitenClient.getSpaceInfo(boardInfo.space_id);
+          if (spaceInfo) {
+            teamData.initSpaceName = spaceInfo.title;
+          }
         }
       }
       

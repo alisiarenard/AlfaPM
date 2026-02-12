@@ -236,6 +236,16 @@ export class KaitenClient {
     }
   }
 
+  async getBoardInfo(boardId: number): Promise<{ id: number; title: string; space_id: number } | null> {
+    try {
+      const response = await this.makeRequest<{ id: number; title: string; space_id: number }>(`/boards/${boardId}`);
+      return response;
+    } catch (error) {
+      log(`[Kaiten] Failed to get board info for ${boardId}: ${error}`);
+      return null;
+    }
+  }
+
   async validateBoard(boardId: number, boardType: 'initiatives' | 'sprints' = 'initiatives'): Promise<{ valid: boolean; error?: string }> {
     try {
       const maskedKey = this.apiKey ? `${this.apiKey.slice(0, 4)}...${this.apiKey.slice(-4)}` : 'NOT SET';
