@@ -3994,7 +3994,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const participants = init.teamContributions
-          .filter(tc => tc.actualSP > 0)
           .map(tc => tc.teamName);
 
         result.push({
