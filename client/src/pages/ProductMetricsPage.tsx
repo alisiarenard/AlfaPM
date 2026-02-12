@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Download, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
 import type { DepartmentWithTeamCount, TeamRow } from "@shared/schema";
 
@@ -451,8 +452,8 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                         className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
                         data-testid={`row-initiative-${init.cardId}`}
                       >
-                        <td className="px-4 py-2.5 border-b border-border w-[20%]">
-                          <div className="flex items-center gap-2">
+                        <td className="px-4 py-2.5 border-b border-border w-[20%] max-w-0">
+                          <div className="flex items-center gap-2 min-w-0">
                             {init.type && (
                               <span
                                 className="inline-flex items-center justify-center w-6 h-6 text-[0.65rem] font-semibold rounded-full shrink-0"
@@ -466,7 +467,14 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                                 {init.type.charAt(0)}
                               </span>
                             )}
-                            <span className="truncate" data-testid={`text-title-${init.cardId}`}>{init.title}</span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="truncate cursor-default" data-testid={`text-title-${init.cardId}`}>{init.title}</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                {init.title}
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         </td>
                         <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
