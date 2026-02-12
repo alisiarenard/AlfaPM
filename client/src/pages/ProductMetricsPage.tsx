@@ -379,7 +379,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
           )}
 
           {selectedDepartment && teamIdsArray.length > 0 && (
-            <div className="mt-6 flex flex-col border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ height: '80vh', opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
+            <div className="mt-6 flex flex-col border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ height: '70vh', opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
               <div className="shrink-0">
                 <table className="w-full text-sm table-fixed">
                   <thead>
