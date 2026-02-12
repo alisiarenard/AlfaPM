@@ -379,12 +379,9 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
           )}
 
           {selectedDepartment && teamIdsArray.length > 0 && (
-            <div className="mt-6" data-testid="initiatives-table-container">
-              <div
-                className="border border-border rounded-lg overflow-hidden transition-opacity duration-300"
-                style={{ opacity: isTableFetching ? 0.5 : 1 }}
-              >
-                <table className="w-full text-sm">
+            <div className="mt-6 flex flex-col border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ height: '80vh', opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
+              <div className="shrink-0">
+                <table className="w-full text-sm table-fixed">
                   <thead>
                     <tr className="bg-muted/50">
                       <th className="text-left px-4 py-3 border-b border-border w-[30%]" data-testid="th-initiative">
@@ -443,6 +440,10 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                       </th>
                     </tr>
                   </thead>
+                </table>
+              </div>
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <table className="w-full text-sm table-fixed">
                   <tbody>
                     {displayTableData?.initiatives && displayTableData.initiatives.length > 0 ? (
                       displayTableData.initiatives.map((init, index) => (
@@ -451,7 +452,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                           className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
                           data-testid={`row-initiative-${init.cardId}`}
                         >
-                          <td className="px-4 py-2.5 border-b border-border">
+                          <td className="px-4 py-2.5 border-b border-border w-[30%]">
                             <div className="flex items-center gap-2">
                               {init.type && (
                                 <span
@@ -515,28 +516,35 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                       </tr>
                     )}
                   </tbody>
-                  {displayTableData?.initiatives && displayTableData.initiatives.length > 0 && (
-                    <tfoot>
-                      <tr className="bg-muted/30 font-semibold">
-                        <td className="px-4 py-2.5 border-t border-border" data-testid="text-total-label">
-                          Итого ({displayTableData.initiatives.length})
-                        </td>
-                        <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
-                          {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
-                        </td>
-                        <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
-                          {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
-                        </td>
-                        <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
-                      </tr>
-                    </tfoot>
-                  )}
                 </table>
               </div>
+              {displayTableData?.initiatives && displayTableData.initiatives.length > 0 && (
+                <div className="shrink-0 border-t border-border">
+                  <table className="w-full text-sm table-fixed">
+                    <tfoot>
+                      <tr className="bg-muted/30 font-semibold">
+                        <td className="px-4 py-2.5 w-[30%]" data-testid="text-total-label">
+                          Итого ({displayTableData.initiatives.length})
+                        </td>
+                        <td className="px-4 py-2.5 text-right tabular-nums" data-testid="text-total-planned-cost">
+                          {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
+                        </td>
+                        <td className="px-4 py-2.5 text-right tabular-nums" data-testid="text-total-actual-cost">
+                          {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">—</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>
