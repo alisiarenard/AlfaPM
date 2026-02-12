@@ -16,8 +16,8 @@ function Sidebar() {
   const [location, setLocation] = useLocation();
 
   const navItems = [
-    { path: "/", icon: Users, label: "Команды" },
-    { path: "/product-metrics", icon: LayoutDashboard, label: "ProductMetrics" },
+    { path: "/", icon: Users, label: "Командные метрики" },
+    { path: "/product-metrics", icon: LayoutDashboard, label: "Продуктовые метрики" },
   ];
 
   return (
