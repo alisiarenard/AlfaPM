@@ -81,7 +81,7 @@ function AppLayout() {
       <Sidebar />
       <div className="flex-1 min-w-0">
         <div className="bg-card">
-          <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto">
+          <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto">
             <div className="flex items-center justify-between px-6 py-3">
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
