@@ -411,8 +411,8 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                                 <span
                                   className="inline-flex items-center justify-center w-6 h-6 text-[0.65rem] font-semibold rounded-full shrink-0"
                                   style={{
-                                    backgroundColor: init.type === 'Epic' ? 'rgba(205, 37, 61, 0.15)' : init.type === 'Compliance' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(139, 92, 246, 0.15)',
-                                    color: init.type === 'Epic' ? '#cd253d' : init.type === 'Compliance' ? '#3b82f6' : '#8b5cf6',
+                                    backgroundColor: init.type === 'Epic' ? 'rgba(205, 37, 61, 0.15)' : init.type === 'Compliance' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(156, 163, 175, 0.2)',
+                                    color: init.type === 'Epic' ? '#cd253d' : init.type === 'Compliance' ? '#3b82f6' : '#9ca3af',
                                   }}
                                   title={init.type}
                                   data-testid={`badge-type-${init.cardId}`}
