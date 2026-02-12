@@ -1,6 +1,7 @@
 import { InitiativesTimeline } from "@/components/InitiativesTimeline";
 import { TeamHeader } from "@/components/TeamHeader";
 import { MetricsCharts } from "@/components/MetricsCharts";
+import { MetricsPanel } from "@/components/MetricsPanel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -466,9 +467,6 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
       setActiveTab("");
       setActiveTabInitialized(false);
       setSelectedTeams(new Set());
-      lastSuccessfulDataRef.current = null;
-      lastSuccessfulCostStructureRef.current = null;
-      lastSuccessfulValueCostRef.current = null;
     }
   }, [departmentTeams]);
 
@@ -506,24 +504,20 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
       if (!isInitialLoad && departments && departments.length > 0) {
         const urlParams = parseUrlParams();
         
-        // Обновляем департамент если он изменился в URL
-        setSelectedDepartment(currentDept => {
-          if (urlParams.dept !== currentDept) {
-            if (urlParams.dept && departments.some(d => d.id === urlParams.dept)) {
-              return urlParams.dept;
-            } else if (!urlParams.dept && currentDept) {
-              // Если параметр dept убрали из URL, выбираем первый доступный
-              const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
-              return firstAvailableDepartment ? firstAvailableDepartment.id : currentDept;
+        if (urlParams.dept !== selectedDepartment) {
+          if (urlParams.dept && departments.some(d => d.id === urlParams.dept)) {
+            setSelectedDepartment(urlParams.dept);
+          } else if (!urlParams.dept && selectedDepartment) {
+            const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
+            if (firstAvailableDepartment) {
+              setSelectedDepartment(firstAvailableDepartment.id);
             }
           }
-          return currentDept;
-        });
+        }
         
-        // Обновляем год если он изменился в URL
-        setSelectedYear(currentYear => {
-          return urlParams.year !== currentYear ? urlParams.year : currentYear;
-        });
+        if (urlParams.year !== selectedYear) {
+          setSelectedYear(urlParams.year);
+        }
         
         // Обновляем фильтр "Активные" если он изменился в URL
         setShowActiveOnly(currentActive => {
@@ -1044,104 +1038,6 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
     }
   };
 
-  // Получаем Innovation Rate для выбранных команд
-  const { data: innovationRateData, isFetching: isIRFetching } = useQuery<{
-    success: boolean;
-    actualIR: number;
-    plannedIR: number;
-    diffFromPlanned: number;
-    totalSP: number;
-    innovationSP: number;
-  }>({
-    queryKey: ['/api/metrics/innovation-rate', { teamIds: teamIdsParam, year: selectedYear }],
-    queryFn: async () => {
-      const response = await fetch(`/api/metrics/innovation-rate?teamIds=${teamIdsParam}&year=${selectedYear}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch innovation rate');
-      }
-      return response.json();
-    },
-    enabled: teamIdsArray.length > 0,
-    placeholderData: (previousData) => previousData,
-  });
-
-  // Используем ref для хранения последнего успешного значения
-  const lastSuccessfulDataRef = useRef<typeof innovationRateData | null>(null);
-  
-  // Обновляем ref когда получаем новые данные
-  if (innovationRateData && !isIRFetching) {
-    lastSuccessfulDataRef.current = innovationRateData;
-  }
-
-  // Показываем последнее успешное значение во время загрузки
-  const displayIR = innovationRateData || lastSuccessfulDataRef.current;
-
-  // Получаем Cost Structure для выбранных команд и года
-  const { data: costStructureData, isFetching: isCostStructureFetching } = useQuery<{
-    success: boolean;
-    year: number;
-    totalSP: number;
-    typeStats: Record<string, number>;
-    typePercentages: Record<string, number>;
-    teams: Array<{ id: string; name: string }>;
-  }>({
-    queryKey: ['/api/metrics/cost-structure', { teamIds: teamIdsParam, year: selectedYear }],
-    queryFn: async () => {
-      const response = await fetch(`/api/metrics/cost-structure?teamIds=${teamIdsParam}&year=${selectedYear}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch cost structure');
-      }
-      return response.json();
-    },
-    enabled: teamIdsArray.length > 0,
-    placeholderData: (previousData) => previousData,
-  });
-
-  // Используем ref для хранения последнего успешного значения
-  const lastSuccessfulCostStructureRef = useRef<typeof costStructureData | null>(null);
-  
-  // Обновляем ref когда получаем новые данные
-  if (costStructureData && !isCostStructureFetching) {
-    lastSuccessfulCostStructureRef.current = costStructureData;
-  }
-
-  // Показываем последнее успешное значение во время загрузки
-  const displayCostStructure = costStructureData || lastSuccessfulCostStructureRef.current;
-
-  // Получаем Value/Cost для выбранных команд
-  const { data: valueCostData, isFetching: isValueCostFetching } = useQuery<{
-    success: boolean;
-    plannedValueCost: number;
-    factValueCost: number;
-    sumPlannedValue: number;
-    sumPlannedCost: number;
-    sumFactValue: number;
-    sumFactCost: number;
-  }>({
-    queryKey: ['/api/metrics/value-cost', { teamIds: teamIdsParam, year: selectedYear }],
-    queryFn: async () => {
-      const response = await fetch(`/api/metrics/value-cost?teamIds=${teamIdsParam}&year=${selectedYear}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch value/cost');
-      }
-      return response.json();
-    },
-    enabled: teamIdsArray.length > 0,
-    placeholderData: (previousData) => previousData,
-  });
-
-  // Используем ref для хранения последнего успешного значения
-  const lastSuccessfulValueCostRef = useRef<typeof valueCostData | null>(null);
-  
-  // Обновляем ref когда получаем новые данные
-  if (valueCostData && !isValueCostFetching) {
-    lastSuccessfulValueCostRef.current = valueCostData;
-  }
-
-  // Показываем последнее успешное значение во время загрузки
-  const displayValueCost = valueCostData || lastSuccessfulValueCostRef.current;
-
-
   return (
     <div className="bg-background flex-1">
     <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
@@ -1149,151 +1045,8 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="mb-6">
-                <div 
-                  className="w-full h-[110px] border border-border rounded-lg flex relative transition-opacity duration-300"
-                  style={{ opacity: isIRFetching || isCostStructureFetching || isValueCostFetching ? 0.5 : 1 }}
-                >
-                  <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
-                    <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
-                    <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
-                      {displayIR ? `${displayIR.actualIR}%` : '-'}
-                    </div>
-                    <div className="text-[0.8rem] text-muted-foreground truncate">
-                      {displayIR && (
-                        <span 
-                          className="font-semibold" 
-                          style={{ color: displayIR.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
-                        >
-                          {displayIR.diffFromPlanned >= 0 ? '+' : ''}{displayIR.diffFromPlanned}%
-                        </span>
-                      )}
-                      {displayIR && ' от планового значения'}
-                    </div>
-                  </div>
-                  <div className="border-l border-border my-3"></div>
-                  <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
-                    <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
-                    <div className="flex justify-between items-end w-full">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">
-                          {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '-'}
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground">плановый</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">
-                          {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '-'}
-                        </div>
-                        <div className="text-[0.8rem] text-muted-foreground">фактический</div>
-                      </div>
-                    </div>
-                    <div></div>
-                  </div>
-                  <div className="border-l border-border my-3"></div>
-                  <div className="w-[66%] pl-4 py-3 flex flex-col justify-between">
-                    <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
-                    <div className="flex gap-2 items-end flex-1">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
-                            <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-epic">
-                              {displayCostStructure?.typePercentages?.['Epic'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Epic</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Epic'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
-                            <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-compliance">
-                              {displayCostStructure?.typePercentages?.['Compliance'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Compliance</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Compliance'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
-                            <div className="text-[1rem] font-semibold" style={{ color: '#cd253d' }} data-testid="cost-enabler">
-                              {displayCostStructure?.typePercentages?.['Enabler'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Enabler</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Enabler'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
-                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-security">
-                              {displayCostStructure?.typePercentages?.['Security'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Security</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Security'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
-                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-service-desk">
-                              {displayCostStructure?.typePercentages?.['Service Desk'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Service Desk</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Service Desk'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
-                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-postmortem">
-                              {displayCostStructure?.typePercentages?.['Postmortem'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Postmortem</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Postmortem'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
-                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-tech-debt">
-                              {displayCostStructure?.typePercentages?.['Tech debt'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Tech debt</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Tech debt'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 cursor-help">
-                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-bug">
-                              {displayCostStructure?.typePercentages?.['Bug'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Bug</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Bug'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-col items-center gap-1 flex-1 min-w-[80px] cursor-help">
-                            <div className="text-[1rem] font-semibold text-muted-foreground" data-testid="cost-other">
-                              {displayCostStructure?.typePercentages?.['Др. доработки'] || 0}%
-                            </div>
-                            <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">Др. доработки</div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>{(displayCostStructure?.typeStats?.['Др. доработки'] || 0).toFixed(1)} SP</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
+                <div className="relative">
+                  <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
