@@ -3884,6 +3884,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const teamIdsParam = req.query.teamIds as string;
       const yearParam = req.query.year as string;
       const filterParam = (req.query.filter as string) || 'all';
+      const filterTeamIdsParam = req.query.filterTeamIds as string | undefined;
 
       if (!teamIdsParam) {
         return res.status(400).json({ success: false, error: "teamIds parameter is required" });
@@ -4029,6 +4030,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (t) participantNames.push(t.teamName);
         }
         const participants = participantNames;
+
+        if (filterTeamIdsParam) {
+          const filterTeamIds = filterTeamIdsParam.split(',').map(id => id.trim()).filter(Boolean);
+          const hasMatchingParticipant = uniqueTeamIds.some(tid => filterTeamIds.includes(tid));
+          if (!hasMatchingParticipant) continue;
+        }
 
         result.push({
           title: init.title,

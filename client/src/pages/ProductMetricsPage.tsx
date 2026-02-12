@@ -29,6 +29,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['Epic', 'Compliance', 'Enabler']));
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['ar', 'effectType', 'contribution', 'participants', 'justification']));
+  const [filterTeamIds, setFilterTeamIds] = useState<Set<string>>(new Set());
 
   const parseUrlParams = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -74,9 +75,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       } else {
         setSelectedTeams(new Set(departmentTeams.map(t => t.teamId)));
       }
+      setFilterTeamIds(new Set(departmentTeams.map(t => t.teamId)));
       setIsInitialLoad(false);
     } else {
       setSelectedTeams(new Set(departmentTeams.map(t => t.teamId)));
+      setFilterTeamIds(new Set(departmentTeams.map(t => t.teamId)));
     }
   }, [departmentTeams, isInitialLoad]);
 
@@ -154,14 +157,22 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     participants: string[];
   }
 
+  const filterTeamIdsArray = Array.from(filterTeamIds);
+  const filterTeamIdsParam = filterTeamIdsArray.sort().join(',');
+  const allTeamsFilterSelected = departmentTeams ? filterTeamIds.size === departmentTeams.length : true;
+
   const { data: initiativesTableData, isFetching: isTableFetching } = useQuery<{
     success: boolean;
     year: number;
     initiatives: InitiativeTableRow[];
   }>({
-    queryKey: ['/api/metrics/initiatives-table', { teamIds: teamIdsParam, year: selectedYear, filter: initiativeFilter }],
+    queryKey: ['/api/metrics/initiatives-table', { teamIds: teamIdsParam, year: selectedYear, filter: initiativeFilter, filterTeamIds: filterTeamIdsParam }],
     queryFn: async () => {
-      const response = await fetch(`/api/metrics/initiatives-table?teamIds=${teamIdsParam}&year=${selectedYear}&filter=${initiativeFilter}`);
+      let url = `/api/metrics/initiatives-table?teamIds=${teamIdsParam}&year=${selectedYear}&filter=${initiativeFilter}`;
+      if (!allTeamsFilterSelected && filterTeamIdsParam) {
+        url += `&filterTeamIds=${filterTeamIdsParam}`;
+      }
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch initiatives table');
       return response.json();
     },
@@ -496,19 +507,23 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-end gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" data-testid="button-team-selection" title="Выбрать команды">
+                    <Button size="icon" variant="ghost" className="relative" data-testid="button-team-selection" title="Фильтр по командам">
                       <Users className="h-4 w-4" />
+                      {!allTeamsFilterSelected && (
+                        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" data-testid="indicator-team-filter-active" />
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-white dark:bg-card">
                     {departmentTeams?.map((team) => (
                       <DropdownMenuCheckboxItem
                         key={team.teamId}
-                        checked={selectedTeams.has(team.teamId)}
+                        checked={filterTeamIds.has(team.teamId)}
                         onCheckedChange={() => {
-                          setSelectedTeams(prev => {
+                          setFilterTeamIds(prev => {
                             const next = new Set(prev);
                             if (next.has(team.teamId)) {
+                              if (next.size <= 1) return prev;
                               next.delete(team.teamId);
                             } else {
                               next.add(team.teamId);
