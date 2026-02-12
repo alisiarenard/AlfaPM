@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 import type { DepartmentWithTeamCount, TeamRow } from "@shared/schema";
 
 interface ProductMetricsPageProps {
@@ -48,6 +49,35 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
     }
     setSelectedTeams(newSelectedTeams);
   };
+
+  interface InitiativeTableRow {
+    title: string;
+    type: string | null;
+    cardId: number;
+    plannedCost: number;
+    actualCost: number;
+    plannedEffect: number | null;
+    actualEffect: number | null;
+  }
+
+  const { data: initiativesTableData, isFetching: isTableFetching } = useQuery<{
+    success: boolean;
+    year: number;
+    initiatives: InitiativeTableRow[];
+  }>({
+    queryKey: ['/api/metrics/initiatives-table', { teamIds: teamIdsParam, year: selectedYear }],
+    queryFn: async () => {
+      const response = await fetch(`/api/metrics/initiatives-table?teamIds=${teamIdsParam}&year=${selectedYear}`);
+      if (!response.ok) throw new Error('Failed to fetch initiatives table');
+      return response.json();
+    },
+    enabled: teamIdsArray.length > 0,
+    placeholderData: (previousData) => previousData,
+  });
+
+  const lastTableDataRef = useRef<typeof initiativesTableData | null>(null);
+  if (initiativesTableData && !isTableFetching) lastTableDataRef.current = initiativesTableData;
+  const displayTableData = initiativesTableData || lastTableDataRef.current;
 
   const handleDownloadReport = async () => {
     try {
@@ -330,6 +360,128 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
             <p className="text-muted-foreground text-center py-12">Нет команд в выбранном департаменте</p>
           ) : (
             <p className="text-muted-foreground text-center py-12">Выберите департамент для просмотра метрик</p>
+          )}
+
+          {selectedDepartment && teamIdsArray.length > 0 && (
+            <div className="mt-6" data-testid="initiatives-table-container">
+              <div
+                className="border border-border rounded-lg overflow-hidden transition-opacity duration-300"
+                style={{ opacity: isTableFetching ? 0.5 : 1 }}
+              >
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border w-[30%]" data-testid="th-initiative">
+                        Инициатива
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-cost">
+                        Затраты (план)
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-cost">
+                        Затраты (факт)
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-effect">
+                        Эффект (план)
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-effect">
+                        Эффект (факт)
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
+                        % АР
+                      </th>
+                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
+                        Тип Эффекта
+                      </th>
+                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
+                        Обоснование
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayTableData?.initiatives && displayTableData.initiatives.length > 0 ? (
+                      displayTableData.initiatives.map((init, index) => (
+                        <tr
+                          key={init.cardId}
+                          className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
+                          data-testid={`row-initiative-${init.cardId}`}
+                        >
+                          <td className="px-4 py-2.5 border-b border-border">
+                            <div className="flex items-center gap-2">
+                              {init.type && (
+                                <span
+                                  className="inline-block px-1.5 py-0.5 text-[0.65rem] font-medium rounded"
+                                  style={{
+                                    backgroundColor: init.type === 'Epic' ? 'rgba(205, 37, 61, 0.1)' : init.type === 'Compliance' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+                                    color: init.type === 'Epic' ? '#cd253d' : init.type === 'Compliance' ? '#3b82f6' : '#8b5cf6',
+                                  }}
+                                  data-testid={`badge-type-${init.cardId}`}
+                                >
+                                  {init.type}
+                                </span>
+                              )}
+                              <span className="truncate" data-testid={`text-title-${init.cardId}`}>{init.title}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
+                            {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
+                          </td>
+                          <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
+                            {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
+                          </td>
+                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-effect-${init.cardId}`}>
+                            —
+                          </td>
+                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-effect-${init.cardId}`}>
+                            —
+                          </td>
+                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>
+                            —
+                          </td>
+                          <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>
+                            —
+                          </td>
+                          <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>
+                            —
+                          </td>
+                        </tr>
+                      ))
+                    ) : !isTableFetching ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                          Нет инициатив для отображения
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-8 text-center">
+                          <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  {displayTableData?.initiatives && displayTableData.initiatives.length > 0 && (
+                    <tfoot>
+                      <tr className="bg-muted/30 font-semibold">
+                        <td className="px-4 py-2.5 border-t border-border" data-testid="text-total-label">
+                          Итого ({displayTableData.initiatives.length})
+                        </td>
+                        <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
+                          {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
+                        </td>
+                        <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
+                          {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
+                        </td>
+                        <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
+                        <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </div>
           )}
         </div>
       </div>

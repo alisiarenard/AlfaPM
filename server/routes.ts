@@ -3828,6 +3828,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/metrics/initiatives-table", async (req, res) => {
+    try {
+      const teamIdsParam = req.query.teamIds as string;
+      const yearParam = req.query.year as string;
+
+      if (!teamIdsParam) {
+        return res.status(400).json({ success: false, error: "teamIds parameter is required" });
+      }
+
+      const teamIds = teamIdsParam.split(',').map(id => id.trim()).filter(id => id);
+      const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
+
+      if (teamIds.length === 0) {
+        return res.status(400).json({ success: false, error: "At least one team ID is required" });
+      }
+
+      const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
+      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+
+      if (validTeams.length === 0) {
+        return res.status(404).json({ success: false, error: "No valid teams found" });
+      }
+
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+
+      const initiativesByCardId = new Map<number, {
+        title: string;
+        type: string | null;
+        size: number;
+        state: string;
+        cardId: number;
+        plannedValue: string | null;
+        factValue: string | null;
+        totalPlannedCost: number;
+        totalActualCost: number;
+        teamContributions: Array<{ teamId: string; teamName: string; spPrice: number; actualSP: number }>;
+      }>();
+
+      for (const team of validTeams) {
+        const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+
+        let teamSprintIds: Set<number> | null = null;
+        if (team.sprintBoardId !== null) {
+          const allTeamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+          const yearSprints = allTeamSprints.filter(sprint => {
+            const sprintStart = new Date(sprint.startDate);
+            return sprintStart >= yearStart && sprintStart <= yearEnd;
+          });
+          teamSprintIds = new Set(yearSprints.map(s => s.sprintId));
+        }
+
+        for (const initiative of initiatives) {
+          const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+          let tasks = allTasks.filter(task => task.teamId === team.teamId);
+          if (teamSprintIds) {
+            tasks = tasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId));
+          }
+
+          let actualSP = 0;
+          for (const task of tasks) {
+            if (task.state === '3-done' && task.condition !== '3 - deleted') {
+              actualSP += task.size || 0;
+            }
+          }
+
+          const existing = initiativesByCardId.get(initiative.cardId);
+          if (existing) {
+            existing.totalActualCost += actualSP * team.spPrice;
+            existing.teamContributions.push({
+              teamId: team.teamId,
+              teamName: team.teamName,
+              spPrice: team.spPrice,
+              actualSP,
+            });
+          } else {
+            initiativesByCardId.set(initiative.cardId, {
+              title: initiative.title,
+              type: initiative.type,
+              size: initiative.size,
+              state: initiative.state,
+              cardId: initiative.cardId,
+              plannedValue: initiative.plannedValue,
+              factValue: initiative.factValue,
+              totalPlannedCost: 0,
+              totalActualCost: actualSP * team.spPrice,
+              teamContributions: [{
+                teamId: team.teamId,
+                teamName: team.teamName,
+                spPrice: team.spPrice,
+                actualSP,
+              }],
+            });
+          }
+        }
+      }
+
+      const result: Array<{
+        title: string;
+        type: string | null;
+        cardId: number;
+        plannedCost: number;
+        actualCost: number;
+        plannedEffect: number | null;
+        actualEffect: number | null;
+      }> = [];
+
+      initiativesByCardId.forEach((init) => {
+        const avgSpPrice = init.teamContributions.length > 0
+          ? init.teamContributions.reduce((sum, tc) => sum + tc.spPrice, 0) / init.teamContributions.length
+          : 0;
+
+        const plannedCost = (init.size || 0) * avgSpPrice;
+        const actualCost = init.totalActualCost;
+
+        let plannedEffect: number | null = null;
+        let actualEffect: number | null = null;
+
+        if (init.type === 'Compliance' || init.type === 'Enabler') {
+          plannedEffect = plannedCost;
+          actualEffect = actualCost;
+        } else {
+          plannedEffect = init.plannedValue && init.plannedValue.trim() !== '' ? parseFloat(init.plannedValue) : null;
+          actualEffect = init.factValue && init.factValue.trim() !== '' ? parseFloat(init.factValue) : null;
+        }
+
+        if (actualCost > 0 || plannedCost > 0) {
+          result.push({
+            title: init.title,
+            type: init.type,
+            cardId: init.cardId,
+            plannedCost: Math.round(plannedCost),
+            actualCost: Math.round(actualCost),
+            plannedEffect,
+            actualEffect,
+          });
+        }
+      });
+
+      result.sort((a, b) => {
+        const typeOrder: Record<string, number> = { 'Epic': 0, 'Compliance': 1, 'Enabler': 2 };
+        const aOrder = a.type ? (typeOrder[a.type] ?? 3) : 3;
+        const bOrder = b.type ? (typeOrder[b.type] ?? 3) : 3;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return a.title.localeCompare(b.title);
+      });
+
+      res.json({
+        success: true,
+        year,
+        initiatives: result,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to fetch initiatives table data",
+      });
+    }
+  });
+
   app.get("/api/metrics/team-sprint-stats", async (req, res) => {
     try {
       const teamId = req.query.teamId as string;
