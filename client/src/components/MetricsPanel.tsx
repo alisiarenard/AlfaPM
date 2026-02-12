@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MetricsPanelProps {
   teamIds: string[];
   selectedYear: string;
+  children?: ReactNode;
 }
 
-export function MetricsPanel({ teamIds, selectedYear }: MetricsPanelProps) {
+export function MetricsPanel({ teamIds, selectedYear, children }: MetricsPanelProps) {
   const teamIdsParam = teamIds.sort().join(',');
 
   const { data: innovationRateData, isFetching: isIRFetching } = useQuery<{
@@ -162,6 +163,7 @@ export function MetricsPanel({ teamIds, selectedYear }: MetricsPanelProps) {
           ))}
         </div>
       </div>
+      {children}
     </div>
   );
 }
