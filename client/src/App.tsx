@@ -51,7 +51,16 @@ function Sidebar() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => setLocation("/?settings=true")}
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search);
+              const dept = params.get('dept') || '';
+              const year = params.get('year') || '';
+              const newParams = new URLSearchParams();
+              if (dept) newParams.set('dept', dept);
+              if (year) newParams.set('year', year);
+              newParams.set('settings', 'true');
+              setLocation(`/?${newParams.toString()}`);
+            }}
             data-testid="button-settings"
           >
             <Settings className="h-5 w-5" />
