@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Download, ChevronDown, ChevronRight } from "lucide-react";
+import { MoreVertical, Download, ChevronDown, ChevronRight, Columns } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
@@ -28,6 +28,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [initiativeFilter, setInitiativeFilter] = useState<string>("all");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['Epic', 'Compliance', 'Enabler']));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['ar', 'effectType', 'contribution', 'participants', 'justification']));
 
   const parseUrlParams = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -180,6 +181,19 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       return next;
     });
   }, []);
+
+  const toggleColumn = useCallback((col: string) => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(col)) next.delete(col);
+      else next.add(col);
+      return next;
+    });
+  }, []);
+
+  const visibleColCount = useMemo(() => {
+    return 6 + (visibleColumns.has('ar') ? 1 : 0) + (visibleColumns.has('effectType') ? 1 : 0) + (visibleColumns.has('contribution') ? 1 : 0) + (visibleColumns.has('participants') ? 1 : 0) + (visibleColumns.has('justification') ? 1 : 0);
+  }, [visibleColumns]);
 
   const groupedInitiatives = useMemo(() => {
     if (!displayTableData?.initiatives) return [];
@@ -478,7 +492,34 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           )}
 
           {selectedDepartment && teamIdsArray.length > 0 && (
-            <div className="mt-6 border border-border rounded-lg overflow-y-auto custom-scrollbar transition-opacity duration-300" style={{ maxHeight: '70vh', opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
+            <div className="mt-6 border border-border rounded-lg transition-opacity duration-300" style={{ opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
+              <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-end gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" data-testid="button-column-visibility" title="Настроить колонки">
+                      <Columns className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuCheckboxItem checked={visibleColumns.has('ar')} onCheckedChange={() => toggleColumn('ar')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-ar">
+                      % АР
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.has('effectType')} onCheckedChange={() => toggleColumn('effectType')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-effect-type">
+                      Тип Эффекта
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.has('contribution')} onCheckedChange={() => toggleColumn('contribution')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-contribution">
+                      % вклада
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.has('participants')} onCheckedChange={() => toggleColumn('participants')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-participants">
+                      Участники
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked={visibleColumns.has('justification')} onCheckedChange={() => toggleColumn('justification')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-justification">
+                      Обоснование
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(70vh - 48px)' }}>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
@@ -524,21 +565,31 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-vc">
                       V/C (факт)
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
-                      % АР
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
-                      Тип Эффекта
-                    </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
-                      % вклада
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-participants">
-                      Участники
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
-                      Обоснование
-                    </th>
+                    {visibleColumns.has('ar') && (
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
+                        % АР
+                      </th>
+                    )}
+                    {visibleColumns.has('effectType') && (
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
+                        Тип Эффекта
+                      </th>
+                    )}
+                    {visibleColumns.has('contribution') && (
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
+                        % вклада
+                      </th>
+                    )}
+                    {visibleColumns.has('participants') && (
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-participants">
+                        Участники
+                      </th>
+                    )}
+                    {visibleColumns.has('justification') && (
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
+                        Обоснование
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -572,13 +623,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
                               {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            {visibleColumns.has('ar') && <td className="px-4 py-2.5 border-b border-border"></td>}
+                            {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-b border-border"></td>}
+                            {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-b border-border"></td>}
+                            {visibleColumns.has('participants') && <td className="px-4 py-2.5 border-b border-border"></td>}
+                            {visibleColumns.has('justification') && <td className="px-4 py-2.5 border-b border-border"></td>}
                           </tr>
                           {isExpanded && group.items.map((init, index) => (
                             <tr
@@ -617,21 +666,23 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-vc-${init.cardId}`}>
                                 —
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>
-                                —
-                              </td>
-                              <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>
-                                —
-                              </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>
-                                —
-                              </td>
-                              <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-participants-${init.cardId}`}>
-                                {init.participants && init.participants.length > 0 ? init.participants.join(', ') : '—'}
-                              </td>
-                              <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>
-                                —
-                              </td>
+                              {visibleColumns.has('ar') && (
+                                <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>—</td>
+                              )}
+                              {visibleColumns.has('effectType') && (
+                                <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>—</td>
+                              )}
+                              {visibleColumns.has('contribution') && (
+                                <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>—</td>
+                              )}
+                              {visibleColumns.has('participants') && (
+                                <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-participants-${init.cardId}`}>
+                                  {init.participants && init.participants.length > 0 ? init.participants.join(', ') : '—'}
+                                </td>
+                              )}
+                              {visibleColumns.has('justification') && (
+                                <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>—</td>
+                              )}
                             </tr>
                           ))}
                         </Fragment>
@@ -639,13 +690,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     })
                   ) : !isTableFetching ? (
                     <tr>
-                      <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={visibleColCount + 1} className="px-4 py-8 text-center text-muted-foreground">
                         Нет инициатив для отображения
                       </td>
                     </tr>
                   ) : (
                     <tr>
-                      <td colSpan={12} className="px-4 py-8 text-center">
+                      <td colSpan={visibleColCount + 1} className="px-4 py-8 text-center">
                         <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
                       </td>
                     </tr>
@@ -667,15 +718,16 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
                       <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
                       <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                      <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
-                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                      <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
-                      <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
+                      {visibleColumns.has('ar') && <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>}
+                      {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
+                      {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>}
+                      {visibleColumns.has('participants') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
+                      {visibleColumns.has('justification') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
                     </tr>
                   </tfoot>
                 )}
               </table>
+              </div>
             </div>
           )}
         </div>
