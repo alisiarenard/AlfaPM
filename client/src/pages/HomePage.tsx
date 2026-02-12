@@ -1137,8 +1137,16 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <div className="w-[70px] min-w-[70px] h-screen sticky top-0 border-r border-border bg-card flex flex-col items-center py-4">
+      <div className="w-[70px] min-w-[70px] h-screen sticky top-0 border-r border-border bg-card flex flex-col items-center py-4 justify-between">
         <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => setSettingsOpen(true)}
+          data-testid="button-settings"
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
       </div>
       <div className="flex-1 min-w-0">
       <div className="bg-card">
@@ -1192,14 +1200,6 @@ export default function HomePage() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setSettingsOpen(true)}
-              data-testid="button-settings"
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
           </div>
         </div>
       </div>
