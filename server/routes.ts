@@ -3974,7 +3974,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         participants: string[];
       }> = [];
 
-      initiativesByCardId.forEach((init) => {
+      for (const init of initiativesByCardId.values()) {
         const avgSpPrice = init.teamContributions.length > 0
           ? init.teamContributions.reduce((sum, tc) => sum + tc.spPrice, 0) / init.teamContributions.length
           : 0;
@@ -3993,8 +3993,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           actualEffect = init.factValue && init.factValue.trim() !== '' ? parseFloat(init.factValue) : null;
         }
 
-        const participants = init.teamContributions
-          .map(tc => tc.teamName);
+        const allTasksForInit = await storage.getTasksByInitCardId(init.cardId);
+        const uniqueTeamIds = [...new Set(allTasksForInit.map(t => t.teamId).filter(Boolean))];
+        const participantNames: string[] = [];
+        for (const tid of uniqueTeamIds) {
+          const t = await storage.getTeamById(tid);
+          if (t) participantNames.push(t.teamName);
+        }
+        const participants = participantNames;
 
         result.push({
           title: init.title,
@@ -4006,7 +4012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           actualEffect,
           participants,
         });
-      });
+      }
 
       result.sort((a, b) => {
         const typeOrder: Record<string, number> = { 'Epic': 0, 'Compliance': 1, 'Enabler': 2 };
