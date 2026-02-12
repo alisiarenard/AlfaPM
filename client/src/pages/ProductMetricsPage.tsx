@@ -392,6 +392,9 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
                         Тип Эффекта
                       </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
+                        % вклада
+                      </th>
                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
                         Обоснование
                       </th>
@@ -441,6 +444,9 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                           <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>
                             —
                           </td>
+                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>
+                            —
+                          </td>
                           <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>
                             —
                           </td>
@@ -448,13 +454,13 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                       ))
                     ) : !isTableFetching ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                        <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                           Нет инициатив для отображения
                         </td>
                       </tr>
                     ) : (
                       <tr>
-                        <td colSpan={8} className="px-4 py-8 text-center">
+                        <td colSpan={9} className="px-4 py-8 text-center">
                           <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
                         </td>
                       </tr>
