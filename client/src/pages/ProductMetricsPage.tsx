@@ -409,14 +409,15 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                             <div className="flex items-center gap-2">
                               {init.type && (
                                 <span
-                                  className="inline-block px-1.5 py-0.5 text-[0.65rem] font-medium rounded"
+                                  className="inline-flex items-center justify-center w-6 h-6 text-[0.65rem] font-semibold rounded-full shrink-0"
                                   style={{
-                                    backgroundColor: init.type === 'Epic' ? 'rgba(205, 37, 61, 0.1)' : init.type === 'Compliance' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(139, 92, 246, 0.1)',
+                                    backgroundColor: init.type === 'Epic' ? 'rgba(205, 37, 61, 0.15)' : init.type === 'Compliance' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(139, 92, 246, 0.15)',
                                     color: init.type === 'Epic' ? '#cd253d' : init.type === 'Compliance' ? '#3b82f6' : '#8b5cf6',
                                   }}
+                                  title={init.type}
                                   data-testid={`badge-type-${init.cardId}`}
                                 >
-                                  {init.type}
+                                  {init.type.charAt(0)}
                                 </span>
                               )}
                               <span className="truncate" data-testid={`text-title-${init.cardId}`}>{init.title}</span>
