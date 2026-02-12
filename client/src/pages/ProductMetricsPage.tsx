@@ -481,7 +481,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
             <div className="mt-6 border border-border rounded-lg overflow-y-auto custom-scrollbar transition-opacity duration-300" style={{ maxHeight: '70vh', opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-muted/50" style={{ backdropFilter: 'blur(8px)' }}>
+                  <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
                     <th className="text-left px-4 py-3 border-b border-border w-[20%]" data-testid="th-initiative">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -549,7 +549,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         <Fragment key={group.type}>
                           <tr
                             className="cursor-pointer select-none"
-                            style={{ backgroundColor: 'rgba(205, 37, 61, 0.08)' }}
+                            style={{ backgroundColor: 'hsl(var(--muted) / 0.5)' }}
                             onClick={() => toggleType(group.type)}
                             data-testid={`row-group-${group.type}`}
                           >
