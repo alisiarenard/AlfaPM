@@ -15,8 +15,8 @@ export interface IStorage {
   getTeamById(teamId: string): Promise<TeamRow | undefined>;
   getTeamBySprintBoardId(sprintBoardId: number): Promise<TeamRow | undefined>;
   getTeamByInitBoardId(initBoardId: number): Promise<TeamRow | undefined>;
-  createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow>;
-  updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined>;
+  createTeam(team: { teamName: string; spaceId: number; spaceName?: string; initSpaceId?: number; initSpaceName?: string; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow>;
+  updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; spaceName: string; initSpaceId: number; initSpaceName: string; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined>;
   deleteTeam(teamId: string): Promise<void>;
   getAllInitiatives(): Promise<InitiativeRow[]>;
   getInitiativesByBoardId(initBoardId: number): Promise<InitiativeRow[]>;
@@ -142,11 +142,11 @@ export class MemStorage implements IStorage {
     return undefined;
   }
 
-  async createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow> {
+  async createTeam(team: { teamName: string; spaceId: number; spaceName?: string; initSpaceId?: number; initSpaceName?: string; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow> {
     return {} as TeamRow;
   }
 
-  async updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined> {
+  async updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; spaceName: string; initSpaceId: number; initSpaceName: string; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined> {
     return undefined;
   }
 
@@ -426,7 +426,7 @@ export class DbStorage implements IStorage {
     return result;
   }
 
-  async createTeam(team: { teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow> {
+  async createTeam(team: { teamName: string; spaceId: number; spaceName?: string; initSpaceId?: number; initSpaceName?: string; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice?: number; departmentId: string }): Promise<TeamRow> {
     const [newTeam] = await db.insert(teams).values({
       ...team,
       spPrice: team.spPrice ?? 0
@@ -434,7 +434,7 @@ export class DbStorage implements IStorage {
     return newTeam;
   }
 
-  async updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined> {
+  async updateTeam(teamId: string, team: Partial<{ teamName: string; spaceId: number; spaceName: string; initSpaceId: number; initSpaceName: string; sprintBoardId: number; initBoardId: number; vilocity: number; sprintDuration: number; spPrice: number; departmentId: string }>): Promise<TeamRow | undefined> {
     const [updated] = await db.update(teams)
       .set(team)
       .where(eq(teams.teamId, teamId))
