@@ -238,7 +238,9 @@ export class KaitenClient {
 
   async getBoardInfo(boardId: number): Promise<{ id: number; title: string; space_id: number } | null> {
     try {
-      const response = await this.makeRequest<{ id: number; title: string; space_id: number }>(`/boards/${boardId}`);
+      const response = await this.makeRequest<any>(`/boards/${boardId}`);
+      const allKeys = Object.keys(response || {});
+      log(`[Kaiten] getBoardInfo(${boardId}): id=${response?.id}, title=${response?.title}, space_id=${response?.space_id}, ALL_KEYS=${allKeys.join(',')}`);
       return response;
     } catch (error) {
       log(`[Kaiten] Failed to get board info for ${boardId}: ${error}`);

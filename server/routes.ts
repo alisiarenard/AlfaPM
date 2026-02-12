@@ -240,7 +240,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         if (!team.initSpaceName && team.initBoardId) {
+          log(`[Teams] Fetching initSpace for team ${team.teamName}, initBoardId=${team.initBoardId}`);
           const boardInfo = await kaitenClient.getBoardInfo(team.initBoardId);
+          log(`[Teams] getBoardInfo result: ${JSON.stringify(boardInfo)}`);
           if (boardInfo && boardInfo.space_id) {
             team.initSpaceId = boardInfo.space_id;
             const spaceInfo = await kaitenClient.getSpaceInfo(boardInfo.space_id);
