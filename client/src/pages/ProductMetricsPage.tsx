@@ -492,7 +492,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           )}
 
           {selectedDepartment && teamIdsArray.length > 0 && (
-            <div className="mt-6 border border-border rounded-lg transition-opacity duration-300" style={{ opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
+            <div className="mt-6 border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
               <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-end gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
