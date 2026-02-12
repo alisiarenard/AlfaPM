@@ -384,7 +384,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-muted/50" style={{ backdropFilter: 'blur(8px)' }}>
-                    <th className="text-left px-4 py-3 border-b border-border w-[30%]" data-testid="th-initiative">
+                    <th className="text-left px-4 py-3 border-b border-border w-[20%]" data-testid="th-initiative">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="font-semibold text-muted-foreground gap-1" data-testid="button-initiative-filter">
@@ -451,7 +451,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                         className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
                         data-testid={`row-initiative-${init.cardId}`}
                       >
-                        <td className="px-4 py-2.5 border-b border-border w-[30%]">
+                        <td className="px-4 py-2.5 border-b border-border w-[20%]">
                           <div className="flex items-center gap-2">
                             {init.type && (
                               <span
@@ -521,7 +521,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                 {displayTableData?.initiatives && displayTableData.initiatives.length > 0 && (
                   <tfoot className="sticky bottom-0 z-10">
                     <tr className="bg-muted/80 font-semibold" style={{ backdropFilter: 'blur(8px)' }}>
-                      <td className="px-4 py-2.5 border-t border-border w-[30%]" data-testid="text-total-label">
+                      <td className="px-4 py-2.5 border-t border-border w-[20%]" data-testid="text-total-label">
                         Итого ({displayTableData.initiatives.length})
                       </td>
                       <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
