@@ -3921,14 +3921,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const team of validTeams) {
         const allInitiatives = await storage.getInitiativesByBoardId(team.initBoardId);
-        const initiatives = filterParam === 'all'
-          ? allInitiatives
-          : allInitiatives.filter(init => {
-              if (filterParam === 'done') return init.state === '3-done';
-              if (filterParam === 'active') return init.state === '2-inProgress';
-              if (filterParam === 'backlog') return init.state === '1-queued';
-              return true;
-            });
+        const allowedTypes = ['Epic', 'Compliance', 'Enabler'];
+        const initiatives = allInitiatives
+          .filter(init => init.type !== null && allowedTypes.includes(init.type))
+          .filter(init => {
+            if (filterParam === 'all') return true;
+            if (filterParam === 'done') return init.state === '3-done';
+            if (filterParam === 'active') return init.state === '2-inProgress';
+            if (filterParam === 'backlog') return init.state === '1-queued';
+            return true;
+          });
 
         let teamSprintIds: Set<number> | null = null;
         if (team.sprintBoardId !== null) {
