@@ -3963,17 +3963,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           actualEffect = init.factValue && init.factValue.trim() !== '' ? parseFloat(init.factValue) : null;
         }
 
-        if (actualCost > 0 || plannedCost > 0) {
-          result.push({
-            title: init.title,
-            type: init.type,
-            cardId: init.cardId,
-            plannedCost: Math.round(plannedCost),
-            actualCost: Math.round(actualCost),
-            plannedEffect,
-            actualEffect,
-          });
-        }
+        result.push({
+          title: init.title,
+          type: init.type,
+          cardId: init.cardId,
+          plannedCost: Math.round(plannedCost),
+          actualCost: Math.round(actualCost),
+          plannedEffect,
+          actualEffect,
+        });
       });
 
       result.sort((a, b) => {
