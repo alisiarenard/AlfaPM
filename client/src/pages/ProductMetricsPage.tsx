@@ -623,6 +623,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
                               {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
                             </td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            <td className="px-4 py-2.5 border-b border-border"></td>
                             {visibleColumns.has('ar') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-b border-border"></td>}
