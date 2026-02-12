@@ -113,6 +113,7 @@ export default function SettingsPage() {
   const [sprintDuration, setSprintDuration] = useState("");
   const [spPrice, setSpPrice] = useState("");
   const [hasSprints, setHasSprints] = useState(true);
+  const [initSpaceId, setInitSpaceId] = useState("");
   const [sprintIds, setSprintIds] = useState("");
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
@@ -180,6 +181,7 @@ export default function SettingsPage() {
       spaceId: number; 
       sprintBoardId: number; 
       initBoardId: number; 
+      initSpaceId?: number;
       vilocity: number; 
       sprintDuration: number; 
       spPrice?: number;
@@ -204,6 +206,7 @@ export default function SettingsPage() {
       setSpaceId("");
       setSprintBoardId("");
       setInitBoardId("");
+      setInitSpaceId("");
       setVelocity("");
       setSprintDuration("");
       setSpPrice("");
@@ -240,6 +243,7 @@ export default function SettingsPage() {
       spaceId?: number; 
       sprintBoardId?: number | null; 
       initBoardId?: number; 
+      initSpaceId?: number;
       vilocity?: number; 
       sprintDuration?: number; 
       spPrice?: number;
@@ -261,6 +265,7 @@ export default function SettingsPage() {
       setSpaceId(updatedTeam.spaceId.toString());
       setSprintBoardId(updatedTeam.sprintBoardId?.toString() || "");
       setInitBoardId(updatedTeam.initBoardId.toString());
+      setInitSpaceId(updatedTeam.initSpaceId?.toString() || "");
       setVelocity(updatedTeam.vilocity.toString());
       setSprintDuration(updatedTeam.sprintDuration.toString());
       setSpPrice(updatedTeam.spPrice.toString());
@@ -340,6 +345,7 @@ export default function SettingsPage() {
       setSpaceId("");
       setSprintBoardId("");
       setInitBoardId("");
+      setInitSpaceId("");
       setVelocity("");
       setSprintDuration("");
       setSpPrice("");
@@ -349,6 +355,7 @@ export default function SettingsPage() {
       setSpaceId(editingTeam.spaceId.toString());
       setSprintBoardId(editingTeam.sprintBoardId?.toString() || "");
       setInitBoardId(editingTeam.initBoardId.toString());
+      setInitSpaceId(editingTeam.initSpaceId?.toString() || "");
       setVelocity(editingTeam.vilocity.toString());
       setSprintDuration(editingTeam.sprintDuration.toString());
       setSpPrice(editingTeam.spPrice.toString());
@@ -371,6 +378,7 @@ export default function SettingsPage() {
     setSpaceId(team.spaceId.toString());
     setSprintBoardId(team.sprintBoardId?.toString() || "");
     setInitBoardId(team.initBoardId.toString());
+    setInitSpaceId(team.initSpaceId?.toString() || "");
     setVelocity(team.vilocity.toString());
     setSprintDuration(team.sprintDuration.toString());
     setSpPrice(team.spPrice.toString());
@@ -393,12 +401,13 @@ export default function SettingsPage() {
       const spaceIdChanged = (spaceId ? parseInt(spaceId) : editingTeam.spaceId) !== editingTeam.spaceId;
       const sprintBoardIdChanged = (sprintBoardId ? parseInt(sprintBoardId) : editingTeam.sprintBoardId) !== editingTeam.sprintBoardId;
       const initBoardIdChanged = (initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId) !== editingTeam.initBoardId;
+      const initSpaceIdChanged = (initSpaceId ? parseInt(initSpaceId) : (editingTeam.initSpaceId ?? 0)) !== (editingTeam.initSpaceId ?? 0);
       const velocityChanged = (velocity ? parseInt(velocity) : editingTeam.vilocity) !== editingTeam.vilocity;
       const sprintDurationChanged = (sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration) !== editingTeam.sprintDuration;
       const spPriceChanged = (spPrice ? parseInt(spPrice) : editingTeam.spPrice) !== editingTeam.spPrice;
       const hasSprintsChanged = hasSprints !== true;
       const sprintIdsChanged = sprintIds.trim() !== "";
-      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || sprintIdsChanged;
+      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || sprintIdsChanged;
     }
     return false;
   };
@@ -624,6 +633,20 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div className="flex-1 space-y-2">
+                          <Label htmlFor="init-space-id">ID пространства инициатив</Label>
+                          <Input
+                            id="init-space-id"
+                            type="number"
+                            placeholder="0"
+                            value={initSpaceId}
+                            onChange={(e) => setInitSpaceId(e.target.value)}
+                            className="no-arrows"
+                            data-testid="input-init-space-id"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex-1 space-y-2">
                           <Label htmlFor="velocity">Velocity <span className="text-destructive">*</span></Label>
                           <Input
                             id="velocity"
@@ -635,8 +658,6 @@ export default function SettingsPage() {
                             data-testid="input-velocity"
                           />
                         </div>
-                      </div>
-                      <div className="flex gap-4">
                         <div className="flex-1 space-y-2">
                           <Label htmlFor="sprint-duration">Длительность спринта (дней) <span className="text-destructive">*</span></Label>
                           <Input
@@ -700,6 +721,7 @@ export default function SettingsPage() {
                                 spaceId: spaceId ? parseInt(spaceId) : editingTeam.spaceId,
                                 sprintBoardId: sprintBoardId ? parseInt(sprintBoardId) : null,
                                 initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
+                                initSpaceId: initSpaceId ? parseInt(initSpaceId) : undefined,
                                 vilocity: velocity ? parseInt(velocity) : editingTeam.vilocity,
                                 sprintDuration: sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration,
                                 spPrice: spPrice ? parseInt(spPrice) : editingTeam.spPrice,
@@ -793,6 +815,20 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div className="flex-1 space-y-2">
+                          <Label htmlFor="new-init-space-id">ID пространства инициатив</Label>
+                          <Input
+                            id="new-init-space-id"
+                            type="number"
+                            placeholder="0"
+                            value={initSpaceId}
+                            onChange={(e) => setInitSpaceId(e.target.value)}
+                            className="no-arrows"
+                            data-testid="input-init-space-id"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex-1 space-y-2">
                           <Label htmlFor="new-velocity">Velocity <span className="text-destructive">*</span></Label>
                           <Input
                             id="new-velocity"
@@ -804,8 +840,6 @@ export default function SettingsPage() {
                             data-testid="input-velocity"
                           />
                         </div>
-                      </div>
-                      <div className="flex gap-4">
                         <div className="flex-1 space-y-2">
                           <Label htmlFor="new-sprint-duration">Длительность спринта (дней) <span className="text-destructive">*</span></Label>
                           <Input
@@ -876,6 +910,7 @@ export default function SettingsPage() {
                             spaceId: parseInt(spaceId),
                             sprintBoardId: parseInt(sprintBoardId),
                             initBoardId: parseInt(initBoardId),
+                            initSpaceId: initSpaceId ? parseInt(initSpaceId) : undefined,
                             vilocity: parseInt(velocity),
                             sprintDuration: parseInt(sprintDuration),
                             spPrice: spPrice ? parseInt(spPrice) : undefined,

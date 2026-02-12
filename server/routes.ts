@@ -239,17 +239,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.updateTeam(team.teamId, { spaceName: spaceInfo.title });
           }
         }
-        if (!team.initSpaceName && team.initBoardId) {
-          log(`[Teams] Fetching initSpace for team ${team.teamName}, initBoardId=${team.initBoardId}`);
-          const boardInfo = await kaitenClient.getBoardInfo(team.initBoardId);
-          log(`[Teams] getBoardInfo result: ${JSON.stringify(boardInfo)}`);
-          if (boardInfo && boardInfo.space_id) {
-            team.initSpaceId = boardInfo.space_id;
-            const spaceInfo = await kaitenClient.getSpaceInfo(boardInfo.space_id);
-            if (spaceInfo) {
-              team.initSpaceName = spaceInfo.title;
-              await storage.updateTeam(team.teamId, { initSpaceId: boardInfo.space_id, initSpaceName: spaceInfo.title });
-            }
+        if (!team.initSpaceName && team.initSpaceId) {
+          const spaceInfo = await kaitenClient.getSpaceInfo(team.initSpaceId);
+          if (spaceInfo) {
+            team.initSpaceName = spaceInfo.title;
+            await storage.updateTeam(team.teamId, { initSpaceName: spaceInfo.title });
           }
         }
       }
@@ -286,15 +280,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Запрашиваем пространство доски инициатив
-      if (teamData.initBoardId) {
-        const boardInfo = await kaitenClient.getBoardInfo(teamData.initBoardId);
-        if (boardInfo && boardInfo.space_id) {
-          teamData.initSpaceId = boardInfo.space_id;
-          const spaceInfo = await kaitenClient.getSpaceInfo(boardInfo.space_id);
-          if (spaceInfo) {
-            teamData.initSpaceName = spaceInfo.title;
-          }
+      if (teamData.initSpaceId) {
+        const spaceInfo = await kaitenClient.getSpaceInfo(teamData.initSpaceId);
+        if (spaceInfo) {
+          teamData.initSpaceName = spaceInfo.title;
         }
       }
       
@@ -572,8 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { teamId } = req.params;
       const updateData = req.body;
 
-      // Получаем текущие данные команды для валидации
-      const currentTeam = updateData.initBoardId !== undefined || updateData.sprintBoardId !== undefined
+      const currentTeam = updateData.initBoardId !== undefined || updateData.sprintBoardId !== undefined || updateData.initSpaceId !== undefined
         ? await storage.getTeamById(teamId)
         : null;
 
@@ -611,6 +599,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const spaceInfo = await kaitenClient.getSpaceInfo(updateData.spaceId);
           if (spaceInfo) {
             updateData.spaceName = spaceInfo.title;
+          }
+        }
+      }
+
+      if (updateData.initSpaceId !== undefined) {
+        if (!currentTeam || currentTeam.initSpaceId !== updateData.initSpaceId) {
+          const spaceInfo = await kaitenClient.getSpaceInfo(updateData.initSpaceId);
+          if (spaceInfo) {
+            updateData.initSpaceName = spaceInfo.title;
           }
         }
       }
