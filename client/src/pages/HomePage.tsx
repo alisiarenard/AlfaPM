@@ -20,7 +20,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Department, DepartmentWithTeamCount, TeamRow, InitiativeRow, Initiative, Team, SprintRow } from "@shared/schema";
-import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 
 function DepartmentTreeItem({ 
   department, 
@@ -114,7 +113,10 @@ export default function HomePage() {
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState<string>("");
   const [viewTab, setViewTab] = useState<"initiatives" | "metrics">("initiatives");
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('settings') === 'true';
+  });
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
   const [rightPanelMode, setRightPanelMode] = useState<null | "addBlock" | "addTeam" | "editBlock" | "editTeam">(null);
@@ -1136,19 +1138,7 @@ export default function HomePage() {
 
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <div className="w-[70px] min-w-[70px] h-screen sticky top-0 border-r border-border bg-card flex flex-col items-center py-4 justify-between">
-        <img src={logoImage} alt="Logo" className="w-10 h-10 rounded-md" />
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => setSettingsOpen(true)}
-          data-testid="button-settings"
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
-      </div>
-      <div className="flex-1 min-w-0">
+    <div className="min-h-screen bg-background flex-1">
       <div className="bg-card">
         <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto">
           <div className="flex items-center justify-between px-6 py-3">
@@ -1997,7 +1987,6 @@ export default function HomePage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
     </div>
   );
 }
