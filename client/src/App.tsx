@@ -146,7 +146,9 @@ function AppLayout() {
           <Route path="/product-metrics">
             <ProductMetricsPage
               selectedDepartment={selectedDepartment}
+              setSelectedDepartment={setSelectedDepartment}
               selectedYear={selectedYear}
+              setSelectedYear={setSelectedYear}
               departments={departments}
             />
           </Route>

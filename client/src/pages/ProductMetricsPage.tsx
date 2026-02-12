@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useLocation } from "wouter";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
@@ -10,16 +11,32 @@ import { Loader2 } from "lucide-react";
 import type { DepartmentWithTeamCount, TeamRow } from "@shared/schema";
 import { getKaitenCardUrl } from "@shared/kaiten.config";
 
+const currentYear = new Date().getFullYear();
+
 interface ProductMetricsPageProps {
   selectedDepartment: string;
+  setSelectedDepartment: (dept: string) => void;
   selectedYear: string;
+  setSelectedYear: (year: string) => void;
   departments?: DepartmentWithTeamCount[];
 }
 
-export default function ProductMetricsPage({ selectedDepartment, selectedYear, departments }: ProductMetricsPageProps) {
+export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments }: ProductMetricsPageProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [initiativeFilter, setInitiativeFilter] = useState<string>("all");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const parseUrlParams = useCallback(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    return {
+      dept: searchParams.get('dept') || '',
+      year: searchParams.get('year') || currentYear.toString(),
+      spaces: searchParams.get('spaces')?.split(',').filter(Boolean) || [],
+      filter: searchParams.get('filter') || 'all',
+    };
+  }, []);
 
   const { data: departmentTeams } = useQuery<TeamRow[]>({
     queryKey: ["/api/teams", selectedDepartment],
@@ -27,26 +44,80 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
   });
 
   useEffect(() => {
-    if (departmentTeams) {
-      setSelectedTeams(new Set(departmentTeams.map(team => team.teamId)));
+    if (!isInitialLoad) return;
+    const urlParams = parseUrlParams();
+    if (urlParams.dept && departments?.some(d => d.id === urlParams.dept)) {
+      setSelectedDepartment(urlParams.dept);
     }
-  }, [selectedDepartment, departmentTeams]);
+    if (urlParams.year) {
+      setSelectedYear(urlParams.year);
+    }
+    if (urlParams.filter && ['all', 'done', 'active', 'backlog'].includes(urlParams.filter)) {
+      setInitiativeFilter(urlParams.filter);
+    }
+  }, [departments, isInitialLoad]);
+
+  useEffect(() => {
+    if (!departmentTeams || departmentTeams.length === 0) return;
+    if (isInitialLoad) {
+      const urlParams = parseUrlParams();
+      if (urlParams.spaces.length > 0) {
+        const spaceIdSet = new Set(urlParams.spaces);
+        const teamsToSelect = departmentTeams.filter(t => spaceIdSet.has(String(t.spaceId)));
+        if (teamsToSelect.length > 0) {
+          setSelectedTeams(new Set(teamsToSelect.map(t => t.teamId)));
+        } else {
+          setSelectedTeams(new Set(departmentTeams.map(t => t.teamId)));
+        }
+      } else {
+        setSelectedTeams(new Set(departmentTeams.map(t => t.teamId)));
+      }
+      setIsInitialLoad(false);
+    } else {
+      setSelectedTeams(new Set(departmentTeams.map(t => t.teamId)));
+    }
+  }, [departmentTeams, isInitialLoad]);
 
   const teamIdsArray = Array.from(selectedTeams);
   const teamIdsParam = teamIdsArray.sort().join(',');
 
   const spaceGroups = useMemo(() => {
     if (!departmentTeams) return [];
-    const groups = new Map<string, { spaceName: string; teamIds: string[] }>();
+    const groups = new Map<string, { spaceId: string; spaceName: string; teamIds: string[] }>();
     for (const team of departmentTeams) {
       const key = String(team.spaceId);
       if (!groups.has(key)) {
-        groups.set(key, { spaceName: team.spaceName || `Пространство ${team.spaceId}`, teamIds: [] });
+        groups.set(key, { spaceId: key, spaceName: team.spaceName || `Пространство ${team.spaceId}`, teamIds: [] });
       }
       groups.get(key)!.teamIds.push(team.teamId);
     }
     return Array.from(groups.values());
   }, [departmentTeams]);
+
+  const selectedSpaceIds = useMemo(() => {
+    if (!spaceGroups.length) return [];
+    return spaceGroups
+      .filter(g => g.teamIds.every(id => selectedTeams.has(id)))
+      .map(g => g.spaceId);
+  }, [spaceGroups, selectedTeams]);
+
+  useEffect(() => {
+    if (isInitialLoad || !selectedDepartment) return;
+    const params = new URLSearchParams();
+    params.set('dept', selectedDepartment);
+    params.set('year', selectedYear);
+    if (selectedSpaceIds.length > 0 && selectedSpaceIds.length < spaceGroups.length) {
+      params.set('spaces', selectedSpaceIds.join(','));
+    }
+    if (initiativeFilter !== 'all') {
+      params.set('filter', initiativeFilter);
+    }
+    const newUrl = `/product-metrics?${params.toString()}`;
+    const currentUrl = window.location.pathname + window.location.search;
+    if (currentUrl !== newUrl) {
+      setLocation(newUrl);
+    }
+  }, [selectedDepartment, selectedYear, selectedSpaceIds, initiativeFilter, isInitialLoad, spaceGroups.length]);
 
   const handleSpaceToggle = (teamIds: string[]) => {
     const newSelectedTeams = new Set(selectedTeams);
