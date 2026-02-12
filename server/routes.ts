@@ -3971,6 +3971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         actualCost: number;
         plannedEffect: number | null;
         actualEffect: number | null;
+        participants: string[];
       }> = [];
 
       initiativesByCardId.forEach((init) => {
@@ -3992,6 +3993,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           actualEffect = init.factValue && init.factValue.trim() !== '' ? parseFloat(init.factValue) : null;
         }
 
+        const participants = init.teamContributions
+          .filter(tc => tc.actualSP > 0)
+          .map(tc => tc.teamName);
+
         result.push({
           title: init.title,
           type: init.type,
@@ -4000,6 +4005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           actualCost: Math.round(actualCost),
           plannedEffect,
           actualEffect,
+          participants,
         });
       });
 

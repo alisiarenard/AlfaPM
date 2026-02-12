@@ -74,6 +74,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
     actualCost: number;
     plannedEffect: number | null;
     actualEffect: number | null;
+    participants: string[];
   }
 
   const { data: initiativesTableData, isFetching: isTableFetching } = useQuery<{
@@ -496,7 +497,7 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                           —
                         </td>
                         <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-participants-${init.cardId}`}>
-                          —
+                          {init.participants && init.participants.length > 0 ? init.participants.join(', ') : '—'}
                         </td>
                         <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>
                           —
