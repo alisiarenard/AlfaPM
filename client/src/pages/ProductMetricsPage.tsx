@@ -407,34 +407,34 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-cost">
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-cost">
                       Затраты (план)
                     </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-cost">
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-cost">
                       Затраты (факт)
                     </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-effect">
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-effect">
                       Эффект (план)
                     </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-effect">
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-effect">
                       Эффект (факт)
                     </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-vc">
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-vc">
                       V/C (план)
                     </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-vc">
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-vc">
                       V/C (факт)
                     </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
                       % АР
                     </th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
                       Тип Эффекта
                     </th>
-                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
                       % вклада
                     </th>
-                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
                       Обоснование
                     </th>
                   </tr>
