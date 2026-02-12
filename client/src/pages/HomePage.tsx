@@ -1137,7 +1137,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border bg-card">
+      <div className="bg-card">
         <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto">
           <div className="flex items-center justify-between px-6 py-3">
             <div className="flex items-center gap-3">
