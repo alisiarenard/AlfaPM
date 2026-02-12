@@ -633,7 +633,7 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div className="flex-1 space-y-2">
-                          <Label htmlFor="init-space-id">ID пространства инициатив</Label>
+                          <Label htmlFor="init-space-id">ID пространства инициатив <span className="text-destructive">*</span></Label>
                           <Input
                             id="init-space-id"
                             type="number"
@@ -709,7 +709,7 @@ export default function SettingsPage() {
                     {editingTeam && hasFormChanged() && (
                       <div className="p-4 flex justify-end">
                         <Button
-                          disabled={!teamName.trim() || updateTeamMutation.isPending}
+                          disabled={!teamName.trim() || !initSpaceId || updateTeamMutation.isPending}
                           style={{ backgroundColor: '#cd253d' }}
                           className="hover:opacity-90 border-0"
                           data-testid="button-save-team"
@@ -721,7 +721,7 @@ export default function SettingsPage() {
                                 spaceId: spaceId ? parseInt(spaceId) : editingTeam.spaceId,
                                 sprintBoardId: sprintBoardId ? parseInt(sprintBoardId) : null,
                                 initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
-                                initSpaceId: initSpaceId ? parseInt(initSpaceId) : undefined,
+                                initSpaceId: parseInt(initSpaceId),
                                 vilocity: velocity ? parseInt(velocity) : editingTeam.vilocity,
                                 sprintDuration: sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration,
                                 spPrice: spPrice ? parseInt(spPrice) : editingTeam.spPrice,
@@ -815,7 +815,7 @@ export default function SettingsPage() {
                           />
                         </div>
                         <div className="flex-1 space-y-2">
-                          <Label htmlFor="new-init-space-id">ID пространства инициатив</Label>
+                          <Label htmlFor="new-init-space-id">ID пространства инициатив <span className="text-destructive">*</span></Label>
                           <Input
                             id="new-init-space-id"
                             type="number"
@@ -895,6 +895,7 @@ export default function SettingsPage() {
                           !spaceId || 
                           !sprintBoardId || 
                           !initBoardId || 
+                          !initSpaceId ||
                           !velocity || 
                           !sprintDuration ||
                           (hasSprints && !sprintIds.trim()) ||
@@ -910,7 +911,7 @@ export default function SettingsPage() {
                             spaceId: parseInt(spaceId),
                             sprintBoardId: parseInt(sprintBoardId),
                             initBoardId: parseInt(initBoardId),
-                            initSpaceId: initSpaceId ? parseInt(initSpaceId) : undefined,
+                            initSpaceId: parseInt(initSpaceId),
                             vilocity: parseInt(velocity),
                             sprintDuration: parseInt(sprintDuration),
                             spPrice: spPrice ? parseInt(spPrice) : undefined,
