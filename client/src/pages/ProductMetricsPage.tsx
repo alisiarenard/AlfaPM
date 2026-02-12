@@ -408,6 +408,12 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                       <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-effect">
                         Эффект (факт)
                       </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-vc">
+                        V/C (план)
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-vc">
+                        V/C (факт)
+                      </th>
                       <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
                         % АР
                       </th>
@@ -460,6 +466,12 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                           <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-effect-${init.cardId}`}>
                             —
                           </td>
+                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-vc-${init.cardId}`}>
+                            —
+                          </td>
+                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-vc-${init.cardId}`}>
+                            —
+                          </td>
                           <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>
                             —
                           </td>
@@ -476,13 +488,13 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
                       ))
                     ) : !isTableFetching ? (
                       <tr>
-                        <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                        <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
                           Нет инициатив для отображения
                         </td>
                       </tr>
                     ) : (
                       <tr>
-                        <td colSpan={9} className="px-4 py-8 text-center">
+                        <td colSpan={11} className="px-4 py-8 text-center">
                           <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
                         </td>
                       </tr>
