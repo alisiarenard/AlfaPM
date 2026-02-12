@@ -93,6 +93,7 @@ export type DepartmentWithTeamCount = Department & { teamCount: number };
 
 export const teams = pgTable("teams", {
   spaceId: integer("space_id").notNull(),
+  spaceName: varchar("space_name"),
   sprintBoardId: integer("sprint_board_id"),
   initBoardId: integer("init_board_id").notNull(),
   teamId: varchar("team_id").primaryKey().default(sql`gen_random_uuid()`),

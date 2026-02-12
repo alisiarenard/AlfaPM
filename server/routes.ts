@@ -253,6 +253,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
+
+      // Запрашиваем название пространства из Kaiten
+      if (teamData.spaceId) {
+        const spaceInfo = await kaitenClient.getSpaceInfo(teamData.spaceId);
+        if (spaceInfo) {
+          teamData.spaceName = spaceInfo.title;
+        }
+      }
       
       // Создаем команду в БД
       const team = await storage.createTeam(teamData);
@@ -557,6 +565,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               success: false, 
               error: validation.error || "Доска спринтов не найдена в Kaiten"
             });
+          }
+        }
+      }
+
+      // Запрашиваем название пространства из Kaiten если spaceId изменился
+      if (updateData.spaceId !== undefined) {
+        if (!currentTeam || currentTeam.spaceId !== updateData.spaceId) {
+          const spaceInfo = await kaitenClient.getSpaceInfo(updateData.spaceId);
+          if (spaceInfo) {
+            updateData.spaceName = spaceInfo.title;
           }
         }
       }

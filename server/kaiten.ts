@@ -216,6 +216,16 @@ export class KaitenClient {
     return [];
   }
 
+  async getSpaceInfo(spaceId: number): Promise<{ id: number; title: string } | null> {
+    try {
+      const response = await this.makeRequest<{ id: number; title: string }>(`/spaces/${spaceId}`);
+      return response;
+    } catch (error) {
+      log(`[Kaiten] Failed to get space info for ${spaceId}: ${error}`);
+      return null;
+    }
+  }
+
   async testConnection(): Promise<boolean> {
     try {
       await this.makeRequest('/spaces');
