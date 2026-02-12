@@ -104,13 +104,19 @@ function DepartmentTreeItem({
   );
 }
 
-export default function HomePage() {
+interface HomePageProps {
+  selectedDepartment: string;
+  setSelectedDepartment: (value: string) => void;
+  selectedYear: string;
+  setSelectedYear: (value: string) => void;
+  departments?: DepartmentWithTeamCount[];
+}
+
+export default function HomePage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments }: HomePageProps) {
   const currentYear = new Date().getFullYear();
   const [location, setLocation] = useLocation();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [activeTabInitialized, setActiveTabInitialized] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
-  const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [activeTab, setActiveTab] = useState<string>("");
   const [viewTab, setViewTab] = useState<"initiatives" | "metrics">("initiatives");
   const [settingsOpen, setSettingsOpen] = useState(() => {
@@ -171,10 +177,6 @@ export default function HomePage() {
       setLocation(newUrl);
     }
   };
-
-  const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
-    queryKey: ["/api/departments"],
-  });
 
   const { data: departmentTeams } = useQuery<TeamRow[]>({
     queryKey: ["/api/teams", selectedDepartment],
@@ -470,7 +472,10 @@ export default function HomePage() {
     }
   }, [departmentTeams]);
 
-  // Восстановление выбранных команд после загрузки команд департамента
+  useEffect(() => {
+    setActiveTabInitialized(false);
+  }, [selectedDepartment]);
+
   useEffect(() => {
     if (!isInitialLoad && departmentTeams && departmentTeams.length > 0 && selectedDepartment) {
       const urlParams = parseUrlParams();
@@ -1138,63 +1143,7 @@ export default function HomePage() {
 
 
   return (
-    <div className="min-h-screen bg-background flex-1">
-      <div className="bg-card">
-        <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto">
-          <div className="flex items-center justify-between px-6 py-3">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-foreground">Командные метрики</h2>
-            </div>
-            <div className="flex items-center gap-3">
-            <Select 
-              value={selectedDepartment} 
-              onValueChange={(dept) => {
-                setSelectedDepartment(dept);
-                setActiveTabInitialized(false); // Сбрасываем флаг при смене департамента
-              }}
-              data-testid="select-department"
-            >
-              <SelectTrigger className="w-[200px] bg-white">
-                <SelectValue placeholder="Выберите департамент" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                {departments?.map((dept) => (
-                  <SelectItem 
-                    key={dept.id} 
-                    value={dept.id} 
-                    data-testid={`option-department-${dept.id}`}
-                  >
-                    {dept.department} {dept.teamCount === 0 ? "(нет команд)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select 
-              value={selectedYear} 
-              onValueChange={setSelectedYear}
-              data-testid="select-year"
-            >
-              <SelectTrigger className="w-[120px] bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectItem value="2025" data-testid="option-year-2025">
-                  2025
-                </SelectItem>
-                <SelectItem 
-                  value="2026" 
-                  data-testid="option-year-2026"
-                  disabled={currentYear < 2026}
-                >
-                  2026
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-    </div>
-    
+    <div className="bg-background flex-1">
     <div className="max-w-[1200px] xl:max-w-none xl:w-4/5 mx-auto" data-testid="main-container">
         <div className="p-6">
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
