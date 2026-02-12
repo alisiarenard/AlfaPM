@@ -66,9 +66,9 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
     year: number;
     initiatives: InitiativeTableRow[];
   }>({
-    queryKey: ['/api/metrics/initiatives-table', { teamIds: teamIdsParam, year: selectedYear }],
+    queryKey: ['/api/metrics/initiatives-table', { teamIds: teamIdsParam, year: selectedYear, filter: initiativeFilter }],
     queryFn: async () => {
-      const response = await fetch(`/api/metrics/initiatives-table?teamIds=${teamIdsParam}&year=${selectedYear}`);
+      const response = await fetch(`/api/metrics/initiatives-table?teamIds=${teamIdsParam}&year=${selectedYear}&filter=${initiativeFilter}`);
       if (!response.ok) throw new Error('Failed to fetch initiatives table');
       return response.json();
     },

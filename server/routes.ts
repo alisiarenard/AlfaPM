@@ -3832,6 +3832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const teamIdsParam = req.query.teamIds as string;
       const yearParam = req.query.year as string;
+      const filterParam = (req.query.filter as string) || 'all';
 
       if (!teamIdsParam) {
         return res.status(400).json({ success: false, error: "teamIds parameter is required" });
@@ -3868,7 +3869,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }>();
 
       for (const team of validTeams) {
-        const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+        const allInitiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+        const initiatives = filterParam === 'all'
+          ? allInitiatives
+          : allInitiatives.filter(init => {
+              if (filterParam === 'done') return init.state === '3-done';
+              if (filterParam === 'active') return init.state === '2-inProgress';
+              if (filterParam === 'backlog') return init.state === '1-queued';
+              return true;
+            });
 
         let teamSprintIds: Set<number> | null = null;
         if (team.sprintBoardId !== null) {
