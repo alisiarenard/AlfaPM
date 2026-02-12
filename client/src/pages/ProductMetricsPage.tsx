@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from "react";
 import { useLocation } from "wouter";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Download, ChevronDown } from "lucide-react";
+import { MoreVertical, Download, ChevronDown, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
@@ -27,6 +27,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [initiativeFilter, setInitiativeFilter] = useState<string>("all");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['Epic', 'Compliance', 'Enabler']));
 
   const parseUrlParams = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -170,6 +171,28 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const lastTableDataRef = useRef<typeof initiativesTableData | null>(null);
   if (initiativesTableData && !isTableFetching) lastTableDataRef.current = initiativesTableData;
   const displayTableData = initiativesTableData || lastTableDataRef.current;
+
+  const toggleType = useCallback((type: string) => {
+    setExpandedTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }, []);
+
+  const groupedInitiatives = useMemo(() => {
+    if (!displayTableData?.initiatives) return [];
+    const types = ['Epic', 'Compliance', 'Enabler'] as const;
+    return types.map(type => {
+      const items = displayTableData.initiatives.filter(i => i.type === type);
+      const totalPlannedCost = items.reduce((s, i) => s + i.plannedCost, 0);
+      const totalActualCost = items.reduce((s, i) => s + i.actualCost, 0);
+      const totalPlannedEffect = items.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
+      const totalActualEffect = items.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
+      return { type, items, totalPlannedCost, totalActualCost, totalPlannedEffect, totalActualEffect };
+    }).filter(g => g.items.length > 0);
+  }, [displayTableData]);
 
   const handleDownloadReport = async () => {
     try {
@@ -519,74 +542,100 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   </tr>
                 </thead>
                 <tbody>
-                  {displayTableData?.initiatives && displayTableData.initiatives.length > 0 ? (
-                    displayTableData.initiatives.map((init, index) => (
-                      <tr
-                        key={init.cardId}
-                        className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
-                        data-testid={`row-initiative-${init.cardId}`}
-                      >
-                        <td className="px-4 py-2.5 border-b border-border w-[20%] max-w-0">
-                          <div className="flex items-center gap-2 min-w-0">
-                            {init.type && (
-                              <span
-                                className="inline-flex items-center justify-center w-6 h-6 text-[0.65rem] font-semibold rounded-full shrink-0"
-                                style={{
-                                  backgroundColor: init.type === 'Epic' ? 'rgba(205, 37, 61, 0.15)' : init.type === 'Compliance' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(156, 163, 175, 0.2)',
-                                  color: init.type === 'Epic' ? '#cd253d' : init.type === 'Compliance' ? '#3b82f6' : '#9ca3af',
-                                }}
-                                title={init.type}
-                                data-testid={`badge-type-${init.cardId}`}
-                              >
-                                {init.type.charAt(0)}
-                              </span>
-                            )}
-                            <a
-                              href={getKaitenCardUrl(init.spaceId, init.cardId, init.archived)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="truncate text-foreground hover:text-primary hover:underline"
-                              data-testid={`text-title-${init.cardId}`}
+                  {groupedInitiatives.length > 0 ? (
+                    groupedInitiatives.map((group) => {
+                      const isExpanded = expandedTypes.has(group.type);
+                      return (
+                        <Fragment key={group.type}>
+                          <tr
+                            className="cursor-pointer select-none bg-muted/40 hover-elevate"
+                            onClick={() => toggleType(group.type)}
+                            data-testid={`row-group-${group.type}`}
+                          >
+                            <td className="px-4 py-2.5 border-b border-border w-[20%]">
+                              <div className="flex items-center gap-2 font-semibold">
+                                {isExpanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                                <span>{group.type}</span>
+                                <span className="text-muted-foreground font-normal text-xs">({group.items.length})</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
+                              {group.totalPlannedCost > 0 ? group.totalPlannedCost.toLocaleString('ru-RU') : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-cost-${group.type}`}>
+                              {group.totalActualCost > 0 ? group.totalActualCost.toLocaleString('ru-RU') : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-effect-${group.type}`}>
+                              {group.totalPlannedEffect > 0 ? group.totalPlannedEffect.toLocaleString('ru-RU') : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
+                              {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground">—</td>
+                            <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground">—</td>
+                            <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground">—</td>
+                            <td className="px-4 py-2.5 border-b border-border text-muted-foreground">—</td>
+                            <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground">—</td>
+                            <td className="px-4 py-2.5 border-b border-border text-muted-foreground">—</td>
+                            <td className="px-4 py-2.5 border-b border-border text-muted-foreground">—</td>
+                          </tr>
+                          {isExpanded && group.items.map((init, index) => (
+                            <tr
+                              key={init.cardId}
+                              className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
+                              data-testid={`row-initiative-${init.cardId}`}
                             >
-                              {init.title}
-                            </a>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
-                          {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
-                          {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-effect-${init.cardId}`}>
-                          —
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-effect-${init.cardId}`}>
-                          —
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-vc-${init.cardId}`}>
-                          —
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-vc-${init.cardId}`}>
-                          —
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>
-                          —
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>
-                          —
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>
-                          —
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-participants-${init.cardId}`}>
-                          {init.participants && init.participants.length > 0 ? init.participants.join(', ') : '—'}
-                        </td>
-                        <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>
-                          —
-                        </td>
-                      </tr>
-                    ))
+                              <td className="px-4 py-2.5 border-b border-border w-[20%] max-w-0">
+                                <div className="flex items-center min-w-0 pl-6">
+                                  <a
+                                    href={getKaitenCardUrl(init.spaceId, init.cardId, init.archived)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="truncate text-foreground hover:text-primary hover:underline"
+                                    data-testid={`text-title-${init.cardId}`}
+                                  >
+                                    {init.title}
+                                  </a>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
+                                {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
+                                {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-effect-${init.cardId}`}>
+                                —
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-effect-${init.cardId}`}>
+                                —
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-vc-${init.cardId}`}>
+                                —
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-vc-${init.cardId}`}>
+                                —
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>
+                                —
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>
+                                —
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>
+                                —
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-participants-${init.cardId}`}>
+                                {init.participants && init.participants.length > 0 ? init.participants.join(', ') : '—'}
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>
+                                —
+                              </td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    })
                   ) : !isTableFetching ? (
                     <tr>
                       <td colSpan={12} className="px-4 py-8 text-center text-muted-foreground">
