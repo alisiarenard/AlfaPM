@@ -11,6 +11,7 @@ import { Users, LayoutDashboard, Settings } from "lucide-react";
 import { useState } from "react";
 import HomePage from "@/pages/HomePage";
 import ProductMetricsPage from "@/pages/ProductMetricsPage";
+import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/not-found";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 import type { DepartmentWithTeamCount } from "@shared/schema";
@@ -51,16 +52,7 @@ function Sidebar() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => {
-              const params = new URLSearchParams(window.location.search);
-              const dept = params.get('dept') || '';
-              const year = params.get('year') || '';
-              const newParams = new URLSearchParams();
-              if (dept) newParams.set('dept', dept);
-              if (year) newParams.set('year', year);
-              newParams.set('settings', 'true');
-              setLocation(`/?${newParams.toString()}`);
-            }}
+            onClick={() => setLocation("/settings")}
             data-testid="button-settings"
           >
             <Settings className="h-5 w-5" />
@@ -81,7 +73,8 @@ function AppLayout() {
     queryKey: ["/api/departments"],
   });
 
-  const pageTitle = navItems.find(item => 
+  const isSettingsPage = location.startsWith("/settings");
+  const pageTitle = isSettingsPage ? "Настройки" : navItems.find(item => 
     item.path === "/" ? location === "/" || location.startsWith("/?") : location.startsWith(item.path)
   )?.label || "Командные метрики";
 
@@ -95,49 +88,51 @@ function AppLayout() {
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
               </div>
-              <div className="flex items-center gap-3">
-                <Select
-                  value={selectedDepartment}
-                  onValueChange={setSelectedDepartment}
-                  data-testid="select-department"
-                >
-                  <SelectTrigger className="w-[200px] bg-white">
-                    <SelectValue placeholder="Выберите департамент" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    {departments?.map((dept) => (
-                      <SelectItem
-                        key={dept.id}
-                        value={dept.id}
-                        data-testid={`option-department-${dept.id}`}
-                      >
-                        {dept.department} {dept.teamCount === 0 ? "(нет команд)" : ""}
+              {!isSettingsPage && (
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={selectedDepartment}
+                    onValueChange={setSelectedDepartment}
+                    data-testid="select-department"
+                  >
+                    <SelectTrigger className="w-[200px] bg-white">
+                      <SelectValue placeholder="Выберите департамент" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      {departments?.map((dept) => (
+                        <SelectItem
+                          key={dept.id}
+                          value={dept.id}
+                          data-testid={`option-department-${dept.id}`}
+                        >
+                          {dept.department} {dept.teamCount === 0 ? "(нет команд)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={selectedYear}
+                    onValueChange={setSelectedYear}
+                    data-testid="select-year"
+                  >
+                    <SelectTrigger className="w-[120px] bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="2025" data-testid="option-year-2025">
+                        2025
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={selectedYear}
-                  onValueChange={setSelectedYear}
-                  data-testid="select-year"
-                >
-                  <SelectTrigger className="w-[120px] bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    <SelectItem value="2025" data-testid="option-year-2025">
-                      2025
-                    </SelectItem>
-                    <SelectItem
-                      value="2026"
-                      data-testid="option-year-2026"
-                      disabled={currentYear < 2026}
-                    >
-                      2026
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                      <SelectItem
+                        value="2026"
+                        data-testid="option-year-2026"
+                        disabled={currentYear < 2026}
+                      >
+                        2026
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -160,6 +155,9 @@ function AppLayout() {
               setSelectedYear={setSelectedYear}
               departments={departments}
             />
+          </Route>
+          <Route path="/settings">
+            <SettingsPage />
           </Route>
           <Route component={NotFound} />
         </Switch>
