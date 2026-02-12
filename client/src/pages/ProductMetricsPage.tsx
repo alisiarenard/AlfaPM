@@ -510,7 +510,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <Button size="icon" variant="ghost" className="relative" data-testid="button-team-selection" title="Фильтр по командам">
                       <Users className="h-4 w-4" />
                       {!allTeamsFilterSelected && (
-                        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" data-testid="indicator-team-filter-active" />
+                        <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-destructive" data-testid="indicator-team-filter-active" />
                       )}
                     </Button>
                   </DropdownMenuTrigger>
