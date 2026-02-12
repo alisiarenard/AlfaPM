@@ -379,172 +379,162 @@ export default function ProductMetricsPage({ selectedDepartment, selectedYear, d
           )}
 
           {selectedDepartment && teamIdsArray.length > 0 && (
-            <div className="mt-6 flex flex-col border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ height: '70vh', opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
-              <div className="shrink-0">
-                <table className="w-full text-sm table-fixed">
-                  <thead>
-                    <tr className="bg-muted/50">
-                      <th className="text-left px-4 py-3 border-b border-border w-[30%]" data-testid="th-initiative">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="font-semibold text-muted-foreground gap-1" data-testid="button-initiative-filter">
-                              {initiativeFilter === 'all' ? 'Все инициативы' : initiativeFilter === 'done' ? 'Завершенные инициативы' : initiativeFilter === 'active' ? 'Активные инициативы' : 'Бэклог'}
-                              <ChevronDown className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start">
-                            <DropdownMenuItem onClick={() => setInitiativeFilter('all')} data-testid="filter-all">
-                              Все инициативы
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setInitiativeFilter('done')} data-testid="filter-done">
-                              Завершенные инициативы
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setInitiativeFilter('active')} data-testid="filter-active">
-                              Активные инициативы
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setInitiativeFilter('backlog')} data-testid="filter-backlog">
-                              Бэклог
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-cost">
-                        Затраты (план)
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-cost">
-                        Затраты (факт)
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-effect">
-                        Эффект (план)
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-effect">
-                        Эффект (факт)
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-vc">
-                        V/C (план)
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-vc">
-                        V/C (факт)
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
-                        % АР
-                      </th>
-                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
-                        Тип Эффекта
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
-                        % вклада
-                      </th>
-                      <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
-                        Обоснование
-                      </th>
+            <div className="mt-6 border border-border rounded-lg overflow-y-auto custom-scrollbar transition-opacity duration-300" style={{ maxHeight: '70vh', opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-muted/50" style={{ backdropFilter: 'blur(8px)' }}>
+                    <th className="text-left px-4 py-3 border-b border-border w-[30%]" data-testid="th-initiative">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="font-semibold text-muted-foreground gap-1" data-testid="button-initiative-filter">
+                            {initiativeFilter === 'all' ? 'Все инициативы' : initiativeFilter === 'done' ? 'Завершенные инициативы' : initiativeFilter === 'active' ? 'Активные инициативы' : 'Бэклог'}
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={() => setInitiativeFilter('all')} data-testid="filter-all">
+                            Все инициативы
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setInitiativeFilter('done')} data-testid="filter-done">
+                            Завершенные инициативы
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setInitiativeFilter('active')} data-testid="filter-active">
+                            Активные инициативы
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setInitiativeFilter('backlog')} data-testid="filter-backlog">
+                            Бэклог
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-cost">
+                      Затраты (план)
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-cost">
+                      Затраты (факт)
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-effect">
+                      Эффект (план)
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-effect">
+                      Эффект (факт)
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-vc">
+                      V/C (план)
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-vc">
+                      V/C (факт)
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
+                      % АР
+                    </th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
+                      Тип Эффекта
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
+                      % вклада
+                    </th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
+                      Обоснование
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayTableData?.initiatives && displayTableData.initiatives.length > 0 ? (
+                    displayTableData.initiatives.map((init, index) => (
+                      <tr
+                        key={init.cardId}
+                        className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
+                        data-testid={`row-initiative-${init.cardId}`}
+                      >
+                        <td className="px-4 py-2.5 border-b border-border w-[30%]">
+                          <div className="flex items-center gap-2">
+                            {init.type && (
+                              <span
+                                className="inline-flex items-center justify-center w-6 h-6 text-[0.65rem] font-semibold rounded-full shrink-0"
+                                style={{
+                                  backgroundColor: init.type === 'Epic' ? 'rgba(205, 37, 61, 0.15)' : init.type === 'Compliance' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(156, 163, 175, 0.2)',
+                                  color: init.type === 'Epic' ? '#cd253d' : init.type === 'Compliance' ? '#3b82f6' : '#9ca3af',
+                                }}
+                                title={init.type}
+                                data-testid={`badge-type-${init.cardId}`}
+                              >
+                                {init.type.charAt(0)}
+                              </span>
+                            )}
+                            <span className="truncate" data-testid={`text-title-${init.cardId}`}>{init.title}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
+                          {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
+                          {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-effect-${init.cardId}`}>
+                          —
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-effect-${init.cardId}`}>
+                          —
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-vc-${init.cardId}`}>
+                          —
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-vc-${init.cardId}`}>
+                          —
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>
+                          —
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>
+                          —
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>
+                          —
+                        </td>
+                        <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>
+                          —
+                        </td>
+                      </tr>
+                    ))
+                  ) : !isTableFetching ? (
+                    <tr>
+                      <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
+                        Нет инициатив для отображения
+                      </td>
                     </tr>
-                  </thead>
-                </table>
-              </div>
-              <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar">
-                <table className="w-full text-sm table-fixed">
-                  <tbody>
-                    {displayTableData?.initiatives && displayTableData.initiatives.length > 0 ? (
-                      displayTableData.initiatives.map((init, index) => (
-                        <tr
-                          key={init.cardId}
-                          className={`hover-elevate ${index % 2 === 0 ? '' : 'bg-muted/20'}`}
-                          data-testid={`row-initiative-${init.cardId}`}
-                        >
-                          <td className="px-4 py-2.5 border-b border-border w-[30%]">
-                            <div className="flex items-center gap-2">
-                              {init.type && (
-                                <span
-                                  className="inline-flex items-center justify-center w-6 h-6 text-[0.65rem] font-semibold rounded-full shrink-0"
-                                  style={{
-                                    backgroundColor: init.type === 'Epic' ? 'rgba(205, 37, 61, 0.15)' : init.type === 'Compliance' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(156, 163, 175, 0.2)',
-                                    color: init.type === 'Epic' ? '#cd253d' : init.type === 'Compliance' ? '#3b82f6' : '#9ca3af',
-                                  }}
-                                  title={init.type}
-                                  data-testid={`badge-type-${init.cardId}`}
-                                >
-                                  {init.type.charAt(0)}
-                                </span>
-                              )}
-                              <span className="truncate" data-testid={`text-title-${init.cardId}`}>{init.title}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
-                            {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
-                            {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-effect-${init.cardId}`}>
-                            —
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-effect-${init.cardId}`}>
-                            —
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-vc-${init.cardId}`}>
-                            —
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-vc-${init.cardId}`}>
-                            —
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>
-                            —
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>
-                            —
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>
-                            —
-                          </td>
-                          <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>
-                            —
-                          </td>
-                        </tr>
-                      ))
-                    ) : !isTableFetching ? (
-                      <tr>
-                        <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
-                          Нет инициатив для отображения
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr>
-                        <td colSpan={11} className="px-4 py-8 text-center">
-                          <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              {displayTableData?.initiatives && displayTableData.initiatives.length > 0 && (
-                <div className="shrink-0 border-t border-border">
-                  <table className="w-full text-sm table-fixed">
-                    <tfoot>
-                      <tr className="bg-muted/30 font-semibold">
-                        <td className="px-4 py-2.5 w-[30%]" data-testid="text-total-label">
-                          Итого ({displayTableData.initiatives.length})
-                        </td>
-                        <td className="px-4 py-2.5 text-right tabular-nums" data-testid="text-total-planned-cost">
-                          {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
-                        </td>
-                        <td className="px-4 py-2.5 text-right tabular-nums" data-testid="text-total-actual-cost">
-                          {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground">—</td>
-                        <td className="px-4 py-2.5 text-muted-foreground">—</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
+                  ) : (
+                    <tr>
+                      <td colSpan={11} className="px-4 py-8 text-center">
+                        <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+                {displayTableData?.initiatives && displayTableData.initiatives.length > 0 && (
+                  <tfoot className="sticky bottom-0 z-10">
+                    <tr className="bg-muted/80 font-semibold" style={{ backdropFilter: 'blur(8px)' }}>
+                      <td className="px-4 py-2.5 border-t border-border w-[30%]" data-testid="text-total-label">
+                        Итого ({displayTableData.initiatives.length})
+                      </td>
+                      <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
+                        {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
+                      </td>
+                      <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
+                        {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
+                      </td>
+                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                      <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
+                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                      <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
             </div>
           )}
         </div>
