@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from "react";
 import { useLocation } from "wouter";
 import { MetricsPanel } from "@/components/MetricsPanel";
@@ -24,6 +24,7 @@ interface ProductMetricsPageProps {
 
 export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle }: ProductMetricsPageProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [initiativeFilter, setInitiativeFilter] = useState<string>("all");
@@ -31,6 +32,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['Epic', 'Compliance', 'Enabler']));
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['ar', 'effectType', 'contribution', 'participants', 'justification']));
   const [filterTeamIds, setFilterTeamIds] = useState<Set<string>>(new Set());
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const parseUrlParams = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -140,6 +142,32 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       setLocation(newUrl);
     }
   }, [selectedDepartment, selectedYear, selectedSpaceIds, initiativeFilter, isInitialLoad, spaceGroups.length]);
+
+  const handleSyncSpaces = async () => {
+    const ids = selectedSpaceIds.map(Number);
+    if (ids.length === 0) return;
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/kaiten/sync-spaces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spaceIds: ids }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast({ title: "Синхронизация завершена", description: `Обновлено инициатив: ${data.syncedInitiatives}` });
+        queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/metrics/initiatives-table'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/metrics'] });
+      } else {
+        toast({ title: "Ошибка синхронизации", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Ошибка", description: "Не удалось выполнить синхронизацию", variant: "destructive" });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleSpaceToggle = (teamIds: string[]) => {
     const newSelectedTeams = new Set(selectedTeams);
@@ -522,8 +550,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           {selectedDepartment && teamIdsArray.length > 0 && (
             <div className="mt-6 border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
               <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-end gap-2">
-                <Button size="icon" variant="ghost" data-testid="button-refresh" title="Обновить">
-                  <RefreshCw className="h-4 w-4" />
+                <Button size="icon" variant="ghost" data-testid="button-refresh" title="Обновить" onClick={handleSyncSpaces} disabled={isSyncing}>
+                  <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

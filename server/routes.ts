@@ -2397,6 +2397,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/kaiten/sync-spaces", async (req, res) => {
+    try {
+      const { spaceIds } = req.body;
+      if (!Array.isArray(spaceIds) || spaceIds.length === 0) {
+        return res.status(400).json({ success: false, error: "spaceIds array is required" });
+      }
+
+      const allTeams = await storage.getAllTeams();
+      const relevantTeams = allTeams.filter(t => spaceIds.includes(Number(t.initSpaceId || t.initBoardId)));
+
+      const boardIds = [...new Set(relevantTeams.map(t => t.initBoardId))];
+      const plannedValueId = "id_237";
+      const factValueId = "id_238";
+
+      let totalSynced = 0;
+      const updatedSpaces: { spaceId: number; spaceName: string }[] = [];
+
+      for (const numericSpaceId of spaceIds.map(Number)) {
+        const spaceInfo = await kaitenClient.getSpaceInfo(numericSpaceId);
+        if (spaceInfo) {
+          updatedSpaces.push({ spaceId: numericSpaceId, spaceName: spaceInfo.title });
+          const teamsForSpace = allTeams.filter(t => Number(t.initSpaceId) === numericSpaceId || (!t.initSpaceId && Number(t.initBoardId) === numericSpaceId));
+          for (const team of teamsForSpace) {
+            if (team.initSpaceName !== spaceInfo.title) {
+              await storage.updateTeam(team.teamId, { initSpaceName: spaceInfo.title });
+            }
+          }
+        }
+      }
+
+      for (const boardId of boardIds) {
+        const allCards = await kaitenClient.getCardsFromBoard(boardId);
+        const cards = allCards.filter(card => !card.archived);
+        const syncedCardIds: number[] = [];
+        const syncedInitiatives = [];
+
+        for (const card of cards) {
+          let state: "1-queued" | "2-inProgress" | "3-done";
+          if (card.state === 3) {
+            state = "3-done";
+          } else if (card.state === 2) {
+            state = "2-inProgress";
+          } else {
+            state = "1-queued";
+          }
+          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+          const rawPlanned = card.properties?.[plannedValueId];
+          const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
+          const rawFact = card.properties?.[factValueId];
+          const factValue = rawFact == null ? undefined : String(rawFact);
+
+          const synced = await storage.syncInitiativeFromKaiten(
+            card.id,
+            boardId,
+            card.title,
+            state,
+            condition,
+            card.size || 0,
+            card.type?.name,
+            plannedValueId,
+            plannedValue,
+            factValueId,
+            factValue,
+            card.due_date || null,
+            card.last_moved_to_done_at || null
+          );
+          syncedInitiatives.push(synced);
+          syncedCardIds.push(card.id);
+        }
+
+        await storage.archiveInitiativesNotInList(boardId, syncedCardIds);
+
+        const teamsForBoard = relevantTeams.filter(t => t.initBoardId === boardId);
+        if (teamsForBoard.length > 0) {
+          const team = teamsForBoard[0];
+          const spPrice = team.spPrice || 0;
+          for (const initiative of syncedInitiatives) {
+            if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
+              const plannedCost = initiative.size * spPrice;
+              const tasks = await storage.getTasksByInitCardId(initiative.cardId);
+              const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
+              const factCost = actualSize * spPrice;
+              await storage.updateInitiative(initiative.id, {
+                plannedValue: String(plannedCost),
+                factValue: String(factCost)
+              });
+            }
+          }
+        }
+
+        totalSynced += syncedInitiatives.length;
+      }
+
+      res.json({
+        success: true,
+        syncedInitiatives: totalSynced,
+        updatedSpaces
+      });
+    } catch (error) {
+      console.error("[Sync Spaces] Error:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to sync spaces"
+      });
+    }
+  });
+
   app.post("/api/kaiten/sync-board/:boardId", async (req, res) => {
     try {
       const boardId = parseInt(req.params.boardId);
