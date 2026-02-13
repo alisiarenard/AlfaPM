@@ -716,8 +716,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
                               {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
-                            <td className="px-4 py-2.5 border-b border-border"></td>
+                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-vc-${group.type}`}>
+                              {group.totalPlannedEffect > 0 && group.totalPlannedCost > 0 ? (Math.round((group.totalPlannedEffect / group.totalPlannedCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-vc-${group.type}`}>
+                              {group.totalActualEffect > 0 && group.totalActualCost > 0 ? (Math.round((group.totalActualEffect / group.totalActualCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
+                            </td>
                             {visibleColumns.has('ar') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-b border-border"></td>}
@@ -749,17 +753,17 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
                                 {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-effect-${init.cardId}`}>
-                                —
+                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-effect-${init.cardId}`}>
+                                {init.plannedEffect !== null && init.plannedEffect > 0 ? init.plannedEffect.toLocaleString('ru-RU') : '—'}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-effect-${init.cardId}`}>
-                                —
+                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-effect-${init.cardId}`}>
+                                {init.actualEffect !== null && init.actualEffect > 0 ? init.actualEffect.toLocaleString('ru-RU') : '—'}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-planned-vc-${init.cardId}`}>
-                                —
+                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
+                                {init.plannedEffect !== null && init.plannedCost > 0 ? (Math.round((init.plannedEffect / init.plannedCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-actual-vc-${init.cardId}`}>
-                                —
+                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-vc-${init.cardId}`}>
+                                {init.actualEffect !== null && init.actualCost > 0 ? (Math.round((init.actualEffect / init.actualCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
                               </td>
                               {visibleColumns.has('ar') && (
                                 <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>—</td>
@@ -809,10 +813,23 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
                         {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
                       </td>
-                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
-                      <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>
+                      {(() => {
+                        const inits = displayTableData!.initiatives;
+                        const totalPC = inits.reduce((s, i) => s + i.plannedCost, 0);
+                        const totalAC = inits.reduce((s, i) => s + i.actualCost, 0);
+                        const totalPE = inits.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
+                        const totalAE = inits.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
+                        const vcPlan = totalPE > 0 && totalPC > 0 ? Math.round((totalPE / totalPC) * 10) / 10 : null;
+                        const vcFact = totalAE > 0 && totalAC > 0 ? Math.round((totalAE / totalAC) * 10) / 10 : null;
+                        return (
+                          <>
+                            <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{totalPE > 0 ? totalPE.toLocaleString('ru-RU') : '—'}</td>
+                            <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{totalAE > 0 ? totalAE.toLocaleString('ru-RU') : '—'}</td>
+                            <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{vcPlan !== null ? vcPlan.toLocaleString('ru-RU') : '—'}</td>
+                            <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{vcFact !== null ? vcFact.toLocaleString('ru-RU') : '—'}</td>
+                          </>
+                        );
+                      })()}
                       {visibleColumns.has('ar') && <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>}
                       {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
                       {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>}
