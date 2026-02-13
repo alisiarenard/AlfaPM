@@ -86,10 +86,10 @@ function AppLayout() {
         <div className="bg-card">
           <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto">
             <div className="flex items-center justify-between px-6 py-3">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col">
                 <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
                 {pageSubtitle && (
-                  <span className="text-sm text-muted-foreground" data-testid="text-page-subtitle">{pageSubtitle}</span>
+                  <span className="text-xs text-muted-foreground" data-testid="text-page-subtitle">{pageSubtitle}</span>
                 )}
               </div>
               {!isSettingsPage && (
