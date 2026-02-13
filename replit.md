@@ -88,12 +88,9 @@ OPENAI_API_KEY=your-openai-key
 docker-compose up -d --build
 ```
 
-3. Run database migration (first time only):
-```bash
-docker-compose exec app npm run db:push
-```
+3. Access the application at `http://localhost:5000`
 
-4. Access the application at `http://localhost:5000`
+Database migrations run automatically on container startup via `docker-entrypoint.sh`.
 
 **Environment Variables:**
 - `DATABASE_URL` - PostgreSQL connection string (auto-configured in docker-compose)
