@@ -4059,6 +4059,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
         let teamSprintIds: Set<number> | null = null;
+        let prevYearSprintIds: Set<number> | null = null;
+        let nextYearSprintIds: Set<number> | null = null;
         if (team.sprintBoardId !== null) {
           const allTeamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
           const yearSprints = allTeamSprints.filter(sprint => {
@@ -4066,17 +4068,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return sprintStart >= yearStart && sprintStart <= yearEnd;
           });
           teamSprintIds = new Set(yearSprints.map(s => s.sprintId));
+
+          if (filterParam === 'carryover' || filterParam === 'transferred') {
+            const prevYearStart = new Date(year - 1, 0, 1);
+            const prevYearEnd = new Date(year - 1, 11, 31, 23, 59, 59);
+            const nextYearStart = new Date(year + 1, 0, 1);
+            const nextYearEnd = new Date(year + 1, 11, 31, 23, 59, 59);
+            prevYearSprintIds = new Set(allTeamSprints.filter(s => {
+              const d = new Date(s.startDate);
+              return d >= prevYearStart && d <= prevYearEnd;
+            }).map(s => s.sprintId));
+            nextYearSprintIds = new Set(allTeamSprints.filter(s => {
+              const d = new Date(s.startDate);
+              return d >= nextYearStart && d <= nextYearEnd;
+            }).map(s => s.sprintId));
+          }
         }
 
         for (const initiative of initiatives) {
           const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
-          let tasks = allTasks.filter(task => task.teamId === team.teamId);
+          const teamTasks = allTasks.filter(task => task.teamId === team.teamId);
+
+          let tasks = teamTasks;
           if (teamSprintIds) {
-            tasks = tasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId));
+            tasks = teamTasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId));
           }
 
           const hasDoneTasksInYear = tasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
           if (!hasDoneTasksInYear) continue;
+
+          if (filterParam === 'carryover' && prevYearSprintIds) {
+            const prevYearTasks = teamTasks.filter(task => task.sprintId !== null && prevYearSprintIds!.has(task.sprintId));
+            const hasDoneInPrevYear = prevYearTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
+            if (!hasDoneInPrevYear) continue;
+          }
+
+          if (filterParam === 'transferred' && nextYearSprintIds) {
+            const nextYearTasks = teamTasks.filter(task => task.sprintId !== null && nextYearSprintIds!.has(task.sprintId));
+            const hasDoneInNextYear = nextYearTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
+            if (!hasDoneInNextYear) continue;
+          }
 
           let actualSP = 0;
           for (const task of tasks) {

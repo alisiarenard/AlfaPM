@@ -620,7 +620,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="font-normal text-muted-foreground gap-1" data-testid="button-initiative-filter">
-                            {initiativeFilter === 'all' ? 'Все инициативы' : initiativeFilter === 'done' ? 'Завершенные инициативы' : initiativeFilter === 'active' ? 'Активные инициативы' : 'Бэклог'}
+                            {{ all: 'Все инициативы', done: 'Завершенные', active: 'Активные', backlog: 'Бэклог', carryover: 'Переходящие', transferred: 'Перенесенные' }[initiativeFilter] || 'Все инициативы'}
                             <ChevronDown className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -629,13 +629,19 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             Все инициативы
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setInitiativeFilter('done')} data-testid="filter-done">
-                            Завершенные инициативы
+                            Завершенные
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setInitiativeFilter('active')} data-testid="filter-active">
-                            Активные инициативы
+                            Активные
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setInitiativeFilter('backlog')} data-testid="filter-backlog">
                             Бэклог
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setInitiativeFilter('carryover')} data-testid="filter-carryover">
+                            Переходящие
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setInitiativeFilter('transferred')} data-testid="filter-transferred">
+                            Перенесенные
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
