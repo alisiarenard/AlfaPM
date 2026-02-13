@@ -588,7 +588,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <th className="text-left px-4 py-3 border-b border-border w-[20%]" data-testid="th-initiative">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="font-semibold text-muted-foreground gap-1" data-testid="button-initiative-filter">
+                          <Button variant="ghost" size="sm" className="font-normal text-muted-foreground gap-1" data-testid="button-initiative-filter">
                             {initiativeFilter === 'all' ? 'Все инициативы' : initiativeFilter === 'done' ? 'Завершенные инициативы' : initiativeFilter === 'active' ? 'Активные инициативы' : 'Бэклог'}
                             <ChevronDown className="h-3.5 w-3.5" />
                           </Button>
