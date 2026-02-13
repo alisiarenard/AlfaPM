@@ -19,9 +19,10 @@ interface ProductMetricsPageProps {
   selectedYear: string;
   setSelectedYear: (year: string) => void;
   departments?: DepartmentWithTeamCount[];
+  setPageSubtitle: (subtitle: string) => void;
 }
 
-export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments }: ProductMetricsPageProps) {
+export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle }: ProductMetricsPageProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
@@ -116,6 +117,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       .filter(g => g.teamIds.every(id => selectedTeams.has(id)))
       .map(g => g.spaceName);
   }, [spaceGroups, selectedTeams]);
+
+  useEffect(() => {
+    setPageSubtitle(selectedSpaceNames.length > 0 ? selectedSpaceNames.join(', ') : '');
+    return () => setPageSubtitle('');
+  }, [selectedSpaceNames, setPageSubtitle]);
 
   useEffect(() => {
     if (isInitialLoad || !selectedDepartment) return;
@@ -453,11 +459,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     <div className="bg-background flex-1">
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
-          {selectedSpaceNames.length > 0 && (
-            <p className="text-sm text-muted-foreground mb-4" data-testid="text-selected-spaces">
-              {selectedSpaceNames.join(', ')}
-            </p>
-          )}
           {selectedDepartment && teamIdsArray.length > 0 ? (
             <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear}>
               <DropdownMenu>

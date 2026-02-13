@@ -24,12 +24,18 @@ interface HomePageProps {
   selectedYear: string;
   setSelectedYear: (value: string) => void;
   departments?: DepartmentWithTeamCount[];
+  setPageSubtitle: (subtitle: string) => void;
 }
 
-export default function HomePage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments }: HomePageProps) {
+export default function HomePage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle }: HomePageProps) {
   const currentYear = new Date().getFullYear();
   const [location, setLocation] = useLocation();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  useEffect(() => {
+    setPageSubtitle('');
+    return () => setPageSubtitle('');
+  }, [setPageSubtitle]);
   const [activeTabInitialized, setActiveTabInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("");
   const [viewTab, setViewTab] = useState<"initiatives" | "metrics">("initiatives");

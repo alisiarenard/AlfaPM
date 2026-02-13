@@ -68,6 +68,7 @@ function AppLayout() {
   const [location] = useLocation();
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
+  const [pageSubtitle, setPageSubtitle] = useState<string>("");
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
@@ -87,6 +88,9 @@ function AppLayout() {
             <div className="flex items-center justify-between px-6 py-3">
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
+                {pageSubtitle && (
+                  <span className="text-sm text-muted-foreground" data-testid="text-page-subtitle">{pageSubtitle}</span>
+                )}
               </div>
               {!isSettingsPage && (
                 <div className="flex items-center gap-3">
@@ -145,6 +149,7 @@ function AppLayout() {
               selectedYear={selectedYear}
               setSelectedYear={setSelectedYear}
               departments={departments}
+              setPageSubtitle={setPageSubtitle}
             />
           </Route>
           <Route path="/product-metrics">
@@ -154,6 +159,7 @@ function AppLayout() {
               selectedYear={selectedYear}
               setSelectedYear={setSelectedYear}
               departments={departments}
+              setPageSubtitle={setPageSubtitle}
             />
           </Route>
           <Route path="/settings">
