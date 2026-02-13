@@ -103,15 +103,34 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     );
   }
 
-  const rawChartData = metricsData?.data || [];
-  
-  // Добавляем месяц к каждой точке для оси X
-  const chartData = rawChartData.map(d => ({
-    ...d,
-    month: format(new Date(d.finishDate), 'LLL', { locale: ru })
+  const allMonths = Array.from({ length: 12 }, (_, i) => ({
+    monthIndex: i,
+    monthLabel: format(new Date(parseInt(selectedYear), i, 1), 'LLL', { locale: ru }),
   }));
 
-  if (chartData.length === 0) {
+  const rawChartData = metricsData?.data || [];
+  
+  const chartData = allMonths.map(m => {
+    const pointsInMonth = rawChartData.filter(d => new Date(d.finishDate).getMonth() === m.monthIndex);
+    if (pointsInMonth.length === 0) {
+      return { monthIndex: m.monthIndex, month: m.monthLabel, innovationRate: null as number | null, velocity: null as number | null, deliveryPlanCompliance: null as number | null, startDate: '', finishDate: '' };
+    }
+    const last = pointsInMonth[pointsInMonth.length - 1];
+    const avgIR = pointsInMonth.reduce((s, p) => s + p.innovationRate, 0) / pointsInMonth.length;
+    const avgVel = pointsInMonth.reduce((s, p) => s + p.velocity, 0) / pointsInMonth.length;
+    const avgDPC = pointsInMonth.reduce((s, p) => s + p.deliveryPlanCompliance, 0) / pointsInMonth.length;
+    return {
+      monthIndex: m.monthIndex,
+      month: m.monthLabel,
+      innovationRate: Math.round(avgIR * 10) / 10,
+      velocity: Math.round(avgVel * 10) / 10,
+      deliveryPlanCompliance: Math.round(avgDPC * 10) / 10,
+      startDate: pointsInMonth[0].startDate,
+      finishDate: last.finishDate,
+    };
+  });
+
+  if (rawChartData.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
         Нет данных за {selectedYear} год
@@ -119,48 +138,19 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     );
   }
 
-  const avgInnovationRate = chartData.length > 0 
-    ? Math.round(chartData.reduce((sum, d) => sum + d.innovationRate, 0) / chartData.length)
+  const dataWithIR = chartData.filter(d => d.innovationRate !== null);
+  const avgInnovationRate = dataWithIR.length > 0 
+    ? Math.round(dataWithIR.reduce((sum, d) => sum + (d.innovationRate ?? 0), 0) / dataWithIR.length)
     : 0;
   
-  const avgVelocity = chartData.length > 0 
-    ? Math.round(chartData.reduce((sum, d) => sum + d.velocity, 0) / chartData.length)
-    : 0;
-  
-  const avgDeliveryPlanCompliance = chartData.length > 0 
-    ? Math.round(chartData.reduce((sum, d) => sum + d.deliveryPlanCompliance, 0) / chartData.length)
+  const dataWithDPC = chartData.filter(d => d.deliveryPlanCompliance !== null);
+  const avgDeliveryPlanCompliance = dataWithDPC.length > 0 
+    ? Math.round(dataWithDPC.reduce((sum, d) => sum + (d.deliveryPlanCompliance ?? 0), 0) / dataWithDPC.length)
     : 0;
 
-  // Данные для графика velocity - среднее за 2 спринта
-  const velocityChartData: Array<{ sprintTitle: string; velocity: number; startDate: string; finishDate: string; month: string }> = [];
-  for (let i = 0; i < chartData.length; i += 2) {
-    if (i + 1 < chartData.length) {
-      // Есть пара спринтов - берём среднее
-      const avgVel = (chartData[i].velocity + chartData[i + 1].velocity) / 2;
-      const finishDate = chartData[i + 1].finishDate;
-      velocityChartData.push({
-        sprintTitle: `${chartData[i].sprintTitle} - ${chartData[i + 1].sprintTitle}`,
-        velocity: Math.round(avgVel * 10) / 10,
-        startDate: chartData[i].startDate,
-        finishDate: finishDate,
-        month: format(new Date(finishDate), 'LLL', { locale: ru })
-      });
-    } else {
-      // Нечётное количество - последний спринт как есть
-      const finishDate = chartData[i].finishDate;
-      velocityChartData.push({
-        sprintTitle: chartData[i].sprintTitle,
-        velocity: chartData[i].velocity,
-        startDate: chartData[i].startDate,
-        finishDate: finishDate,
-        month: format(new Date(finishDate), 'LLL', { locale: ru })
-      });
-    }
-  }
-
-  // Среднее velocity пересчитываем по усреднённым данным
-  const avgVelocityForChart = velocityChartData.length > 0 
-    ? Math.round(velocityChartData.reduce((sum, d) => sum + d.velocity, 0) / velocityChartData.length)
+  const dataWithVel = chartData.filter(d => d.velocity !== null);
+  const avgVelocityForChart = dataWithVel.length > 0 
+    ? Math.round(dataWithVel.reduce((sum, d) => sum + (d.velocity ?? 0), 0) / dataWithVel.length)
     : 0;
 
   return (
@@ -199,6 +189,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 strokeWidth={2}
                 dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
                 activeDot={{ r: 4, fill: CHART_COLOR }}
+                connectNulls
               />
             </LineChart>
           </ResponsiveContainer>
@@ -211,7 +202,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
       <div className="flex flex-col">
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={velocityChartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+            <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="month" 
@@ -225,7 +216,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 axisLine={{ stroke: 'hsl(var(--border))' }}
               />
               <Tooltip 
-                content={<CustomTooltip formatter={(v) => `${(v).toFixed(1)} SP`} metricName="Velocity (avg 2 sprints)" />}
+                content={<CustomTooltip formatter={(v) => `${(v).toFixed(1)} SP`} metricName="Velocity" />}
               />
               <ReferenceLine 
                 y={avgVelocityForChart} 
@@ -240,6 +231,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 strokeWidth={2}
                 dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
                 activeDot={{ r: 4, fill: CHART_COLOR }}
+                connectNulls
               />
             </LineChart>
           </ResponsiveContainer>
@@ -283,6 +275,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 strokeWidth={2}
                 dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
                 activeDot={{ r: 4, fill: CHART_COLOR }}
+                connectNulls
               />
             </LineChart>
           </ResponsiveContainer>
