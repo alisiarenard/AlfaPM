@@ -4032,6 +4032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const allInitiatives = await storage.getInitiativesByBoardId(team.initBoardId);
         const allowedTypes = ['Epic', 'Compliance', 'Enabler'];
         const initiatives = allInitiatives
+          .filter(init => !init.archived)
           .filter(init => init.type !== null && allowedTypes.includes(init.type))
           .filter(init => {
             if (filterParam === 'all') return true;
@@ -4057,6 +4058,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (teamSprintIds) {
             tasks = tasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId));
           }
+
+          const hasDoneTasksInYear = tasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
+          if (!hasDoneTasksInYear) continue;
 
           let actualSP = 0;
           for (const task of tasks) {
