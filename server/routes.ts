@@ -2400,14 +2400,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/kaiten/sync-spaces", async (req, res) => {
     try {
       const { spaceIds } = req.body;
+      console.log("[Sync Spaces] Request body:", JSON.stringify(req.body));
+      console.log("[Sync Spaces] spaceIds:", spaceIds);
       if (!Array.isArray(spaceIds) || spaceIds.length === 0) {
         return res.status(400).json({ success: false, error: "spaceIds array is required" });
       }
 
       const allTeams = await storage.getAllTeams();
+      console.log("[Sync Spaces] Total teams in DB:", allTeams.length);
+      console.log("[Sync Spaces] Teams initSpaceId values:", allTeams.map(t => ({ teamId: t.teamId, teamName: t.teamName, initSpaceId: t.initSpaceId, initBoardId: t.initBoardId })));
+
       const relevantTeams = allTeams.filter(t => spaceIds.includes(Number(t.initSpaceId || t.initBoardId)));
+      console.log("[Sync Spaces] Relevant teams found:", relevantTeams.length, relevantTeams.map(t => t.teamName));
 
       const boardIds = [...new Set(relevantTeams.map(t => t.initBoardId))];
+      console.log("[Sync Spaces] Board IDs to sync:", boardIds);
+
       const plannedValueId = "id_237";
       const factValueId = "id_238";
 
@@ -2415,20 +2423,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedSpaces: { spaceId: number; spaceName: string }[] = [];
 
       for (const numericSpaceId of spaceIds.map(Number)) {
+        console.log("[Sync Spaces] Fetching space info for spaceId:", numericSpaceId);
         const spaceInfo = await kaitenClient.getSpaceInfo(numericSpaceId);
+        console.log("[Sync Spaces] Space info result:", spaceInfo);
         if (spaceInfo) {
           updatedSpaces.push({ spaceId: numericSpaceId, spaceName: spaceInfo.title });
           const teamsForSpace = allTeams.filter(t => Number(t.initSpaceId) === numericSpaceId || (!t.initSpaceId && Number(t.initBoardId) === numericSpaceId));
+          console.log("[Sync Spaces] Teams for space:", teamsForSpace.length, teamsForSpace.map(t => t.teamName));
           for (const team of teamsForSpace) {
+            console.log("[Sync Spaces] Updating team spaceName:", team.teamName, "old:", team.initSpaceName, "new:", spaceInfo.title);
             if (team.initSpaceName !== spaceInfo.title) {
               await storage.updateTeam(team.teamId, { initSpaceName: spaceInfo.title });
             }
           }
+        } else {
+          console.log("[Sync Spaces] WARNING: Could not get space info for spaceId:", numericSpaceId);
         }
       }
 
       for (const boardId of boardIds) {
+        console.log("[Sync Spaces] Syncing board:", boardId);
         const allCards = await kaitenClient.getCardsFromBoard(boardId);
+        console.log("[Sync Spaces] Cards from board:", allCards.length, "non-archived:", allCards.filter(c => !c.archived).length);
         const cards = allCards.filter(card => !card.archived);
         const syncedCardIds: number[] = [];
         const syncedInitiatives = [];
