@@ -466,7 +466,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="absolute top-1 right-10"
+                    className="absolute top-1 right-1"
                     data-testid="button-menu"
                   >
                     <MoreVertical className="h-4 w-4" />
@@ -512,14 +512,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="absolute top-1 right-1"
-                data-testid="button-refresh"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
             </MetricsPanel>
           ) : selectedDepartment ? (
             <p className="text-muted-foreground text-center py-12">Нет команд в выбранном департаменте</p>
@@ -530,6 +522,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           {selectedDepartment && teamIdsArray.length > 0 && (
             <div className="mt-6 border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
               <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-end gap-2">
+                <Button size="icon" variant="ghost" data-testid="button-refresh" title="Обновить">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon" variant="ghost" className="relative" data-testid="button-team-selection" title="Фильтр по командам">
