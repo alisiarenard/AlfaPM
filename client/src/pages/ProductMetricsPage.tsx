@@ -609,46 +609,46 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-cost">
+                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-cost">
                       Затраты (план)
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-cost">
+                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-cost">
                       Затраты (факт)
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-effect">
+                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-effect">
                       Эффект (план)
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-effect">
+                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-effect">
                       Эффект (факт)
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-planned-vc">
+                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-vc">
                       V/C (план)
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-actual-vc">
+                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-vc">
                       V/C (факт)
                     </th>
                     {visibleColumns.has('ar') && (
-                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-ar-percent">
+                      <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-ar-percent">
                         % АР
                       </th>
                     )}
                     {visibleColumns.has('effectType') && (
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-effect-type">
+                      <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-effect-type">
                         Тип Эффекта
                       </th>
                     )}
                     {visibleColumns.has('contribution') && (
-                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
+                      <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
                         % вклада
                       </th>
                     )}
                     {visibleColumns.has('participants') && (
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-participants">
+                      <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-participants">
                         Участники
                       </th>
                     )}
                     {visibleColumns.has('justification') && (
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground border-b border-border" data-testid="th-justification">
+                      <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-justification">
                         Обоснование
                       </th>
                     )}
