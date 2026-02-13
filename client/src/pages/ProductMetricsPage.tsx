@@ -453,7 +453,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     <div className="bg-background flex-1">
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
-          {notAllSpacesSelected && selectedSpaceNames.length > 0 && (
+          {selectedSpaceNames.length > 0 && (
             <p className="text-sm text-muted-foreground mb-4" data-testid="text-selected-spaces">
               {selectedSpaceNames.join(', ')}
             </p>
