@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users } from "lucide-react";
+import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
@@ -466,7 +466,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="absolute top-1 right-1"
+                    className="absolute top-1 right-10"
                     data-testid="button-menu"
                   >
                     <MoreVertical className="h-4 w-4" />
@@ -512,6 +512,14 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="absolute top-1 right-1"
+                data-testid="button-refresh"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </MetricsPanel>
           ) : selectedDepartment ? (
             <p className="text-muted-foreground text-center py-12">Нет команд в выбранном департаменте</p>
