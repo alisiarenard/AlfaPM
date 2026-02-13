@@ -48,15 +48,19 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
   useEffect(() => {
     if (!isInitialLoad) return;
-    const urlParams = parseUrlParams();
-    if (urlParams.dept && departments?.some(d => d.id === urlParams.dept)) {
-      setSelectedDepartment(urlParams.dept);
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlDept = searchParams.get('dept');
+    const urlYear = searchParams.get('year');
+    const urlFilter = searchParams.get('filter');
+
+    if (urlDept && departments?.some(d => d.id === urlDept)) {
+      setSelectedDepartment(urlDept);
     }
-    if (urlParams.year) {
-      setSelectedYear(urlParams.year);
+    if (urlYear) {
+      setSelectedYear(urlYear);
     }
-    if (urlParams.filter && ['all', 'done', 'active', 'backlog'].includes(urlParams.filter)) {
-      setInitiativeFilter(urlParams.filter);
+    if (urlFilter && ['all', 'done', 'active', 'backlog'].includes(urlFilter)) {
+      setInitiativeFilter(urlFilter);
     }
   }, [departments, isInitialLoad]);
 

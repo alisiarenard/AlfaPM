@@ -78,26 +78,29 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
 
 
 
-  // Восстановление состояния из URL при первой загрузке
   useEffect(() => {
     if (isInitialLoad && departments && departments.length > 0) {
-      const urlParams = parseUrlParams();
-      
-      // Восстанавливаем департамент из URL или выбираем первый доступный
-      if (urlParams.dept && departments.some(d => d.id === urlParams.dept)) {
-        setSelectedDepartment(urlParams.dept);
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlDept = searchParams.get('dept');
+      const urlYear = searchParams.get('year');
+      const urlActive = searchParams.get('active');
+
+      if (urlDept && departments.some(d => d.id === urlDept)) {
+        setSelectedDepartment(urlDept);
       } else if (!selectedDepartment) {
         const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
         if (firstAvailableDepartment) {
           setSelectedDepartment(firstAvailableDepartment.id);
         }
       }
-      
-      // Восстанавливаем год
-      setSelectedYear(urlParams.year);
-      
-      // Восстанавливаем фильтр "Активные"
-      setShowActiveOnly(urlParams.active);
+
+      if (urlYear) {
+        setSelectedYear(urlYear);
+      }
+
+      if (urlActive) {
+        setShowActiveOnly(urlActive === '1');
+      }
       
       setIsInitialLoad(false);
     }
