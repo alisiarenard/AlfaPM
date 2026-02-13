@@ -624,7 +624,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <ChevronDown className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
+                        <DropdownMenuContent align="start" className="bg-white dark:bg-popover">
                           <DropdownMenuItem onClick={() => setInitiativeFilter('all')} data-testid="filter-all">
                             Все инициативы
                           </DropdownMenuItem>
