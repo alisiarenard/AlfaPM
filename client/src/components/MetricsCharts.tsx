@@ -138,6 +138,12 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     );
   }
 
+  const renderDot = (dataKey: string) => (props: any) => {
+    const { cx, cy, payload } = props;
+    if (payload[dataKey] === null || payload[dataKey] === undefined) return <circle cx={0} cy={0} r={0} fill="none" />;
+    return <circle cx={cx} cy={cy} r={2} fill={CHART_COLOR} strokeWidth={0} />;
+  };
+
   const dataWithIR = chartData.filter(d => d.innovationRate !== null);
   const avgInnovationRate = dataWithIR.length > 0 
     ? Math.round(dataWithIR.reduce((sum, d) => sum + (d.innovationRate ?? 0), 0) / dataWithIR.length)
@@ -187,7 +193,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 dataKey="innovationRate" 
                 stroke={CHART_COLOR} 
                 strokeWidth={2}
-                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
+                dot={renderDot('innovationRate')}
                 activeDot={{ r: 4, fill: CHART_COLOR }}
                 connectNulls
               />
@@ -229,7 +235,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 dataKey="velocity" 
                 stroke={CHART_COLOR} 
                 strokeWidth={2}
-                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
+                dot={renderDot('velocity')}
                 activeDot={{ r: 4, fill: CHART_COLOR }}
                 connectNulls
               />
@@ -273,7 +279,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                 dataKey="deliveryPlanCompliance" 
                 stroke={CHART_COLOR} 
                 strokeWidth={2}
-                dot={{ fill: CHART_COLOR, strokeWidth: 0, r: 1 }}
+                dot={renderDot('deliveryPlanCompliance')}
                 activeDot={{ r: 4, fill: CHART_COLOR }}
                 connectNulls
               />
