@@ -110,6 +110,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       .map(g => g.spaceId);
   }, [spaceGroups, selectedTeams]);
 
+  const notAllSpacesSelected = spaceGroups.length > 0 && selectedSpaceIds.length < spaceGroups.length;
+  const selectedSpaceNames = useMemo(() => {
+    return spaceGroups
+      .filter(g => g.teamIds.every(id => selectedTeams.has(id)))
+      .map(g => g.spaceName);
+  }, [spaceGroups, selectedTeams]);
+
   useEffect(() => {
     if (isInitialLoad || !selectedDepartment) return;
     const params = new URLSearchParams();
@@ -446,6 +453,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     <div className="bg-background flex-1">
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
+          {notAllSpacesSelected && selectedSpaceNames.length > 0 && (
+            <p className="text-sm text-muted-foreground mb-4" data-testid="text-selected-spaces">
+              {selectedSpaceNames.join(', ')}
+            </p>
+          )}
           {selectedDepartment && teamIdsArray.length > 0 ? (
             <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear}>
               <DropdownMenu>
