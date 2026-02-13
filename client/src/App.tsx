@@ -89,7 +89,7 @@ function AppLayout() {
               <div className="flex flex-col">
                 <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
                 {pageSubtitle && (
-                  <span className="text-xs text-muted-foreground" data-testid="text-page-subtitle">{pageSubtitle}</span>
+                  <span className="text-sm text-destructive" data-testid="text-page-subtitle">{pageSubtitle}</span>
                 )}
               </div>
               {!isSettingsPage && (
