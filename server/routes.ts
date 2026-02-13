@@ -4069,7 +4069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           teamSprintIds = new Set(yearSprints.map(s => s.sprintId));
 
-          if (filterParam === 'carryover' || filterParam === 'transferred') {
+          if (filterParam === 'carryover' || filterParam === 'transferred' || filterParam === 'done') {
             const prevYearStart = new Date(year - 1, 0, 1);
             const prevYearEnd = new Date(year - 1, 11, 31, 23, 59, 59);
             const nextYearStart = new Date(year + 1, 0, 1);
@@ -4107,6 +4107,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const nextYearTasks = teamTasks.filter(task => task.sprintId !== null && nextYearSprintIds!.has(task.sprintId));
             const hasDoneInNextYear = nextYearTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
             if (!hasDoneInNextYear) continue;
+          }
+
+          if (filterParam === 'done') {
+            const isCarryover = prevYearSprintIds && teamTasks.filter(task => task.sprintId !== null && prevYearSprintIds!.has(task.sprintId)).some(task => task.state === '3-done' && task.condition !== '3 - deleted');
+            const isTransferred = nextYearSprintIds && teamTasks.filter(task => task.sprintId !== null && nextYearSprintIds!.has(task.sprintId)).some(task => task.state === '3-done' && task.condition !== '3 - deleted');
+            if (isCarryover || isTransferred) continue;
           }
 
           let actualSP = 0;
