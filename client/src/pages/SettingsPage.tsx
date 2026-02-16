@@ -772,8 +772,8 @@ export default function SettingsPage() {
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center space-x-2 flex-shrink-0">
                               <Checkbox 
                                 id="edit-has-sprints" 
                                 checked={hasSprints}
@@ -782,12 +782,9 @@ export default function SettingsPage() {
                               />
                               <Label htmlFor="edit-has-sprints" className="cursor-pointer">Спринты</Label>
                             </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="edit-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
                             <Input
                               id="edit-sprint-ids"
-                              placeholder="Введите ID спринтов через запятую (например: 123, 456, 789)"
+                              placeholder="Sprint IDs через запятую"
                               value={sprintIds}
                               onChange={(e) => setSprintIds(e.target.value)}
                               disabled={!hasSprints}
@@ -1006,8 +1003,8 @@ export default function SettingsPage() {
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center space-x-2 flex-shrink-0">
                               <Checkbox 
                                 id="new-has-sprints" 
                                 checked={hasSprints}
@@ -1016,12 +1013,9 @@ export default function SettingsPage() {
                               />
                               <Label htmlFor="new-has-sprints" className="cursor-pointer">Спринты</Label>
                             </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="new-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
                             <Input
                               id="new-sprint-ids"
-                              placeholder="Введите ID спринтов через запятую (например: 123, 456, 789)"
+                              placeholder="Sprint IDs через запятую"
                               value={sprintIds}
                               onChange={(e) => setSprintIds(e.target.value)}
                               disabled={!hasSprints}
