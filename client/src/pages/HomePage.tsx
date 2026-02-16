@@ -84,21 +84,23 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
       const urlYear = searchParams.get('year');
       const urlActive = searchParams.get('active');
 
-      if (urlDept && departments.some(d => d.id === urlDept)) {
-        setSelectedDepartment(urlDept);
+      const hasUrlParams = urlDept || urlYear || urlActive;
+
+      if (hasUrlParams) {
+        if (urlDept && departments.some(d => d.id === urlDept)) {
+          setSelectedDepartment(urlDept);
+        }
+        if (urlYear) {
+          setSelectedYear(urlYear);
+        }
+        if (urlActive) {
+          setShowActiveOnly(urlActive === '1');
+        }
       } else if (!selectedDepartment) {
         const firstAvailableDepartment = departments.find(dept => dept.teamCount > 0);
         if (firstAvailableDepartment) {
           setSelectedDepartment(firstAvailableDepartment.id);
         }
-      }
-
-      if (urlYear) {
-        setSelectedYear(urlYear);
-      }
-
-      if (urlActive) {
-        setShowActiveOnly(urlActive === '1');
       }
       
       setIsInitialLoad(false);
@@ -130,8 +132,12 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
     }
   }, [departmentTeams]);
 
+  const prevDepartmentRef = useRef(selectedDepartment);
   useEffect(() => {
-    setActiveTabInitialized(false);
+    if (prevDepartmentRef.current !== selectedDepartment) {
+      prevDepartmentRef.current = selectedDepartment;
+      setActiveTabInitialized(false);
+    }
   }, [selectedDepartment]);
 
   useEffect(() => {
