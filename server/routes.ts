@@ -661,6 +661,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/team-yearly-data/:teamId", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const year = req.query.year ? parseInt(req.query.year as string) : null;
+      if (year) {
+        const data = await storage.getTeamYearlyData(teamId, year);
+        return res.json(data || null);
+      }
+      const allData = await storage.getTeamYearlyDataAll(teamId);
+      res.json(allData);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to get team yearly data" });
+    }
+  });
+
+  app.post("/api/team-yearly-data", async (req, res) => {
+    try {
+      const { teamId, year, vilocity, sprintDuration, spPrice, hasSprints } = req.body;
+      if (!teamId || !year || vilocity === undefined || sprintDuration === undefined) {
+        return res.status(400).json({ success: false, error: "Missing required fields" });
+      }
+      const result = await storage.upsertTeamYearlyData({
+        teamId,
+        year: parseInt(year),
+        vilocity: parseFloat(vilocity),
+        sprintDuration: parseInt(sprintDuration),
+        spPrice: parseInt(spPrice) || 0,
+        hasSprints: hasSprints !== undefined ? hasSprints : true,
+      });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to save team yearly data" });
+    }
+  });
+
   app.get("/api/initiatives", async (req, res) => {
     try {
       const initiatives = await storage.getAllInitiatives();

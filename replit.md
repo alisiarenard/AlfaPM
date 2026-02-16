@@ -36,7 +36,7 @@ The backend is an Express.js application with TypeScript and ESM, providing a RE
 - **API Endpoints:** Standard CRUD endpoints for departments, teams, initiatives, and tasks. Specific endpoints for timeline data with server-side filtering, sprint saving, metrics calculation (Innovation Rate, Cost Structure, Value/Cost from done tasks only), sprint information, Kaiten synchronization, and PDF report generation.
 - **Kaiten Integration:** Intelligent all-in-one synchronization for initiatives and tasks, including automatic sprint detection, archiving logic, parent chain validation for initiative types, and optimized API calls. Handles new sprints, updates existing ones, and manages sprintless teams. Synchronizes custom fields and calculates planned/actual values. Automatic synchronization on team creation.
 - **Data Storage:** PostgreSQL (via Neon) is the primary data store, managed with Drizzle ORM.
-    - **Database Schema:** Includes tables for `users`, `departments`, `teams`, `initiatives`, `tasks`, and `sprints`. Migrations are managed by Drizzle-kit.
+    - **Database Schema:** Includes tables for `users`, `departments`, `teams`, `initiatives`, `tasks`, `sprints`, and `team_yearly_data`. The `team_yearly_data` table stores per-year team metrics (velocity, sprintDuration, spPrice, hasSprints) keyed by teamId+year. On startup, existing teams are auto-backfilled into this table for the current year. Migrations are managed by Drizzle-kit.
 
 **Configuration:**
 - **Kaiten Configuration:** Kaiten domain and custom field IDs are configured via environment variables (`KAITEN_DOMAIN`, `VITE_KAITEN_DOMAIN`, `KAITEN_API_KEY`).

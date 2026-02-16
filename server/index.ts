@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./init-db";
+import { migrateTeamsToYearlyData } from "./storage";
 
 const app = express();
 app.use(express.json());
@@ -39,8 +40,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Инициализируем базу данных
   await initializeDatabase();
+  await migrateTeamsToYearlyData();
   
   const server = await registerRoutes(app);
 

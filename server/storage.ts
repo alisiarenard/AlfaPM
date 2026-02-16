@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, users, departments, teams, initiatives, tasks, sprints } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, users, departments, teams, initiatives, tasks, sprints, teamYearlyData } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, sql, asc, desc, and, gte, lt } from "drizzle-orm";
@@ -83,6 +83,10 @@ export interface IStorage {
       initiativeCardId: number | null;
     }>;
   } | null>;
+  getTeamYearlyData(teamId: string, year: number): Promise<TeamYearlyDataRow | undefined>;
+  getTeamYearlyDataAll(teamId: string): Promise<TeamYearlyDataRow[]>;
+  upsertTeamYearlyData(data: InsertTeamYearlyData): Promise<TeamYearlyDataRow>;
+  deleteTeamYearlyData(teamId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -353,6 +357,22 @@ export class MemStorage implements IStorage {
   } | null> {
     return null;
   }
+
+  async getTeamYearlyData(teamId: string, year: number): Promise<TeamYearlyDataRow | undefined> {
+    return undefined;
+  }
+
+  async getTeamYearlyDataAll(teamId: string): Promise<TeamYearlyDataRow[]> {
+    return [];
+  }
+
+  async upsertTeamYearlyData(data: InsertTeamYearlyData): Promise<TeamYearlyDataRow> {
+    return {} as TeamYearlyDataRow;
+  }
+
+  async deleteTeamYearlyData(teamId: string): Promise<void> {
+    return;
+  }
 }
 
 export class DbStorage implements IStorage {
@@ -454,6 +474,8 @@ export class DbStorage implements IStorage {
       if (team.sprintBoardId) {
         await tx.delete(sprints).where(eq(sprints.boardId, team.sprintBoardId));
       }
+
+      await tx.delete(teamYearlyData).where(eq(teamYearlyData.teamId, teamId));
 
       await tx.delete(teams).where(eq(teams.teamId, teamId));
     });
@@ -882,6 +904,59 @@ export class DbStorage implements IStorage {
       return newSprint;
     }
   }
+
+  async getTeamYearlyData(teamId: string, year: number): Promise<TeamYearlyDataRow | undefined> {
+    const [result] = await db.select().from(teamYearlyData)
+      .where(and(eq(teamYearlyData.teamId, teamId), eq(teamYearlyData.year, year)));
+    return result;
+  }
+
+  async getTeamYearlyDataAll(teamId: string): Promise<TeamYearlyDataRow[]> {
+    return await db.select().from(teamYearlyData)
+      .where(eq(teamYearlyData.teamId, teamId))
+      .orderBy(asc(teamYearlyData.year));
+  }
+
+  async upsertTeamYearlyData(data: InsertTeamYearlyData): Promise<TeamYearlyDataRow> {
+    const existing = await this.getTeamYearlyData(data.teamId, data.year);
+    if (existing) {
+      const [updated] = await db.update(teamYearlyData)
+        .set({
+          vilocity: data.vilocity,
+          sprintDuration: data.sprintDuration,
+          spPrice: data.spPrice,
+          hasSprints: data.hasSprints,
+        })
+        .where(eq(teamYearlyData.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(teamYearlyData).values(data).returning();
+    return created;
+  }
+
+  async deleteTeamYearlyData(teamId: string): Promise<void> {
+    await db.delete(teamYearlyData).where(eq(teamYearlyData.teamId, teamId));
+  }
 }
 
 export const storage = new DbStorage();
+
+export async function migrateTeamsToYearlyData() {
+  const currentYear = new Date().getFullYear();
+  const allTeams = await db.select().from(teams);
+  for (const team of allTeams) {
+    const existing = await db.select().from(teamYearlyData)
+      .where(and(eq(teamYearlyData.teamId, team.teamId), eq(teamYearlyData.year, currentYear)));
+    if (existing.length === 0) {
+      await db.insert(teamYearlyData).values({
+        teamId: team.teamId,
+        year: currentYear,
+        vilocity: team.vilocity,
+        sprintDuration: team.sprintDuration,
+        spPrice: team.spPrice,
+        hasSprints: team.hasSprints,
+      });
+    }
+  }
+}

@@ -10,7 +10,7 @@ import { Plus, Users, Trash2, ChevronRight, ChevronDown } from "lucide-react";
 import { MdAccountTree } from "react-icons/md";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { DepartmentWithTeamCount, TeamRow, Department } from "@shared/schema";
+import type { DepartmentWithTeamCount, TeamRow, Department, TeamYearlyDataRow } from "@shared/schema";
 
 function DepartmentTreeItem({ 
   department, 
@@ -199,6 +199,14 @@ export default function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/teams", newTeam.departmentId] });
       queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/initiatives/board", newTeam.initBoardId] });
+      saveYearlyDataMutation.mutate({
+        teamId: newTeam.teamId,
+        year: parseInt(metricsYear),
+        vilocity: newTeam.vilocity,
+        sprintDuration: newTeam.sprintDuration,
+        spPrice: newTeam.spPrice,
+        hasSprints: newTeam.hasSprints,
+      });
       toast({
         title: "Успешно",
         description: "Команда создана и инициативы синхронизированы",
@@ -330,6 +338,28 @@ export default function SettingsPage() {
     },
   });
 
+  const { data: yearlyData, isLoading: yearlyDataLoading } = useQuery<TeamYearlyDataRow | null>({
+    queryKey: ["/api/team-yearly-data", editingTeam?.teamId, { year: metricsYear }],
+    queryFn: async () => {
+      if (!editingTeam) return null;
+      const res = await fetch(`/api/team-yearly-data/${editingTeam.teamId}?year=${metricsYear}`);
+      return await res.json();
+    },
+    enabled: !!editingTeam && rightPanelMode === "editTeam",
+  });
+
+  const saveYearlyDataMutation = useMutation({
+    mutationFn: async (data: { teamId: string; year: number; vilocity: number; sprintDuration: number; spPrice: number; hasSprints: boolean }) => {
+      const res = await apiRequest("POST", "/api/team-yearly-data", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      if (editingTeam) {
+        queryClient.invalidateQueries({ queryKey: ["/api/team-yearly-data", editingTeam.teamId] });
+      }
+    },
+  });
+
   useEffect(() => {
     if (departments && departments.length > 0) {
       const allDepartmentIds = new Set(departments.map(dept => dept.id));
@@ -364,13 +394,26 @@ export default function SettingsPage() {
       setInitBoardId(editingTeam.initBoardId.toString());
       setInitSpaceId(editingTeam.initSpaceId?.toString() || "");
       setOmniBoardId(editingTeam.omniBoardId?.toString() || "");
-      setVelocity(editingTeam.vilocity.toString());
-      setSprintDuration(editingTeam.sprintDuration.toString());
-      setSpPrice(editingTeam.spPrice.toString());
       setHasSprints(true);
       setSprintIds("");
     }
   }, [rightPanelMode, editingDepartment, editingTeam, departments]);
+
+  useEffect(() => {
+    if (rightPanelMode === "editTeam" && editingTeam && !yearlyDataLoading) {
+      if (yearlyData) {
+        setVelocity(yearlyData.vilocity.toString());
+        setSprintDuration(yearlyData.sprintDuration.toString());
+        setSpPrice(yearlyData.spPrice.toString());
+        setHasSprints(yearlyData.hasSprints);
+      } else {
+        setVelocity(editingTeam.vilocity.toString());
+        setSprintDuration(editingTeam.sprintDuration.toString());
+        setSpPrice(editingTeam.spPrice.toString());
+        setHasSprints(editingTeam.hasSprints);
+      }
+    }
+  }, [rightPanelMode, editingTeam, yearlyData, yearlyDataLoading, metricsYear]);
 
   const handleDepartmentClick = (dept: DepartmentWithTeamCount) => {
     setEditingDepartment(dept);
@@ -388,11 +431,9 @@ export default function SettingsPage() {
     setInitBoardId(team.initBoardId.toString());
     setInitSpaceId(team.initSpaceId?.toString() || "");
     setOmniBoardId(team.omniBoardId?.toString() || "");
-    setVelocity(team.vilocity.toString());
-    setSprintDuration(team.sprintDuration.toString());
-    setSpPrice(team.spPrice.toString());
     setHasSprints(true);
     setSprintIds("");
+    setMetricsYear(new Date().getFullYear().toString());
   };
 
   const hasFormChanged = () => {
@@ -765,6 +806,9 @@ export default function SettingsPage() {
                           data-testid="button-save-team"
                           onClick={() => {
                             if (editingTeam) {
+                              const vel = velocity ? parseInt(velocity) : editingTeam.vilocity;
+                              const sd = sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration;
+                              const sp = spPrice ? parseInt(spPrice) : editingTeam.spPrice;
                               updateTeamMutation.mutate({
                                 teamId: editingTeam.teamId,
                                 teamName: teamName.trim(),
@@ -773,10 +817,18 @@ export default function SettingsPage() {
                                 initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
                                 initSpaceId: parseInt(initSpaceId),
                                 omniBoardId: omniBoardId ? parseInt(omniBoardId) : null,
-                                vilocity: velocity ? parseInt(velocity) : editingTeam.vilocity,
-                                sprintDuration: sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration,
-                                spPrice: spPrice ? parseInt(spPrice) : editingTeam.spPrice,
+                                vilocity: vel,
+                                sprintDuration: sd,
+                                spPrice: sp,
                                 departmentId: editingTeam.departmentId
+                              });
+                              saveYearlyDataMutation.mutate({
+                                teamId: editingTeam.teamId,
+                                year: parseInt(metricsYear),
+                                vilocity: vel,
+                                sprintDuration: sd,
+                                spPrice: sp,
+                                hasSprints,
                               });
                             }
                           }}
