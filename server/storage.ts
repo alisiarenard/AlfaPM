@@ -85,6 +85,7 @@ export interface IStorage {
   } | null>;
   getTeamYearlyData(teamId: string, year: number): Promise<TeamYearlyDataRow | undefined>;
   getTeamYearlyDataAll(teamId: string): Promise<TeamYearlyDataRow[]>;
+  getAllTeamYearlyData(): Promise<TeamYearlyDataRow[]>;
   upsertTeamYearlyData(data: InsertTeamYearlyData): Promise<TeamYearlyDataRow>;
   deleteTeamYearlyData(teamId: string): Promise<void>;
 }
@@ -363,6 +364,10 @@ export class MemStorage implements IStorage {
   }
 
   async getTeamYearlyDataAll(teamId: string): Promise<TeamYearlyDataRow[]> {
+    return [];
+  }
+
+  async getAllTeamYearlyData(): Promise<TeamYearlyDataRow[]> {
     return [];
   }
 
@@ -915,6 +920,10 @@ export class DbStorage implements IStorage {
     return await db.select().from(teamYearlyData)
       .where(eq(teamYearlyData.teamId, teamId))
       .orderBy(asc(teamYearlyData.year));
+  }
+
+  async getAllTeamYearlyData(): Promise<TeamYearlyDataRow[]> {
+    return await db.select().from(teamYearlyData);
   }
 
   async upsertTeamYearlyData(data: InsertTeamYearlyData): Promise<TeamYearlyDataRow> {

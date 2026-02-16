@@ -146,6 +146,52 @@ function filterInitiativesForTimeline(
   });
 }
 
+async function buildSpPriceMap(allTeams: any[]): Promise<Map<string, Map<number, number>>> {
+  const yearlyData = await storage.getAllTeamYearlyData();
+  const map = new Map<string, Map<number, number>>();
+  for (const row of yearlyData) {
+    if (!map.has(row.teamId)) {
+      map.set(row.teamId, new Map());
+    }
+    map.get(row.teamId)!.set(row.year, row.spPrice);
+  }
+  for (const team of allTeams) {
+    if (!map.has(team.teamId)) {
+      map.set(team.teamId, new Map());
+    }
+  }
+  return map;
+}
+
+function getSpPriceForTask(
+  spPriceMap: Map<string, Map<number, number>>,
+  teamId: string | null,
+  task: { doneDate?: string | null; completedAt?: string | null },
+  fallbackSpPrice: number
+): number {
+  if (!teamId) return fallbackSpPrice;
+  const yearMap = spPriceMap.get(teamId);
+  if (!yearMap) return fallbackSpPrice;
+  
+  const dateStr = task.doneDate || task.completedAt;
+  if (dateStr) {
+    const year = new Date(dateStr).getFullYear();
+    if (yearMap.has(year)) return yearMap.get(year)!;
+  }
+  return fallbackSpPrice;
+}
+
+function getSpPriceForYear(
+  spPriceMap: Map<string, Map<number, number>>,
+  teamId: string,
+  year: number,
+  fallbackSpPrice: number
+): number {
+  const yearMap = spPriceMap.get(teamId);
+  if (yearMap && yearMap.has(year)) return yearMap.get(year)!;
+  return fallbackSpPrice;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/departments", async (req, res) => {
     try {
@@ -1187,6 +1233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Рассчитываем разбивку SP по командам для каждой инициативы
         const allTeams = await storage.getAllTeams();
+        const spPriceMap = await buildSpPriceMap(allTeams);
         const teamInfoMap = new Map(allTeams.map(t => [t.teamId, { name: t.teamName, spPrice: t.spPrice || 0 }]));
         const crossTeamTasks = allTasks.filter(task =>
           task.initCardId !== null &&
@@ -1204,7 +1251,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const breakdown = teamBreakdownByInit.get(initId)!;
           const info = task.teamId ? teamInfoMap.get(task.teamId) : null;
           const tName = info?.name || 'Без команды';
-          const cost = task.size * (info?.spPrice || 0);
+          const spPrice = getSpPriceForTask(spPriceMap, task.teamId, task, info?.spPrice || 0);
+          const cost = task.size * spPrice;
           breakdown[tName] = (breakdown[tName] || 0) + cost;
           totalDoneSPByInit.set(initId, (totalDoneSPByInit.get(initId) || 0) + task.size);
         });
@@ -1351,6 +1399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Рассчитываем разбивку SP по командам для каждой инициативы
         const allTeams = await storage.getAllTeams();
+        const spPriceMap = await buildSpPriceMap(allTeams);
         const teamInfoMap = new Map(allTeams.map(t => [t.teamId, { name: t.teamName, spPrice: t.spPrice || 0 }]));
         const crossTeamTasks = allTasks.filter(task =>
           task.initCardId !== null &&
@@ -1368,7 +1417,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const breakdown = teamBreakdownByInit.get(initId)!;
           const info = task.teamId ? teamInfoMap.get(task.teamId) : null;
           const tName = info?.name || 'Без команды';
-          const cost = task.size * (info?.spPrice || 0);
+          const spPrice = getSpPriceForTask(spPriceMap, task.teamId, task, info?.spPrice || 0);
+          const cost = task.size * spPrice;
           breakdown[tName] = (breakdown[tName] || 0) + cost;
           totalDoneSPByInit.set(initId, (totalDoneSPByInit.get(initId) || 0) + task.size);
         });
@@ -2511,6 +2561,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const plannedValueId = "id_237";
       const factValueId = "id_238";
+      const spPriceMapSync = await buildSpPriceMap(allTeams);
+      const currentYearSync = new Date().getFullYear();
 
       let totalSynced = 0;
       const updatedSpaces: { spaceId: number; spaceName: string }[] = [];
@@ -2677,13 +2729,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Обновляем effect для Compliance/Enabler
-          const spPrice = team.spPrice || 0;
+          const spPrice = getSpPriceForYear(spPriceMapSync, team.teamId, currentYearSync, team.spPrice || 0);
           for (const initiative of syncedInitiatives) {
             if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
               const plannedCost = initiative.size * spPrice;
               const tasks = await storage.getTasksByInitCardId(initiative.cardId);
-              const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
-              const factCost = actualSize * spPrice;
+              let factCost = 0;
+              for (const task of tasks) {
+                const taskSpPrice = getSpPriceForTask(spPriceMapSync, task.teamId, task, spPrice);
+                factCost += task.size * taskSpPrice;
+              }
               await storage.updateInitiative(initiative.id, {
                 plannedValue: String(plannedCost),
                 factValue: String(factCost)
@@ -2792,27 +2847,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Для инициатив типа Compliance и Enabler автоматически проставляем planned_value = planned_cost и fact_value = fact_cost
       const allTeams = await storage.getAllTeams();
+      const spPriceMapBoard = await buildSpPriceMap(allTeams);
       const relevantTeams = allTeams.filter(team => team.initBoardId === boardId);
       
       if (relevantTeams.length > 0) {
-        // Используем первую команду для расчета cost (если несколько команд работают с одной доской)
         const team = relevantTeams[0];
-        const spPrice = team.spPrice || 0;
-        
+        const currentYear = new Date().getFullYear();
+        const spPrice = getSpPriceForYear(spPriceMapBoard, team.teamId, currentYear, team.spPrice || 0);
         
         for (const initiative of syncedInitiatives) {
           if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
-            // Рассчитываем planned_cost
             const plannedCost = initiative.size * spPrice;
             
-            // Получаем фактические задачи для расчета fact_cost
             const tasks = await storage.getTasksByInitCardId(initiative.cardId);
-            const actualSize = tasks.reduce((sum, task) => sum + task.size, 0);
-            const factCost = actualSize * spPrice;
+            let factCost = 0;
+            for (const task of tasks) {
+              const taskSpPrice = getSpPriceForTask(spPriceMapBoard, task.teamId, task, spPrice);
+              factCost += task.size * taskSpPrice;
+            }
             
-            // log(`[Kaiten Sync] Updating initiative ${initiative.cardId} "${initiative.title}" (${initiative.type}): planned_cost=${plannedCost}, fact_cost=${factCost}`);
-            
-            // Обновляем planned_value и fact_value
             await storage.updateInitiative(initiative.id, {
               plannedValue: String(plannedCost),
               factValue: String(factCost)
@@ -3966,6 +4019,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      const allTeamsForPrice = await storage.getAllTeams();
+      const spPriceMap = await buildSpPriceMap(allTeamsForPrice);
+
       // Получаем инициативы для каждой команды с фильтрацией по спринтам команды (как в Excel)
       const initiativesWithSprints = await Promise.all(
         validTeams.map(async (team) => {
@@ -4049,6 +4105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }));
               
               // Создаем новый объект с полями teamId, spPrice, teamName и sprints
+              const yearlySpPrice = getSpPriceForYear(spPriceMap, team.teamId, year, team.spPrice);
               return {
                 id: initiative.id,
                 cardId: initiative.cardId,
@@ -4066,7 +4123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 dueDate: initiative.doneDate,
                 doneDate: initiative.doneDate,
                 teamId: team.teamId,
-                spPrice: team.spPrice,
+                spPrice: yearlySpPrice,
                 teamName: team.teamName,
                 sprints: sprints
               };
@@ -4216,6 +4273,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ success: false, error: "No valid teams found" });
       }
 
+      const allTeamsForPrice = await storage.getAllTeams();
+      const spPriceMap = await buildSpPriceMap(allTeamsForPrice);
+
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31, 23, 59, 59);
 
@@ -4337,14 +4397,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
+          const yearlySpPrice = getSpPriceForYear(spPriceMap, team.teamId, year, team.spPrice);
+          const prevYearlySpPrice = getSpPriceForYear(spPriceMap, team.teamId, year - 1, team.spPrice);
           const existing = initiativesByCardId.get(initiative.cardId);
           if (existing) {
-            existing.totalActualCost += actualSP * team.spPrice;
-            existing.totalPrevYearActualCost += prevYearActualSP * team.spPrice;
+            existing.totalActualCost += actualSP * yearlySpPrice;
+            existing.totalPrevYearActualCost += prevYearActualSP * prevYearlySpPrice;
             existing.teamContributions.push({
               teamId: team.teamId,
               teamName: team.teamName,
-              spPrice: team.spPrice,
+              spPrice: yearlySpPrice,
               actualSP,
             });
           } else {
@@ -4359,12 +4421,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               plannedValue: initiative.plannedValue,
               factValue: initiative.factValue,
               totalPlannedCost: 0,
-              totalActualCost: actualSP * team.spPrice,
-              totalPrevYearActualCost: prevYearActualSP * team.spPrice,
+              totalActualCost: actualSP * yearlySpPrice,
+              totalPrevYearActualCost: prevYearActualSP * prevYearlySpPrice,
               teamContributions: [{
                 teamId: team.teamId,
                 teamName: team.teamName,
-                spPrice: team.spPrice,
+                spPrice: yearlySpPrice,
                 actualSP,
               }],
             });
