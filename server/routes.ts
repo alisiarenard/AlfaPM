@@ -4052,7 +4052,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const allInitiatives = await storage.getInitiativesByBoardId(team.initBoardId);
         const allowedTypes = ['Epic', 'Compliance', 'Enabler'];
         const initiatives = allInitiatives
-          .filter(init => !init.archived)
           .filter(init => init.type !== null && allowedTypes.includes(init.type))
           .filter(init => {
             if (filterParam === 'all') return true;
