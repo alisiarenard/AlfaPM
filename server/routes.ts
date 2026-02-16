@@ -1152,7 +1152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Рассчитываем разбивку SP по командам для каждой инициативы
         const allTeams = await storage.getAllTeams();
-        const teamNameMap = new Map(allTeams.map(t => [t.teamId, t.teamName]));
+        const teamInfoMap = new Map(allTeams.map(t => [t.teamId, { name: t.teamName, spPrice: t.spPrice || 0 }]));
         const crossTeamTasks = allTasks.filter(task =>
           task.initCardId !== null &&
           allInitiativeCardIds.has(task.initCardId) &&
@@ -1166,8 +1166,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             teamBreakdownByInit.set(initId, {});
           }
           const breakdown = teamBreakdownByInit.get(initId)!;
-          const tName = (task.teamId && teamNameMap.get(task.teamId)) || 'Без команды';
-          breakdown[tName] = (breakdown[tName] || 0) + task.size;
+          const info = task.teamId ? teamInfoMap.get(task.teamId) : null;
+          const tName = info?.name || 'Без команды';
+          const cost = task.size * (info?.spPrice || 0);
+          breakdown[tName] = (breakdown[tName] || 0) + cost;
         });
         const finalWithBreakdown = finalInitiatives.map((init: any) => ({
           ...init,
@@ -1311,7 +1313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Рассчитываем разбивку SP по командам для каждой инициативы
         const allTeams = await storage.getAllTeams();
-        const teamNameMap = new Map(allTeams.map(t => [t.teamId, t.teamName]));
+        const teamInfoMap = new Map(allTeams.map(t => [t.teamId, { name: t.teamName, spPrice: t.spPrice || 0 }]));
         const crossTeamTasks = allTasks.filter(task =>
           task.initCardId !== null &&
           allInitiativeCardIds.has(task.initCardId) &&
@@ -1325,8 +1327,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             teamBreakdownByInit.set(initId, {});
           }
           const breakdown = teamBreakdownByInit.get(initId)!;
-          const tName = (task.teamId && teamNameMap.get(task.teamId)) || 'Без команды';
-          breakdown[tName] = (breakdown[tName] || 0) + task.size;
+          const info = task.teamId ? teamInfoMap.get(task.teamId) : null;
+          const tName = info?.name || 'Без команды';
+          const cost = task.size * (info?.spPrice || 0);
+          breakdown[tName] = (breakdown[tName] || 0) + cost;
         });
         const finalWithBreakdown = finalInitiatives.map((init: any) => ({
           ...init,

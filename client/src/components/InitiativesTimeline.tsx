@@ -1432,17 +1432,20 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                         <span className="text-xs text-foreground tabular-nums cursor-default border-b border-dotted border-muted-foreground/50">{percentage}%</span>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="text-xs">
-                        {teamEntries
-                          .sort((a, b) => b[1] - a[1])
-                          .map(([teamName, sp]) => {
-                            const teamPct = size > 0 ? Math.round((sp / size) * 100) : 0;
-                            return (
-                              <div key={teamName} className="flex items-center justify-between gap-3">
-                                <span className="text-muted-foreground">{teamName}</span>
-                                <span className="tabular-nums font-medium">{teamPct}%</span>
-                              </div>
-                            );
-                          })}
+                        {(() => {
+                          const totalCost = teamEntries.reduce((s, [, v]) => s + v, 0);
+                          return teamEntries
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([teamName, cost]) => {
+                              const teamPct = totalCost > 0 ? Math.round((cost / totalCost) * 100) : 0;
+                              return (
+                                <div key={teamName} className="flex items-center justify-between gap-3">
+                                  <span className="text-muted-foreground">{teamName}</span>
+                                  <span className="tabular-nums font-medium">{teamPct}%</span>
+                                </div>
+                              );
+                            });
+                        })()}
                       </TooltipContent>
                     </Tooltip>
                   );
