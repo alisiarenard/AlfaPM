@@ -574,8 +574,8 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       }
     });
     
-    // Собираем инициативы с их SP, процентами и задачами
-    let initiativesProgress: InitiativeProgress[] = initiatives
+    // Собираем инициативы с их SP, процентами и задачами (используем allInitiatives чтобы проценты суммировались в 100%)
+    let initiativesProgress: InitiativeProgress[] = allInitiatives
       .map(initiative => {
         const tasks = getSprintTasks(initiative, sprintId);
         // Пропускаем инициативы без тасок в этом спринте
@@ -657,12 +657,11 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             
             const totalBackendSP = finalBusinessSupportSP + finalOtherInitiativesSP;
             
-            // Перестраиваем initiativesProgress используя задачи с бэка
-            finalInitiativesProgress = initiatives
+            // Перестраиваем initiativesProgress используя задачи с бэка и allInitiatives
+            finalInitiativesProgress = allInitiatives
               .filter(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
-                // Показываем только инициативы "Поддержка бизнеса" или те, у которых есть таски
-                return initiative.cardId === 0 || backedTasks.length > 0;
+                return backedTasks.length > 0;
               })
               .map(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
