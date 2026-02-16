@@ -115,6 +115,7 @@ export default function SettingsPage() {
   const [hasSprints, setHasSprints] = useState(true);
   const [initSpaceId, setInitSpaceId] = useState("");
   const [omniBoardId, setOmniBoardId] = useState("");
+  const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
   const [sprintIds, setSprintIds] = useState("");
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
@@ -604,7 +605,7 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="pt-2">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3" data-testid="section-kaiten-integration">Настройка интеграции с Kaiten</h3>
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="section-kaiten-integration">Настройка интеграции с Kaiten</h3>
                         <div className="space-y-2">
                           <div className="flex gap-4">
                             <div className="flex-1 space-y-2">
@@ -677,7 +678,20 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="pt-2">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3" data-testid="section-annual-metrics">Годовые метрики и данные</h3>
+                        <div className="flex items-center gap-2 mb-3">
+                          <h3 className="text-sm font-semibold text-muted-foreground" data-testid="section-annual-metrics">Годовые метрики и данные за:</h3>
+                          <Select value={metricsYear} onValueChange={setMetricsYear}>
+                            <SelectTrigger className="w-[100px] h-8" data-testid="select-metrics-year">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-[300]">
+                              <SelectItem value="2024">2024</SelectItem>
+                              <SelectItem value="2025">2025</SelectItem>
+                              <SelectItem value="2026">2026</SelectItem>
+                              <SelectItem value="2027">2027</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div className="space-y-2">
                           <div className="flex gap-4">
                             <div className="flex-1 space-y-2">
@@ -814,7 +828,7 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="pt-2">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3" data-testid="section-new-kaiten-integration">Настройка интеграции с Kaiten</h3>
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="section-new-kaiten-integration">Настройка интеграции с Kaiten</h3>
                         <div className="space-y-2">
                           <div className="flex gap-4">
                             <div className="flex-1 space-y-2">
@@ -887,7 +901,20 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="pt-2">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3" data-testid="section-new-annual-metrics">Годовые метрики и данные</h3>
+                        <div className="flex items-center gap-2 mb-3">
+                          <h3 className="text-sm font-semibold text-muted-foreground" data-testid="section-new-annual-metrics">Годовые метрики и данные за:</h3>
+                          <Select value={metricsYear} onValueChange={setMetricsYear}>
+                            <SelectTrigger className="w-[100px] h-8" data-testid="select-new-metrics-year">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-[300]">
+                              <SelectItem value="2024">2024</SelectItem>
+                              <SelectItem value="2025">2025</SelectItem>
+                              <SelectItem value="2026">2026</SelectItem>
+                              <SelectItem value="2027">2027</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div className="space-y-2">
                           <div className="flex gap-4">
                             <div className="flex-1 space-y-2">
