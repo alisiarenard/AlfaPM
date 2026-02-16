@@ -943,20 +943,24 @@ export class DbStorage implements IStorage {
 export const storage = new DbStorage();
 
 export async function migrateTeamsToYearlyData() {
-  const currentYear = new Date().getFullYear();
-  const allTeams = await db.select().from(teams);
-  for (const team of allTeams) {
-    const existing = await db.select().from(teamYearlyData)
-      .where(and(eq(teamYearlyData.teamId, team.teamId), eq(teamYearlyData.year, currentYear)));
-    if (existing.length === 0) {
-      await db.insert(teamYearlyData).values({
-        teamId: team.teamId,
-        year: currentYear,
-        vilocity: team.vilocity,
-        sprintDuration: team.sprintDuration,
-        spPrice: team.spPrice,
-        hasSprints: team.hasSprints,
-      });
+  try {
+    const currentYear = new Date().getFullYear();
+    const allTeams = await db.select().from(teams);
+    for (const team of allTeams) {
+      const existing = await db.select().from(teamYearlyData)
+        .where(and(eq(teamYearlyData.teamId, team.teamId), eq(teamYearlyData.year, currentYear)));
+      if (existing.length === 0) {
+        await db.insert(teamYearlyData).values({
+          teamId: team.teamId,
+          year: currentYear,
+          vilocity: team.vilocity,
+          sprintDuration: team.sprintDuration,
+          spPrice: team.spPrice,
+          hasSprints: team.hasSprints,
+        });
+      }
     }
+  } catch (e) {
+    console.warn("migrateTeamsToYearlyData: skipped, table may not exist yet. Run db:push first.", (e as Error).message);
   }
 }
