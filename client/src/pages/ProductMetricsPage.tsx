@@ -833,7 +833,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
                               </td>
                               <td
-                                className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                                className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
                                 data-testid={`text-planned-effect-${init.cardId}`}
                                 onClick={() => init.type === 'Epic' && startCellEdit(init.cardId, 'plannedEffect', init.plannedEffect)}
                               >
@@ -841,7 +841,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   <input
                                     ref={editInputRef}
                                     type="text"
-                                    className="w-full bg-background border border-primary rounded px-1 py-0.5 text-right text-sm outline-none"
+                                    className="w-full bg-transparent border-0 border-b border-b-border rounded-none px-1 py-0.5 text-right text-sm outline-none focus:ring-0"
                                     value={editingCellValue}
                                     onChange={(e) => setEditingCellValue(e.target.value)}
                                     onBlur={commitCellEdit}
@@ -856,7 +856,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 )}
                               </td>
                               <td
-                                className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                                className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
                                 data-testid={`text-actual-effect-${init.cardId}`}
                                 onClick={() => init.type === 'Epic' && startCellEdit(init.cardId, 'actualEffect', init.actualEffect)}
                               >
@@ -864,7 +864,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   <input
                                     ref={editInputRef}
                                     type="text"
-                                    className="w-full bg-background border border-primary rounded px-1 py-0.5 text-right text-sm outline-none"
+                                    className="w-full bg-transparent border-0 border-b border-b-border rounded-none px-1 py-0.5 text-right text-sm outline-none focus:ring-0"
                                     value={editingCellValue}
                                     onChange={(e) => setEditingCellValue(e.target.value)}
                                     onBlur={commitCellEdit}
