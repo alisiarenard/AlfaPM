@@ -24,7 +24,6 @@ import {
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
 import { ExternalLink, Check, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -1411,45 +1410,16 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 </div>
               </td>
               <td className="sticky left-[300px] z-[100] bg-background px-2 py-3 min-w-[140px] max-w-[140px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const completed = getTotalSP(initiative);
-                    const size = initiative.size || 0;
-                    const percentage = size > 0 ? Math.round((completed / size) * 100) : 0;
-                    
-                    const donutData = [
-                      { value: percentage },
-                      { value: 100 - percentage }
-                    ];
-                    
-                    return (
-                      <>
-                        <div className="w-4 h-4 flex-shrink-0">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={donutData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={5}
-                                outerRadius={8}
-                                dataKey="value"
-                                startAngle={90}
-                                endAngle={-270}
-                              >
-                                <Cell fill="#cd253d" />
-                                <Cell fill="hsl(var(--muted))" />
-                              </Pie>
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground">
-                          {formatCompleted(initiative)}
-                        </span>
-                      </>
-                    );
-                  })()}
-                </div>
+                {(() => {
+                  const completed = getTotalSP(initiative);
+                  const size = initiative.size || 0;
+                  const percentage = size > 0 ? Math.round((completed / size) * 100) : 0;
+                  return (
+                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                      {size > 0 ? `${percentage}%` : '—'}
+                    </span>
+                  );
+                })()}
               </td>
               <td 
                 className="sticky left-[440px] z-[100] bg-background min-w-[100px] max-w-[100px]"
