@@ -150,6 +150,7 @@ export interface Initiative {
   dueDate: string | null;
   doneDate: string | null;
   teamBreakdown?: Record<string, number>;
+  totalDoneSP?: number;
 }
 
 export interface Team {

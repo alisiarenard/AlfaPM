@@ -1411,9 +1411,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               </td>
               <td className="sticky left-[300px] z-[100] bg-background px-2 py-3 min-w-[140px] max-w-[140px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 {(() => {
-                  const completed = getTotalSP(initiative);
                   const size = initiative.size || 0;
-                  const percentage = size > 0 ? Math.round((completed / size) * 100) : 0;
+                  const totalDone = initiative.totalDoneSP || getTotalSP(initiative);
+                  const percentage = size > 0 ? Math.round((totalDone / size) * 100) : 0;
                   const breakdown = initiative.teamBreakdown || {};
                   const teamEntries = Object.entries(breakdown);
                   const hasMultipleTeams = teamEntries.length > 1;

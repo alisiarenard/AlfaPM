@@ -1160,6 +1160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           task.condition !== '3 - deleted'
         );
         const teamBreakdownByInit = new Map<number, Record<string, number>>();
+        const totalDoneSPByInit = new Map<number, number>();
         crossTeamTasks.forEach(task => {
           const initId = task.initCardId!;
           if (!teamBreakdownByInit.has(initId)) {
@@ -1170,10 +1171,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const tName = info?.name || 'Без команды';
           const cost = task.size * (info?.spPrice || 0);
           breakdown[tName] = (breakdown[tName] || 0) + cost;
+          totalDoneSPByInit.set(initId, (totalDoneSPByInit.get(initId) || 0) + task.size);
         });
         const finalWithBreakdown = finalInitiatives.map((init: any) => ({
           ...init,
-          teamBreakdown: teamBreakdownByInit.get(init.cardId) || {}
+          teamBreakdown: teamBreakdownByInit.get(init.cardId) || {},
+          totalDoneSP: totalDoneSPByInit.get(init.cardId) || 0
         }));
 
         res.json({ initiatives: finalWithBreakdown, sprints: teamSprints });
@@ -1321,6 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           task.condition !== '3 - deleted'
         );
         const teamBreakdownByInit = new Map<number, Record<string, number>>();
+        const totalDoneSPByInit = new Map<number, number>();
         crossTeamTasks.forEach(task => {
           const initId = task.initCardId!;
           if (!teamBreakdownByInit.has(initId)) {
@@ -1331,10 +1335,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const tName = info?.name || 'Без команды';
           const cost = task.size * (info?.spPrice || 0);
           breakdown[tName] = (breakdown[tName] || 0) + cost;
+          totalDoneSPByInit.set(initId, (totalDoneSPByInit.get(initId) || 0) + task.size);
         });
         const finalWithBreakdown = finalInitiatives.map((init: any) => ({
           ...init,
-          teamBreakdown: teamBreakdownByInit.get(init.cardId) || {}
+          teamBreakdown: teamBreakdownByInit.get(init.cardId) || {},
+          totalDoneSP: totalDoneSPByInit.get(init.cardId) || 0
         }));
 
         res.json({ initiatives: finalWithBreakdown, sprints: virtualSprints });
