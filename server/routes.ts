@@ -2508,35 +2508,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const syncedInitiatives = [];
 
         for (const card of cards) {
+          console.log(`[Sync Spaces] Card ${card.id} "${card.title}": size=${card.size}, state=${card.state}, type=${card.type?.name}, properties=${JSON.stringify(card.properties)}, due_date=${card.due_date}, last_moved_to_done_at=${card.last_moved_to_done_at}`);
+
+          const fullCard = await kaitenClient.getCard(card.id);
+          console.log(`[Sync Spaces] Full card ${fullCard.id}: size=${fullCard.size}, state=${fullCard.state}, type=${fullCard.type?.name}, properties=${JSON.stringify(fullCard.properties)}, due_date=${fullCard.due_date}, last_moved_to_done_at=${fullCard.last_moved_to_done_at}`);
+
           let state: "1-queued" | "2-inProgress" | "3-done";
-          if (card.state === 3) {
+          if (fullCard.state === 3) {
             state = "3-done";
-          } else if (card.state === 2) {
+          } else if (fullCard.state === 2) {
             state = "2-inProgress";
           } else {
             state = "1-queued";
           }
-          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+          const condition: "1-live" | "2-archived" = fullCard.archived ? "2-archived" : "1-live";
 
-          const rawPlanned = card.properties?.[plannedValueId];
+          const rawPlanned = fullCard.properties?.[plannedValueId];
           const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
-          const rawFact = card.properties?.[factValueId];
+          const rawFact = fullCard.properties?.[factValueId];
           const factValue = rawFact == null ? undefined : String(rawFact);
 
           const synced = await storage.syncInitiativeFromKaiten(
-            card.id,
+            fullCard.id,
             boardId,
-            card.title,
+            fullCard.title,
             state,
             condition,
-            card.size || 0,
-            card.type?.name,
+            fullCard.size || 0,
+            fullCard.type?.name,
             plannedValueId,
             plannedValue,
             factValueId,
             factValue,
-            card.due_date || null,
-            card.last_moved_to_done_at || null
+            fullCard.due_date || null,
+            fullCard.last_moved_to_done_at || null
           );
           syncedInitiatives.push(synced);
           syncedCardIds.push(card.id);
