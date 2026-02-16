@@ -1415,7 +1415,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   const size = initiative.size || 0;
                   const percentage = size > 0 ? Math.round((completed / size) * 100) : 0;
                   return (
-                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                    <span className="text-xs text-foreground tabular-nums">
                       {size > 0 ? `${percentage}%` : '—'}
                     </span>
                   );
