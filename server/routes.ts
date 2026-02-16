@@ -2535,8 +2535,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.archiveInitiativesNotInList(boardId, syncedCardIds);
 
         const teamsForBoard = relevantTeams.filter(t => t.initBoardId === boardId);
-        if (teamsForBoard.length > 0) {
-          const team = teamsForBoard[0];
+
+        // Синхронизация задач для каждой команды на этой доске
+        for (const team of teamsForBoard) {
+          try {
+            let totalTasksSynced = 0;
+            const syncedTaskCardIds: number[] = [];
+
+            if (team.hasSprints && team.sprintBoardId) {
+              const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+
+              // Синхронизируем спринты
+              for (const sprint of teamSprints) {
+                try {
+                  const kaitenSprint = await kaitenClient.getSprint(sprint.sprintId);
+                  if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
+                    for (const sprintCard of kaitenSprint.cards) {
+                      try {
+                        const card = await kaitenClient.getCard(sprintCard.id);
+                        if (card.condition === 3) continue;
+
+                        let initCardId = 0;
+                        if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                          initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+                        }
+
+                        let state: "1-queued" | "2-inProgress" | "3-done";
+                        if (card.state === 3) state = "3-done";
+                        else if (card.state === 2) state = "2-inProgress";
+                        else state = "1-queued";
+
+                        const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+                        await storage.syncTaskFromKaiten(
+                          card.id, card.board_id, card.title,
+                          card.created || new Date().toISOString(),
+                          state, card.size || 0, condition, card.archived || false,
+                          initCardId, card.type?.name, card.completed_at ?? undefined,
+                          sprint.sprintId, card.last_moved_to_done_at ?? null, team.teamId
+                        );
+                        syncedTaskCardIds.push(card.id);
+                        totalTasksSynced++;
+                      } catch {}
+                    }
+                  }
+                } catch {}
+              }
+            } else if (team.initBoardId) {
+              const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+              for (const initiative of initiatives) {
+                try {
+                  const initiativeCard = await kaitenClient.getCard(initiative.cardId);
+                  if (initiativeCard.children_ids && Array.isArray(initiativeCard.children_ids) && initiativeCard.children_ids.length > 0) {
+                    for (const childId of initiativeCard.children_ids) {
+                      try {
+                        const childCard = await kaitenClient.getCard(childId);
+                        if (childCard.archived) continue;
+
+                        let initCardId = initiative.cardId;
+                        if (childCard.parents_ids && Array.isArray(childCard.parents_ids) && childCard.parents_ids.length > 0) {
+                          const foundInitCardId = await findInitiativeInParentChain(childCard.parents_ids[0]);
+                          if (foundInitCardId !== 0) initCardId = foundInitCardId;
+                        }
+
+                        let state: "1-queued" | "2-inProgress" | "3-done";
+                        if (childCard.state === 3) state = "3-done";
+                        else if (childCard.state === 2) state = "2-inProgress";
+                        else state = "1-queued";
+
+                        const condition: "1-live" | "2-archived" = childCard.archived ? "2-archived" : "1-live";
+
+                        await storage.syncTaskFromKaiten(
+                          childCard.id, childCard.board_id, childCard.title,
+                          childCard.created || new Date().toISOString(),
+                          state, childCard.size || 0, condition, childCard.archived || false,
+                          initCardId, childCard.type?.name, childCard.completed_at ?? undefined,
+                          null, childCard.last_moved_to_done_at, team.teamId
+                        );
+                        syncedTaskCardIds.push(childCard.id);
+                        totalTasksSynced++;
+                      } catch {}
+                    }
+                  }
+                } catch {}
+              }
+            }
+
+            console.log(`[Sync Spaces] Team ${team.teamName}: synced ${totalTasksSynced} tasks`);
+          } catch (taskSyncError) {
+            console.error(`[Sync Spaces] Error syncing tasks for team ${team.teamName}:`, taskSyncError);
+          }
+
+          // Обновляем effect для Compliance/Enabler
           const spPrice = team.spPrice || 0;
           for (const initiative of syncedInitiatives) {
             if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
