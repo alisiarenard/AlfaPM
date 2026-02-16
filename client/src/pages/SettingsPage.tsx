@@ -453,10 +453,14 @@ export default function SettingsPage() {
       const initBoardIdChanged = (initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId) !== editingTeam.initBoardId;
       const initSpaceIdChanged = (initSpaceId ? parseInt(initSpaceId) : (editingTeam.initSpaceId ?? 0)) !== (editingTeam.initSpaceId ?? 0);
       const omniBoardIdChanged = (omniBoardId ? parseInt(omniBoardId) : (editingTeam.omniBoardId ?? 0)) !== (editingTeam.omniBoardId ?? 0);
-      const velocityChanged = (velocity ? parseInt(velocity) : editingTeam.vilocity) !== editingTeam.vilocity;
-      const sprintDurationChanged = (sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration) !== editingTeam.sprintDuration;
-      const spPriceChanged = (spPrice ? parseInt(spPrice) : editingTeam.spPrice) !== editingTeam.spPrice;
-      const hasSprintsChanged = hasSprints !== true;
+      const origVelocity = yearlyData ? yearlyData.vilocity : editingTeam.vilocity;
+      const origSprintDuration = yearlyData ? yearlyData.sprintDuration : editingTeam.sprintDuration;
+      const origSpPrice = yearlyData ? yearlyData.spPrice : editingTeam.spPrice;
+      const origHasSprints = yearlyData ? yearlyData.hasSprints : editingTeam.hasSprints;
+      const velocityChanged = (velocity ? parseFloat(velocity) : origVelocity) !== origVelocity;
+      const sprintDurationChanged = (sprintDuration ? parseInt(sprintDuration) : origSprintDuration) !== origSprintDuration;
+      const spPriceChanged = (spPrice ? parseInt(spPrice) : origSpPrice) !== origSpPrice;
+      const hasSprintsChanged = hasSprints !== origHasSprints;
       const sprintIdsChanged = sprintIds.trim() !== "";
       return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || omniBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || sprintIdsChanged;
     }
@@ -782,14 +786,17 @@ export default function SettingsPage() {
                               />
                               <Label htmlFor="edit-has-sprints" className="cursor-pointer">Спринты</Label>
                             </div>
-                            <Input
-                              id="edit-sprint-ids"
-                              placeholder="Sprint IDs через запятую"
-                              value={sprintIds}
-                              onChange={(e) => setSprintIds(e.target.value)}
-                              disabled={!hasSprints}
-                              data-testid="input-sprint-ids"
-                            />
+                            <div className="flex-1 space-y-1">
+                              <Label htmlFor="edit-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
+                              <Input
+                                id="edit-sprint-ids"
+                                placeholder="ID через запятую (123, 456, 789)"
+                                value={sprintIds}
+                                onChange={(e) => setSprintIds(e.target.value)}
+                                disabled={!hasSprints}
+                                data-testid="input-sprint-ids"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1013,14 +1020,17 @@ export default function SettingsPage() {
                               />
                               <Label htmlFor="new-has-sprints" className="cursor-pointer">Спринты</Label>
                             </div>
-                            <Input
-                              id="new-sprint-ids"
-                              placeholder="Sprint IDs через запятую"
-                              value={sprintIds}
-                              onChange={(e) => setSprintIds(e.target.value)}
-                              disabled={!hasSprints}
-                              data-testid="input-sprint-ids"
-                            />
+                            <div className="flex-1 space-y-1">
+                              <Label htmlFor="new-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
+                              <Input
+                                id="new-sprint-ids"
+                                placeholder="ID через запятую (123, 456, 789)"
+                                value={sprintIds}
+                                onChange={(e) => setSprintIds(e.target.value)}
+                                disabled={!hasSprints}
+                                data-testid="input-sprint-ids"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
