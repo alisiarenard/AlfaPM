@@ -1152,7 +1152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Рассчитываем разбивку SP по командам для каждой инициативы
         const allTeams = await storage.getAllTeams();
-        const teamNameMap = new Map(allTeams.map(t => [t.id, t.name]));
+        const teamNameMap = new Map(allTeams.map(t => [t.teamId, t.teamName]));
         const crossTeamTasks = allTasks.filter(task =>
           task.initCardId !== null &&
           allInitiativeCardIds.has(task.initCardId) &&
@@ -1311,7 +1311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Рассчитываем разбивку SP по командам для каждой инициативы
         const allTeams = await storage.getAllTeams();
-        const teamNameMap = new Map(allTeams.map(t => [t.id, t.name]));
+        const teamNameMap = new Map(allTeams.map(t => [t.teamId, t.teamName]));
         const crossTeamTasks = allTasks.filter(task =>
           task.initCardId !== null &&
           allInitiativeCardIds.has(task.initCardId) &&
