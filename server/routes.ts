@@ -4242,22 +4242,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const hasDoneTasksInYear = tasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
           if (!hasDoneTasksInYear) continue;
 
-          if (filterParam === 'carryover' && prevYearSprintIds) {
-            const prevYearTasks = teamTasks.filter(task => task.sprintId !== null && prevYearSprintIds!.has(task.sprintId));
-            const hasDoneInPrevYear = prevYearTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
-            if (!hasDoneInPrevYear) continue;
+          const isDoneTask = (task: any) => task.state === '3-done' && task.condition !== '3 - deleted';
+
+          const checkCarryover = () => {
+            if (prevYearSprintIds) {
+              return teamTasks.filter(task => task.sprintId !== null && prevYearSprintIds!.has(task.sprintId)).some(isDoneTask);
+            }
+            return teamTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year - 1);
+          };
+
+          const checkTransferred = () => {
+            if (nextYearSprintIds) {
+              return teamTasks.filter(task => task.sprintId !== null && nextYearSprintIds!.has(task.sprintId)).some(isDoneTask);
+            }
+            return teamTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year + 1);
+          };
+
+          if (filterParam === 'carryover') {
+            if (!checkCarryover()) continue;
           }
 
-          if (filterParam === 'transferred' && nextYearSprintIds) {
-            const nextYearTasks = teamTasks.filter(task => task.sprintId !== null && nextYearSprintIds!.has(task.sprintId));
-            const hasDoneInNextYear = nextYearTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
-            if (!hasDoneInNextYear) continue;
+          if (filterParam === 'transferred') {
+            if (!checkTransferred()) continue;
           }
 
           if (filterParam === 'done') {
-            const isCarryover = prevYearSprintIds && teamTasks.filter(task => task.sprintId !== null && prevYearSprintIds!.has(task.sprintId)).some(task => task.state === '3-done' && task.condition !== '3 - deleted');
-            const isTransferred = nextYearSprintIds && teamTasks.filter(task => task.sprintId !== null && nextYearSprintIds!.has(task.sprintId)).some(task => task.state === '3-done' && task.condition !== '3 - deleted');
-            if (isCarryover || isTransferred) continue;
+            if (checkCarryover() || checkTransferred()) continue;
           }
 
           let actualSP = 0;
