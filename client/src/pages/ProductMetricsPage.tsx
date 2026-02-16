@@ -57,7 +57,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     onSuccess: () => {
       setEditingCell(null);
       setEditingCellValue("");
-      queryClient.invalidateQueries({ queryKey: ["/api/product-metrics/initiatives"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/metrics/initiatives-table'] });
       toast({ title: "Значение обновлено" });
     },
     onError: (error: Error) => {
