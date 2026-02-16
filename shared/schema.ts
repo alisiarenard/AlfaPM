@@ -105,6 +105,7 @@ export const teams = pgTable("teams", {
   departmentId: varchar("department_id").notNull(),
   spPrice: integer("sp_price").notNull(),
   hasSprints: boolean("has_sprints").notNull().default(true),
+  omniBoardId: integer("omni_board_id"),
 });
 
 export const insertTeamSchema = createInsertSchema(teams)
