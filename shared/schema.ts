@@ -116,6 +116,20 @@ export const insertTeamSchema = createInsertSchema(teams)
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type TeamRow = typeof teams.$inferSelect;
 
+export const teamYearlyData = pgTable("team_yearly_data", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull(),
+  year: integer("year").notNull(),
+  vilocity: real("vilocity").notNull(),
+  sprintDuration: integer("sprint_duration").notNull(),
+  spPrice: integer("sp_price").notNull().default(0),
+  hasSprints: boolean("has_sprints").notNull().default(true),
+});
+
+export const insertTeamYearlyDataSchema = createInsertSchema(teamYearlyData).omit({ id: true });
+export type InsertTeamYearlyData = z.infer<typeof insertTeamYearlyDataSchema>;
+export type TeamYearlyDataRow = typeof teamYearlyData.$inferSelect;
+
 export interface TaskInSprint {
   id: string;
   cardId: number;
