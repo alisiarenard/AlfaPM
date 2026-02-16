@@ -4091,6 +4091,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const initiative of initiatives) {
           const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+
+          if (initiative.condition === '2-archived' && allTasks.length === 0) continue;
+
           const teamTasks = allTasks.filter(task => task.teamId === team.teamId);
 
           let tasks = teamTasks;
