@@ -1150,7 +1150,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Применяем фильтрацию по году и активности
         const finalInitiatives = filterInitiativesForTimeline(initiativesWithInvolvement, year, showActiveOnly);
 
-        res.json({ initiatives: finalInitiatives, sprints: teamSprints });
+        // Рассчитываем разбивку SP по командам для каждой инициативы
+        const allTeams = await storage.getAllTeams();
+        const teamNameMap = new Map(allTeams.map(t => [t.id, t.name]));
+        const crossTeamTasks = allTasks.filter(task =>
+          task.initCardId !== null &&
+          allInitiativeCardIds.has(task.initCardId) &&
+          task.state === '3-done' &&
+          task.condition !== '3 - deleted'
+        );
+        const teamBreakdownByInit = new Map<number, Record<string, number>>();
+        crossTeamTasks.forEach(task => {
+          const initId = task.initCardId!;
+          if (!teamBreakdownByInit.has(initId)) {
+            teamBreakdownByInit.set(initId, {});
+          }
+          const breakdown = teamBreakdownByInit.get(initId)!;
+          const tName = (task.teamId && teamNameMap.get(task.teamId)) || 'Без команды';
+          breakdown[tName] = (breakdown[tName] || 0) + task.size;
+        });
+        const finalWithBreakdown = finalInitiatives.map((init: any) => ({
+          ...init,
+          teamBreakdown: teamBreakdownByInit.get(init.cardId) || {}
+        }));
+
+        res.json({ initiatives: finalWithBreakdown, sprints: teamSprints });
       } else {
         // РЕЖИМ: Виртуальные спринты (hasSprints === false)
         // Создаём виртуальные спринты на основе sprintDuration
@@ -1285,7 +1309,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Применяем фильтрацию по году и активности
         const finalInitiatives = filterInitiativesForTimeline(initiativesWithInvolvement, year, showActiveOnly);
 
-        res.json({ initiatives: finalInitiatives, sprints: virtualSprints });
+        // Рассчитываем разбивку SP по командам для каждой инициативы
+        const allTeams = await storage.getAllTeams();
+        const teamNameMap = new Map(allTeams.map(t => [t.id, t.name]));
+        const crossTeamTasks = allTasks.filter(task =>
+          task.initCardId !== null &&
+          allInitiativeCardIds.has(task.initCardId) &&
+          task.state === '3-done' &&
+          task.condition !== '3 - deleted'
+        );
+        const teamBreakdownByInit = new Map<number, Record<string, number>>();
+        crossTeamTasks.forEach(task => {
+          const initId = task.initCardId!;
+          if (!teamBreakdownByInit.has(initId)) {
+            teamBreakdownByInit.set(initId, {});
+          }
+          const breakdown = teamBreakdownByInit.get(initId)!;
+          const tName = (task.teamId && teamNameMap.get(task.teamId)) || 'Без команды';
+          breakdown[tName] = (breakdown[tName] || 0) + task.size;
+        });
+        const finalWithBreakdown = finalInitiatives.map((init: any) => ({
+          ...init,
+          teamBreakdown: teamBreakdownByInit.get(init.cardId) || {}
+        }));
+
+        res.json({ initiatives: finalWithBreakdown, sprints: virtualSprints });
       }
     } catch (error) {
       res.status(500).json({ 

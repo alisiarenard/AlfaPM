@@ -1411,13 +1411,40 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               </td>
               <td className="sticky left-[300px] z-[100] bg-background px-2 py-3 min-w-[140px] max-w-[140px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 {(() => {
-                  const completed = getTotalSP(initiative);
                   const size = initiative.size || 0;
-                  const percentage = size > 0 ? Math.round((completed / size) * 100) : 0;
+                  const breakdown = initiative.teamBreakdown || {};
+                  const teamEntries = Object.entries(breakdown);
+                  const totalDone = teamEntries.reduce((s, [, v]) => s + v, 0);
+                  const percentage = size > 0 ? Math.round((totalDone / size) * 100) : 0;
+                  const hasMultipleTeams = teamEntries.length > 1;
+
+                  if (size <= 0) {
+                    return <span className="text-xs text-foreground tabular-nums">—</span>;
+                  }
+
+                  if (!hasMultipleTeams) {
+                    return <span className="text-xs text-foreground tabular-nums">{percentage}%</span>;
+                  }
+
                   return (
-                    <span className="text-xs text-foreground tabular-nums">
-                      {size > 0 ? `${percentage}%` : '—'}
-                    </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-xs text-foreground tabular-nums cursor-default border-b border-dotted border-muted-foreground/50">{percentage}%</span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">
+                        {teamEntries
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([teamName, sp]) => {
+                            const teamPct = Math.round((sp / size) * 100);
+                            return (
+                              <div key={teamName} className="flex items-center justify-between gap-3">
+                                <span className="text-muted-foreground">{teamName}</span>
+                                <span className="tabular-nums font-medium">{teamPct}%</span>
+                              </div>
+                            );
+                          })}
+                      </TooltipContent>
+                    </Tooltip>
                   );
                 })()}
               </td>

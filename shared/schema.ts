@@ -149,6 +149,7 @@ export interface Initiative {
   factValue: string | null;
   dueDate: string | null;
   doneDate: string | null;
+  teamBreakdown?: Record<string, number>;
 }
 
 export interface Team {
