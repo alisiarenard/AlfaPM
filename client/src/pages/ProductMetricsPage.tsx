@@ -841,7 +841,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   <input
                                     ref={editInputRef}
                                     type="text"
-                                    className="w-full bg-transparent border-0 border-b border-b-border rounded-none px-1 py-0.5 text-right text-sm outline-none focus:ring-0"
+                                    className="bg-transparent border-0 border-b border-b-border rounded-none py-0.5 text-right text-sm outline-none focus:ring-0"
+                                    style={{ width: '100%', boxSizing: 'border-box', margin: 0, padding: 0, paddingBottom: '2px' }}
                                     value={editingCellValue}
                                     onChange={(e) => setEditingCellValue(e.target.value)}
                                     onBlur={commitCellEdit}
@@ -864,7 +865,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   <input
                                     ref={editInputRef}
                                     type="text"
-                                    className="w-full bg-transparent border-0 border-b border-b-border rounded-none px-1 py-0.5 text-right text-sm outline-none focus:ring-0"
+                                    className="bg-transparent border-0 border-b border-b-border rounded-none py-0.5 text-right text-sm outline-none focus:ring-0"
+                                    style={{ width: '100%', boxSizing: 'border-box', margin: 0, padding: 0, paddingBottom: '2px' }}
                                     value={editingCellValue}
                                     onChange={(e) => setEditingCellValue(e.target.value)}
                                     onBlur={commitCellEdit}
