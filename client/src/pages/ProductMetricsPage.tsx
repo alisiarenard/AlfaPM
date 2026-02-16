@@ -834,15 +834,17 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               </td>
                               <td
                                 className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
+                                style={{ minWidth: 0 }}
                                 data-testid={`text-planned-effect-${init.cardId}`}
-                                onClick={() => init.type === 'Epic' && startCellEdit(init.cardId, 'plannedEffect', init.plannedEffect)}
+                                onClick={() => init.type === 'Epic' && !(editingCell?.cardId === init.cardId && editingCell.field === 'plannedEffect') && startCellEdit(init.cardId, 'plannedEffect', init.plannedEffect)}
                               >
                                 {editingCell?.cardId === init.cardId && editingCell.field === 'plannedEffect' ? (
                                   <input
                                     ref={editInputRef}
                                     type="text"
-                                    className="bg-transparent border-0 border-b border-b-border rounded-none py-0.5 text-right text-sm outline-none focus:ring-0"
-                                    style={{ width: '100%', boxSizing: 'border-box', margin: 0, padding: 0, paddingBottom: '2px' }}
+                                    className="bg-transparent border-0 border-b border-b-border rounded-none text-right text-sm outline-none focus:ring-0 tabular-nums"
+                                    style={{ width: '5ch', minWidth: '3ch', maxWidth: '100%', padding: 0, margin: 0, paddingBottom: '1px' }}
+                                    size={1}
                                     value={editingCellValue}
                                     onChange={(e) => setEditingCellValue(e.target.value)}
                                     onBlur={commitCellEdit}
@@ -858,15 +860,17 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               </td>
                               <td
                                 className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
+                                style={{ minWidth: 0 }}
                                 data-testid={`text-actual-effect-${init.cardId}`}
-                                onClick={() => init.type === 'Epic' && startCellEdit(init.cardId, 'actualEffect', init.actualEffect)}
+                                onClick={() => init.type === 'Epic' && !(editingCell?.cardId === init.cardId && editingCell.field === 'actualEffect') && startCellEdit(init.cardId, 'actualEffect', init.actualEffect)}
                               >
                                 {editingCell?.cardId === init.cardId && editingCell.field === 'actualEffect' ? (
                                   <input
                                     ref={editInputRef}
                                     type="text"
-                                    className="bg-transparent border-0 border-b border-b-border rounded-none py-0.5 text-right text-sm outline-none focus:ring-0"
-                                    style={{ width: '100%', boxSizing: 'border-box', margin: 0, padding: 0, paddingBottom: '2px' }}
+                                    className="bg-transparent border-0 border-b border-b-border rounded-none text-right text-sm outline-none focus:ring-0 tabular-nums"
+                                    style={{ width: '5ch', minWidth: '3ch', maxWidth: '100%', padding: 0, margin: 0, paddingBottom: '1px' }}
+                                    size={1}
                                     value={editingCellValue}
                                     onChange={(e) => setEditingCellValue(e.target.value)}
                                     onBlur={commitCellEdit}
