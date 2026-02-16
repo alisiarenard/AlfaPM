@@ -4197,7 +4197,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (init.type === 'Compliance' || init.type === 'Enabler') {
           plannedEffect = plannedCost;
-          actualEffect = actualCost;
+          actualEffect = filterParam === 'carryover'
+            ? actualCost + init.totalPrevYearActualCost
+            : actualCost;
         } else {
           plannedEffect = init.plannedValue && init.plannedValue.trim() !== '' ? parseFloat(init.plannedValue) : null;
           actualEffect = init.factValue && init.factValue.trim() !== '' ? parseFloat(init.factValue) : null;
