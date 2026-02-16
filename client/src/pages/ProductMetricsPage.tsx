@@ -843,7 +843,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                     ref={editInputRef}
                                     type="text"
                                     className="bg-transparent border-0 border-b border-b-border rounded-none text-right text-sm outline-none focus:ring-0 tabular-nums"
-                                    style={{ width: '5ch', minWidth: '3ch', maxWidth: '100%', padding: 0, margin: 0, paddingBottom: '1px' }}
+                                    style={{ width: '10ch', minWidth: '6ch', maxWidth: '100%', padding: 0, margin: 0, paddingBottom: '1px' }}
                                     size={1}
                                     value={editingCellValue}
                                     onChange={(e) => setEditingCellValue(e.target.value)}
@@ -869,7 +869,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                     ref={editInputRef}
                                     type="text"
                                     className="bg-transparent border-0 border-b border-b-border rounded-none text-right text-sm outline-none focus:ring-0 tabular-nums"
-                                    style={{ width: '5ch', minWidth: '3ch', maxWidth: '100%', padding: 0, margin: 0, paddingBottom: '1px' }}
+                                    style={{ width: '10ch', minWidth: '6ch', maxWidth: '100%', padding: 0, margin: 0, paddingBottom: '1px' }}
                                     size={1}
                                     value={editingCellValue}
                                     onChange={(e) => setEditingCellValue(e.target.value)}
