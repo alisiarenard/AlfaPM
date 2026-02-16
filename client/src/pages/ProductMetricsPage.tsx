@@ -647,9 +647,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-cost">
                       Затраты (план)
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-prev-year-actual-cost">
-                      Затраты пред. (факт)
-                    </th>
+                    {initiativeFilter === 'carryover' && (
+                      <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-prev-year-actual-cost">
+                        Затраты пред. (факт)
+                      </th>
+                    )}
                     <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-cost">
                       Затраты (факт)
                     </th>
@@ -709,9 +711,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
                               {group.totalPlannedCost > 0 ? group.totalPlannedCost.toLocaleString('ru-RU') : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-prev-year-actual-cost-${group.type}`}>
-                              {group.totalPrevYearActualCost > 0 ? group.totalPrevYearActualCost.toLocaleString('ru-RU') : '—'}
-                            </td>
+                            {initiativeFilter === 'carryover' && (
+                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-prev-year-actual-cost-${group.type}`}>
+                                {group.totalPrevYearActualCost > 0 ? group.totalPrevYearActualCost.toLocaleString('ru-RU') : '—'}
+                              </td>
+                            )}
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-cost-${group.type}`}>
                               {group.totalActualCost > 0 ? group.totalActualCost.toLocaleString('ru-RU') : '—'}
                             </td>
@@ -754,9 +758,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
                                 {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-prev-year-actual-cost-${init.cardId}`}>
-                                {init.prevYearActualCost > 0 ? init.prevYearActualCost.toLocaleString('ru-RU') : '—'}
-                              </td>
+                              {initiativeFilter === 'carryover' && (
+                                <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-prev-year-actual-cost-${init.cardId}`}>
+                                  {init.prevYearActualCost > 0 ? init.prevYearActualCost.toLocaleString('ru-RU') : '—'}
+                                </td>
+                              )}
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
                                 {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
                               </td>
@@ -814,9 +820,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
                         {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
                       </td>
-                      <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-prev-year-actual-cost">
-                        {displayTableData.initiatives.reduce((sum, i) => sum + (i.prevYearActualCost || 0), 0).toLocaleString('ru-RU')}
-                      </td>
+                      {initiativeFilter === 'carryover' && (
+                        <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-prev-year-actual-cost">
+                          {displayTableData.initiatives.reduce((sum, i) => sum + (i.prevYearActualCost || 0), 0).toLocaleString('ru-RU')}
+                        </td>
+                      )}
                       <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
                         {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
                       </td>
