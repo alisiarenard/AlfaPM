@@ -483,8 +483,8 @@ export default function SettingsPage() {
   return (
     <div className="bg-background flex-1" data-testid="page-settings">
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto">
-        <div className="p-6">
-          <div className="border border-border rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 120px)' }}>
+        <div className="px-6 pb-6">
+          <div className="border border-border rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 80px)' }}>
             <div className="flex h-full">
               <div className="w-[30%] border-r border-border p-4 overflow-y-auto">
                 <div className="flex items-center justify-between mb-3">
