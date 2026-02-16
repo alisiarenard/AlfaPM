@@ -30,7 +30,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [initiativeFilter, setInitiativeFilter] = useState<string>("all");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['Epic', 'Compliance', 'Enabler']));
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['ar', 'effectType', 'contribution', 'participants', 'justification']));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['ar', 'effectType', 'contribution', 'participants']));
   const [filterTeamIds, setFilterTeamIds] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -248,7 +248,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   }, []);
 
   const visibleColCount = useMemo(() => {
-    return 6 + (visibleColumns.has('ar') ? 1 : 0) + (visibleColumns.has('effectType') ? 1 : 0) + (visibleColumns.has('contribution') ? 1 : 0) + (visibleColumns.has('participants') ? 1 : 0) + (visibleColumns.has('justification') ? 1 : 0);
+    return 7 + (visibleColumns.has('ar') ? 1 : 0) + (visibleColumns.has('effectType') ? 1 : 0) + (visibleColumns.has('contribution') ? 1 : 0) + (visibleColumns.has('participants') ? 1 : 0);
   }, [visibleColumns]);
 
   const groupedInitiatives = useMemo(() => {
@@ -257,10 +257,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     return types.map(type => {
       const items = displayTableData.initiatives.filter(i => i.type === type);
       const totalPlannedCost = items.reduce((s, i) => s + i.plannedCost, 0);
+      const totalPrevYearActualCost = items.reduce((s, i) => s + (i.prevYearActualCost || 0), 0);
       const totalActualCost = items.reduce((s, i) => s + i.actualCost, 0);
       const totalPlannedEffect = items.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
       const totalActualEffect = items.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
-      return { type, items, totalPlannedCost, totalActualCost, totalPlannedEffect, totalActualEffect };
+      return { type, items, totalPlannedCost, totalPrevYearActualCost, totalActualCost, totalPlannedEffect, totalActualEffect };
     }).filter(g => g.items.length > 0);
   }, [displayTableData]);
 
@@ -606,9 +607,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <DropdownMenuCheckboxItem checked={visibleColumns.has('participants')} onCheckedChange={() => toggleColumn('participants')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-participants">
                       Участники
                     </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked={visibleColumns.has('justification')} onCheckedChange={() => toggleColumn('justification')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-justification">
-                      Обоснование
-                    </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -649,6 +647,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-cost">
                       Затраты (план)
                     </th>
+                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-prev-year-actual-cost">
+                      Затраты пред. (факт)
+                    </th>
                     <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-cost">
                       Затраты (факт)
                     </th>
@@ -684,11 +685,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         Участники
                       </th>
                     )}
-                    {visibleColumns.has('justification') && (
-                      <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-justification">
-                        Обоснование
-                      </th>
-                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -713,6 +709,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
                               {group.totalPlannedCost > 0 ? group.totalPlannedCost.toLocaleString('ru-RU') : '—'}
                             </td>
+                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-prev-year-actual-cost-${group.type}`}>
+                              {group.totalPrevYearActualCost > 0 ? group.totalPrevYearActualCost.toLocaleString('ru-RU') : '—'}
+                            </td>
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-cost-${group.type}`}>
                               {group.totalActualCost > 0 ? group.totalActualCost.toLocaleString('ru-RU') : '—'}
                             </td>
@@ -732,7 +731,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('participants') && <td className="px-4 py-2.5 border-b border-border"></td>}
-                            {visibleColumns.has('justification') && <td className="px-4 py-2.5 border-b border-border"></td>}
                           </tr>
                           {isExpanded && group.items.map((init, index) => (
                             <tr
@@ -755,6 +753,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
                                 {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
+                              </td>
+                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-prev-year-actual-cost-${init.cardId}`}>
+                                {init.prevYearActualCost > 0 ? init.prevYearActualCost.toLocaleString('ru-RU') : '—'}
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
                                 {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
@@ -785,9 +786,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   {init.participants && init.participants.length > 0 ? init.participants.join(', ') : '—'}
                                 </td>
                               )}
-                              {visibleColumns.has('justification') && (
-                                <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-justification-${init.cardId}`}>—</td>
-                              )}
                             </tr>
                           ))}
                         </Fragment>
@@ -816,6 +814,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
                         {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
                       </td>
+                      <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-prev-year-actual-cost">
+                        {displayTableData.initiatives.reduce((sum, i) => sum + (i.prevYearActualCost || 0), 0).toLocaleString('ru-RU')}
+                      </td>
                       <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
                         {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
                       </td>
@@ -840,7 +841,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
                       {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>}
                       {visibleColumns.has('participants') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
-                      {visibleColumns.has('justification') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
                     </tr>
                   </tfoot>
                 )}

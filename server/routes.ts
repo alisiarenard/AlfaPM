@@ -4031,6 +4031,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31, 23, 59, 59);
 
+      const prevYearStart = new Date(year - 1, 0, 1);
+      const prevYearEnd = new Date(year - 1, 11, 31, 23, 59, 59);
+
       const initiativesByCardId = new Map<number, {
         title: string;
         type: string | null;
@@ -4041,6 +4044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         factValue: string | null;
         totalPlannedCost: number;
         totalActualCost: number;
+        totalPrevYearActualCost: number;
         teamContributions: Array<{ teamId: string; teamName: string; spPrice: number; actualSP: number }>;
       }>();
 
@@ -4069,18 +4073,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           teamSprintIds = new Set(yearSprints.map(s => s.sprintId));
 
+          prevYearSprintIds = new Set(allTeamSprints.filter(s => {
+            const d = new Date(s.startDate);
+            return d >= prevYearStart && d <= prevYearEnd;
+          }).map(s => s.sprintId));
+
           if (filterParam === 'carryover' || filterParam === 'transferred' || filterParam === 'done') {
-            const prevYearStart = new Date(year - 1, 0, 1);
-            const prevYearEnd = new Date(year - 1, 11, 31, 23, 59, 59);
-            const nextYearStart = new Date(year + 1, 0, 1);
-            const nextYearEnd = new Date(year + 1, 11, 31, 23, 59, 59);
-            prevYearSprintIds = new Set(allTeamSprints.filter(s => {
-              const d = new Date(s.startDate);
-              return d >= prevYearStart && d <= prevYearEnd;
-            }).map(s => s.sprintId));
+            const nextYearStartD = new Date(year + 1, 0, 1);
+            const nextYearEndD = new Date(year + 1, 11, 31, 23, 59, 59);
             nextYearSprintIds = new Set(allTeamSprints.filter(s => {
               const d = new Date(s.startDate);
-              return d >= nextYearStart && d <= nextYearEnd;
+              return d >= nextYearStartD && d <= nextYearEndD;
             }).map(s => s.sprintId));
           }
         }
@@ -4122,9 +4125,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
+          let prevYearActualSP = 0;
+          if (prevYearSprintIds) {
+            const prevTasks = teamTasks.filter(task => task.sprintId !== null && prevYearSprintIds!.has(task.sprintId));
+            for (const task of prevTasks) {
+              if (task.state === '3-done' && task.condition !== '3 - deleted') {
+                prevYearActualSP += task.size || 0;
+              }
+            }
+          }
+
           const existing = initiativesByCardId.get(initiative.cardId);
           if (existing) {
             existing.totalActualCost += actualSP * team.spPrice;
+            existing.totalPrevYearActualCost += prevYearActualSP * team.spPrice;
             existing.teamContributions.push({
               teamId: team.teamId,
               teamName: team.teamName,
@@ -4144,6 +4158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               factValue: initiative.factValue,
               totalPlannedCost: 0,
               totalActualCost: actualSP * team.spPrice,
+              totalPrevYearActualCost: prevYearActualSP * team.spPrice,
               teamContributions: [{
                 teamId: team.teamId,
                 teamName: team.teamName,
@@ -4162,6 +4177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         spaceId: number;
         archived: boolean;
         plannedCost: number;
+        prevYearActualCost: number;
         actualCost: number;
         plannedEffect: number | null;
         actualEffect: number | null;
@@ -4209,6 +4225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           spaceId: init.spaceId,
           archived: init.archived,
           plannedCost: Math.round(plannedCost),
+          prevYearActualCost: Math.round(init.totalPrevYearActualCost),
           actualCost: Math.round(actualCost),
           plannedEffect,
           actualEffect,
