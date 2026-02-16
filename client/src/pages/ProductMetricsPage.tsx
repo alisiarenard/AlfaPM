@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from "react";
 import { useLocation } from "wouter";
 import { MetricsPanel } from "@/components/MetricsPanel";
@@ -33,6 +33,72 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['ar', 'effectType', 'contribution', 'participants']));
   const [filterTeamIds, setFilterTeamIds] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
+  const [editingCell, setEditingCell] = useState<{ cardId: number; field: 'plannedEffect' | 'actualEffect' } | null>(null);
+  const [editingCellValue, setEditingCellValue] = useState("");
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  const updateEffectMutation = useMutation({
+    mutationFn: async ({ cardId, plannedValue, factValue }: {
+      cardId: number;
+      plannedValue?: string | null;
+      factValue?: string | null;
+    }) => {
+      const response = await fetch(`/api/kaiten/update-initiative/${cardId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plannedValue, factValue }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update initiative');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setEditingCell(null);
+      setEditingCellValue("");
+      queryClient.invalidateQueries({ queryKey: ["/api/product-metrics/initiatives"] });
+      toast({ title: "Значение обновлено" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Ошибка обновления", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const startCellEdit = (cardId: number, field: 'plannedEffect' | 'actualEffect', currentValue: number | null) => {
+    setEditingCell({ cardId, field });
+    setEditingCellValue(currentValue !== null && currentValue > 0 ? String(currentValue) : "");
+    setTimeout(() => editInputRef.current?.focus(), 0);
+  };
+
+  const commitCellEdit = () => {
+    if (!editingCell) return;
+    const cleanedValue = editingCellValue.replace(/\s/g, '').replace(',', '.');
+    const numValue = cleanedValue === '' ? null : parseFloat(cleanedValue);
+
+    if (numValue !== null && (isNaN(numValue) || numValue < 0)) {
+      toast({ title: "Некорректное значение", variant: "destructive" });
+      cancelCellEdit();
+      return;
+    }
+
+    const updateData: { cardId: number; plannedValue?: string | null; factValue?: string | null } = {
+      cardId: editingCell.cardId,
+    };
+
+    if (editingCell.field === 'plannedEffect') {
+      updateData.plannedValue = numValue !== null ? String(numValue) : null;
+    } else {
+      updateData.factValue = numValue !== null ? String(numValue) : null;
+    }
+
+    updateEffectMutation.mutate(updateData);
+  };
+
+  const cancelCellEdit = () => {
+    setEditingCell(null);
+    setEditingCellValue("");
+  };
 
   const parseUrlParams = useCallback(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -766,11 +832,51 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
                                 {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-effect-${init.cardId}`}>
-                                {init.plannedEffect !== null && init.plannedEffect > 0 ? init.plannedEffect.toLocaleString('ru-RU') : '—'}
+                              <td
+                                className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                                data-testid={`text-planned-effect-${init.cardId}`}
+                                onClick={() => init.type === 'Epic' && startCellEdit(init.cardId, 'plannedEffect', init.plannedEffect)}
+                              >
+                                {editingCell?.cardId === init.cardId && editingCell.field === 'plannedEffect' ? (
+                                  <input
+                                    ref={editInputRef}
+                                    type="text"
+                                    className="w-full bg-background border border-primary rounded px-1 py-0.5 text-right text-sm outline-none"
+                                    value={editingCellValue}
+                                    onChange={(e) => setEditingCellValue(e.target.value)}
+                                    onBlur={commitCellEdit}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') commitCellEdit();
+                                      if (e.key === 'Escape') cancelCellEdit();
+                                    }}
+                                    data-testid={`input-planned-effect-${init.cardId}`}
+                                  />
+                                ) : (
+                                  init.plannedEffect !== null && init.plannedEffect > 0 ? init.plannedEffect.toLocaleString('ru-RU') : '—'
+                                )}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-effect-${init.cardId}`}>
-                                {init.actualEffect !== null && init.actualEffect > 0 ? init.actualEffect.toLocaleString('ru-RU') : '—'}
+                              <td
+                                className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                                data-testid={`text-actual-effect-${init.cardId}`}
+                                onClick={() => init.type === 'Epic' && startCellEdit(init.cardId, 'actualEffect', init.actualEffect)}
+                              >
+                                {editingCell?.cardId === init.cardId && editingCell.field === 'actualEffect' ? (
+                                  <input
+                                    ref={editInputRef}
+                                    type="text"
+                                    className="w-full bg-background border border-primary rounded px-1 py-0.5 text-right text-sm outline-none"
+                                    value={editingCellValue}
+                                    onChange={(e) => setEditingCellValue(e.target.value)}
+                                    onBlur={commitCellEdit}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') commitCellEdit();
+                                      if (e.key === 'Escape') cancelCellEdit();
+                                    }}
+                                    data-testid={`input-actual-effect-${init.cardId}`}
+                                  />
+                                ) : (
+                                  init.actualEffect !== null && init.actualEffect > 0 ? init.actualEffect.toLocaleString('ru-RU') : '—'
+                                )}
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
                                 {init.plannedEffect !== null && init.plannedCost > 0 ? (Math.round((init.plannedEffect / init.plannedCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
