@@ -3440,7 +3440,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/kaiten/smart-sync/:teamId", async (req, res) => {
     try {
       const teamId = req.params.teamId;
-      console.log(`\n[SMART-SYNC START] Syncing team ${teamId}`);
+      const yearParam = req.body?.year;
+      const syncYear = yearParam ? parseInt(yearParam) : null;
+      console.log(`\n[SMART-SYNC START] Syncing team ${teamId}, year=${syncYear || 'all'}`);
       
       // Получаем команду
       const team = await storage.getTeamById(teamId);
@@ -3538,12 +3540,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (team.sprintBoardId) {
         console.log(`[SMART-SYNC] Getting all sprints from database for board ${team.sprintBoardId}`);
         
-        // Получаем ВСЕ спринты для этой доски из БД
+        // Получаем спринты для этой доски из БД
         const allSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
-        console.log(`[SMART-SYNC] Found ${allSprints.length} sprints in database`);
+        
+        // Фильтруем спринты по году, если указан
+        const sprintsToSync = syncYear
+          ? allSprints.filter(sprint => {
+              const sprintYear = new Date(sprint.startDate).getFullYear();
+              return sprintYear === syncYear;
+            })
+          : allSprints;
+        console.log(`[SMART-SYNC] Found ${allSprints.length} sprints total, syncing ${sprintsToSync.length} (year=${syncYear || 'all'})`);
         
         // Проходим по каждому спринту
-        for (const dbSprint of allSprints) {
+        for (const dbSprint of sprintsToSync) {
           try {
             console.log(`[SMART-SYNC] Processing sprint ${dbSprint.sprintId} (Kaiten ID: ${dbSprint.sprintId})`);
             

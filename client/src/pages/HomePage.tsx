@@ -478,8 +478,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
 
   const syncAllMutation = useMutation({
     mutationFn: async () => {
-      // Умная синхронизация: синхронизирует инициативы + проверяет новый спринт + синхронизирует задачи нового спринта
-      const smartSyncRes = await apiRequest("POST", `/api/kaiten/smart-sync/${team.teamId}`, {});
+      // Умная синхронизация: синхронизирует инициативы + спринты выбранного года + задачи
+      const smartSyncRes = await apiRequest("POST", `/api/kaiten/smart-sync/${team.teamId}`, { year: parseInt(selectedYear) });
       const smartSyncData = await smartSyncRes.json();
       
       // Для команд без спринтов - дополнительно синхронизируем задачи из инициатив
