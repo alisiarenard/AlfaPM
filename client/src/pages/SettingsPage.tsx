@@ -114,6 +114,7 @@ export default function SettingsPage() {
   const [spPrice, setSpPrice] = useState("");
   const [hasSprints, setHasSprints] = useState(true);
   const [initSpaceId, setInitSpaceId] = useState("");
+  const [omniBoardId, setOmniBoardId] = useState("");
   const [sprintIds, setSprintIds] = useState("");
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
@@ -182,6 +183,7 @@ export default function SettingsPage() {
       sprintBoardId: number; 
       initBoardId: number; 
       initSpaceId?: number;
+      omniBoardId?: number;
       vilocity: number; 
       sprintDuration: number; 
       spPrice?: number;
@@ -207,6 +209,7 @@ export default function SettingsPage() {
       setSprintBoardId("");
       setInitBoardId("");
       setInitSpaceId("");
+      setOmniBoardId("");
       setVelocity("");
       setSprintDuration("");
       setSpPrice("");
@@ -244,6 +247,7 @@ export default function SettingsPage() {
       sprintBoardId?: number | null; 
       initBoardId?: number; 
       initSpaceId?: number;
+      omniBoardId?: number | null;
       vilocity?: number; 
       sprintDuration?: number; 
       spPrice?: number;
@@ -266,6 +270,7 @@ export default function SettingsPage() {
       setSprintBoardId(updatedTeam.sprintBoardId?.toString() || "");
       setInitBoardId(updatedTeam.initBoardId.toString());
       setInitSpaceId(updatedTeam.initSpaceId?.toString() || "");
+      setOmniBoardId(updatedTeam.omniBoardId?.toString() || "");
       setVelocity(updatedTeam.vilocity.toString());
       setSprintDuration(updatedTeam.sprintDuration.toString());
       setSpPrice(updatedTeam.spPrice.toString());
@@ -346,6 +351,7 @@ export default function SettingsPage() {
       setSprintBoardId("");
       setInitBoardId("");
       setInitSpaceId("");
+      setOmniBoardId("");
       setVelocity("");
       setSprintDuration("");
       setSpPrice("");
@@ -356,6 +362,7 @@ export default function SettingsPage() {
       setSprintBoardId(editingTeam.sprintBoardId?.toString() || "");
       setInitBoardId(editingTeam.initBoardId.toString());
       setInitSpaceId(editingTeam.initSpaceId?.toString() || "");
+      setOmniBoardId(editingTeam.omniBoardId?.toString() || "");
       setVelocity(editingTeam.vilocity.toString());
       setSprintDuration(editingTeam.sprintDuration.toString());
       setSpPrice(editingTeam.spPrice.toString());
@@ -379,6 +386,7 @@ export default function SettingsPage() {
     setSprintBoardId(team.sprintBoardId?.toString() || "");
     setInitBoardId(team.initBoardId.toString());
     setInitSpaceId(team.initSpaceId?.toString() || "");
+    setOmniBoardId(team.omniBoardId?.toString() || "");
     setVelocity(team.vilocity.toString());
     setSprintDuration(team.sprintDuration.toString());
     setSpPrice(team.spPrice.toString());
@@ -402,12 +410,13 @@ export default function SettingsPage() {
       const sprintBoardIdChanged = (sprintBoardId ? parseInt(sprintBoardId) : editingTeam.sprintBoardId) !== editingTeam.sprintBoardId;
       const initBoardIdChanged = (initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId) !== editingTeam.initBoardId;
       const initSpaceIdChanged = (initSpaceId ? parseInt(initSpaceId) : (editingTeam.initSpaceId ?? 0)) !== (editingTeam.initSpaceId ?? 0);
+      const omniBoardIdChanged = (omniBoardId ? parseInt(omniBoardId) : (editingTeam.omniBoardId ?? 0)) !== (editingTeam.omniBoardId ?? 0);
       const velocityChanged = (velocity ? parseInt(velocity) : editingTeam.vilocity) !== editingTeam.vilocity;
       const sprintDurationChanged = (sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration) !== editingTeam.sprintDuration;
       const spPriceChanged = (spPrice ? parseInt(spPrice) : editingTeam.spPrice) !== editingTeam.spPrice;
       const hasSprintsChanged = hasSprints !== true;
       const sprintIdsChanged = sprintIds.trim() !== "";
-      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || sprintIdsChanged;
+      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || omniBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || sprintIdsChanged;
     }
     return false;
   };
@@ -582,7 +591,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 px-6 pt-3 pb-6 space-y-2 overflow-y-auto">
+                    <div className="flex-1 px-6 pt-3 pb-6 space-y-4 overflow-y-auto">
                       <div className="space-y-2">
                         <Label htmlFor="team-name">Название команды <span className="text-destructive">*</span></Label>
                         <Input
@@ -593,117 +602,144 @@ export default function SettingsPage() {
                           data-testid="input-team-name"
                         />
                       </div>
-                      <div className="flex gap-4">
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="space-id">ID пространства <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="space-id"
-                            type="number"
-                            placeholder="0"
-                            value={spaceId}
-                            onChange={(e) => setSpaceId(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-space-id"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="sprint-board-id">ID доски <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="sprint-board-id"
-                            type="number"
-                            placeholder="0"
-                            value={sprintBoardId}
-                            onChange={(e) => setSprintBoardId(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-sprint-board-id"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="init-board-id">ID доски инициатив <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="init-board-id"
-                            type="number"
-                            placeholder="0"
-                            value={initBoardId}
-                            onChange={(e) => setInitBoardId(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-init-board-id"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="init-space-id">ID пространства инициатив <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="init-space-id"
-                            type="number"
-                            placeholder="0"
-                            value={initSpaceId}
-                            onChange={(e) => setInitSpaceId(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-init-space-id"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="velocity">Velocity <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="velocity"
-                            type="number"
-                            placeholder="0"
-                            value={velocity}
-                            onChange={(e) => setVelocity(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-velocity"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="sprint-duration">Длительность спринта (дней) <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="sprint-duration"
-                            type="number"
-                            placeholder="0"
-                            value={sprintDuration}
-                            onChange={(e) => setSprintDuration(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-sprint-duration"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="sp-price">Стоимость одного SP (₽)</Label>
-                          <Input
-                            id="sp-price"
-                            type="number"
-                            placeholder="0"
-                            value={spPrice}
-                            onChange={(e) => setSpPrice(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-sp-price"
-                          />
+
+                      <div className="pt-2">
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3" data-testid="section-kaiten-integration">Настройка интеграции с Kaiten</h3>
+                        <div className="space-y-2">
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="space-id">ID пространства <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="space-id"
+                                type="number"
+                                placeholder="0"
+                                value={spaceId}
+                                onChange={(e) => setSpaceId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-space-id"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="sprint-board-id">ID доски</Label>
+                              <Input
+                                id="sprint-board-id"
+                                type="number"
+                                placeholder="0"
+                                value={sprintBoardId}
+                                onChange={(e) => setSprintBoardId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-sprint-board-id"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="init-board-id">ID доски инициатив <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="init-board-id"
+                                type="number"
+                                placeholder="0"
+                                value={initBoardId}
+                                onChange={(e) => setInitBoardId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-init-board-id"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="init-space-id">ID пространства инициатив <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="init-space-id"
+                                type="number"
+                                placeholder="0"
+                                value={initSpaceId}
+                                onChange={(e) => setInitSpaceId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-init-space-id"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="omni-board-id">ID omni-доски</Label>
+                              <Input
+                                id="omni-board-id"
+                                type="number"
+                                placeholder="0"
+                                value={omniBoardId}
+                                onChange={(e) => setOmniBoardId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-omni-board-id"
+                              />
+                            </div>
+                            <div className="flex-1" />
+                          </div>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="edit-has-sprints" 
-                            checked={hasSprints}
-                            onCheckedChange={(checked) => setHasSprints(checked === true)}
-                            data-testid="checkbox-has-sprints"
-                          />
-                          <Label htmlFor="edit-has-sprints" className="cursor-pointer">Спринты</Label>
+
+                      <div className="pt-2">
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3" data-testid="section-annual-metrics">Годовые метрики и данные</h3>
+                        <div className="space-y-2">
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="velocity">Velocity <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="velocity"
+                                type="number"
+                                placeholder="0"
+                                value={velocity}
+                                onChange={(e) => setVelocity(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-velocity"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="sprint-duration">Длительность спринта (дней) <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="sprint-duration"
+                                type="number"
+                                placeholder="0"
+                                value={sprintDuration}
+                                onChange={(e) => setSprintDuration(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-sprint-duration"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="sp-price">Стоимость одного SP</Label>
+                              <Input
+                                id="sp-price"
+                                type="number"
+                                placeholder="0"
+                                value={spPrice}
+                                onChange={(e) => setSpPrice(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-sp-price"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id="edit-has-sprints" 
+                                checked={hasSprints}
+                                onCheckedChange={(checked) => setHasSprints(checked === true)}
+                                data-testid="checkbox-has-sprints"
+                              />
+                              <Label htmlFor="edit-has-sprints" className="cursor-pointer">Спринты</Label>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
+                            <Input
+                              id="edit-sprint-ids"
+                              placeholder="Введите ID спринтов через запятую (например: 123, 456, 789)"
+                              value={sprintIds}
+                              onChange={(e) => setSprintIds(e.target.value)}
+                              disabled={!hasSprints}
+                              data-testid="input-sprint-ids"
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
-                        <Input
-                          id="edit-sprint-ids"
-                          placeholder="Введите ID спринтов через запятую (например: 123, 456, 789)"
-                          value={sprintIds}
-                          onChange={(e) => setSprintIds(e.target.value)}
-                          disabled={!hasSprints}
-                          data-testid="input-sprint-ids"
-                        />
                       </div>
                     </div>
                     {editingTeam && hasFormChanged() && (
@@ -722,6 +758,7 @@ export default function SettingsPage() {
                                 sprintBoardId: sprintBoardId ? parseInt(sprintBoardId) : null,
                                 initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
                                 initSpaceId: parseInt(initSpaceId),
+                                omniBoardId: omniBoardId ? parseInt(omniBoardId) : null,
                                 vilocity: velocity ? parseInt(velocity) : editingTeam.vilocity,
                                 sprintDuration: sprintDuration ? parseInt(sprintDuration) : editingTeam.sprintDuration,
                                 spPrice: spPrice ? parseInt(spPrice) : editingTeam.spPrice,
@@ -747,7 +784,7 @@ export default function SettingsPage() {
                         </h2>
                       </div>
                     </div>
-                    <div className="flex-1 px-6 pt-3 pb-6 space-y-2 overflow-y-auto">
+                    <div className="flex-1 px-6 pt-3 pb-6 space-y-4 overflow-y-auto">
                       <div className="flex gap-4">
                         <div className="flex-1 space-y-2">
                           <Label htmlFor="new-team-name">Название команды <span className="text-destructive">*</span></Label>
@@ -775,117 +812,144 @@ export default function SettingsPage() {
                           </Select>
                         </div>
                       </div>
-                      <div className="flex gap-4">
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="new-space-id">ID пространства <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="new-space-id"
-                            type="number"
-                            placeholder="0"
-                            value={spaceId}
-                            onChange={(e) => setSpaceId(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-space-id"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="new-sprint-board-id">ID доски <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="new-sprint-board-id"
-                            type="number"
-                            placeholder="0"
-                            value={sprintBoardId}
-                            onChange={(e) => setSprintBoardId(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-sprint-board-id"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="new-init-board-id">ID доски инициатив <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="new-init-board-id"
-                            type="number"
-                            placeholder="0"
-                            value={initBoardId}
-                            onChange={(e) => setInitBoardId(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-init-board-id"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="new-init-space-id">ID пространства инициатив <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="new-init-space-id"
-                            type="number"
-                            placeholder="0"
-                            value={initSpaceId}
-                            onChange={(e) => setInitSpaceId(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-init-space-id"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="new-velocity">Velocity <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="new-velocity"
-                            type="number"
-                            placeholder="0"
-                            value={velocity}
-                            onChange={(e) => setVelocity(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-velocity"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="new-sprint-duration">Длительность спринта (дней) <span className="text-destructive">*</span></Label>
-                          <Input
-                            id="new-sprint-duration"
-                            type="number"
-                            placeholder="0"
-                            value={sprintDuration}
-                            onChange={(e) => setSprintDuration(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-sprint-duration"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Label htmlFor="new-sp-price">Стоимость одного SP (₽)</Label>
-                          <Input
-                            id="new-sp-price"
-                            type="number"
-                            placeholder="0"
-                            value={spPrice}
-                            onChange={(e) => setSpPrice(e.target.value)}
-                            className="no-arrows"
-                            data-testid="input-sp-price"
-                          />
+
+                      <div className="pt-2">
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3" data-testid="section-new-kaiten-integration">Настройка интеграции с Kaiten</h3>
+                        <div className="space-y-2">
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-space-id">ID пространства <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="new-space-id"
+                                type="number"
+                                placeholder="0"
+                                value={spaceId}
+                                onChange={(e) => setSpaceId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-space-id"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-sprint-board-id">ID доски <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="new-sprint-board-id"
+                                type="number"
+                                placeholder="0"
+                                value={sprintBoardId}
+                                onChange={(e) => setSprintBoardId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-sprint-board-id"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-init-board-id">ID доски инициатив <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="new-init-board-id"
+                                type="number"
+                                placeholder="0"
+                                value={initBoardId}
+                                onChange={(e) => setInitBoardId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-init-board-id"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-init-space-id">ID пространства инициатив <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="new-init-space-id"
+                                type="number"
+                                placeholder="0"
+                                value={initSpaceId}
+                                onChange={(e) => setInitSpaceId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-init-space-id"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-omni-board-id">ID omni-доски</Label>
+                              <Input
+                                id="new-omni-board-id"
+                                type="number"
+                                placeholder="0"
+                                value={omniBoardId}
+                                onChange={(e) => setOmniBoardId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-omni-board-id"
+                              />
+                            </div>
+                            <div className="flex-1" />
+                          </div>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="new-has-sprints" 
-                            checked={hasSprints}
-                            onCheckedChange={(checked) => setHasSprints(checked === true)}
-                            data-testid="checkbox-has-sprints"
-                          />
-                          <Label htmlFor="new-has-sprints" className="cursor-pointer">Спринты</Label>
+
+                      <div className="pt-2">
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3" data-testid="section-new-annual-metrics">Годовые метрики и данные</h3>
+                        <div className="space-y-2">
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-velocity">Velocity <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="new-velocity"
+                                type="number"
+                                placeholder="0"
+                                value={velocity}
+                                onChange={(e) => setVelocity(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-velocity"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-sprint-duration">Длительность спринта (дней) <span className="text-destructive">*</span></Label>
+                              <Input
+                                id="new-sprint-duration"
+                                type="number"
+                                placeholder="0"
+                                value={sprintDuration}
+                                onChange={(e) => setSprintDuration(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-sprint-duration"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-sp-price">Стоимость одного SP</Label>
+                              <Input
+                                id="new-sp-price"
+                                type="number"
+                                placeholder="0"
+                                value={spPrice}
+                                onChange={(e) => setSpPrice(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-sp-price"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id="new-has-sprints" 
+                                checked={hasSprints}
+                                onCheckedChange={(checked) => setHasSprints(checked === true)}
+                                data-testid="checkbox-has-sprints"
+                              />
+                              <Label htmlFor="new-has-sprints" className="cursor-pointer">Спринты</Label>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
+                            <Input
+                              id="new-sprint-ids"
+                              placeholder="Введите ID спринтов через запятую (например: 123, 456, 789)"
+                              value={sprintIds}
+                              onChange={(e) => setSprintIds(e.target.value)}
+                              disabled={!hasSprints}
+                              data-testid="input-sprint-ids"
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-sprint-ids">Sprint IDs {hasSprints && <span className="text-destructive">*</span>}</Label>
-                        <Input
-                          id="new-sprint-ids"
-                          placeholder="Введите ID спринтов через запятую (например: 123, 456, 789)"
-                          value={sprintIds}
-                          onChange={(e) => setSprintIds(e.target.value)}
-                          disabled={!hasSprints}
-                          data-testid="input-sprint-ids"
-                        />
                       </div>
                     </div>
                     <div className="p-4 flex justify-end">
@@ -912,6 +976,7 @@ export default function SettingsPage() {
                             sprintBoardId: parseInt(sprintBoardId),
                             initBoardId: parseInt(initBoardId),
                             initSpaceId: parseInt(initSpaceId),
+                            omniBoardId: omniBoardId ? parseInt(omniBoardId) : undefined,
                             vilocity: parseInt(velocity),
                             sprintDuration: parseInt(sprintDuration),
                             spPrice: spPrice ? parseInt(spPrice) : undefined,
