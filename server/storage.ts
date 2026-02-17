@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, users, departments, teams, initiatives, tasks, sprints, teamYearlyData } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, sql, asc, desc, and, gte, lt, ne } from "drizzle-orm";
+import { eq, sql, asc, desc, and, gte, lt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -646,12 +646,7 @@ export class DbStorage implements IStorage {
   }
 
   async getTasksByInitCardId(initCardId: number): Promise<TaskRow[]> {
-    const result = await db.select().from(tasks).where(
-      and(
-        eq(tasks.initCardId, initCardId),
-        ne(tasks.condition, "3 - deleted")
-      )
-    );
+    const result = await db.select().from(tasks).where(eq(tasks.initCardId, initCardId));
     return result;
   }
 
