@@ -2568,193 +2568,216 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedSpaces: { spaceId: number; spaceName: string }[] = [];
 
       for (const numericSpaceId of spaceIds.map(Number)) {
-        console.log("[Sync Spaces] Fetching space info for spaceId:", numericSpaceId);
-        const spaceInfo = await kaitenClient.getSpaceInfo(numericSpaceId);
-        console.log("[Sync Spaces] Space info result:", spaceInfo);
-        if (spaceInfo) {
-          updatedSpaces.push({ spaceId: numericSpaceId, spaceName: spaceInfo.title });
-          const teamsForSpace = allTeams.filter(t => Number(t.initSpaceId) === numericSpaceId || (!t.initSpaceId && Number(t.initBoardId) === numericSpaceId));
-          console.log("[Sync Spaces] Teams for space:", teamsForSpace.length, teamsForSpace.map(t => t.teamName));
-          for (const team of teamsForSpace) {
-            console.log("[Sync Spaces] Updating team spaceName:", team.teamName, "old:", team.initSpaceName, "new:", spaceInfo.title);
-            if (team.initSpaceName !== spaceInfo.title) {
-              await storage.updateTeam(team.teamId, { initSpaceName: spaceInfo.title });
+        try {
+          console.log("[Sync Spaces] Fetching space info for spaceId:", numericSpaceId);
+          const spaceInfo = await kaitenClient.getSpaceInfo(numericSpaceId);
+          console.log("[Sync Spaces] Space info result:", spaceInfo);
+          if (spaceInfo) {
+            updatedSpaces.push({ spaceId: numericSpaceId, spaceName: spaceInfo.title });
+            const teamsForSpace = allTeams.filter(t => Number(t.initSpaceId) === numericSpaceId || (!t.initSpaceId && Number(t.initBoardId) === numericSpaceId));
+            console.log("[Sync Spaces] Teams for space:", teamsForSpace.length, teamsForSpace.map(t => t.teamName));
+            for (const team of teamsForSpace) {
+              console.log("[Sync Spaces] Updating team spaceName:", team.teamName, "old:", team.initSpaceName, "new:", spaceInfo.title);
+              if (team.initSpaceName !== spaceInfo.title) {
+                await storage.updateTeam(team.teamId, { initSpaceName: spaceInfo.title });
+              }
             }
+          } else {
+            console.log("[Sync Spaces] WARNING: Could not get space info for spaceId:", numericSpaceId);
           }
-        } else {
-          console.log("[Sync Spaces] WARNING: Could not get space info for spaceId:", numericSpaceId);
+        } catch (spaceError: any) {
+          console.error(`[Sync Spaces] Error fetching space info for ${numericSpaceId}:`, spaceError.message || spaceError);
+          // Продолжаем к следующему пространству
+          continue;
         }
       }
 
       for (const boardId of boardIds) {
-        console.log("[Sync Spaces] Syncing board:", boardId);
-        const allCards = await kaitenClient.getCardsFromBoard(boardId);
-        const syncedCardIds: number[] = [];
-        const syncedInitiatives = [];
+        try {
+          console.log("[Sync Spaces] Syncing board:", boardId);
+          const allCards = await kaitenClient.getCardsFromBoard(boardId);
+          const syncedCardIds: number[] = [];
+          const syncedInitiatives = [];
 
-        for (const card of allCards) {
-          try {
-            const fullCard = await kaitenClient.getCard(card.id);
-            if (!fullCard) {
-              console.log(`[Sync Spaces] Card ${card.id} returned null from Kaiten API`);
+          for (const card of allCards) {
+            try {
+              const fullCard = await kaitenClient.getCard(card.id);
+              if (!fullCard) {
+                console.log(`[Sync Spaces] Card ${card.id} returned null from Kaiten API`);
+                continue;
+              }
+
+              let state: "1-queued" | "2-inProgress" | "3-done";
+              if (fullCard.state === 3) {
+                state = "3-done";
+              } else if (fullCard.state === 2) {
+                state = "2-inProgress";
+              } else {
+                state = "1-queued";
+              }
+              const condition: "1-live" | "2-archived" = fullCard.archived ? "2-archived" : "1-live";
+
+              const rawPlanned = fullCard.properties?.[plannedValueId];
+              const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
+              const rawFact = fullCard.properties?.[factValueId];
+              const factValue = rawFact == null ? undefined : String(rawFact);
+
+              const synced = await storage.syncInitiativeFromKaiten(
+                fullCard.id,
+                boardId,
+                fullCard.title,
+                state,
+                condition,
+                fullCard.size || 0,
+                fullCard.type?.name,
+                plannedValueId,
+                plannedValue,
+                factValueId,
+                factValue,
+                fullCard.due_date || null,
+                fullCard.last_moved_to_done_at || null,
+                fullCard.archived || false
+              );
+              syncedInitiatives.push(synced);
+              if (!fullCard.archived) {
+                syncedCardIds.push(card.id);
+              }
+            } catch (cardError: any) {
+              console.error(`[Sync Spaces] Skipping card ${card.id} due to error:`, cardError.message || cardError);
               continue;
             }
-
-            let state: "1-queued" | "2-inProgress" | "3-done";
-            if (fullCard.state === 3) {
-              state = "3-done";
-            } else if (fullCard.state === 2) {
-              state = "2-inProgress";
-            } else {
-              state = "1-queued";
-            }
-            const condition: "1-live" | "2-archived" = fullCard.archived ? "2-archived" : "1-live";
-
-            const rawPlanned = fullCard.properties?.[plannedValueId];
-            const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
-            const rawFact = fullCard.properties?.[factValueId];
-            const factValue = rawFact == null ? undefined : String(rawFact);
-
-            const synced = await storage.syncInitiativeFromKaiten(
-              fullCard.id,
-              boardId,
-              fullCard.title,
-              state,
-              condition,
-              fullCard.size || 0,
-              fullCard.type?.name,
-              plannedValueId,
-              plannedValue,
-              factValueId,
-              factValue,
-              fullCard.due_date || null,
-              fullCard.last_moved_to_done_at || null,
-              fullCard.archived || false
-            );
-            syncedInitiatives.push(synced);
-            if (!fullCard.archived) {
-              syncedCardIds.push(card.id);
-            }
-          } catch (cardError) {
-            console.error(`[Sync Spaces] Skipping card ${card.id} due to error:`, cardError.message || cardError);
-            continue;
           }
-        }
 
-        await storage.archiveInitiativesNotInList(boardId, syncedCardIds);
+          await storage.archiveInitiativesNotInList(boardId, syncedCardIds);
 
-        const teamsForBoard = relevantTeams.filter(t => t.initBoardId === boardId);
+          const teamsForBoard = relevantTeams.filter(t => t.initBoardId === boardId);
 
-        // Синхронизация задач для каждой команды на этой доске
-        for (const team of teamsForBoard) {
-          try {
-            let totalTasksSynced = 0;
-            const syncedTaskCardIds: number[] = [];
+          // Синхронизация задач для каждой команды на этой доске
+          for (const team of teamsForBoard) {
+            try {
+              let totalTasksSynced = 0;
+              const syncedTaskCardIds: number[] = [];
 
-            if (team.hasSprints && team.sprintBoardId) {
-              const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+              if (team.hasSprints && team.sprintBoardId) {
+                const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
 
-              // Синхронизируем спринты
-              for (const sprint of teamSprints) {
-                try {
-                  const kaitenSprint = await kaitenClient.getSprint(sprint.sprintId);
-                  if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
-                    for (const sprintCard of kaitenSprint.cards) {
-                      try {
-                        const card = await kaitenClient.getCard(sprintCard.id);
-                        if (!card || card.condition === 3) continue;
+                // Синхронизируем спринты
+                for (const sprint of teamSprints) {
+                  try {
+                    const kaitenSprint = await kaitenClient.getSprint(sprint.sprintId);
+                    if (kaitenSprint && kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
+                      for (const sprintCard of kaitenSprint.cards) {
+                        try {
+                          const card = await kaitenClient.getCard(sprintCard.id);
+                          if (!card || card.condition === 3) continue;
 
-                        let initCardId = 0;
-                        if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                          initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+                          let initCardId = 0;
+                          if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                            initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+                          }
+
+                          let state: "1-queued" | "2-inProgress" | "3-done";
+                          if (card.state === 3) state = "3-done";
+                          else if (card.state === 2) state = "2-inProgress";
+                          else state = "1-queued";
+
+                          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+                          await storage.syncTaskFromKaiten(
+                            card.id, card.board_id, card.title,
+                            card.created || new Date().toISOString(),
+                            state, card.size || 0, condition, card.archived || false,
+                            initCardId, card.type?.name, card.completed_at ?? undefined,
+                            sprint.sprintId, card.last_moved_to_done_at ?? null, team.teamId
+                          );
+                          syncedTaskCardIds.push(card.id);
+                          totalTasksSynced++;
+                        } catch (taskErr: any) {
+                          console.error(`[Sync Spaces] Skipping task ${sprintCard.id} due to error:`, taskErr.message || taskErr);
+                          continue;
                         }
-
-                        let state: "1-queued" | "2-inProgress" | "3-done";
-                        if (card.state === 3) state = "3-done";
-                        else if (card.state === 2) state = "2-inProgress";
-                        else state = "1-queued";
-
-                        const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
-
-                        await storage.syncTaskFromKaiten(
-                          card.id, card.board_id, card.title,
-                          card.created || new Date().toISOString(),
-                          state, card.size || 0, condition, card.archived || false,
-                          initCardId, card.type?.name, card.completed_at ?? undefined,
-                          sprint.sprintId, card.last_moved_to_done_at ?? null, team.teamId
-                        );
-                        syncedTaskCardIds.push(card.id);
-                        totalTasksSynced++;
-                      } catch {}
+                      }
                     }
+                  } catch (sprintErr: any) {
+                    console.error(`[Sync Spaces] Skipping sprint ${sprint.sprintId} due to error:`, sprintErr.message || sprintErr);
+                    continue;
                   }
-                } catch {}
-              }
-            } else if (team.initBoardId) {
-              const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
-              for (const initiative of initiatives) {
-                try {
-                  const initiativeCard = await kaitenClient.getCard(initiative.cardId);
-                  if (initiativeCard.children_ids && Array.isArray(initiativeCard.children_ids) && initiativeCard.children_ids.length > 0) {
-                    for (const childId of initiativeCard.children_ids) {
-                      try {
-                        const childCard = await kaitenClient.getCard(childId);
-                        if (!childCard || childCard.archived) continue;
+                }
+              } else if (team.initBoardId) {
+                const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+                for (const initiative of initiatives) {
+                  try {
+                    const initiativeCard = await kaitenClient.getCard(initiative.cardId);
+                    if (initiativeCard && initiativeCard.children_ids && Array.isArray(initiativeCard.children_ids) && initiativeCard.children_ids.length > 0) {
+                      for (const childId of initiativeCard.children_ids) {
+                        try {
+                          const childCard = await kaitenClient.getCard(childId);
+                          if (!childCard || childCard.archived) continue;
 
-                        let initCardId = initiative.cardId;
-                        if (childCard.parents_ids && Array.isArray(childCard.parents_ids) && childCard.parents_ids.length > 0) {
-                          const foundInitCardId = await findInitiativeInParentChain(childCard.parents_ids[0]);
-                          if (foundInitCardId !== 0) initCardId = foundInitCardId;
+                          let initCardId = initiative.cardId;
+                          if (childCard.parents_ids && Array.isArray(childCard.parents_ids) && childCard.parents_ids.length > 0) {
+                            const foundInitCardId = await findInitiativeInParentChain(childCard.parents_ids[0]);
+                            if (foundInitCardId !== 0) initCardId = foundInitCardId;
+                          }
+
+                          let state: "1-queued" | "2-inProgress" | "3-done";
+                          if (childCard.state === 3) state = "3-done";
+                          else if (childCard.state === 2) state = "2-inProgress";
+                          else state = "1-queued";
+
+                          const condition: "1-live" | "2-archived" = childCard.archived ? "2-archived" : "1-live";
+
+                          await storage.syncTaskFromKaiten(
+                            childCard.id, childCard.board_id, childCard.title,
+                            childCard.created || new Date().toISOString(),
+                            state, childCard.size || 0, condition, childCard.archived || false,
+                            initCardId, childCard.type?.name, childCard.completed_at ?? undefined,
+                            null, childCard.last_moved_to_done_at, team.teamId
+                          );
+                          syncedTaskCardIds.push(childCard.id);
+                          totalTasksSynced++;
+                        } catch (childErr: any) {
+                          console.error(`[Sync Spaces] Skipping child task ${childId} due to error:`, childErr.message || childErr);
+                          continue;
                         }
-
-                        let state: "1-queued" | "2-inProgress" | "3-done";
-                        if (childCard.state === 3) state = "3-done";
-                        else if (childCard.state === 2) state = "2-inProgress";
-                        else state = "1-queued";
-
-                        const condition: "1-live" | "2-archived" = childCard.archived ? "2-archived" : "1-live";
-
-                        await storage.syncTaskFromKaiten(
-                          childCard.id, childCard.board_id, childCard.title,
-                          childCard.created || new Date().toISOString(),
-                          state, childCard.size || 0, condition, childCard.archived || false,
-                          initCardId, childCard.type?.name, childCard.completed_at ?? undefined,
-                          null, childCard.last_moved_to_done_at, team.teamId
-                        );
-                        syncedTaskCardIds.push(childCard.id);
-                        totalTasksSynced++;
-                      } catch {}
+                      }
                     }
+                  } catch (initErr: any) {
+                    console.error(`[Sync Spaces] Skipping initiative children for ${initiative.cardId} due to error:`, initErr.message || initErr);
+                    continue;
                   }
-                } catch {}
+                }
               }
-            }
 
-            console.log(`[Sync Spaces] Team ${team.teamName}: synced ${totalTasksSynced} tasks`);
-          } catch (taskSyncError) {
-            console.error(`[Sync Spaces] Error syncing tasks for team ${team.teamName}:`, taskSyncError);
+              console.log(`[Sync Spaces] Team ${team.teamName}: synced ${totalTasksSynced} tasks`);
+
+              // Обновляем effect для Compliance/Enabler
+              const spPrice = getSpPriceForYear(spPriceMapSync, team.teamId, currentYearSync, team.spPrice || 0);
+              for (const initiative of syncedInitiatives) {
+                if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
+                  const plannedCost = initiative.size * spPrice;
+                  const tasks = await storage.getTasksByInitCardId(initiative.cardId);
+                  let factCost = 0;
+                  for (const task of tasks) {
+                    const taskSpPrice = getSpPriceForTask(spPriceMapSync, task.teamId, task, spPrice);
+                    factCost += task.size * taskSpPrice;
+                  }
+                  await storage.updateInitiative(initiative.id, {
+                    plannedValue: String(plannedCost),
+                    factValue: String(factCost)
+                  });
+                }
+              }
+            } catch (teamSyncError: any) {
+              console.error(`[Sync Spaces] Error syncing tasks for team ${team.teamName}:`, teamSyncError.message || teamSyncError);
+            }
           }
 
-          // Обновляем effect для Compliance/Enabler
-          const spPrice = getSpPriceForYear(spPriceMapSync, team.teamId, currentYearSync, team.spPrice || 0);
-          for (const initiative of syncedInitiatives) {
-            if (initiative.type === 'Compliance' || initiative.type === 'Enabler') {
-              const plannedCost = initiative.size * spPrice;
-              const tasks = await storage.getTasksByInitCardId(initiative.cardId);
-              let factCost = 0;
-              for (const task of tasks) {
-                const taskSpPrice = getSpPriceForTask(spPriceMapSync, task.teamId, task, spPrice);
-                factCost += task.size * taskSpPrice;
-              }
-              await storage.updateInitiative(initiative.id, {
-                plannedValue: String(plannedCost),
-                factValue: String(factCost)
-              });
-            }
-          }
+          totalSynced += syncedInitiatives.length;
+        } catch (boardError: any) {
+          console.error(`[Sync Spaces] Error syncing board ${boardId}:`, boardError.message || boardError);
+          continue;
         }
-
-        totalSynced += syncedInitiatives.length;
       }
 
       res.json({
