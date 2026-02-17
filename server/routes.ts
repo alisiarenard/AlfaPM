@@ -2589,16 +2589,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const boardId of boardIds) {
         console.log("[Sync Spaces] Syncing board:", boardId);
         const allCards = await kaitenClient.getCardsFromBoard(boardId);
-        console.log("[Sync Spaces] Cards from board:", allCards.length, "non-archived:", allCards.filter(c => !c.archived).length);
-        const cards = allCards.filter(card => !card.archived);
         const syncedCardIds: number[] = [];
         const syncedInitiatives = [];
 
-        for (const card of cards) {
-          console.log(`[Sync Spaces] Card ${card.id} "${card.title}": size=${card.size}, state=${card.state}, type=${card.type?.name}, properties=${JSON.stringify(card.properties)}, due_date=${card.due_date}, last_moved_to_done_at=${card.last_moved_to_done_at}`);
+        for (const card of allCards) {
+          console.log(`[Sync Spaces] Card ${card.id} "${card.title}": size=${card.size}, state=${card.state}, type=${card.type?.name}, archived=${card.archived}`);
 
           const fullCard = await kaitenClient.getCard(card.id);
-          console.log(`[Sync Spaces] Full card ${fullCard.id}: size=${fullCard.size}, state=${fullCard.state}, type=${fullCard.type?.name}, properties=${JSON.stringify(fullCard.properties)}, due_date=${fullCard.due_date}, last_moved_to_done_at=${fullCard.last_moved_to_done_at}`);
+          console.log(`[Sync Spaces] Full card ${fullCard.id}: size=${fullCard.size}, state=${fullCard.state}, type=${fullCard.type?.name}, archived=${fullCard.archived}`);
 
           let state: "1-queued" | "2-inProgress" | "3-done";
           if (fullCard.state === 3) {
@@ -2608,6 +2606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             state = "1-queued";
           }
+          // Прямое использование флага archived из Kaiten
           const condition: "1-live" | "2-archived" = fullCard.archived ? "2-archived" : "1-live";
 
           const rawPlanned = fullCard.properties?.[plannedValueId];
@@ -2631,7 +2630,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fullCard.last_moved_to_done_at || null
           );
           syncedInitiatives.push(synced);
-          syncedCardIds.push(card.id);
+          if (!fullCard.archived) {
+            syncedCardIds.push(card.id);
+          }
         }
 
         await storage.archiveInitiativesNotInList(boardId, syncedCardIds);
@@ -4377,11 +4378,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const hasFactValue = initiative.factValue !== null && initiative.factValue !== "" && parseFloat(initiative.factValue) > 0;
 
           if (filterParam === 'backlog') {
-            if (initiative.condition === '2-archived') continue;
+            if (initiative.condition === '2-archived' || initiative.archived === true) continue;
             const hasAnyDoneTasks = allTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
             if (hasAnyDoneTasks) continue;
             if (hasFactValue) continue;
           } else {
+            // Если карточка заархивирована и у нее НЕТ задач, скрываем ее из всех продуктовых метрик
+            if ((initiative.condition === '2-archived' || initiative.archived === true) && allTasks.length === 0) {
+               continue;
+            }
             // Для Эпиков показываем их, если есть задачи в году ИЛИ если есть факт. значение (чтобы видеть эффект)
             if (!hasDoneTasksInYear && !hasFactValue) continue;
           }
