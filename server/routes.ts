@@ -2595,7 +2595,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const card of allCards) {
           try {
             const fullCard = await kaitenClient.getCard(card.id);
-            if (!fullCard) continue;
+            if (!fullCard) {
+              console.log(`[Sync Spaces] Card ${card.id} returned null from Kaiten API`);
+              continue;
+            }
 
             let state: "1-queued" | "2-inProgress" | "3-done";
             if (fullCard.state === 3) {
@@ -2659,7 +2662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     for (const sprintCard of kaitenSprint.cards) {
                       try {
                         const card = await kaitenClient.getCard(sprintCard.id);
-                        if (card.condition === 3) continue;
+                        if (!card || card.condition === 3) continue;
 
                         let initCardId = 0;
                         if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
@@ -2696,7 +2699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     for (const childId of initiativeCard.children_ids) {
                       try {
                         const childCard = await kaitenClient.getCard(childId);
-                        if (childCard.archived) continue;
+                        if (!childCard || childCard.archived) continue;
 
                         let initCardId = initiative.cardId;
                         if (childCard.parents_ids && Array.isArray(childCard.parents_ids) && childCard.parents_ids.length > 0) {
