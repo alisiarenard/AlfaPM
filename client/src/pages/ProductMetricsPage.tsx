@@ -277,9 +277,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     year: number;
     initiatives: InitiativeTableRow[];
   }>({
-    queryKey: ['/api/metrics/initiatives-table', { teamIds: teamIdsParam, year: selectedYear, filter: initiativeFilter, filterTeamIds: filterTeamIdsParam }],
+    queryKey: ['/api/metrics/initiatives-table', { teamIds: teamIdsParam, year: selectedYear, filter: initiativeFilter, filterTeamIds: filterTeamIdsParam, t: new Date().getTime() }],
     queryFn: async () => {
-      let url = `/api/metrics/initiatives-table?teamIds=${teamIdsParam}&year=${selectedYear}&filter=${initiativeFilter}`;
+      let url = `/api/metrics/initiatives-table?teamIds=${teamIdsParam}&year=${selectedYear}&filter=${initiativeFilter}&_t=${new Date().getTime()}`;
       if (!allTeamsFilterSelected && filterTeamIdsParam) {
         url += `&filterTeamIds=${filterTeamIdsParam}`;
       }
