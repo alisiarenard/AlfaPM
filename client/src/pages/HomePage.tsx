@@ -247,7 +247,7 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
               
               {departmentTeams.map((team) => (
                 <TabsContent key={team.teamId} value={team.teamId}>
-                  <TeamInitiativesTab team={team} showActiveOnly={showActiveOnly} setShowActiveOnly={setShowActiveOnly} selectedYear={selectedYear} viewTab={viewTab} />
+                  <TeamInitiativesTab team={team} showActiveOnly={showActiveOnly} setShowActiveOnly={setShowActiveOnly} selectedYear={selectedYear} viewTab={viewTab} setViewTab={setViewTab} />
                 </TabsContent>
               ))}
             </Tabs>
@@ -312,7 +312,7 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
   );
 }
 
-function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedYear, viewTab }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void; selectedYear: string; viewTab: "initiatives" | "metrics" }) {
+function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedYear, viewTab, setViewTab }: { team: TeamRow; showActiveOnly: boolean; setShowActiveOnly: (value: boolean) => void; selectedYear: string; viewTab: "initiatives" | "metrics"; setViewTab: (tab: "initiatives" | "metrics") => void }) {
   const { toast } = useToast();
   const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
   const hasSyncedRef = useRef(false);
