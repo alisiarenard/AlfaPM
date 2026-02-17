@@ -214,6 +214,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     if (ids.length === 0) return;
     setIsSyncing(true);
     try {
+      queryClient.clear(); // Полностью очищаем кэш перед синхронизацией
       const response = await fetch('/api/kaiten/sync-spaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

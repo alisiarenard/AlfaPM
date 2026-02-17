@@ -4321,12 +4321,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (init.type === null || !allowedTypes.includes(init.type)) continue;
           
           const allTasks = await storage.getTasksByInitCardId(init.cardId);
-          // Более надежная проверка на архив: учитываем разные варианты
           const isArchived = init.condition === '2-archived' || init.condition === 'archived';
           const hasNoTasks = allTasks.length === 0;
 
+          // Логируем информацию по каждой инициативе перед фильтрацией
+          console.log(`[Init Info] Card ${init.cardId} "${init.title}": Archived=${isArchived}, Condition=${init.condition}, TasksCount=${allTasks.length}`);
+
           if (isArchived && hasNoTasks) {
-            console.log(`[Filter] Skipping archived empty initiative: ${init.cardId} "${init.title}" (condition: ${init.condition})`);
+            console.log(`[Filter] Skipping archived empty initiative: ${init.cardId} "${init.title}"`);
             continue;
           }
           
@@ -4364,7 +4366,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const initiative of initiatives) {
           const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
-
           const teamTasks = allTasks.filter(task => task.teamId === team.teamId);
 
           let tasks = teamTasks;
