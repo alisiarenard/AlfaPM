@@ -221,7 +221,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       });
       const data = await response.json();
       if (data.success) {
-        toast({ title: "Синхронизация завершена", description: `Обновлено инициатив: ${data.syncedInitiatives}` });
+        toast({ title: "Синхронизация завершена", description: `Обновлено данных в пространствах: ${data.updatedSpaces?.length || 0}` });
         
         // Обновляем данные ТОЛЬКО после успешного завершения
         queryClient.clear();
