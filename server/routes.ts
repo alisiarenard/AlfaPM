@@ -4345,6 +4345,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           initiatives.push(init);
         }
 
+        console.log(`[Filter] Team ${team.teamName} has ${initiatives.length} initiatives after initial filtering`);
+
         let teamSprintIds: Set<number> | null = null;
         let prevYearSprintIds: Set<number> | null = null;
         let nextYearSprintIds: Set<number> | null = null;
@@ -4402,7 +4404,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (hasFactValue) continue;
           } else {
             // Для Эпиков показываем их, если есть задачи в году ИЛИ если есть факт. значение (чтобы видеть эффект)
-            if (!hasDoneTasksInYear && !hasFactValue) continue;
+            // Или если это Carryover/Transferred
+            const isSpecialFilter = filterParam === 'carryover' || filterParam === 'transferred' || filterParam === 'backlog';
+            if (!isSpecialFilter && !hasDoneTasksInYear && !hasFactValue) {
+              console.log(`[Filter] Skipping initiative ${initiative.cardId} for team ${team.teamName} - no done tasks in year and no fact value`);
+              continue;
+            }
           }
 
           const isDoneTask = (task: any) => task.state === '3-done' && task.condition !== '3 - deleted';
