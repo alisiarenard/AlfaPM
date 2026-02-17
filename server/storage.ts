@@ -949,6 +949,7 @@ export class DbStorage implements IStorage {
           sprintDuration: data.sprintDuration,
           spPrice: data.spPrice,
           hasSprints: data.hasSprints,
+          plannedIr: data.plannedIr,
         })
         .where(eq(teamYearlyData.id, existing.id))
         .returning();
