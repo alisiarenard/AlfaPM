@@ -61,50 +61,39 @@ function filterInitiativesForTimeline(
   // Нормализация year - если NaN или невалидное значение, используем null
   const validYear = (year !== null && !isNaN(year) && year > 0) ? year : null;
   
-  return initiatives.filter(init => {
-    // "Поддержка бизнеса" показываем всегда (независимо от года и других фильтров)
+  const filtered = initiatives.filter(init => {
     const isSupport = init.cardId === 0;
     if (isSupport) {
       return true;
     }
     
-    // Не показываем архивные инициативы
     if (init.condition === "2-archived") {
       return false;
     }
     
-    // Показываем только Epic, Compliance и Enabler
     if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') {
       return false;
     }
     
-    // Фильтр "Активные" - показываем только inProgress
     if (showActiveOnly && init.state !== "2-inProgress") {
       return false;
     }
     
-    // Queued инициативы показываем всегда (если прошли предыдущие фильтры)
     if (init.state === "1-queued") {
       return true;
     }
     
-    // InProgress инициативы показываем всегда (если прошли предыдущие фильтры)
-    // Для них не применяем фильтр по году, т.к. это текущая работа
     if (init.state === "2-inProgress") {
       return true;
     }
     
-    // Для Done инициатив применяем строгие фильтры
     if (init.state === "3-done") {
-      // Считаем общее количество выполненных SP
       const totalSp = init.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
       
-      // Не показываем если выполнено 0 SP
       if (totalSp === 0) {
         return false;
       }
       
-      // Фильтр по году: проверяем, есть ли задачи, закрытые в выбранном году
       if (validYear) {
         const hasTasksInSelectedYear = init.sprints?.some((sprint: any) => 
           sprint.tasks?.some((task: any) => {
@@ -114,7 +103,6 @@ function filterInitiativesForTimeline(
           })
         ) || false;
         
-        // Не показываем если нет задач в выбранном году
         if (!hasTasksInSelectedYear) {
           return false;
         }
@@ -123,6 +111,19 @@ function filterInitiativesForTimeline(
     
     return true;
   });
+
+  filtered.sort((a, b) => {
+    const order = (init: any) => {
+      if (init.cardId === 0) return 0;
+      if (init.state === "2-inProgress") return 1;
+      if (init.state === "3-done") return 2;
+      if (init.state === "1-queued") return 3;
+      return 4;
+    };
+    return order(a) - order(b);
+  });
+
+  return filtered;
 }
 
 async function buildSpPriceMap(allTeams: any[]): Promise<Map<string, Map<number, number>>> {
