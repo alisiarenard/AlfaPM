@@ -226,7 +226,7 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
   return (
     <div className="bg-background flex-1">
     <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="main-container">
-        <div className="p-6">
+        <div className="px-6 pb-6">
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList data-testid="tabs-teams">
