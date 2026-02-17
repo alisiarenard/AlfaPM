@@ -85,7 +85,7 @@ function AppLayout() {
       <div className="flex-1 min-w-0">
         <div className="bg-card">
           <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto">
-            <div className="flex items-center justify-between px-6 pt-[20px] h-[52px]">
+            <div className="flex items-center justify-between px-6 pt-[5px] h-[52px]">
               <div className="flex flex-col">
                 <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
                 {pageSubtitle && (
