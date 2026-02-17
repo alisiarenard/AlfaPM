@@ -2607,6 +2607,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 continue;
               }
 
+              console.log(`[Sync Spaces] Initiative card ${fullCard.id} "${fullCard.title}" — archived: ${fullCard.archived}, condition: ${fullCard.condition}, state: ${fullCard.state}`);
+
               let state: "1-queued" | "2-inProgress" | "3-done";
               if (fullCard.state === 3) {
                 state = "3-done";
