@@ -4321,12 +4321,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (init.type === null || !allowedTypes.includes(init.type)) continue;
           
           const allTasks = await storage.getTasksByInitCardId(init.cardId);
-          // ГЛОБАЛЬНОЕ ПРАВИЛО: Исключаем архивные без задач
-          if (init.condition === '2-archived' && allTasks.length === 0) {
+          // Более надежная проверка на архив: учитываем разные варианты
+          const isArchived = init.condition === '2-archived' || init.condition === 'archived';
+          const hasNoTasks = allTasks.length === 0;
+
+          if (isArchived && hasNoTasks) {
+            console.log(`[Filter] Skipping archived empty initiative: ${init.cardId} "${init.title}" (condition: ${init.condition})`);
             continue;
           }
           
-          // Применяем фильтры по состоянию
           if (filterParam === 'done' && init.state !== '3-done') continue;
           if (filterParam === 'active' && init.state !== '2-inProgress') continue;
           
