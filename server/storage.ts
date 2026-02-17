@@ -560,22 +560,31 @@ export class DbStorage implements IStorage {
     const existing = await this.getInitiativeByCardId(cardId);
     
     if (existing) {
+      const updateData: Record<string, any> = { 
+        title, 
+        state, 
+        condition, 
+        size, 
+        initBoardId: boardId, 
+        type: type || null,
+        dueDate: dueDate || null,
+        doneDate: doneDate || null
+      };
+      if (plannedValueId !== undefined && plannedValueId !== null) {
+        updateData.plannedValueId = plannedValueId;
+      }
+      if (plannedValue !== undefined) {
+        updateData.plannedValue = plannedValue;
+      }
+      if (factValueId !== undefined && factValueId !== null) {
+        updateData.factValueId = factValueId;
+      }
+      if (factValue !== undefined) {
+        updateData.factValue = factValue;
+      }
       const [updated] = await db
         .update(initiatives)
-        .set({ 
-          title, 
-          state, 
-          condition, 
-          size, 
-          initBoardId: boardId, 
-          type: type || null,
-          plannedValueId: plannedValueId || null,
-          plannedValue: plannedValue || null,
-          factValueId: factValueId || null,
-          factValue: factValue || null,
-          dueDate: dueDate || null,
-          doneDate: doneDate || null
-        })
+        .set(updateData)
         .where(eq(initiatives.cardId, cardId))
         .returning();
       return updated;
