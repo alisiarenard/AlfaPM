@@ -558,6 +558,7 @@ export class DbStorage implements IStorage {
     doneDate?: string | null
   ): Promise<InitiativeRow> {
     const existing = await this.getInitiativeByCardId(cardId);
+    console.log(`[syncInitiativeFromKaiten] cardId=${cardId}, title="${title}", incoming: plannedValue=${plannedValue}, factValue=${factValue}, existing: plannedValue=${existing?.plannedValue}, factValue=${existing?.factValue}`);
     
     if (existing) {
       const updateData: Record<string, any> = { 
@@ -582,11 +583,13 @@ export class DbStorage implements IStorage {
       if (factValue !== undefined) {
         updateData.factValue = factValue;
       }
+      console.log(`[syncInitiativeFromKaiten] cardId=${cardId} UPDATE: factValue in updateData=${updateData.factValue}, plannedValue in updateData=${updateData.plannedValue}`);
       const [updated] = await db
         .update(initiatives)
         .set(updateData)
         .where(eq(initiatives.cardId, cardId))
         .returning();
+      console.log(`[syncInitiativeFromKaiten] cardId=${cardId} AFTER UPDATE: factValue=${updated.factValue}, plannedValue=${updated.plannedValue}`);
       return updated;
     } else {
       const [created] = await db
