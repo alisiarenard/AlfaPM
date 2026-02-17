@@ -4315,6 +4315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (filterParam === 'done') {
+            if (!hasDoneTasksInYear) continue;
             if (checkCarryover() || checkTransferred()) continue;
           }
 
