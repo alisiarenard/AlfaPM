@@ -222,9 +222,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       const data = await response.json();
       if (data.success) {
         toast({ title: "Синхронизация завершена", description: `Обновлено инициатив: ${data.syncedInitiatives}` });
-        queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/metrics/initiatives-table'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/metrics'] });
+        await queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
+        await queryClient.invalidateQueries({ queryKey: ['/api/metrics'] });
+        await queryClient.refetchQueries({ queryKey: ['/api/metrics/initiatives-table'] });
       } else {
         toast({ title: "Ошибка синхронизации", description: data.error, variant: "destructive" });
       }
@@ -283,7 +283,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       if (!allTeamsFilterSelected && filterTeamIdsParam) {
         url += `&filterTeamIds=${filterTeamIdsParam}`;
       }
-      const response = await fetch(url);
+      const response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) throw new Error('Failed to fetch initiatives table');
       return response.json();
     },
