@@ -4321,12 +4321,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (init.type === null || !allowedTypes.includes(init.type)) continue;
           
           const allTasks = await storage.getTasksByInitCardId(init.cardId);
-          // Более надежная проверка на архив: учитываем разные варианты
-          const isArchived = init.condition === '2-archived' || init.condition === 'archived';
+          // ГЛОБАЛЬНОЕ ПРАВИЛО: Исключаем архивные без задач
+          // Проверяем как condition, так и флаг archived если он есть
+          const isArchived = init.condition === '2-archived' || init.condition === 'archived' || (init as any).archived === true;
           const hasNoTasks = allTasks.length === 0;
 
           if (isArchived && hasNoTasks) {
-            console.log(`[Filter] Skipping archived empty initiative: ${init.cardId} "${init.title}" (condition: ${init.condition})`);
+            console.log(`[Filter] CRITICAL: Skipping archived empty initiative: ${init.cardId} "${init.title}" (condition: ${init.condition})`);
             continue;
           }
           
@@ -4363,9 +4364,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         for (const initiative of initiatives) {
-          const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+          const allTasksForThisInit = await storage.getTasksByInitCardId(initiative.cardId);
+          
+          // Проверка на архивность: если в архиве и нет задач ВООБЩЕ во всей базе
+          const isArchived = initiative.condition === '2-archived' || initiative.condition === 'archived' || (initiative as any).archived === true;
+          if (isArchived && allTasksForThisInit.length === 0) {
+            console.log(`[Filter] Skipping archived empty initiative during team loop: ${initiative.cardId}`);
+            continue;
+          }
 
-          const teamTasks = allTasks.filter(task => task.teamId === team.teamId);
+          const teamTasks = allTasksForThisInit.filter(task => task.teamId === team.teamId);
 
           let tasks = teamTasks;
           if (teamSprintIds) {
@@ -4436,6 +4444,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (existing) {
             existing.totalActualCost += actualSP * yearlySpPrice;
             existing.totalPrevYearActualCost += prevYearActualSP * prevYearlySpPrice;
+            // Убеждаемся что флаг архивации переносится правильно
+            if (initiative.condition === '2-archived' || initiative.condition === 'archived') {
+              existing.archived = true;
+            }
             existing.teamContributions.push({
               teamId: team.teamId,
               teamName: team.teamName,
@@ -4540,10 +4552,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return a.title.localeCompare(b.title);
       });
 
+      const finalResult = result.filter(init => {
+        // Дополнительная финальная проверка: если инициатива архивная и у нее 0 участников (задач), убираем ее
+        if (init.archived && init.participants.length === 0) {
+          console.log(`[Filter] FINAL REMOVAL: Archived empty initiative: ${init.cardId} "${init.title}"`);
+          return false;
+        }
+        return true;
+      });
+
+      console.log(`[Filter] initiatives-table returning ${finalResult.length} initiatives. IDs: ${finalResult.map(i => i.cardId).join(', ')}`);
+
       res.json({
         success: true,
         year,
-        initiatives: result,
+        initiatives: finalResult,
       });
     } catch (error) {
       res.status(500).json({

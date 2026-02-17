@@ -646,7 +646,12 @@ export class DbStorage implements IStorage {
   }
 
   async getTasksByInitCardId(initCardId: number): Promise<TaskRow[]> {
-    const result = await db.select().from(tasks).where(eq(tasks.initCardId, initCardId));
+    const result = await db.select().from(tasks).where(
+      and(
+        eq(tasks.initCardId, initCardId),
+        ne(tasks.condition, "3 - deleted")
+      )
+    );
     return result;
   }
 
