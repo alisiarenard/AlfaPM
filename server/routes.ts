@@ -2614,7 +2614,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
           const rawFact = fullCard.properties?.[factValueId];
           const factValue = rawFact == null ? undefined : String(rawFact);
-          console.log(`[Sync Spaces] Card ${fullCard.id} "${fullCard.title}": extracting plannedValueId=${plannedValueId} -> rawPlanned=${rawPlanned}, factValueId=${factValueId} -> rawFact=${rawFact}, final: plannedValue=${plannedValue}, factValue=${factValue}`);
 
           const synced = await storage.syncInitiativeFromKaiten(
             fullCard.id,
@@ -4361,14 +4360,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           const hasDoneTasksInYear = tasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
+          const hasFactValue = initiative.factValue !== null && initiative.factValue !== "" && parseFloat(initiative.factValue) > 0;
 
           if (filterParam === 'backlog') {
             if (initiative.condition === '2-archived') continue;
             const hasAnyDoneTasks = allTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
             if (hasAnyDoneTasks) continue;
-            if (initiative.factValue != null && initiative.factValue > 0) continue;
+            if (hasFactValue) continue;
           } else {
-            if (!hasDoneTasksInYear) continue;
+            // Для Эпиков показываем их, если есть задачи в году ИЛИ если есть факт. значение (чтобы видеть эффект)
+            if (!hasDoneTasksInYear && !hasFactValue) continue;
           }
 
           const isDoneTask = (task: any) => task.state === '3-done' && task.condition !== '3 - deleted';
