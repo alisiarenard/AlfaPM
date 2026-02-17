@@ -14,53 +14,32 @@ import { calculateInitiativesInvolvement } from "./utils/involvement";
  * @returns ID инициативы или 0, если не найдена
  */
 async function findInitiativeInParentChain(parentCardId: number, depth = 0, originalTaskId?: number): Promise<number> {
-  // Защита от бесконечной рекурсии
-  if (depth > 5) {
+  if (depth > 10) {
     return 0;
   }
   
-  // Проверяем, является ли родитель инициативой
-  const parentInitiative = await storage.getInitiativeByCardId(parentCardId);
-  if (parentInitiative) {
-    // Проверяем тип инициативы - подходящие типы: Epic, Compliance, Enabler
-    const validTypes = ['Epic', 'Compliance', 'Enabler'];
-    const initiativeType = parentInitiative.type || '';
+  let lastFoundInitiativeId = 0;
+  let currentCardId = parentCardId;
+  
+  for (let d = depth; d <= 10; d++) {
+    const initiative = await storage.getInitiativeByCardId(currentCardId);
+    if (initiative) {
+      lastFoundInitiativeId = currentCardId;
+    }
     
-    if (validTypes.includes(initiativeType)) {
-      // Тип подходит - возвращаем этот ID
-      return parentCardId;
-    } else {
-      // Тип НЕ подходит - продолжаем поиск вверх по цепочке
-      try {
-        const parentCard = await kaitenClient.getCard(parentCardId);
-        
-        // Проверяем, есть ли у этой инициативы свой родитель
-        if (parentCard.parents_ids && Array.isArray(parentCard.parents_ids) && parentCard.parents_ids.length > 0) {
-          const grandParentId = parentCard.parents_ids[0];
-          return await findInitiativeInParentChain(grandParentId, depth + 1, originalTaskId);
-        } else {
-          return 0;
-        }
-      } catch (error) {
-        return 0;
+    try {
+      const card = await kaitenClient.getCard(currentCardId);
+      if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+        currentCardId = card.parents_ids[0];
+      } else {
+        break;
       }
+    } catch (error) {
+      break;
     }
   }
   
-  // Если родитель не инициатива, получаем его карточку из Kaiten
-  try {
-    const parentCard = await kaitenClient.getCard(parentCardId);
-    
-    // Проверяем, есть ли у родительской карточки свой родитель
-    if (parentCard.parents_ids && Array.isArray(parentCard.parents_ids) && parentCard.parents_ids.length > 0) {
-      const grandParentId = parentCard.parents_ids[0];
-      return await findInitiativeInParentChain(grandParentId, depth + 1, originalTaskId);
-    }
-  } catch (error) {
-  }
-  
-  // Не нашли инициативу в цепочке
-  return 0;
+  return lastFoundInitiativeId;
 }
 
 /**
