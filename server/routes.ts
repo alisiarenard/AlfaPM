@@ -2614,6 +2614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
           const rawFact = fullCard.properties?.[factValueId];
           const factValue = rawFact == null ? undefined : String(rawFact);
+          console.log(`[Sync Spaces] Card ${fullCard.id} "${fullCard.title}": extracting plannedValueId=${plannedValueId} -> rawPlanned=${rawPlanned}, factValueId=${factValueId} -> rawFact=${rawFact}, final: plannedValue=${plannedValue}, factValue=${factValue}`);
 
           const synced = await storage.syncInitiativeFromKaiten(
             fullCard.id,
