@@ -614,24 +614,29 @@ export class DbStorage implements IStorage {
   async archiveInitiativesNotInList(boardId: number, activeCardIds: number[]): Promise<void> {
     const cardIdSet = new Set(activeCardIds);
     
-    // Получаем все инициативы этой доски
     const boardInitiatives = await this.getInitiativesByBoardId(boardId);
     
-    // Находим те, которых нет в списке активных
-    const initiativesToArchive = boardInitiatives.filter(init => !cardIdSet.has(init.cardId));
+    const notInActiveList = boardInitiatives.filter(init => !cardIdSet.has(init.cardId));
+    const alreadyArchived = notInActiveList.filter(init => init.condition === "2-archived");
+    const needArchiving = notInActiveList.filter(init => init.condition !== "2-archived");
     
-    if (initiativesToArchive.length > 0) {
-      console.log(`[Archive Initiatives] Archiving ${initiativesToArchive.length} initiatives not in sync list for board ${boardId}`);
-      
-      // Помечаем как archived
-      for (const initiative of initiativesToArchive) {
+    if (alreadyArchived.length > 0) {
+      console.log(`[Archive Initiatives] Board ${boardId}: ${alreadyArchived.length} already archived in DB, skipping`);
+    }
+    
+    if (needArchiving.length > 0) {
+      console.log(`[Archive Initiatives] Board ${boardId}: archiving ${needArchiving.length} initiatives (active in DB → archived in Kaiten):`);
+      for (const initiative of needArchiving) {
+        console.log(`[Archive Initiatives]   → ${initiative.cardId} "${initiative.title}" (was condition: ${initiative.condition})`);
         await db
           .update(initiatives)
           .set({ condition: "2-archived" })
           .where(eq(initiatives.cardId, initiative.cardId));
       }
-      
-      console.log(`[Archive Initiatives] Archived initiatives: ${initiativesToArchive.map(i => i.cardId).join(', ')}`);
+    }
+    
+    if (notInActiveList.length === 0) {
+      console.log(`[Archive Initiatives] Board ${boardId}: all DB initiatives are active in Kaiten, nothing to archive`);
     }
   }
 
