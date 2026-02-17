@@ -4381,7 +4381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const hasFactValue = initiative.factValue !== null && initiative.factValue !== "" && parseFloat(initiative.factValue) > 0;
 
           if (filterParam === 'backlog') {
-            if (initiative.condition === '2-archived' || initiative.archived === true) continue;
+            if (initiative.condition === '2-archived') continue;
             const hasAnyDoneTasks = allTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
             if (hasAnyDoneTasks) continue;
             if (hasFactValue) continue;
