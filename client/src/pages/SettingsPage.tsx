@@ -113,6 +113,7 @@ export default function SettingsPage() {
   const [sprintDuration, setSprintDuration] = useState("");
   const [spPrice, setSpPrice] = useState("");
   const [hasSprints, setHasSprints] = useState(true);
+  const [plannedIr, setPlannedIr] = useState("");
   const [initSpaceId, setInitSpaceId] = useState("");
   const [omniBoardId, setOmniBoardId] = useState("");
   const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
@@ -349,7 +350,7 @@ export default function SettingsPage() {
   });
 
   const saveYearlyDataMutation = useMutation({
-    mutationFn: async (data: { teamId: string; year: number; vilocity: number; sprintDuration: number; spPrice: number; hasSprints: boolean }) => {
+    mutationFn: async (data: { teamId: string; year: number; vilocity: number; sprintDuration: number; spPrice: number; hasSprints: boolean; plannedIr?: number | null }) => {
       const res = await apiRequest("POST", "/api/team-yearly-data", data);
       return await res.json();
     },
@@ -406,11 +407,13 @@ export default function SettingsPage() {
         setSprintDuration(yearlyData.sprintDuration.toString());
         setSpPrice(yearlyData.spPrice.toString());
         setHasSprints(yearlyData.hasSprints);
+        setPlannedIr(yearlyData.plannedIr?.toString() || "");
       } else {
         setVelocity(editingTeam.vilocity.toString());
         setSprintDuration(editingTeam.sprintDuration.toString());
         setSpPrice(editingTeam.spPrice.toString());
         setHasSprints(editingTeam.hasSprints);
+        setPlannedIr("");
       }
     }
   }, [rightPanelMode, editingTeam, yearlyData, yearlyDataLoading, metricsYear]);
@@ -457,12 +460,14 @@ export default function SettingsPage() {
       const origSprintDuration = yearlyData ? yearlyData.sprintDuration : editingTeam.sprintDuration;
       const origSpPrice = yearlyData ? yearlyData.spPrice : editingTeam.spPrice;
       const origHasSprints = yearlyData ? yearlyData.hasSprints : editingTeam.hasSprints;
+      const origPlannedIr = yearlyData ? (yearlyData.plannedIr ?? null) : null;
       const velocityChanged = (velocity ? parseFloat(velocity) : origVelocity) !== origVelocity;
       const sprintDurationChanged = (sprintDuration ? parseInt(sprintDuration) : origSprintDuration) !== origSprintDuration;
       const spPriceChanged = (spPrice ? parseInt(spPrice) : origSpPrice) !== origSpPrice;
       const hasSprintsChanged = hasSprints !== origHasSprints;
+      const plannedIrChanged = (plannedIr ? parseInt(plannedIr) : null) !== origPlannedIr;
       const sprintIdsChanged = sprintIds.trim() !== "";
-      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || omniBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || sprintIdsChanged;
+      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || omniBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || plannedIrChanged || sprintIdsChanged;
     }
     return false;
   };
@@ -775,6 +780,18 @@ export default function SettingsPage() {
                                 data-testid="input-sp-price"
                               />
                             </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="planned-ir">Плановый IR, %</Label>
+                              <Input
+                                id="planned-ir"
+                                type="number"
+                                placeholder="0"
+                                value={plannedIr}
+                                onChange={(e) => setPlannedIr(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-planned-ir"
+                              />
+                            </div>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="flex items-center space-x-2 flex-shrink-0">
@@ -833,6 +850,7 @@ export default function SettingsPage() {
                                 sprintDuration: sd,
                                 spPrice: sp,
                                 hasSprints,
+                                plannedIr: plannedIr ? parseInt(plannedIr) : null,
                               });
                             }
                           }}

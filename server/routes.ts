@@ -703,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/team-yearly-data", async (req, res) => {
     try {
-      const { teamId, year, vilocity, sprintDuration, spPrice, hasSprints } = req.body;
+      const { teamId, year, vilocity, sprintDuration, spPrice, hasSprints, plannedIr } = req.body;
       if (!teamId || !year || vilocity === undefined || sprintDuration === undefined) {
         return res.status(400).json({ success: false, error: "Missing required fields" });
       }
@@ -714,6 +714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sprintDuration: parseInt(sprintDuration),
         spPrice: parseInt(spPrice) || 0,
         hasSprints: hasSprints !== undefined ? hasSprints : true,
+        plannedIr: plannedIr !== undefined && plannedIr !== null && plannedIr !== '' ? parseInt(plannedIr) : null,
       });
       res.json(result);
     } catch (error) {
@@ -3681,8 +3682,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const innovationSP = (typeStats['Epic'] || 0) + (typeStats['Compliance'] || 0) + (typeStats['Enabler'] || 0);
 
       
-      // Расчитываем разницу с плановым IR
-      const plannedIR = department.plannedIr || 0;
+      // Берём плановый IR из годовых данных команды (если есть), иначе из департамента
+      let plannedIR = department.plannedIr || 0;
+      if (validTeams.length === 1) {
+        const teamYearly = await storage.getTeamYearlyData(validTeams[0].teamId, year);
+        if (teamYearly && teamYearly.plannedIr !== null && teamYearly.plannedIr !== undefined) {
+          plannedIR = teamYearly.plannedIr;
+        }
+      }
       const diffFromPlanned = actualIR - plannedIR;
 
 
