@@ -2594,10 +2594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const card of allCards) {
           try {
-            console.log(`[Sync Spaces] Card ${card.id} "${card.title}": size=${card.size}, state=${card.state}, type=${card.type?.name}, archived=${card.archived}`);
-
             const fullCard = await kaitenClient.getCard(card.id);
-            console.log(`[Sync Spaces] Full card ${fullCard.id}: size=${fullCard.size}, state=${fullCard.state}, type=${fullCard.type?.name}, archived=${fullCard.archived}`);
 
             let state: "1-queued" | "2-inProgress" | "3-done";
             if (fullCard.state === 3) {

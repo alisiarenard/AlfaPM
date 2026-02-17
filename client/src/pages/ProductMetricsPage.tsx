@@ -214,7 +214,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     if (ids.length === 0) return;
     setIsSyncing(true);
     try {
-      queryClient.clear(); // Полностью очищаем кэш перед синхронизацией
       const response = await fetch('/api/kaiten/sync-spaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -223,6 +222,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       const data = await response.json();
       if (data.success) {
         toast({ title: "Синхронизация завершена", description: `Обновлено инициатив: ${data.syncedInitiatives}` });
+        
+        // Обновляем данные ТОЛЬКО после успешного завершения
+        queryClient.clear();
         await queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
         await queryClient.invalidateQueries({ queryKey: ['/api/metrics'] });
         await queryClient.refetchQueries({ queryKey: ['/api/metrics/initiatives-table'] });
