@@ -349,8 +349,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const cards = allCards.filter(card => !card.archived);
           
           
-          const plannedValueId = process.env.KAITEN_PLANNED_VALUE_PROPERTY_ID || "id_237";
-          const factValueId = process.env.KAITEN_FACT_VALUE_PROPERTY_ID || "id_238";
+          const plannedValueId = "id_237";
+          const factValueId = "id_238";
           const syncedCardIds: number[] = [];
           
           for (const card of cards) {
