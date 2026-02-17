@@ -635,31 +635,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
           {selectedDepartment && teamIdsArray.length > 0 && (
             <div className="mt-6 border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
-              <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-end gap-2">
-                <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
-                  {([
-                    { key: 'all', label: 'Все' },
-                    { key: 'done', label: 'Завершенные' },
-                    { key: 'carryover', label: 'Переходящие' },
-                    { key: 'transferred', label: 'Перенесенные' },
-                  ] as const).map(({ key, label }) => (
-                    <button
-                      key={key}
-                      onClick={() => setInitiativeFilter(key)}
-                      className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
-                        initiativeFilter === key
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                      data-testid={`filter-${key}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <Button size="icon" variant="ghost" data-testid="button-refresh" title="Обновить" onClick={handleSyncSpaces} disabled={isSyncing}>
-                  <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                </Button>
+              <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Button size="icon" variant="ghost" data-testid="button-refresh" title="Обновить" onClick={handleSyncSpaces} disabled={isSyncing}>
+                    <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                  </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon" variant="ghost" className="relative" data-testid="button-team-selection" title="Фильтр по командам">
@@ -715,6 +695,28 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
+                <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
+                  {([
+                    { key: 'all', label: 'Все' },
+                    { key: 'done', label: 'Завершенные' },
+                    { key: 'carryover', label: 'Переходящие' },
+                    { key: 'transferred', label: 'Перенесенные' },
+                  ] as const).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setInitiativeFilter(key)}
+                      className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
+                        initiativeFilter === key
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      data-testid={`filter-${key}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(70vh - 48px)' }}>
               <table className="w-full text-sm">

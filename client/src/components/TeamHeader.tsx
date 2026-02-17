@@ -22,7 +22,28 @@ export function TeamHeader({ team, onSync, isSyncing, viewTab, onViewTabChange }
 
   return (
     <div className="px-4 py-2 border-b border-border bg-card">
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            data-testid="button-sprint-info"
+            onClick={() => setSprintInfoOpen(true)}
+            title="Добавить спринт"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            data-testid="button-update-team"
+            onClick={onSync}
+            disabled={isSyncing || !onSync}
+            title="Синхронизировать данные"
+          >
+            <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
         <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
           <button
             onClick={() => onViewTabChange("initiatives")}
@@ -47,25 +68,6 @@ export function TeamHeader({ team, onSync, isSyncing, viewTab, onViewTabChange }
             Метрики
           </button>
         </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          data-testid="button-sprint-info"
-          onClick={() => setSprintInfoOpen(true)}
-          title="Добавить спринт"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          data-testid="button-update-team"
-          onClick={onSync}
-          disabled={isSyncing || !onSync}
-          title="Синхронизировать данные"
-        >
-          <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-        </Button>
       </div>
       <SprintInfoDialog 
         open={sprintInfoOpen} 
