@@ -229,43 +229,17 @@ export default function HomePage({ selectedDepartment, setSelectedDepartment, se
         <div className="p-6">
           {departmentTeams && departmentTeams.length > 0 && activeTab ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="flex items-center justify-between">
-                <TabsList data-testid="tabs-teams">
-                  {departmentTeams.map((team) => (
-                    <TabsTrigger 
-                      key={team.teamId} 
-                      value={team.teamId}
-                      data-testid={`tab-team-${team.teamId}`}
-                    >
-                      {team.teamName}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <div className="flex gap-0.5 bg-muted rounded-md p-0.5 mb-3">
-                  <button
-                    onClick={() => setViewTab("initiatives")}
-                    className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
-                      viewTab === "initiatives" 
-                        ? "bg-background text-foreground shadow-sm" 
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    data-testid="tab-view-initiatives"
+              <TabsList data-testid="tabs-teams">
+                {departmentTeams.map((team) => (
+                  <TabsTrigger 
+                    key={team.teamId} 
+                    value={team.teamId}
+                    data-testid={`tab-team-${team.teamId}`}
                   >
-                    Инициативы
-                  </button>
-                  <button
-                    onClick={() => setViewTab("metrics")}
-                    className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
-                      viewTab === "metrics" 
-                        ? "bg-background text-foreground shadow-sm" 
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    data-testid="tab-view-metrics"
-                  >
-                    Метрики
-                  </button>
-                </div>
-              </div>
+                    {team.teamName}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
               {activeTab && (
                 <TeamMetricsPanel teamId={activeTab} selectedYear={selectedYear} />
@@ -660,6 +634,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         onFilterChange={setShowActiveOnly}
         onSync={handleSync}
         isSyncing={syncAllMutation.isPending}
+        viewTab={viewTab}
+        onViewTabChange={setViewTab}
       />
       <div className="overflow-auto custom-scrollbar pr-6" style={{ height: '60vh' }}>
         {viewTab === "initiatives" ? (
