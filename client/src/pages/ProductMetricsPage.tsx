@@ -214,16 +214,21 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     if (ids.length === 0) return;
     setIsSyncing(true);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
       const response = await fetch('/api/kaiten/sync-spaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ spaceIds: ids }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
+
       const data = await response.json();
       if (data.success) {
-        toast({ title: "Синхронизация завершена", description: `Обновлено данных в пространствах: ${data.updatedSpaces?.length || 0}` });
+        toast({ title: "Синхронизация завершена", description: `Синхронизировано инициатив: ${data.syncedInitiatives || 0}` });
         
-        // Обновляем данные ТОЛЬКО после успешного завершения
         queryClient.clear();
         await queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
         await queryClient.invalidateQueries({ queryKey: ['/api/metrics'] });
@@ -231,8 +236,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       } else {
         toast({ title: "Ошибка синхронизации", description: data.error, variant: "destructive" });
       }
-    } catch {
-      toast({ title: "Ошибка", description: "Не удалось выполнить синхронизацию", variant: "destructive" });
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        toast({ title: "Таймаут синхронизации", description: "Синхронизация заняла больше 5 минут. Данные могли обновиться частично — обновите страницу.", variant: "destructive" });
+      } else {
+        toast({ title: "Ошибка", description: "Не удалось выполнить синхронизацию", variant: "destructive" });
+      }
     } finally {
       setIsSyncing(false);
     }
