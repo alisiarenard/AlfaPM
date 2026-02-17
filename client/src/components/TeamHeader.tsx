@@ -23,7 +23,7 @@ export function TeamHeader({ team, onSync, isSyncing, viewTab, onViewTabChange }
   return (
     <div className="px-4 py-2 border-b border-border bg-card">
       <div className="flex items-center justify-end gap-2">
-        <div className="flex gap-0.5 bg-muted rounded-md p-0.5 mr-auto">
+        <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
           <button
             onClick={() => onViewTabChange("initiatives")}
             className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
