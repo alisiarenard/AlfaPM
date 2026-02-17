@@ -2597,13 +2597,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log("[Sync Spaces] Syncing board:", boardId);
           const allCards = await kaitenClient.getCardsFromBoard(boardId);
+          const nonArchivedCards = allCards.filter(c => !c.archived);
+          console.log(`[Sync Spaces] Board ${boardId}: ${allCards.length} total cards, ${nonArchivedCards.length} non-archived`);
           const syncedCardIds: number[] = [];
 
-          for (const card of allCards) {
+          for (const card of nonArchivedCards) {
             try {
               const fullCard = await kaitenClient.getCard(card.id);
               if (!fullCard) {
                 console.log(`[Sync Spaces] Card ${card.id} returned null from Kaiten API`);
+                continue;
+              }
+
+              if (fullCard.archived) {
+                console.log(`[Sync Spaces] Skipping archived initiative card ${fullCard.id} "${fullCard.title}"`);
                 continue;
               }
 
@@ -2641,9 +2648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 fullCard.archived || false
               );
               allSyncedInitiatives.push(synced);
-              if (!fullCard.archived) {
-                syncedCardIds.push(card.id);
-              }
+              syncedCardIds.push(card.id);
             } catch (cardError: any) {
               console.error(`[Sync Spaces] Skipping card ${card.id} due to error:`, cardError.message || cardError);
               continue;
