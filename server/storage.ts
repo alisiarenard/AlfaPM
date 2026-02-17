@@ -602,10 +602,10 @@ export class DbStorage implements IStorage {
           size, 
           initBoardId: boardId, 
           type: type || null,
-          plannedValueId: plannedValueId || null,
-          plannedValue: plannedValue || null,
-          factValueId: factValueId || null,
-          factValue: factValue || null,
+          plannedValueId: plannedValueId ?? null,
+          plannedValue: plannedValue ?? null,
+          factValueId: factValueId ?? null,
+          factValue: factValue ?? null,
           dueDate: dueDate || null,
           doneDate: doneDate || null
         })
