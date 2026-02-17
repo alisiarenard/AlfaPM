@@ -572,7 +572,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   return (
     <div className="bg-background flex-1">
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
-        <div className="px-6 pb-6">
+        <div className="p-6">
           {selectedDepartment && teamIdsArray.length > 0 ? (
             <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear}>
               <DropdownMenu>
