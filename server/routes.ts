@@ -2593,45 +2593,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const syncedInitiatives = [];
 
         for (const card of allCards) {
-          console.log(`[Sync Spaces] Card ${card.id} "${card.title}": size=${card.size}, state=${card.state}, type=${card.type?.name}, archived=${card.archived}`);
+          try {
+            console.log(`[Sync Spaces] Card ${card.id} "${card.title}": size=${card.size}, state=${card.state}, type=${card.type?.name}, archived=${card.archived}`);
 
-          const fullCard = await kaitenClient.getCard(card.id);
-          console.log(`[Sync Spaces] Full card ${fullCard.id}: size=${fullCard.size}, state=${fullCard.state}, type=${fullCard.type?.name}, archived=${fullCard.archived}`);
+            const fullCard = await kaitenClient.getCard(card.id);
+            console.log(`[Sync Spaces] Full card ${fullCard.id}: size=${fullCard.size}, state=${fullCard.state}, type=${fullCard.type?.name}, archived=${fullCard.archived}`);
 
-          let state: "1-queued" | "2-inProgress" | "3-done";
-          if (fullCard.state === 3) {
-            state = "3-done";
-          } else if (fullCard.state === 2) {
-            state = "2-inProgress";
-          } else {
-            state = "1-queued";
-          }
-          // Прямое использование флага archived из Kaiten
-          const condition: "1-live" | "2-archived" = fullCard.archived ? "2-archived" : "1-live";
+            let state: "1-queued" | "2-inProgress" | "3-done";
+            if (fullCard.state === 3) {
+              state = "3-done";
+            } else if (fullCard.state === 2) {
+              state = "2-inProgress";
+            } else {
+              state = "1-queued";
+            }
+            // Прямое использование флага archived из Kaiten
+            const condition: "1-live" | "2-archived" = fullCard.archived ? "2-archived" : "1-live";
 
-          const rawPlanned = fullCard.properties?.[plannedValueId];
-          const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
-          const rawFact = fullCard.properties?.[factValueId];
-          const factValue = rawFact == null ? undefined : String(rawFact);
+            const rawPlanned = fullCard.properties?.[plannedValueId];
+            const plannedValue = rawPlanned == null ? undefined : String(rawPlanned);
+            const rawFact = fullCard.properties?.[factValueId];
+            const factValue = rawFact == null ? undefined : String(rawFact);
 
-          const synced = await storage.syncInitiativeFromKaiten(
-            fullCard.id,
-            boardId,
-            fullCard.title,
-            state,
-            condition,
-            fullCard.size || 0,
-            fullCard.type?.name,
-            plannedValueId,
-            plannedValue,
-            factValueId,
-            factValue,
-            fullCard.due_date || null,
-            fullCard.last_moved_to_done_at || null
-          );
-          syncedInitiatives.push(synced);
-          if (!fullCard.archived) {
-            syncedCardIds.push(card.id);
+            const synced = await storage.syncInitiativeFromKaiten(
+              fullCard.id,
+              boardId,
+              fullCard.title,
+              state,
+              condition,
+              fullCard.size || 0,
+              fullCard.type?.name,
+              plannedValueId,
+              plannedValue,
+              factValueId,
+              factValue,
+              fullCard.due_date || null,
+              fullCard.last_moved_to_done_at || null,
+              fullCard.archived || false
+            );
+            syncedInitiatives.push(synced);
+            if (!fullCard.archived) {
+              syncedCardIds.push(card.id);
+            }
+          } catch (cardError) {
+            console.error(`[Sync Spaces] Error syncing card ${card.id}:`, cardError);
+            // Если карточка недоступна (например, 403), мы просто пропускаем ее и идем дальше
+            continue;
           }
         }
 
