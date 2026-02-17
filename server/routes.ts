@@ -4312,17 +4312,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }>();
 
       for (const team of validTeams) {
-        const allInitiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+        const allInitiativesForBoard = await storage.getInitiativesByBoardId(team.initBoardId);
         const allowedTypes = ['Epic', 'Compliance', 'Enabler'];
-        const initiatives = allInitiatives
-          .filter(init => init.type !== null && allowedTypes.includes(init.type))
-          .filter(init => {
-            if (filterParam === 'all') return true;
-            if (filterParam === 'done') return init.state === '3-done';
-            if (filterParam === 'active') return init.state === '2-inProgress';
-            if (filterParam === 'backlog') return true;
-            return true;
-          });
+        
+        // Сначала получаем задачи для ВСЕХ инициатив доски разом, чтобы фильтровать эффективно
+        const initiatives = [];
+        for (const init of allInitiativesForBoard) {
+          if (init.type === null || !allowedTypes.includes(init.type)) continue;
+          
+          const allTasks = await storage.getTasksByInitCardId(init.cardId);
+          // ГЛОБАЛЬНОЕ ПРАВИЛО: Исключаем архивные без задач
+          if (init.condition === '2-archived' && allTasks.length === 0) {
+            continue;
+          }
+          
+          // Применяем фильтры по состоянию
+          if (filterParam === 'done' && init.state !== '3-done') continue;
+          if (filterParam === 'active' && init.state !== '2-inProgress') continue;
+          
+          initiatives.push(init);
+        }
 
         let teamSprintIds: Set<number> | null = null;
         let prevYearSprintIds: Set<number> | null = null;
@@ -4352,9 +4361,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const initiative of initiatives) {
           const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
-
-          // Исключаем архивные инициативы без задач (при любых фильтрах)
-          if (initiative.condition === '2-archived' && allTasks.length === 0) continue;
 
           const teamTasks = allTasks.filter(task => task.teamId === team.teamId);
 
