@@ -4363,7 +4363,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (filterParam === 'backlog') {
             if (initiative.condition === '2-archived') continue;
-            if (hasDoneTasksInYear) continue;
+            const hasAnyDoneTasks = teamTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
+            if (hasAnyDoneTasks) continue;
           } else {
             if (!hasDoneTasksInYear) continue;
           }
