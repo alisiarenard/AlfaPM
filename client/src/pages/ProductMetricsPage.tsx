@@ -636,6 +636,27 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           {selectedDepartment && teamIdsArray.length > 0 && (
             <div className="mt-6 border border-border rounded-lg overflow-hidden transition-opacity duration-300" style={{ opacity: isTableFetching ? 0.5 : 1 }} data-testid="initiatives-table-container">
               <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-end gap-2">
+                <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
+                  {([
+                    { key: 'all', label: 'Все' },
+                    { key: 'done', label: 'Завершенные' },
+                    { key: 'carryover', label: 'Переходящие' },
+                    { key: 'transferred', label: 'Перенесенные' },
+                  ] as const).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setInitiativeFilter(key)}
+                      className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
+                        initiativeFilter === key
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      data-testid={`filter-${key}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <Button size="icon" variant="ghost" data-testid="button-refresh" title="Обновить" onClick={handleSyncSpaces} disabled={isSyncing}>
                   <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                 </Button>
@@ -699,35 +720,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
-                    <th className="text-left px-4 py-3 border-b border-border w-[20%]" data-testid="th-initiative">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="font-normal text-muted-foreground gap-1" data-testid="button-initiative-filter">
-                            {{ all: 'Все инициативы', done: 'Завершенные', active: 'Активные', backlog: 'Бэклог', carryover: 'Переходящие', transferred: 'Перенесенные' }[initiativeFilter] || 'Все инициативы'}
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="bg-white dark:bg-popover">
-                          <DropdownMenuItem onClick={() => setInitiativeFilter('all')} data-testid="filter-all">
-                            Все инициативы
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setInitiativeFilter('done')} data-testid="filter-done">
-                            Завершенные
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setInitiativeFilter('active')} data-testid="filter-active">
-                            Активные
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setInitiativeFilter('backlog')} data-testid="filter-backlog">
-                            Бэклог
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setInitiativeFilter('carryover')} data-testid="filter-carryover">
-                            Переходящие
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setInitiativeFilter('transferred')} data-testid="filter-transferred">
-                            Перенесенные
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border w-[20%]" data-testid="th-initiative">
+                      Инициатива
                     </th>
                     <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-cost">
                       Затраты (план)
