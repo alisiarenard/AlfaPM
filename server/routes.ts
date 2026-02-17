@@ -4365,6 +4365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (initiative.condition === '2-archived') continue;
             const hasAnyDoneTasks = allTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
             if (hasAnyDoneTasks) continue;
+            if (initiative.factValue != null && initiative.factValue > 0) continue;
           } else {
             if (!hasDoneTasksInYear) continue;
           }
