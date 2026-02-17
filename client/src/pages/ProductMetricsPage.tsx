@@ -283,7 +283,14 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       if (!allTeamsFilterSelected && filterTeamIdsParam) {
         url += `&filterTeamIds=${filterTeamIdsParam}`;
       }
-      const response = await fetch(url, { cache: 'no-store' });
+      const response = await fetch(url, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch initiatives table');
       return response.json();
     },

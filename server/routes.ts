@@ -4259,6 +4259,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/metrics/initiatives-table", async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     try {
       const teamIdsParam = req.query.teamIds as string;
       const yearParam = req.query.year as string;
