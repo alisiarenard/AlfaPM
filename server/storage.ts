@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, users, departments, teams, initiatives, tasks, sprints, teamYearlyData } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, sql, asc, desc, and, gte, lt } from "drizzle-orm";
+import { eq, sql, asc, desc, and, gte, lt, ne } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;

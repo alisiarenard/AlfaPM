@@ -4321,12 +4321,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (init.type === null || !allowedTypes.includes(init.type)) continue;
           
           const allTasks = await storage.getTasksByInitCardId(init.cardId);
-          // ГЛОБАЛЬНОЕ ПРАВИЛО: Исключаем архивные без задач
-          // Проверяем как condition, так и флаг archived если он есть
+          // ГЛОБАЛЬНОЕ ПРАВИЛО: Исключаем архивные без задач И без значений
           const isArchived = init.condition === '2-archived' || init.condition === 'archived' || (init as any).archived === true;
           const hasNoTasks = allTasks.length === 0;
+          
+          // Проверяем наличие значений: если есть хоть что-то, инициативу НЕ скрываем
+          const factVal = init.factValue?.toString().trim();
+          const plannedVal = init.plannedValue?.toString().trim();
+          const hasValue = (factVal && factVal !== '0' && factVal !== '') || 
+                           (plannedVal && plannedVal !== '0' && plannedVal !== '');
 
-          if (isArchived && hasNoTasks) {
+          // Эпики без задач, но с ценностью (даже если архивированы) ДОЛЖНЫ отображаться
+          // ВАЖНО: Если инициатива НЕ в архиве, она должна отображаться в любом случае
+          // Мы скрываем ТОЛЬКО если: В Архиве И Нет Задач И Нет Ценности
+          if (isArchived && hasNoTasks && !hasValue) {
             console.log(`[Filter] CRITICAL: Skipping archived empty initiative: ${init.cardId} "${init.title}" (condition: ${init.condition})`);
             continue;
           }
@@ -4367,8 +4375,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const allTasksForThisInit = await storage.getTasksByInitCardId(initiative.cardId);
           
           // Проверка на архивность: если в архиве и нет задач ВООБЩЕ во всей базе
+          // Или если это эпик без задач, но у него нет factValue (чтобы не скрыть новые пустые эпики)
           const isArchived = initiative.condition === '2-archived' || initiative.condition === 'archived' || (initiative as any).archived === true;
-          if (isArchived && allTasksForThisInit.length === 0) {
+          const hasNoTasks = allTasksForThisInit.length === 0;
+          const hasNoValue = !initiative.factValue || initiative.factValue === '0' || initiative.factValue === '';
+
+          if (isArchived && hasNoTasks && hasNoValue) {
             console.log(`[Filter] Skipping archived empty initiative during team loop: ${initiative.cardId}`);
             continue;
           }
@@ -4553,8 +4565,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const finalResult = result.filter(init => {
-        // Дополнительная финальная проверка: если инициатива архивная и у нее 0 участников (задач), убираем ее
-        if (init.archived && init.participants.length === 0) {
+        // Дополнительная финальная проверка: если инициатива архивная и у нее 0 участников (задач) И нет значения
+        const hasNoValue = !init.actualEffect || init.actualEffect === 0;
+        if (init.archived && init.participants.length === 0 && hasNoValue) {
           console.log(`[Filter] FINAL REMOVAL: Archived empty initiative: ${init.cardId} "${init.title}"`);
           return false;
         }
