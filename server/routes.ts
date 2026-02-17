@@ -4317,7 +4317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (filterParam === 'all') return true;
             if (filterParam === 'done') return init.state === '3-done';
             if (filterParam === 'active') return init.state === '2-inProgress';
-            if (filterParam === 'backlog') return init.state === '1-queued';
+            if (filterParam === 'backlog') return true;
             return true;
           });
 
@@ -4360,7 +4360,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           const hasDoneTasksInYear = tasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
-          if (!hasDoneTasksInYear) continue;
+
+          if (filterParam === 'backlog') {
+            if (initiative.condition === '2-archived') continue;
+            if (hasDoneTasksInYear) continue;
+          } else {
+            if (!hasDoneTasksInYear) continue;
+          }
 
           const isDoneTask = (task: any) => task.state === '3-done' && task.condition !== '3 - deleted';
 
