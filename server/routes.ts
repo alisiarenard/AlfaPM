@@ -4383,8 +4383,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (hasAnyDoneTasks) continue;
             if (hasFactValue) continue;
           } else {
-            // Если карточка заархивирована и у нее НЕТ задач, скрываем ее из всех продуктовых метрик
-            if ((initiative.condition === '2-archived' || initiative.archived === true) && allTasks.length === 0) {
+          // Если карточка заархивирована и у нее НЕТ задач, скрываем ее из всех продуктовых метрик
+            if (initiative.condition === '2-archived' && allTasks.length === 0) {
                continue;
             }
             // Для Эпиков показываем их, если есть задачи в году ИЛИ если есть факт. значение (чтобы видеть эффект)
