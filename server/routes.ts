@@ -2595,6 +2595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const card of allCards) {
           try {
             const fullCard = await kaitenClient.getCard(card.id);
+            if (!fullCard) continue;
 
             let state: "1-queued" | "2-inProgress" | "3-done";
             if (fullCard.state === 3) {
@@ -2604,7 +2605,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } else {
               state = "1-queued";
             }
-            // Прямое использование флага archived из Kaiten
             const condition: "1-live" | "2-archived" = fullCard.archived ? "2-archived" : "1-live";
 
             const rawPlanned = fullCard.properties?.[plannedValueId];
@@ -2633,8 +2633,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               syncedCardIds.push(card.id);
             }
           } catch (cardError) {
-            console.error(`[Sync Spaces] Error syncing card ${card.id}:`, cardError);
-            // Если карточка недоступна (например, 403), мы просто пропускаем ее и идем дальше
+            console.error(`[Sync Spaces] Skipping card ${card.id} due to error:`, cardError.message || cardError);
             continue;
           }
         }
