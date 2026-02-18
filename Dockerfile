@@ -27,7 +27,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Install drizzle-kit for database migrations
-RUN npm install drizzle-kit
+RUN npm install drizzle-kit@0.31.8
 
 # Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
@@ -38,7 +38,7 @@ COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Copy static assets if needed
-COPY --from=builder /app/attached_assets ./attached_assets 2>/dev/null || true
+COPY --from=builder /app/attached_assets ./attached_assets/
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
