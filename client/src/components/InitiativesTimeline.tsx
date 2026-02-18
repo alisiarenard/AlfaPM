@@ -1356,13 +1356,15 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                     if (isClickable) {
                       return (
                         <div className="flex items-start gap-1">
-                          <button
-                            onClick={() => handleInitiativeTitleClick(initiative)}
-                            className="text-sm text-foreground font-semibold transition-colors text-left"
-                            data-testid={`button-initiative-${initiative.id}`}
+                          <a
+                            href={getKaitenCardUrl(team.spaceId, initiative.cardId, initiative.condition === "2-archived")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-foreground font-semibold transition-colors text-left hover:underline"
+                            data-testid={`link-initiative-${initiative.id}`}
                           >
                             {initiative.title}
-                          </button>
+                          </a>
                           {isComplete && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1382,12 +1384,24 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                     } else {
                       return (
                         <div className="flex items-start gap-1">
-                          <span
-                            className="text-sm text-foreground font-semibold text-left"
-                            data-testid={`text-initiative-${initiative.id}`}
-                          >
-                            {initiative.title}
-                          </span>
+                          {initiative.cardId !== 0 ? (
+                            <a
+                              href={getKaitenCardUrl(team.spaceId, initiative.cardId, initiative.condition === "2-archived")}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-foreground font-semibold text-left hover:underline"
+                              data-testid={`link-initiative-${initiative.id}`}
+                            >
+                              {initiative.title}
+                            </a>
+                          ) : (
+                            <span
+                              className="text-sm text-foreground font-semibold text-left"
+                              data-testid={`text-initiative-${initiative.id}`}
+                            >
+                              {initiative.title}
+                            </span>
+                          )}
                           {isComplete && (
                             <Tooltip>
                               <TooltipTrigger asChild>
