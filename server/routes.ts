@@ -4225,11 +4225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const isArchived = init.condition === '2-archived' || init.condition === 'archived';
           const hasNoTasks = allTasks.length === 0;
 
-          // Логируем информацию по каждой инициативе перед фильтрацией
-          console.log(`[Init Info] Card ${init.cardId} "${init.title}": Archived=${isArchived}, Condition=${init.condition}, TasksCount=${allTasks.length}`);
-
           if (isArchived && hasNoTasks) {
-            console.log(`[Filter] Skipping archived empty initiative: ${init.cardId} "${init.title}"`);
             continue;
           }
           
