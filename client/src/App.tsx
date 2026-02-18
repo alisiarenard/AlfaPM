@@ -55,7 +55,7 @@ function Sidebar() {
             onClick={() => setLocation("/settings")}
             data-testid="button-settings"
           >
-            <Settings className="h-5 w-5" />
+            <Settings className="h-5 w-5 text-white" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">Настройки</TooltipContent>
