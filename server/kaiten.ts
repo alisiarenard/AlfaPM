@@ -104,6 +104,8 @@ export class KaitenClient {
         'Content-Type': 'application/json',
       },
       body: options?.body ? JSON.stringify(options.body) : undefined,
+      headersTimeout: 60000,
+      bodyTimeout: 60000,
     });
 
     const responseText = await body.text();
