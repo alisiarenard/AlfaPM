@@ -2522,6 +2522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/kaiten/sync-spaces", async (req, res) => {
+    res.setTimeout(300000);
     try {
       const { spaceIds } = req.body;
       console.log("[Sync Spaces] Request body:", JSON.stringify(req.body));
@@ -2660,6 +2661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/kaiten/sync-board/:boardId", async (req, res) => {
+    res.setTimeout(300000);
     try {
       const boardId = parseInt(req.params.boardId);
       if (isNaN(boardId)) {
@@ -3009,6 +3011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/kaiten/sync-sprint/:sprintId", async (req, res) => {
+    res.setTimeout(300000);
     try {
       const sprintId = parseInt(req.params.sprintId);
       console.log(`[SYNC-SPRINT] Starting sync for sprint ${sprintId}`);
@@ -3125,6 +3128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/kaiten/sync-sprints/:boardId", async (req, res) => {
+    res.setTimeout(300000);
     try {
       const boardId = parseInt(req.params.boardId);
       if (isNaN(boardId)) {
@@ -3333,15 +3337,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/kaiten/smart-sync/:teamId", async (req, res) => {
+    res.setTimeout(300000);
     try {
       const teamId = req.params.teamId;
       const yearParam = req.body?.year;
       const syncYear = yearParam ? parseInt(yearParam) : null;
-      console.log(`\n[SMART-SYNC START] Syncing team ${teamId}, year=${syncYear || 'all'}`);
       
-      // Получаем команду
       const team = await storage.getTeamById(teamId);
-      console.log(`[SMART-SYNC] Team found: ${team?.teamName}`);
       if (!team) {
         return res.status(404).json({
           success: false,
@@ -3423,61 +3425,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Архивируем инициативы, которых больше нет на доске
       await storage.archiveInitiativesNotInList(team.initBoardId, syncedCardIds);
-      console.log(`[SMART-SYNC] Initiatives synced: ${syncedCount}`);
-      
       
       // Шаг 2: Синхронизируем все спринты из таблицы спринтов
       let tasksSynced = 0;
       
-      console.log(`[SMART-SYNC] Checking for sprint board. hasSprints=${team.hasSprints}, sprintBoardId=${team.sprintBoardId}`);
       if (team.sprintBoardId) {
-        console.log(`[SMART-SYNC] Getting all sprints from database for board ${team.sprintBoardId}`);
-        
-        // Получаем спринты для этой доски из БД
         const allSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
         
-        // Фильтруем спринты по году, если указан
         const sprintsToSync = syncYear
           ? allSprints.filter(sprint => {
               const sprintYear = new Date(sprint.startDate).getFullYear();
               return sprintYear === syncYear;
             })
           : allSprints;
-        console.log(`[SMART-SYNC] Found ${allSprints.length} sprints total, syncing ${sprintsToSync.length} (year=${syncYear || 'all'})`);
         
-        // Проходим по каждому спринту
         for (const dbSprint of sprintsToSync) {
           try {
-            console.log(`[SMART-SYNC] Processing sprint ${dbSprint.sprintId} (Kaiten ID: ${dbSprint.sprintId})`);
-            
-            // Получаем детали спринта из Kaiten
             const sprintDetails = await kaitenClient.getSprint(dbSprint.sprintId);
-            console.log(`[SMART-SYNC] Sprint ${dbSprint.sprintId} has ${sprintDetails.cards?.length || 0} cards`);
             
-            // Синхронизируем задачи этого спринта
             if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
               for (const sprintCard of sprintDetails.cards) {
                 try {
                   const card = await kaitenClient.getCard(sprintCard.id);
                   
-                  // Пропускаем удаленные карточки (condition === 3)
                   if (card.condition === 3) {
                     continue;
                   }
                   
-                  // Ищем инициативу в родительской цепочке
                   let initCardId: number | null = null;
-                  
-                  console.log(`[SMART-SYNC] Task ${card.id} "${card.title.substring(0, 30)}..." parents_ids:`, card.parents_ids);
                   
                   if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
                     initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
-                    console.log(`[SMART-SYNC] Task ${card.id} found initCardId: ${initCardId}`);
                   } else {
                     initCardId = 0;
-                    console.log(`[SMART-SYNC] Task ${card.id} has no parents, setting initCardId: 0`);
                   }
                   
                   let state: "1-queued" | "2-inProgress" | "3-done";
@@ -3515,14 +3496,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
           } catch (sprintError) {
-            const msg = sprintError instanceof Error ? sprintError.message : String(sprintError);
-            console.error(`[SMART-SYNC] Error processing sprint ${dbSprint.sprintId}:`, msg);
+            console.error(`[SMART-SYNC] Error sprint ${dbSprint.sprintId}:`, sprintError instanceof Error ? sprintError.message : String(sprintError));
           }
         }
-        
-        console.log(`[SMART-SYNC] Total tasks synced from all sprints: ${tasksSynced}`);
-      } else {
-        console.log(`[SMART-SYNC] No sprint board configured for this team`);
       }
       
       
@@ -3532,14 +3508,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tasksSynced
       });
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(`[SMART-SYNC] ERROR:`, errorMsg);
-      if (error instanceof Error) {
-        console.error(`[SMART-SYNC] Stack:`, error.stack);
-      }
+      console.error(`[SMART-SYNC] ERROR:`, error instanceof Error ? error.message : String(error));
       res.status(500).json({ 
         success: false, 
-        error: errorMsg
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });
