@@ -465,8 +465,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       
       return { 
         initiatives: { count: smartSyncData.initiativesSynced }, 
-        sprint: smartSyncData.sprint,
-        newSprintSynced: smartSyncData.newSprintSynced,
+        tasksSynced: smartSyncData.tasksSynced || 0,
         tasks: tasksData
       };
     },
@@ -481,16 +480,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       
       let description = `Синхронизировано ${data.initiatives.count} инициатив`;
       
-      // Для команд со спринтами - показываем информацию о синхронизированном спринте
-      if (team.sprintBoardId && data.sprint) {
-        const taskCount = data.sprint.tasksSynced || 0;
-        if (data.newSprintSynced) {
-          description += `. Новый спринт: ${taskCount} задач`;
-        } else {
-          description += ` и ${taskCount} задач из текущего спринта`;
-        }
-      } else if (team.sprintBoardId && !data.sprint) {
-        description += '. Спринт не найден';
+      if (data.tasksSynced > 0) {
+        description += ` и ${data.tasksSynced} задач`;
       }
       
       // Для команд без спринтов - показываем информацию о синхронизированных задачах
