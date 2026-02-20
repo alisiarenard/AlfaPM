@@ -1585,19 +1585,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setTimeout(300000);
     try {
       const sprintId = parseInt(req.params.sprintId);
+      const offset = parseInt(req.query.offset as string) || 0;
+      const limit = parseInt(req.query.limit as string) || 10;
+
       if (isNaN(sprintId)) {
-        return res.status(400).json({ 
-          success: false, 
-          error: "Invalid sprint ID" 
-        });
+        return res.status(400).json({ success: false, error: "Invalid sprint ID" });
       }
 
       const kaitenSprint = await kaitenClient.getSprint(sprintId);
       if (!kaitenSprint) {
-        return res.status(404).json({ 
-          success: false, 
-          error: "Sprint not found in Kaiten" 
-        });
+        return res.status(404).json({ success: false, error: "Sprint not found in Kaiten" });
       }
 
       const sprint = {
@@ -1611,119 +1608,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
         goal: kaitenSprint.goal || null,
       };
 
-      const tasks: any[] = [];
-      
-      if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
-        for (const sprintCard of kaitenSprint.cards) {
-          try {
-            const card = await kaitenClient.getCard(sprintCard.id);
-            
-            if (card.condition === 3) {
-              continue;
-            }
-
-            let initCardId = 0;
-            let initiativeTitle = null;
-            if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-              try {
-                initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
-                if (initCardId > 0) {
-                  const initiative = await storage.getInitiative(initCardId.toString());
-                  if (!initiative) {
-                    const initiativeCard = await kaitenClient.getCard(initCardId);
-                    initiativeTitle = initiativeCard.title;
-                  } else {
-                    initiativeTitle = initiative.title;
-                  }
-                }
-              } catch (parentError) {
-                console.error(`[Sprint Preview] Error finding initiative for card ${sprintCard.id}:`, parentError);
-              }
-            }
-
-            tasks.push({
-              id: card.id.toString(),
-              cardId: card.id,
-              title: card.title,
-              size: card.size || 0,
-              state: card.state === 3 ? "3-done" : (card.state === 2 ? "2-inProgress" : "1-queued"),
-              initiativeCardId: initCardId,
-              initiativeTitle: initiativeTitle,
-              doneDate: card.last_moved_to_done_at || null,
-              condition: card.condition,
-            } as any);
-          } catch (cardError) {
-            console.error(`[Sprint Preview] Error processing card ${sprintCard.id}:`, cardError);
-          }
-        }
-      }
+      const allCards = kaitenSprint.cards && Array.isArray(kaitenSprint.cards) ? kaitenSprint.cards : [];
+      const totalCards = allCards.length;
+      const batch = allCards.slice(offset, offset + limit);
 
       const sprintEndDate = kaitenSprint.actual_finish_date || kaitenSprint.finish_date;
       const sprintStartDate = kaitenSprint.start_date;
       const sprintEndTime = new Date(sprintEndDate).getTime();
       const sprintStartTime = new Date(sprintStartDate).getTime();
 
-      // tasksInside = задачи без doneDate ИЛИ задачи с doneDate внутри дат спринта (кроме deleted)
-      const tasksInside = tasks.filter(task => {
-        const condition = (task as any).condition;
-        // Исключаем только deleted(3)
-        if (condition === 3) return false;
-        
-        // Если нет doneDate - включаем (queued/inProgress)
-        if (!task.doneDate) return true;
-        
-        // Если doneDate внутри дат спринта - включаем
-        const taskTime = new Date(task.doneDate).getTime();
-        return taskTime >= sprintStartTime && taskTime <= sprintEndTime;
-      });
+      const tasks: any[] = [];
+      const tasksOutside: any[] = [];
 
-      // tasksOutside = задачи с doneDate вне дат спринта
-      const tasksOutside = tasks.filter(task => {
-        // No need to filter by condition - all tasks saved are non-deleted
-        
-        // Если нет doneDate - не считаем вне спринта
-        if (!task.doneDate) return false;
-        
-        // Если doneDate вне дат спринта - включаем
-        const taskTime = new Date(task.doneDate).getTime();
-        return taskTime < sprintStartTime || taskTime > sprintEndTime;
-      });
+      for (const sprintCard of batch) {
+        try {
+          const card = await kaitenClient.getCard(sprintCard.id);
+          if (card.condition === 3) continue;
 
-      // СПД = Done SP (в даты спринта) / Total SP (всех планируемых без deleted)
-      let totalSP = 0;
-      let doneSP = 0;
-      
-      // Всего SP = ВСЕ задачи (все уже сохраненные задачи - deleted исключены при сохранении)
-      tasks.forEach(task => {
-        totalSP += task.size || 0;
-      });
-      
-      // Done SP = только done задачи с doneDate внутри дат спринта
-      tasksInside.forEach(task => {
-        if (task.state === "3-done" && task.condition !== '3 - deleted') {
-          doneSP += task.size || 0;
+          let initCardId = 0;
+          let initiativeTitle = null;
+          if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+            try {
+              initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+              if (initCardId > 0) {
+                const initiative = await storage.getInitiative(initCardId.toString());
+                if (!initiative) {
+                  const initiativeCard = await kaitenClient.getCard(initCardId);
+                  initiativeTitle = initiativeCard.title;
+                } else {
+                  initiativeTitle = initiative.title;
+                }
+              }
+            } catch (parentError) {
+              console.error(`[Sprint Preview] Error finding initiative for card ${sprintCard.id}:`, parentError);
+            }
+          }
+
+          const taskData = {
+            id: card.id.toString(),
+            cardId: card.id,
+            title: card.title,
+            size: card.size || 0,
+            state: card.state === 3 ? "3-done" : (card.state === 2 ? "2-inProgress" : "1-queued"),
+            initiativeCardId: initCardId,
+            initiativeTitle: initiativeTitle,
+            doneDate: card.last_moved_to_done_at || null,
+            condition: card.condition,
+          };
+
+          if (taskData.doneDate) {
+            const taskTime = new Date(taskData.doneDate).getTime();
+            if (taskTime < sprintStartTime || taskTime > sprintEndTime) {
+              tasksOutside.push(taskData);
+              continue;
+            }
+          }
+          tasks.push(taskData);
+        } catch (cardError) {
+          console.error(`[Sprint Preview] Error processing card ${sprintCard.id}:`, cardError);
         }
-      });
+      }
 
-      const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
-
-      // Velocity = количество done SP задач
-      sprint.velocity = doneSP;
+      const hasMore = offset + limit < totalCards;
 
       res.json({
         sprint,
-        tasks: tasksInside,
-        tasksOutside: tasksOutside,
+        tasks,
+        tasksOutside,
+        totalCards,
+        offset,
+        limit,
+        hasMore,
         stats: {
-          totalSP,
-          doneSP,
-          deliveryPlanCompliance,
+          totalSP: 0,
+          doneSP: 0,
+          deliveryPlanCompliance: 0,
         },
       });
     } catch (error) {
-      console.error(`[Sprint Preview] Error retrieving sprint ${sprintId}:`, error);
-      res.status(500).json({ 
-        success: false, 
+      console.error(`[Sprint Preview] Error retrieving sprint:`, error);
+      res.status(500).json({
+        success: false,
         error: "Failed to retrieve sprint preview from Kaiten",
         details: error instanceof Error ? error.message : String(error)
       });
