@@ -1582,6 +1582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/sprints/:sprintId/preview", async (req, res) => {
+    res.setTimeout(300000);
     try {
       const sprintId = parseInt(req.params.sprintId);
       if (isNaN(sprintId)) {
