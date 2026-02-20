@@ -61,7 +61,9 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
     queryFn: async () => {
       const response = await fetch(`/api/sprints/${searchedSprintId}/preview`);
       if (!response.ok) {
-        throw new Error('Sprint not found');
+        const errorData = await response.json().catch(() => null);
+        const detail = errorData?.details || errorData?.error || `HTTP ${response.status}`;
+        throw new Error(detail);
       }
       const data = await response.json();
       console.log("[Sprint Info] Данные с бэка:", data);
@@ -177,7 +179,7 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
 
           {error && (
             <div className="text-sm text-destructive mt-2" data-testid="text-sprint-error">
-              Спринт не найден
+              Ошибка: {error.message}
             </div>
           )}
         </div>
