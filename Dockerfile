@@ -12,6 +12,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Build args for Vite (VITE_ vars are embedded at build time)
+ARG VITE_KAITEN_DOMAIN
+ENV VITE_KAITEN_DOMAIN=$VITE_KAITEN_DOMAIN
+
 # Build the application
 RUN npm run build
 
