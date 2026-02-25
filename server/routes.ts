@@ -820,7 +820,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 countSP = true;
               }
               
-              console.log(`[Timeline SP] Init: ${initiative.cardId}, Task: ${task.id}, Sprint: ${task.sprintId}, Size: ${task.size}, DoneDate: ${task.doneDate}, CountSP: ${countSP}, SprintInfo: ${sprintInfo ? 'Found' : 'NOT FOUND'}`);
               
               if (countSP) {
                 current.sp += task.size;
@@ -910,7 +909,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const year = req.query.year ? parseInt(req.query.year as string) : null;
       const showActiveOnly = req.query.showActiveOnly === 'true';
       
-      console.log(`[TIMELINE] Fetching timeline for team ${teamId}, year=${year}, showActiveOnly=${showActiveOnly}`);
       
       const team = await storage.getTeamById(teamId);
       
@@ -2049,7 +2047,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Хелпер для сохранения нового спринта
       const saveNewSprint = async (kaitenSprint: any): Promise<{ sprintId: number; tasksSynced: number } | null> => {
         if (!kaitenSprint || !kaitenSprint.board_id || !kaitenSprint.start_date || !kaitenSprint.finish_date) {
-          console.log(`[CHECK-SYNC] Sprint missing required fields`);
           return null;
         }
         
@@ -2555,21 +2552,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setTimeout(300000);
     try {
       const { spaceIds } = req.body;
-      console.log("[Sync Spaces] Request body:", JSON.stringify(req.body));
-      console.log("[Sync Spaces] spaceIds:", spaceIds);
       if (!Array.isArray(spaceIds) || spaceIds.length === 0) {
         return res.status(400).json({ success: false, error: "spaceIds array is required" });
       }
 
       const allTeams = await storage.getAllTeams();
-      console.log("[Sync Spaces] Total teams in DB:", allTeams.length);
-      console.log("[Sync Spaces] Teams initSpaceId values:", allTeams.map(t => ({ teamId: t.teamId, teamName: t.teamName, initSpaceId: t.initSpaceId, initBoardId: t.initBoardId })));
-
       const relevantTeams = allTeams.filter(t => spaceIds.includes(Number(t.initSpaceId || t.initBoardId)));
-      console.log("[Sync Spaces] Relevant teams found:", relevantTeams.length, relevantTeams.map(t => t.teamName));
-
       const boardIds = [...new Set(relevantTeams.map(t => t.initBoardId))];
-      console.log("[Sync Spaces] Board IDs to sync:", boardIds);
 
       const plannedValueId = "id_237";
       const factValueId = "id_238";
@@ -2580,21 +2569,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const numericSpaceId of spaceIds.map(Number)) {
         try {
-          console.log("[Sync Spaces] Fetching space info for spaceId:", numericSpaceId);
           const spaceInfo = await kaitenClient.getSpaceInfo(numericSpaceId);
-          console.log("[Sync Spaces] Space info result:", spaceInfo);
           if (spaceInfo) {
             updatedSpaces.push({ spaceId: numericSpaceId, spaceName: spaceInfo.title });
             const teamsForSpace = allTeams.filter(t => Number(t.initSpaceId) === numericSpaceId || (!t.initSpaceId && Number(t.initBoardId) === numericSpaceId));
-            console.log("[Sync Spaces] Teams for space:", teamsForSpace.length, teamsForSpace.map(t => t.teamName));
             for (const team of teamsForSpace) {
-              console.log("[Sync Spaces] Updating team spaceName:", team.teamName, "old:", team.initSpaceName, "new:", spaceInfo.title);
               if (team.initSpaceName !== spaceInfo.title) {
                 await storage.updateTeam(team.teamId, { initSpaceName: spaceInfo.title });
               }
             }
-          } else {
-            console.log("[Sync Spaces] WARNING: Could not get space info for spaceId:", numericSpaceId);
           }
         } catch (spaceError: any) {
           console.error(`[Sync Spaces] Error fetching space info for ${numericSpaceId}:`, spaceError.message || spaceError);
@@ -2607,26 +2590,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const boardId of boardIds) {
         try {
-          console.log("[Sync Spaces] Syncing board:", boardId);
           const allCards = await kaitenClient.getCardsFromBoard(boardId);
           const nonArchivedCards = allCards.filter(c => !c.archived);
-          console.log(`[Sync Spaces] Board ${boardId}: ${allCards.length} total cards, ${nonArchivedCards.length} non-archived`);
           const syncedCardIds: number[] = [];
 
           for (const card of nonArchivedCards) {
             try {
               const fullCard = await kaitenClient.getCard(card.id);
               if (!fullCard) {
-                console.log(`[Sync Spaces] Card ${card.id} returned null from Kaiten API`);
                 continue;
               }
 
               if (fullCard.archived) {
-                console.log(`[Sync Spaces] Skipping archived initiative card ${fullCard.id} "${fullCard.title}"`);
                 continue;
               }
-
-              console.log(`[Sync Spaces] Initiative card ${fullCard.id} "${fullCard.title}" — archived: ${fullCard.archived}, condition: ${fullCard.condition}, state: ${fullCard.state}`);
 
               let state: "1-queued" | "2-inProgress" | "3-done";
               if (fullCard.state === 3) {
@@ -2673,8 +2650,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           continue;
         }
       }
-
-      console.log(`[Sync Spaces] Total initiatives synced across all boards: ${allSyncedInitiatives.length}`);
 
       res.json({
         success: true,
@@ -3044,7 +3019,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setTimeout(300000);
     try {
       const sprintId = parseInt(req.params.sprintId);
-      console.log(`[SYNC-SPRINT] Starting sync for sprint ${sprintId}`);
       
       if (isNaN(sprintId)) {
         return res.status(400).json({ 
@@ -3054,9 +3028,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Получаем данные спринта из Kaiten
-      console.log(`[SYNC-SPRINT] Fetching sprint from Kaiten...`);
       const sprint = await kaitenClient.getSprint(sprintId);
-      console.log(`[SYNC-SPRINT] Got sprint with ${sprint.cards?.length || 0} cards`);
       
       if (!sprint.cards || !Array.isArray(sprint.cards)) {
         return res.json({
@@ -3128,10 +3100,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           syncedTasks.push(synced);
           
-          // Логируем прогресс каждые 10 карточек
-          if ((i + 1) % 10 === 0) {
-            console.log(`[SYNC-SPRINT] Processed ${i + 1}/${sprint.cards.length} cards`);
-          }
         } catch (cardError) {
           errorCount++;
           console.error(`[SYNC-SPRINT] Error syncing card ${sprintCard.id}:`, cardError instanceof Error ? cardError.message : String(cardError));
@@ -3139,7 +3107,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log(`[SYNC-SPRINT] Completed: ${syncedTasks.length} synced, ${errorCount} errors`);
       
       res.json({
         success: true,

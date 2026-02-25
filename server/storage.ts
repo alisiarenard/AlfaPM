@@ -620,23 +620,13 @@ export class DbStorage implements IStorage {
     const alreadyArchived = notInActiveList.filter(init => init.condition === "2-archived");
     const needArchiving = notInActiveList.filter(init => init.condition !== "2-archived");
     
-    if (alreadyArchived.length > 0) {
-      console.log(`[Archive Initiatives] Board ${boardId}: ${alreadyArchived.length} already archived in DB, skipping`);
-    }
-    
     if (needArchiving.length > 0) {
-      console.log(`[Archive Initiatives] Board ${boardId}: archiving ${needArchiving.length} initiatives (active in DB → archived in Kaiten):`);
       for (const initiative of needArchiving) {
-        console.log(`[Archive Initiatives]   → ${initiative.cardId} "${initiative.title}" (was condition: ${initiative.condition})`);
         await db
           .update(initiatives)
           .set({ condition: "2-archived" })
           .where(eq(initiatives.cardId, initiative.cardId));
       }
-    }
-    
-    if (notInActiveList.length === 0) {
-      console.log(`[Archive Initiatives] Board ${boardId}: all DB initiatives are active in Kaiten, nothing to archive`);
     }
   }
 

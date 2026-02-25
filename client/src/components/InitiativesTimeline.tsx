@@ -620,10 +620,6 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
         const response = await fetch(`/api/sprints/${sprintId}/info`);
         if (response.ok) {
           const data = await response.json();
-          console.log("[Sprint Modal DEBUG] Данные с бэка:", data);
-          console.log("[Sprint Modal DEBUG] tasks.length:", data.tasks?.length);
-          console.log("[Sprint Modal DEBUG] stats:", data.stats);
-          
           if (data.stats) {
             sprintStats = {
               totalSP: data.stats.totalSP,
@@ -2012,7 +2008,6 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   }
                   
                   const result = await response.json();
-                  console.log('[Sprint Sync] Completed:', result);
                   
                   // Сначала сбрасываем лоадер
                   setIsSyncingSprintData(false);

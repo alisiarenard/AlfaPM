@@ -354,11 +354,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       if (!team.teamId || !team.sprintBoardId || !team.spaceId) return;
       // Не запускать повторно (ни во время синхронизации, ни если уже синхронизировали)
       if (isBackgroundSyncing || hasSyncedRef.current) {
-        console.log(`[Background Sync] SKIPPED for team ${team.teamId} - hasSyncedRef=${hasSyncedRef.current}, isBackgroundSyncing=${isBackgroundSyncing}`);
         return;
       }
-      
-      console.log(`[Background Sync] STARTING for team ${team.teamId}`);
       // Помечаем что синхронизация началась
       hasSyncedRef.current = true;
       
@@ -377,8 +374,6 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         // check-sync endpoint уже синхронизирует данные и возвращает tasksSynced
         // Если данные были синхронизированы - обновляем UI
         if (checkData.synced && checkData.tasksSynced > 0) {
-          console.log(`[Background Sync] check-sync completed for team ${team.teamId}:`, checkData);
-          
           // Обновляем данные на фронте
           queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
           queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
@@ -394,14 +389,10 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
           }
         } else if (!checkData.synced && checkData.sprintId) {
           // Если нужна полная синхронизация нового спринта
-          console.log(`[Background Sync] Starting smart-sync for team ${team.teamId}, sprint ${checkData.sprintId}`);
-          
           const syncResponse = await apiRequest("POST", `/api/kaiten/smart-sync/${team.teamId}`, {});
           if (!isMounted) return;
           
           const syncData = await syncResponse.json();
-          
-          console.log(`[Background Sync] smart-sync completed for team ${team.teamId}:`, syncData);
           
           // Обновляем данные на фронте
           queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
@@ -421,7 +412,6 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       } catch (error) {
         // Игнорируем ошибки отмены запроса
         if (error instanceof Error && error.name === 'AbortError') {
-          console.log(`[Background Sync] Cancelled for team ${team.teamId}`);
           return;
         }
         console.error('[Background Sync] Error:', error);
@@ -596,7 +586,6 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     return getStartDate(a) - getStartDate(b);
   });
   
-  console.log(`[Initiatives Filter] Final count: ${sortedInitiatives.length} initiatives shown (from ${initiatives.length} total)`);
 
   const teamData: Team = {
     boardId: team.initBoardId.toString(),

@@ -191,7 +191,6 @@ async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: str
           if (err.status === 429 && retries < 2) {
             // Rate limit - ждем и повторяем
             const waitTime = (retries + 1) * 20000; // 20s, 40s
-            console.log(`Rate limit hit, waiting ${waitTime}ms before retry ${retries + 1}/2`);
             await sleep(waitTime);
             retries++;
           } else {
