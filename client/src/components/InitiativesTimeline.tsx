@@ -519,26 +519,25 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     return roundSP(sprint?.sp || 0);
   };
 
-  // Получить SP для конкретной инициативы в конкретном спринте (только done задачи с doneDate внутри дат спринта)
   const getFilteredSprintSP = (initiative: Initiative, sprintId: number): number => {
-    const sprintInfo = getSprintInfo(sprintId);
-    if (!sprintInfo) return 0;
-    
-    const sprintStartTime = new Date(sprintInfo.startDate).getTime();
-    const sprintEndTime = new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate).getTime();
-    
     const tasks = getSprintTasks(initiative, sprintId);
+    if (tasks.length === 0) return 0;
+
+    const sprintInfo = getSprintInfo(sprintId);
+    const sprintStartTime = sprintInfo ? new Date(sprintInfo.startDate).getTime() : null;
+    const sprintEndTime = sprintInfo ? new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate).getTime() : null;
+    
     let totalSP = 0;
     
     tasks.forEach(task => {
-      let countSP = false;
       if (!task.doneDate) {
-        countSP = true;
-      } else {
+        totalSP += task.size;
+      } else if (sprintStartTime !== null && sprintEndTime !== null) {
         const taskTime = new Date(task.doneDate).getTime();
-        countSP = taskTime >= sprintStartTime && taskTime <= sprintEndTime;
-      }
-      if (countSP) {
+        if (taskTime >= sprintStartTime && taskTime <= sprintEndTime) {
+          totalSP += task.size;
+        }
+      } else {
         totalSP += task.size;
       }
     });
