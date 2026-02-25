@@ -1478,6 +1478,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Диагностический endpoint для отладки "Поддержка бизнеса" SP
+  app.get("/api/debug/timeline/:teamId", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const team = await storage.getTeamById(teamId);
+      if (!team) return res.status(404).json({ error: "Team not found" });
+
+      const allTasks = await storage.getAllTasks();
+      const teamTasks = allTasks.filter(t => t.teamId === teamId);
+      
+      const allInitiatives = team.initBoardId 
+        ? await storage.getInitiativesByBoardId(team.initBoardId) 
+        : [];
+      const businessSupport = await storage.getInitiativeByCardId(0);
+      const initIds = new Set(allInitiatives.map(i => i.cardId));
+      if (businessSupport) initIds.add(0);
+      
+      const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
+      if (businessSupport) initiativeTypeMap.set(0, businessSupport.type);
+      
+      const teamSprints = team.sprintBoardId 
+        ? await storage.getSprintsByBoardId(team.sprintBoardId) 
+        : [];
+      const teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
+
+      const debug: any = {
+        team: { teamId, teamName: team.teamName, initBoardId: team.initBoardId, sprintBoardId: team.sprintBoardId, hasSprints: team.hasSprints },
+        totalTeamTasks: teamTasks.length,
+        knownInitiativeCardIds: [...initIds],
+        sprints: teamSprints.map(s => ({ sprintId: s.sprintId, title: s.title, startDate: s.startDate, finishDate: s.finishDate })),
+        taskAnalysis: [],
+        supportBusinessBySprint: {} as Record<number, { tasks: number, doneTasks: number, doneSP: number, allSP: number, taskDetails: any[] }>,
+      };
+
+      for (const task of teamTasks) {
+        const initType = initiativeTypeMap.get(task.initCardId || 0);
+        const wouldRedirect = task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler';
+        const effectiveInitCardId = wouldRedirect ? 0 : (task.initCardId || 0);
+        const hasValidSprint = task.sprintId !== null && teamSprintIds.has(task.sprintId!);
+        const isDone = task.state === '3-done' && task.condition !== '3 - deleted';
+        
+        const entry: any = {
+          cardId: task.cardId,
+          title: task.title?.substring(0, 50),
+          size: task.size,
+          state: task.state,
+          condition: task.condition,
+          initCardId: task.initCardId,
+          effectiveInitCardId,
+          redirectedToSupport: wouldRedirect,
+          initType: initType || 'UNKNOWN',
+          sprintId: task.sprintId,
+          hasValidSprint,
+          isDone,
+          countedAsSP: isDone && hasValidSprint,
+        };
+        debug.taskAnalysis.push(entry);
+        
+        // Группируем "Поддержка бизнеса" задачи по спринтам
+        if (effectiveInitCardId === 0 && task.sprintId !== null) {
+          const key = task.sprintId;
+          if (!debug.supportBusinessBySprint[key]) {
+            debug.supportBusinessBySprint[key] = { tasks: 0, doneTasks: 0, doneSP: 0, allSP: 0, taskDetails: [] };
+          }
+          const s = debug.supportBusinessBySprint[key];
+          s.tasks++;
+          s.allSP += task.size || 0;
+          if (isDone) { s.doneTasks++; s.doneSP += task.size || 0; }
+          s.taskDetails.push({ cardId: task.cardId, size: task.size, state: task.state, condition: task.condition, hasValidSprint });
+        }
+      }
+
+      res.json(debug);
+    } catch (error) {
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
   app.get("/api/initiatives/:id", async (req, res) => {
     try {
       const { id } = req.params;
