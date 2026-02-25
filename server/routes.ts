@@ -1453,15 +1453,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nullInitCardIdTasks = teamTasks.filter(t => t.initCardId === null);
       const zeroInitCardIdTasks = teamTasks.filter(t => t.initCardId === 0);
 
+      const taskSprintIds = new Set(teamTasks.filter(t => t.sprintId !== null).map(t => t.sprintId!));
+      const orphanedSprintIds = [...taskSprintIds].filter(sid => !teamSprintIds.has(sid));
+      const tasksWithOrphanedSprints = teamTasks.filter(t => t.sprintId !== null && !teamSprintIds.has(t.sprintId!));
+
       const debug: any = {
         team: { teamId, teamName: team.teamName, initBoardId: team.initBoardId, sprintBoardId: team.sprintBoardId, hasSprints: team.hasSprints },
         totalTeamTasks: teamTasks.length,
         tasksWithNullInitCardId: nullInitCardIdTasks.length,
         tasksWithZeroInitCardId: zeroInitCardIdTasks.length,
+        orphanedSprintIds,
+        tasksWithOrphanedSprintCount: tasksWithOrphanedSprints.length,
+        orphanedSprintTasksSample: tasksWithOrphanedSprints.slice(0, 10).map(t => ({
+          cardId: t.cardId, title: t.title?.substring(0, 50), size: t.size, state: t.state, 
+          sprintId: t.sprintId, initCardId: t.initCardId
+        })),
         nullInitCardIdSample: nullInitCardIdTasks.slice(0, 10).map(t => ({
           cardId: t.cardId, title: t.title?.substring(0, 50), size: t.size, state: t.state, sprintId: t.sprintId, initCardId: t.initCardId
         })),
         knownInitiativeCardIds: [...initIds],
+        teamSprintIds: [...teamSprintIds],
         sprints: teamSprints.map(s => ({ sprintId: s.sprintId, title: s.title, startDate: s.startDate, finishDate: s.finishDate })),
         taskAnalysis: [],
         supportBusinessBySprint: {} as Record<number, { tasks: number, doneTasks: number, doneSP: number, inProgressTasks: number, inProgressSP: number, taskDetails: any[] }>,
