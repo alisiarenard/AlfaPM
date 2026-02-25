@@ -1533,6 +1533,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      const compact = req.query.compact === '1';
+      if (compact) {
+        delete debug.taskAnalysis;
+        Object.keys(debug.supportBusinessBySprint).forEach(key => {
+          delete debug.supportBusinessBySprint[key].taskDetails;
+        });
+      }
       res.json(debug);
     } catch (error) {
       res.status(500).json({ error: String(error) });
