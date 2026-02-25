@@ -952,25 +952,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Загружаем все задачи один раз (избегаем N+1)
-      // Используем allInitiatives для загрузки задач (включая задачи из других типов)
       const allInitiativeCardIds = new Set(allInitiatives.map(i => i.cardId));
       const allTasks = await storage.getAllTasks();
-      // Фильтруем задачи по teamId чтобы показывать только задачи этой команды
+      // Фильтруем задачи по teamId (без фильтра по allInitiativeCardIds — 
+      // задачи из инициатив с других досок должны попадать в "Поддержку бизнеса")
       let initiativeTasks = allTasks.filter(task => 
         task.initCardId !== null && 
-        allInitiativeCardIds.has(task.initCardId) &&
         task.teamId === teamId
       );
       
       // Создаем Map для быстрого поиска типа инициативы по cardId
       const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
       
-      // Перенаправляем задачи из инициатив других типов (не Epic, Compliance и не Enabler) в "Поддержку бизнеса"
+      // Перенаправляем задачи из неизвестных инициатив и не-Epic/Compliance/Enabler в "Поддержку бизнеса"
       initiativeTasks = initiativeTasks.map(task => {
         const initType = initiativeTypeMap.get(task.initCardId || 0);
         // Если инициатива не Epic, не Compliance, не Enabler и не "Поддержка бизнеса" (cardId=0), перенаправляем в "Поддержку бизнеса"
+        // Это также перенаправляет задачи из инициатив с других досок (initType === undefined)
         if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
-          // ВАЖНО: Сохраняем тип инициативы в task.type для правильного подсчета в Cost Structure
           return { ...task, initCardId: 0, type: initType || task.type };
         }
         return task;
@@ -1218,10 +1217,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const teamInfoMap = new Map(allTeams.map(t => [t.teamId, { name: t.teamName, spPrice: t.spPrice || 0 }]));
         const crossTeamTasks = allTasks.filter(task =>
           task.initCardId !== null &&
-          allInitiativeCardIds.has(task.initCardId) &&
           task.state === '3-done' &&
           task.condition !== '3 - deleted'
-        );
+        ).map(task => {
+          const initType = initiativeTypeMap.get(task.initCardId || 0);
+          if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
+            return { ...task, initCardId: 0 };
+          }
+          return task;
+        }).filter(task => allInitiativeCardIds.has(task.initCardId));
         const teamBreakdownByInit = new Map<number, Record<string, number>>();
         const totalDoneSPByInit = new Map<number, number>();
         crossTeamTasks.forEach(task => {
@@ -1384,10 +1388,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const teamInfoMap = new Map(allTeams.map(t => [t.teamId, { name: t.teamName, spPrice: t.spPrice || 0 }]));
         const crossTeamTasks = allTasks.filter(task =>
           task.initCardId !== null &&
-          allInitiativeCardIds.has(task.initCardId) &&
           task.state === '3-done' &&
           task.condition !== '3 - deleted'
-        );
+        ).map(task => {
+          const initType = initiativeTypeMap.get(task.initCardId || 0);
+          if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
+            return { ...task, initCardId: 0 };
+          }
+          return task;
+        }).filter(task => allInitiativeCardIds.has(task.initCardId));
         const teamBreakdownByInit = new Map<number, Record<string, number>>();
         const totalDoneSPByInit = new Map<number, number>();
         crossTeamTasks.forEach(task => {
