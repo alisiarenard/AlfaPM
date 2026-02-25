@@ -1450,19 +1450,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : [];
       const teamSprintIds = new Set(teamSprints.map(s => s.sprintId));
 
+      const nullInitCardIdTasks = teamTasks.filter(t => t.initCardId === null);
+      const zeroInitCardIdTasks = teamTasks.filter(t => t.initCardId === 0);
+
       const debug: any = {
         team: { teamId, teamName: team.teamName, initBoardId: team.initBoardId, sprintBoardId: team.sprintBoardId, hasSprints: team.hasSprints },
         totalTeamTasks: teamTasks.length,
+        tasksWithNullInitCardId: nullInitCardIdTasks.length,
+        tasksWithZeroInitCardId: zeroInitCardIdTasks.length,
+        nullInitCardIdSample: nullInitCardIdTasks.slice(0, 10).map(t => ({
+          cardId: t.cardId, title: t.title?.substring(0, 50), size: t.size, state: t.state, sprintId: t.sprintId, initCardId: t.initCardId
+        })),
         knownInitiativeCardIds: [...initIds],
         sprints: teamSprints.map(s => ({ sprintId: s.sprintId, title: s.title, startDate: s.startDate, finishDate: s.finishDate })),
         taskAnalysis: [],
-        supportBusinessBySprint: {} as Record<number, { tasks: number, doneTasks: number, doneSP: number, allSP: number, taskDetails: any[] }>,
+        supportBusinessBySprint: {} as Record<number, { tasks: number, doneTasks: number, doneSP: number, inProgressTasks: number, inProgressSP: number, taskDetails: any[] }>,
       };
 
       for (const task of teamTasks) {
-        const initType = initiativeTypeMap.get(task.initCardId || 0);
-        const wouldRedirect = task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler';
-        const effectiveInitCardId = wouldRedirect ? 0 : (task.initCardId || 0);
+        const rawInitCardId = task.initCardId;
+        const effectiveInitCardIdBeforeRedirect = rawInitCardId ?? 0;
+        const initType = initiativeTypeMap.get(effectiveInitCardIdBeforeRedirect);
+        const wouldRedirect = effectiveInitCardIdBeforeRedirect !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler';
+        const effectiveInitCardId = wouldRedirect ? 0 : effectiveInitCardIdBeforeRedirect;
         const hasValidSprint = task.sprintId !== null && teamSprintIds.has(task.sprintId!);
         const isDone = task.state === '3-done' && task.condition !== '3 - deleted';
         
@@ -1472,28 +1482,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           size: task.size,
           state: task.state,
           condition: task.condition,
-          initCardId: task.initCardId,
+          rawInitCardId,
+          initCardIdIsNull: rawInitCardId === null,
           effectiveInitCardId,
           redirectedToSupport: wouldRedirect,
           initType: initType || 'UNKNOWN',
           sprintId: task.sprintId,
           hasValidSprint,
           isDone,
-          countedAsSP: isDone && hasValidSprint,
+          isInProgress: !isDone && task.state !== '3-done',
+          countedAsDoneSP: isDone && hasValidSprint,
+          wouldBeIncludedInTimeline: hasValidSprint,
         };
         debug.taskAnalysis.push(entry);
         
-        // Группируем "Поддержка бизнеса" задачи по спринтам
         if (effectiveInitCardId === 0 && task.sprintId !== null) {
           const key = task.sprintId;
           if (!debug.supportBusinessBySprint[key]) {
-            debug.supportBusinessBySprint[key] = { tasks: 0, doneTasks: 0, doneSP: 0, allSP: 0, taskDetails: [] };
+            debug.supportBusinessBySprint[key] = { tasks: 0, doneTasks: 0, doneSP: 0, inProgressTasks: 0, inProgressSP: 0, taskDetails: [] };
           }
           const s = debug.supportBusinessBySprint[key];
           s.tasks++;
-          s.allSP += task.size || 0;
           if (isDone) { s.doneTasks++; s.doneSP += task.size || 0; }
-          s.taskDetails.push({ cardId: task.cardId, size: task.size, state: task.state, condition: task.condition, hasValidSprint });
+          else { s.inProgressTasks++; s.inProgressSP += task.size || 0; }
+          s.taskDetails.push({ cardId: task.cardId, size: task.size, state: task.state, condition: task.condition, hasValidSprint, initCardIdIsNull: rawInitCardId === null });
         }
       }
 
