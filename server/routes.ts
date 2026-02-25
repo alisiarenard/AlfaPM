@@ -1426,11 +1426,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Диагностический endpoint для отладки "Поддержка бизнеса" SP
-  app.get("/api/debug/timeline/:teamId", async (req, res) => {
+  app.get("/api/debug/timeline/:teamIdOrName", async (req, res) => {
     try {
-      const { teamId } = req.params;
-      const team = await storage.getTeamById(teamId);
+      const { teamIdOrName } = req.params;
+      let team = await storage.getTeamById(teamIdOrName);
+      if (!team) {
+        const allTeams = await storage.getAllTeams();
+        team = allTeams.find(t => t.teamName.toLowerCase() === teamIdOrName.toLowerCase()) || null;
+        if (!team) {
+          const matchingTeams = allTeams.filter(t => t.teamName.toLowerCase().includes(teamIdOrName.toLowerCase()));
+          if (matchingTeams.length === 1) {
+            team = matchingTeams[0];
+          } else if (matchingTeams.length > 1) {
+            return res.json({ error: "Multiple teams match", matches: matchingTeams.map(t => ({ teamId: t.teamId, teamName: t.teamName })) });
+          }
+        }
+      }
       if (!team) return res.status(404).json({ error: "Team not found" });
+      const teamId = team.teamId;
 
       const allTasks = await storage.getAllTasks();
       const teamTasks = allTasks.filter(t => t.teamId === teamId);
