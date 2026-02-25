@@ -956,30 +956,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allTasks = await storage.getAllTasks();
       // Фильтруем задачи по teamId (без фильтра по allInitiativeCardIds — 
       // задачи из инициатив с других досок должны попадать в "Поддержку бизнеса")
-      let initiativeTasks = allTasks.filter(task => 
-        task.initCardId !== null && 
-        task.teamId === teamId
-      );
-      
-      console.log(`[TIMELINE DEBUG] Team ${teamId}: total tasks for team = ${initiativeTasks.length}`);
-      console.log(`[TIMELINE DEBUG] Team ${teamId}: allInitiativeCardIds = [${[...allInitiativeCardIds].join(', ')}]`);
-      
-      // Подробная статистика по initCardId
-      const initCardIdStats = new Map<number, { total: number; done: number; totalSP: number; doneSP: number }>();
-      initiativeTasks.forEach(task => {
-        const id = task.initCardId || 0;
-        const stats = initCardIdStats.get(id) || { total: 0, done: 0, totalSP: 0, doneSP: 0 };
-        stats.total++;
-        stats.totalSP += task.size || 0;
-        if (task.state === '3-done' && task.condition !== '3 - deleted') {
-          stats.done++;
-          stats.doneSP += task.size || 0;
-        }
-        initCardIdStats.set(id, stats);
-      });
-      initCardIdStats.forEach((stats, initId) => {
-        console.log(`[TIMELINE DEBUG] Team ${teamId}: initCardId=${initId} -> tasks=${stats.total} (done=${stats.done}), SP total=${stats.totalSP} (done SP=${stats.doneSP})`);
-      });
+      // Берём ВСЕ задачи команды, включая с initCardId=null (они станут "Поддержкой бизнеса")
+      let initiativeTasks = allTasks
+        .filter(task => task.teamId === teamId)
+        .map(task => task.initCardId === null ? { ...task, initCardId: 0 } : task);
       
       // Создаем Map для быстрого поиска типа инициативы по cardId
       const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
@@ -987,28 +967,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Перенаправляем задачи из неизвестных инициатив и не-Epic/Compliance/Enabler в "Поддержку бизнеса"
       initiativeTasks = initiativeTasks.map(task => {
         const initType = initiativeTypeMap.get(task.initCardId || 0);
-        // Если инициатива не Epic, не Compliance, не Enabler и не "Поддержка бизнеса" (cardId=0), перенаправляем в "Поддержку бизнеса"
-        // Это также перенаправляет задачи из инициатив с других досок (initType === undefined)
         if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
-          console.log(`[TIMELINE DEBUG] Team ${teamId}: REDIRECT task ${task.cardId} (initCardId=${task.initCardId}, type=${initType}) -> initCardId=0`);
           return { ...task, initCardId: 0, type: initType || task.type };
         }
         return task;
       });
-      
-      // Статистика после redirect
-      const afterRedirectStats = new Map<number, { total: number; done: number; doneSP: number }>();
-      initiativeTasks.forEach(task => {
-        const id = task.initCardId || 0;
-        const stats = afterRedirectStats.get(id) || { total: 0, done: 0, doneSP: 0 };
-        stats.total++;
-        if (task.state === '3-done' && task.condition !== '3 - deleted') {
-          stats.done++;
-          stats.doneSP += task.size || 0;
-        }
-        afterRedirectStats.set(id, stats);
-      });
-      console.log(`[TIMELINE DEBUG] Team ${teamId}: AFTER REDIRECT - initCardId=0 stats:`, afterRedirectStats.get(0));
 
       // Логика зависит от флага hasSprints:
       // - Если hasSprints === true: используем реальные спринты из БД
@@ -1086,15 +1049,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currentStartDate.setDate(currentStartDate.getDate() + 1);
           }
 
-          // Группируем задачи по инициативам
           const tasksByInitiative = new Map<number, any[]>();
           tasksForVirtual.forEach(task => {
-            if (task.initCardId !== null) {
-              if (!tasksByInitiative.has(task.initCardId)) {
-                tasksByInitiative.set(task.initCardId, []);
-              }
-              tasksByInitiative.get(task.initCardId)!.push(task);
+            const initId = task.initCardId ?? 0;
+            if (!tasksByInitiative.has(initId)) {
+              tasksByInitiative.set(initId, []);
             }
+            tasksByInitiative.get(initId)!.push(task);
           });
 
           const initiativesWithVirtualSprints = initiatives.map(initiative => {
@@ -1168,28 +1129,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Группируем задачи по инициативам в памяти
         const tasksByInitiative = new Map<number, any[]>();
-        const tasksWithSprint = initiativeTasks.filter(task => task.sprintId !== null && teamSprintIds.has(task.sprintId) && task.initCardId !== null);
-        const tasksWithoutSprint = initiativeTasks.filter(task => task.sprintId === null || !teamSprintIds.has(task.sprintId!));
-        
-        console.log(`[TIMELINE DEBUG] Team ${teamId}: tasks with valid sprintId = ${tasksWithSprint.length}, without = ${tasksWithoutSprint.length}`);
-        console.log(`[TIMELINE DEBUG] Team ${teamId}: teamSprintIds = [${[...teamSprintIds].join(', ')}]`);
-        
-        // Логируем задачи с initCardId=0
-        const supportTasks = tasksWithSprint.filter(t => t.initCardId === 0);
-        const supportTasksNoSprint = initiativeTasks.filter(t => t.initCardId === 0 && (t.sprintId === null || !teamSprintIds.has(t.sprintId!)));
-        console.log(`[TIMELINE DEBUG] Team ${teamId}: "Поддержка бизнеса" tasks with valid sprint = ${supportTasks.length} (done=${supportTasks.filter(t => t.state === '3-done').length}, doneSP=${supportTasks.filter(t => t.state === '3-done' && t.condition !== '3 - deleted').reduce((s, t) => s + (t.size || 0), 0)})`);
-        console.log(`[TIMELINE DEBUG] Team ${teamId}: "Поддержка бизнеса" tasks WITHOUT valid sprint = ${supportTasksNoSprint.length}`);
-        if (supportTasksNoSprint.length > 0) {
-          supportTasksNoSprint.slice(0, 5).forEach(t => {
-            console.log(`[TIMELINE DEBUG]   task ${t.cardId} "${t.title}" sprintId=${t.sprintId} state=${t.state} size=${t.size}`);
-          });
-        }
-        
-        tasksWithSprint.forEach(task => {
-            if (!tasksByInitiative.has(task.initCardId!)) {
-              tasksByInitiative.set(task.initCardId!, []);
+        initiativeTasks
+          .filter(task => task.sprintId !== null && teamSprintIds.has(task.sprintId))
+          .forEach(task => {
+            const initId = task.initCardId ?? 0;
+            if (!tasksByInitiative.has(initId)) {
+              tasksByInitiative.set(initId, []);
             }
-            tasksByInitiative.get(task.initCardId!)!.push(task);
+            tasksByInitiative.get(initId)!.push(task);
           });
 
         // Добавляем спринты для каждой инициативы
@@ -1266,15 +1213,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const spPriceMap = await buildSpPriceMap(allTeams);
         const teamInfoMap = new Map(allTeams.map(t => [t.teamId, { name: t.teamName, spPrice: t.spPrice || 0 }]));
         const crossTeamTasks = allTasks.filter(task =>
-          task.initCardId !== null &&
           task.state === '3-done' &&
           task.condition !== '3 - deleted'
         ).map(task => {
-          const initType = initiativeTypeMap.get(task.initCardId || 0);
-          if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
+          const effectiveInitCardId = task.initCardId ?? 0;
+          const initType = initiativeTypeMap.get(effectiveInitCardId);
+          if (effectiveInitCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
             return { ...task, initCardId: 0 };
           }
-          return task;
+          return { ...task, initCardId: effectiveInitCardId };
         }).filter(task => allInitiativeCardIds.has(task.initCardId));
         const teamBreakdownByInit = new Map<number, Record<string, number>>();
         const totalDoneSPByInit = new Map<number, number>();
@@ -1437,15 +1384,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const spPriceMap = await buildSpPriceMap(allTeams);
         const teamInfoMap = new Map(allTeams.map(t => [t.teamId, { name: t.teamName, spPrice: t.spPrice || 0 }]));
         const crossTeamTasks = allTasks.filter(task =>
-          task.initCardId !== null &&
           task.state === '3-done' &&
           task.condition !== '3 - deleted'
         ).map(task => {
-          const initType = initiativeTypeMap.get(task.initCardId || 0);
-          if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
+          const effectiveInitCardId = task.initCardId ?? 0;
+          const initType = initiativeTypeMap.get(effectiveInitCardId);
+          if (effectiveInitCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
             return { ...task, initCardId: 0 };
           }
-          return task;
+          return { ...task, initCardId: effectiveInitCardId };
         }).filter(task => allInitiativeCardIds.has(task.initCardId));
         const teamBreakdownByInit = new Map<number, Record<string, number>>();
         const totalDoneSPByInit = new Map<number, number>();
