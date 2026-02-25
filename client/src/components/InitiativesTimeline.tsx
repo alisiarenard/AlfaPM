@@ -564,7 +564,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     let totalSP = 0;
     
     allInitiatives.forEach(initiative => {
-      const sp = getSprintSP(initiative, sprintId);
+      const sp = getFilteredSprintSP(initiative, sprintId);
       totalSP += sp;
       if (initiative.cardId === 0) {
         businessSupportSP += sp;
@@ -580,7 +580,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
         // Пропускаем инициативы без тасок в этом спринте
         if (tasks.length === 0) return null;
         
-        const sp = getSprintSP(initiative, sprintId);
+        const sp = getFilteredSprintSP(initiative, sprintId);
         const percent = totalSP > 0 ? Math.round((sp / totalSP) * 100) : 0;
         
         return {
@@ -1198,9 +1198,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       return false;
     }
 
-    // Для "Поддержки бизнеса" показываем блоки только там, где есть фактические SP > 0
+    // Для "Поддержки бизнеса" показываем блоки только там, где есть задачи
     if (initiative.cardId === 0) {
-      const sp = getSprintSP(initiative, sprintId);
+      const sp = getFilteredSprintSP(initiative, sprintId);
       return sp > 0;
     }
 
