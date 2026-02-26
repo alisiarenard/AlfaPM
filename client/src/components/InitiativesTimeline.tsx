@@ -652,7 +652,8 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             
             const totalBackendSP = finalBusinessSupportSP + finalOtherInitiativesSP;
             
-            // Перестраиваем initiativesProgress используя задачи с бэка и allInitiatives
+            const knownCardIds = new Set(allInitiatives.map(i => i.cardId));
+            
             finalInitiativesProgress = allInitiatives
               .filter(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
@@ -664,7 +665,6 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
                 const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
                 
-                // Преобразуем задачи в нужный формат
                 const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
                   id: task.id,
                   cardId: task.cardId,
@@ -682,6 +682,37 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   tasks: formattedTasks
                 };
               });
+            
+            const orphanedInitIds = Object.keys(tasksByInitiative)
+              .map(Number)
+              .filter(id => id !== 0 && !knownCardIds.has(id));
+            
+            for (const initId of orphanedInitIds) {
+              const backedTasks = tasksByInitiative[initId];
+              if (!backedTasks || backedTasks.length === 0) continue;
+              
+              const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
+              const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
+              
+              const initTitle = backedTasks[0]?.initiativeTitle || `Инициатива #${initId}`;
+              
+              const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
+                id: task.id,
+                cardId: task.cardId,
+                title: task.title,
+                size: task.size,
+                archived: true,
+                type: 'task',
+                doneDate: null
+              }));
+              
+              finalInitiativesProgress.push({
+                title: `${initTitle} (архив)`,
+                sp,
+                percent,
+                tasks: formattedTasks
+              });
+            }
           }
         }
       } catch (error) {
