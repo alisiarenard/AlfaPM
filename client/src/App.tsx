@@ -8,13 +8,14 @@ import { ThemeProvider } from "@/lib/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, LayoutDashboard, Settings } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import HomePage from "@/pages/HomePage";
 import ProductMetricsPage from "@/pages/ProductMetricsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/not-found";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 import type { DepartmentWithTeamCount } from "@shared/schema";
+import { setKaitenDomain } from "@shared/kaiten.config";
 
 const currentYear = new Date().getFullYear();
 
@@ -173,6 +174,17 @@ function AppLayout() {
 }
 
 function App() {
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.kaitenDomain) {
+          setKaitenDomain(data.kaitenDomain);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">

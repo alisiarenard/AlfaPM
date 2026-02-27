@@ -1,35 +1,28 @@
-/**
- * Конфигурация для формирования URL карточек Kaiten
- */
+let _kaitenDomain: string = 'feature.kaiten.ru';
+let _domainLoaded = false;
 
-const getKaitenDomain = (): string => {
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env.VITE_KAITEN_DOMAIN || 'feature.kaiten.ru';
-  }
+export function setKaitenDomain(domain: string) {
+  _kaitenDomain = domain;
+  _domainLoaded = true;
+}
+
+export function isKaitenDomainLoaded(): boolean {
+  return _domainLoaded;
+}
+
+export function getKaitenDomain(): string {
   if (typeof process !== 'undefined' && process.env) {
-    return process.env.KAITEN_DOMAIN || process.env.VITE_KAITEN_DOMAIN || 'feature.kaiten.ru';
+    return process.env.KAITEN_DOMAIN || process.env.VITE_KAITEN_DOMAIN || _kaitenDomain;
   }
-  return 'feature.kaiten.ru';
-};
+  return _kaitenDomain;
+}
 
-export const KAITEN_CONFIG = {
-  get baseUrl() {
-    return `https://${getKaitenDomain()}`;
-  },
-} as const;
-
-/**
- * Формирует URL для открытия карточки в Kaiten
- * @param spaceId - ID пространства команды
- * @param cardId - ID карточки
- * @param archived - Признак архивации карточки
- * @returns Полный URL для открытия карточки
- */
 export function getKaitenCardUrl(
   spaceId: number,
   cardId: number,
   archived: boolean = false
 ): string {
+  const domain = getKaitenDomain();
   const cardPath = archived ? 'archive/card' : 'boards/card';
-  return `${KAITEN_CONFIG.baseUrl}/space/${spaceId}/${cardPath}/${cardId}`;
+  return `https://${domain}/space/${spaceId}/${cardPath}/${cardId}`;
 }

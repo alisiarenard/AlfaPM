@@ -173,6 +173,12 @@ function getSpPriceForYear(
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.get("/api/config", (_req, res) => {
+    res.json({
+      kaitenDomain: process.env.KAITEN_DOMAIN || process.env.VITE_KAITEN_DOMAIN || 'feature.kaiten.ru'
+    });
+  });
+
   app.get("/api/departments", async (req, res) => {
     try {
       const departments = await storage.getDepartments();
