@@ -4368,10 +4368,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         participants: string[];
       }> = [];
 
+      const fallbackAvgSpPrice = validTeams.length > 0
+        ? validTeams.reduce((sum, t) => sum + getSpPriceForYear(spPriceMap, t.teamId, year, t.spPrice), 0) / validTeams.length
+        : 0;
+
       for (const init of initiativesByCardId.values()) {
         const avgSpPrice = init.teamContributions.length > 0
           ? init.teamContributions.reduce((sum, tc) => sum + tc.spPrice, 0) / init.teamContributions.length
-          : 0;
+          : fallbackAvgSpPrice;
 
         const plannedCost = (init.size || 0) * avgSpPrice;
         const actualCost = init.totalActualCost;
