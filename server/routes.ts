@@ -4320,6 +4320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const yearlySpPrice = getSpPriceForYear(spPriceMap, team.teamId, year, team.spPrice);
           const prevYearlySpPrice = getSpPriceForYear(spPriceMap, team.teamId, year - 1, team.spPrice);
           const hasTeamTasks = teamTasks.length > 0;
+          console.log(`[initiatives-table DEBUG] Processing "${initiative.title}" for team "${team.teamName}": allTasks=${allTasks.length}, teamTasks=${teamTasks.length}, tasksInYear=${tasks.length}, actualSP=${actualSP}, yearlySpPrice=${yearlySpPrice}, hasTeamTasks=${hasTeamTasks}`);
           const existing = initiativesByCardId.get(initiative.cardId);
           if (existing) {
             existing.totalActualCost += actualSP * yearlySpPrice;
@@ -4375,6 +4376,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? validTeams.reduce((sum, t) => sum + getSpPriceForYear(spPriceMap, t.teamId, year, t.spPrice), 0) / validTeams.length
         : 0;
 
+      console.log(`[initiatives-table DEBUG] fallbackAvgSpPrice=${fallbackAvgSpPrice}, validTeams: ${validTeams.map(t => `${t.teamName}(spPrice=${getSpPriceForYear(spPriceMap, t.teamId, year, t.spPrice)})`).join(', ')}`);
+
       for (const init of initiativesByCardId.values()) {
         const avgSpPrice = init.teamContributions.length > 0
           ? init.teamContributions.reduce((sum, tc) => sum + tc.spPrice, 0) / init.teamContributions.length
@@ -4382,6 +4385,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const plannedCost = (init.size || 0) * avgSpPrice;
         const actualCost = init.totalActualCost;
+
+        console.log(`[initiatives-table DEBUG] "${init.title}" (cardId=${init.cardId}): size=${init.size}, teamContributions=[${init.teamContributions.map(tc => `${tc.teamName}(spPrice=${tc.spPrice}, actualSP=${tc.actualSP})`).join(', ')}], avgSpPrice=${avgSpPrice}, plannedCost=${Math.round(plannedCost)}, actualCost=${Math.round(actualCost)}`);
 
         let plannedEffect: number | null = null;
         let actualEffect: number | null = null;
