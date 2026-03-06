@@ -4319,16 +4319,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const yearlySpPrice = getSpPriceForYear(spPriceMap, team.teamId, year, team.spPrice);
           const prevYearlySpPrice = getSpPriceForYear(spPriceMap, team.teamId, year - 1, team.spPrice);
+          const hasTeamTasks = teamTasks.length > 0;
           const existing = initiativesByCardId.get(initiative.cardId);
           if (existing) {
             existing.totalActualCost += actualSP * yearlySpPrice;
             existing.totalPrevYearActualCost += prevYearActualSP * prevYearlySpPrice;
-            existing.teamContributions.push({
-              teamId: team.teamId,
-              teamName: team.teamName,
-              spPrice: yearlySpPrice,
-              actualSP,
-            });
+            if (hasTeamTasks && !existing.teamContributions.some(tc => tc.teamId === team.teamId)) {
+              existing.teamContributions.push({
+                teamId: team.teamId,
+                teamName: team.teamName,
+                spPrice: yearlySpPrice,
+                actualSP,
+              });
+            }
           } else {
             initiativesByCardId.set(initiative.cardId, {
               title: initiative.title,
@@ -4343,12 +4346,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalPlannedCost: 0,
               totalActualCost: actualSP * yearlySpPrice,
               totalPrevYearActualCost: prevYearActualSP * prevYearlySpPrice,
-              teamContributions: [{
+              teamContributions: hasTeamTasks ? [{
                 teamId: team.teamId,
                 teamName: team.teamName,
                 spPrice: yearlySpPrice,
                 actualSP,
-              }],
+              }] : [],
             });
           }
         }
