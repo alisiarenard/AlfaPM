@@ -4267,23 +4267,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let tasks = teamTasks;
           if (teamSprintIds) {
             tasks = teamTasks.filter(task => task.sprintId !== null && teamSprintIds!.has(task.sprintId));
+          } else {
+            tasks = teamTasks.filter(task => {
+              if (!task.doneDate) return false;
+              const doneYear = new Date(task.doneDate).getFullYear();
+              return doneYear === year;
+            });
           }
 
           const hasDoneTasksInYear = tasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
-          const hasFactValue = initiative.factValue !== null && initiative.factValue !== "" && parseFloat(initiative.factValue) > 0;
 
           if (filterParam === 'backlog') {
             if (initiative.condition === '2-archived') continue;
             const hasAnyDoneTasks = allTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
             if (hasAnyDoneTasks) continue;
-            if (hasFactValue) continue;
           } else {
-          // Если карточка заархивирована и у нее НЕТ задач, скрываем ее из всех продуктовых метрик
             if (initiative.condition === '2-archived' && allTasks.length === 0) {
                continue;
             }
-            // Для Эпиков показываем их, если есть задачи в году ИЛИ если есть факт. значение (чтобы видеть эффект)
-            if (!hasDoneTasksInYear && !hasFactValue) continue;
+            if (!hasDoneTasksInYear) continue;
           }
 
           const isDoneTask = (task: any) => task.state === '3-done' && task.condition !== '3 - deleted';
