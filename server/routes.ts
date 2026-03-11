@@ -4199,16 +4199,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         teamContributions: Array<{ teamId: string; teamName: string; spPrice: number; actualSP: number }>;
       }>();
 
+      const allTasksOnce = await storage.getAllTasks();
+      const tasksByInitCardId = new Map<number, typeof allTasksOnce>();
+      for (const task of allTasksOnce) {
+        const initId = task.initCardId || 0;
+        if (!tasksByInitCardId.has(initId)) tasksByInitCardId.set(initId, []);
+        tasksByInitCardId.get(initId)!.push(task);
+      }
+
+      const allTeamsById = new Map<string, Awaited<ReturnType<typeof storage.getTeamById>>>();
+      for (const t of allTeamsForPrice) {
+        allTeamsById.set(t.teamId, t);
+      }
+
       for (const team of validTeams) {
         const allInitiativesForBoard = await storage.getInitiativesByBoardId(team.initBoardId);
         const allowedTypes = ['Epic', 'Compliance', 'Enabler'];
         
-        // Сначала получаем задачи для ВСЕХ инициатив доски разом, чтобы фильтровать эффективно
         const initiatives = [];
         for (const init of allInitiativesForBoard) {
           if (init.type === null || !allowedTypes.includes(init.type)) continue;
           
-          const allTasks = await storage.getTasksByInitCardId(init.cardId);
+          const allTasks = tasksByInitCardId.get(init.cardId) || [];
           const isArchived = init.condition === '2-archived' || init.condition === 'archived';
           const hasNoTasks = allTasks.length === 0;
 
@@ -4249,7 +4261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         for (const initiative of initiatives) {
-          const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+          const allTasks = tasksByInitCardId.get(initiative.cardId) || [];
           const teamTasks = allTasks.filter(task => task.teamId === team.teamId);
 
           let tasks = teamTasks;
@@ -4399,14 +4411,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           actualEffect = init.factValue && init.factValue.trim() !== '' ? parseFloat(init.factValue) : null;
         }
 
-        const allTasksForInit = await storage.getTasksByInitCardId(init.cardId);
+        const allTasksForInit = tasksByInitCardId.get(init.cardId) || [];
         const uniqueTeamIds = [...new Set(allTasksForInit.map(t => t.teamId).filter(Boolean))];
-        const participantNames: string[] = [];
-        for (const tid of uniqueTeamIds) {
-          const t = await storage.getTeamById(tid);
-          if (t) participantNames.push(t.teamName);
-        }
-        const participants = participantNames;
+        const participants = uniqueTeamIds
+          .map(tid => allTeamsById.get(tid))
+          .filter((t): t is NonNullable<typeof t> => t !== undefined)
+          .map(t => t.teamName);
 
         if (filterTeamIdsParam) {
           const filterTeamIds = filterTeamIdsParam.split(',').map(id => id.trim()).filter(Boolean);
