@@ -2020,14 +2020,21 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                       <AccordionContent className="pb-4">
                         <div className="space-y-2 pl-8">
                           {initiative.title === 'Поддержка бизнеса' ? (() => {
-                            const knownTypes = ['Technical Debt', 'Security', 'Service Desk', 'Bugs'];
+                            const typeToGroup: Record<string, string> = {
+                              'Technical Debt': 'Technical Debt',
+                              'Security': 'Security',
+                              'Service Desk': 'Service Desk',
+                              'Omni': 'Service Desk',
+                              'Bugs': 'Bugs',
+                            };
+                            const groupOrder = ['Technical Debt', 'Security', 'Service Desk', 'Bugs'];
                             const grouped: Record<string, TaskInSprint[]> = {};
                             for (const task of initiative.tasks) {
-                              const group = knownTypes.includes(task.type || '') ? task.type! : 'Другие доработки';
+                              const group = typeToGroup[task.type || ''] || 'Другие доработки';
                               if (!grouped[group]) grouped[group] = [];
                               grouped[group].push(task);
                             }
-                            const orderedGroups = [...knownTypes, 'Другие доработки'].filter(g => grouped[g]?.length > 0);
+                            const orderedGroups = [...groupOrder, 'Другие доработки'].filter(g => grouped[g]?.length > 0);
                             return orderedGroups.map((groupName) => {
                               const tasks = grouped[groupName];
                               const groupSP = tasks.reduce((s, t) => s + t.size, 0);
