@@ -671,8 +671,8 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   title: task.title,
                   size: task.size,
                   archived: false,
-                  type: 'task',
-                  doneDate: null
+                  type: task.type || null,
+                  doneDate: task.doneDate || null
                 }));
                 
                 return {
@@ -710,8 +710,8 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                     title: task.title,
                     size: task.size,
                     archived: false,
-                    type: 'task',
-                    doneDate: null
+                    type: task.type || null,
+                    doneDate: task.doneDate || null
                   });
                 });
               } else {
@@ -724,8 +724,8 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   title: task.title,
                   size: task.size,
                   archived: isArchived,
-                  type: 'task',
-                  doneDate: null
+                  type: task.type || null,
+                  doneDate: task.doneDate || null
                 }));
                 
                 finalInitiativesProgress.push({
@@ -2019,33 +2019,87 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                       </AccordionTrigger>
                       <AccordionContent className="pb-4">
                         <div className="space-y-2 pl-8">
-                          {initiative.tasks.map((task, taskIdx) => (
-                            <div key={taskIdx} className="flex items-center justify-between gap-2" data-testid={`task-${idx}-${taskIdx}`}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <a 
-                                    href={getKaitenCardUrl(team.spaceId, task.cardId, task.archived)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-sm text-foreground hover:text-primary transition-colors group flex-1 min-w-0"
-                                    style={{ maxWidth: '75%' }}
-                                    data-testid={`task-link-${idx}-${taskIdx}`}
-                                  >
-                                    <span className="group-hover:underline truncate">{task.title}</span>
-                                    <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                                  </a>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="max-w-sm">{task.title}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              {task.size === 0 ? (
-                                <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
-                              )}
-                            </div>
-                          ))}
+                          {initiative.title === 'Поддержка бизнеса' ? (() => {
+                            const knownTypes = ['Technical Debt', 'Security', 'Service Desk', 'Bugs'];
+                            const grouped: Record<string, TaskInSprint[]> = {};
+                            for (const task of initiative.tasks) {
+                              const group = knownTypes.includes(task.type || '') ? task.type! : 'Другие доработки';
+                              if (!grouped[group]) grouped[group] = [];
+                              grouped[group].push(task);
+                            }
+                            const orderedGroups = [...knownTypes, 'Другие доработки'].filter(g => grouped[g]?.length > 0);
+                            return orderedGroups.map((groupName) => {
+                              const tasks = grouped[groupName];
+                              const groupSP = tasks.reduce((s, t) => s + t.size, 0);
+                              return (
+                                <div key={groupName} className="mb-3">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupName}</span>
+                                    <span className="text-xs text-muted-foreground">{groupSP} sp</span>
+                                  </div>
+                                  <div className="space-y-1.5 pl-3 border-l-2 border-muted">
+                                    {tasks.map((task, taskIdx) => (
+                                      <div key={taskIdx} className="flex items-center justify-between gap-2" data-testid={`task-${idx}-${groupName}-${taskIdx}`}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <a 
+                                              href={getKaitenCardUrl(team.spaceId, task.cardId, task.archived)}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="flex items-center gap-1 text-sm text-foreground hover:text-primary transition-colors group flex-1 min-w-0"
+                                              style={{ maxWidth: '75%' }}
+                                              data-testid={`task-link-${idx}-${groupName}-${taskIdx}`}
+                                            >
+                                              <span className="group-hover:underline truncate">{task.title}</span>
+                                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                            </a>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p className="max-w-sm">{task.title}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                        {task.size === 0 ? (
+                                          <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
+                                        ) : (
+                                          <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            });
+                          })() : (
+                            <>
+                              {initiative.tasks.map((task, taskIdx) => (
+                                <div key={taskIdx} className="flex items-center justify-between gap-2" data-testid={`task-${idx}-${taskIdx}`}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <a 
+                                        href={getKaitenCardUrl(team.spaceId, task.cardId, task.archived)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 text-sm text-foreground hover:text-primary transition-colors group flex-1 min-w-0"
+                                        style={{ maxWidth: '75%' }}
+                                        data-testid={`task-link-${idx}-${taskIdx}`}
+                                      >
+                                        <span className="group-hover:underline truncate">{task.title}</span>
+                                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                      </a>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="max-w-sm">{task.title}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  {task.size === 0 ? (
+                                    <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
+                                  )}
+                                </div>
+                              ))}
+                            </>
+                          )}
                           {initiative.tasks.length === 0 && (
                             <p className="text-xs text-muted-foreground">Нет задач</p>
                           )}

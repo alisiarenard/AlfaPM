@@ -1869,6 +1869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cardId: task.cardId,
           title: task.title,
           size: task.size,
+          type: task.type,
           state: task.state,
           condition: task.condition,
           initiativeCardId: task.initCardId,
