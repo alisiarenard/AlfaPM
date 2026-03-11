@@ -44,6 +44,9 @@ COPY --from=builder /app/tsconfig.json ./tsconfig.json
 # Copy static assets if needed
 COPY --from=builder /app/attached_assets ./attached_assets/
 
+# Copy fonts for PDF generation
+COPY --from=builder /app/server/fonts ./dist/fonts
+
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
