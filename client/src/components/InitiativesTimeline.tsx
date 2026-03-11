@@ -687,31 +687,75 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               .map(Number)
               .filter(id => id !== 0 && !knownCardIds.has(id));
             
+            let extraBusinessSupportSP = 0;
+            const extraBusinessSupportTasks: TaskInSprint[] = [];
+            
             for (const initId of orphanedInitIds) {
               const backedTasks = tasksByInitiative[initId];
               if (!backedTasks || backedTasks.length === 0) continue;
               
+              const initType = backedTasks[0]?.initiativeType || null;
+              const initCondition = backedTasks[0]?.initiativeCondition || null;
+              const isIRType = initType === 'Epic' || initType === 'Compliance' || initType === 'Enabler';
+              const isArchived = initCondition === '2-archived';
+              
               const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
-              const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
               
-              const initTitle = backedTasks[0]?.initiativeTitle || `Инициатива #${initId}`;
-              
-              const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
-                id: task.id,
-                cardId: task.cardId,
-                title: task.title,
-                size: task.size,
-                archived: true,
-                type: 'task',
-                doneDate: null
-              }));
-              
-              finalInitiativesProgress.push({
-                title: `${initTitle} (архив)`,
-                sp,
-                percent,
-                tasks: formattedTasks
-              });
+              if (!isIRType && !isArchived) {
+                extraBusinessSupportSP += sp;
+                backedTasks.forEach((task: any) => {
+                  extraBusinessSupportTasks.push({
+                    id: task.id,
+                    cardId: task.cardId,
+                    title: task.title,
+                    size: task.size,
+                    archived: false,
+                    type: 'task',
+                    doneDate: null
+                  });
+                });
+              } else {
+                const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
+                const initTitle = backedTasks[0]?.initiativeTitle || `Инициатива #${initId}`;
+                
+                const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
+                  id: task.id,
+                  cardId: task.cardId,
+                  title: task.title,
+                  size: task.size,
+                  archived: isArchived,
+                  type: 'task',
+                  doneDate: null
+                }));
+                
+                finalInitiativesProgress.push({
+                  title: isArchived ? `${initTitle} (архив)` : initTitle,
+                  sp,
+                  percent,
+                  tasks: formattedTasks
+                });
+              }
+            }
+            
+            finalBusinessSupportSP += extraBusinessSupportSP;
+            finalOtherInitiativesSP -= extraBusinessSupportSP;
+            
+            if (extraBusinessSupportTasks.length > 0) {
+              const bsIndex = finalInitiativesProgress.findIndex(ip => ip.title === 'Поддержка бизнеса');
+              if (bsIndex >= 0) {
+                finalInitiativesProgress[bsIndex].tasks.push(...extraBusinessSupportTasks);
+                finalInitiativesProgress[bsIndex].sp += extraBusinessSupportSP;
+                finalInitiativesProgress[bsIndex].percent = totalBackendSP > 0 
+                  ? Math.round((finalInitiativesProgress[bsIndex].sp / totalBackendSP) * 100) : 0;
+              } else {
+                const percent = totalBackendSP > 0 ? Math.round((extraBusinessSupportSP / totalBackendSP) * 100) : 0;
+                finalInitiativesProgress.push({
+                  title: 'Поддержка бизнеса',
+                  sp: extraBusinessSupportSP,
+                  percent,
+                  tasks: extraBusinessSupportTasks
+                });
+              }
             }
           }
         }

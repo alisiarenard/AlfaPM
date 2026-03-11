@@ -1847,11 +1847,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allSprintTasks = await storage.getTasksBySprint(sprintId);
       
       const initCardIds = [...new Set(allSprintTasks.map(t => t.initCardId).filter(id => id !== null && id !== 0))];
-      const initiativeTitleMap = new Map<number, string>();
+      const initiativeInfoMap = new Map<number, { title: string; type: string | null; condition: string | null }>();
       for (const cardId of initCardIds) {
         const init = await storage.getInitiativeByCardId(cardId);
         if (init) {
-          initiativeTitleMap.set(cardId, init.title);
+          initiativeInfoMap.set(cardId, { title: init.title, type: init.type, condition: init.condition });
         }
       }
       
@@ -1872,7 +1872,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           state: task.state,
           condition: task.condition,
           initiativeCardId: task.initCardId,
-          initiativeTitle: task.initCardId ? initiativeTitleMap.get(task.initCardId) || null : null,
+          initiativeTitle: task.initCardId ? (initiativeInfoMap.get(task.initCardId)?.title || null) : null,
+          initiativeType: task.initCardId ? (initiativeInfoMap.get(task.initCardId)?.type || null) : null,
+          initiativeCondition: task.initCardId ? (initiativeInfoMap.get(task.initCardId)?.condition || null) : null,
           doneDate: task.doneDate,
         };
         
