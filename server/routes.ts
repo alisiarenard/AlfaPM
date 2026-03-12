@@ -4277,33 +4277,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const hasDoneTasksInYear = tasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
 
-          if (filterParam === 'backlog') {
-            if (initiative.condition === '2-archived') continue;
-            const hasAnyDoneTasks = allTasks.some(task => task.state === '3-done' && task.condition !== '3 - deleted');
-            if (hasAnyDoneTasks) continue;
-          } else {
-            if (initiative.condition === '2-archived' && allTasks.length === 0) {
-               continue;
-            }
-            if (!hasDoneTasksInYear) continue;
-          }
-
           const isDoneTask = (task: any) => task.state === '3-done' && task.condition !== '3 - deleted';
 
           const checkCarryover = () => {
-            return allTasks.some(task =>
-              task.condition !== '3 - deleted' &&
-              task.doneDate &&
-              new Date(task.doneDate).getFullYear() === year - 1
-            );
+            const hasPrevYearDone = allTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year - 1);
+            if (!hasPrevYearDone) return false;
+            const isInProgress = initiative.state === '2-inProgress';
+            return hasDoneTasksInYear || isInProgress;
           };
 
           const checkTransferred = () => {
             return allTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year + 1);
           };
 
-          if (filterParam === 'carryover') {
+          if (filterParam === 'backlog') {
+            if (initiative.condition === '2-archived') continue;
+            const hasAnyDoneTasks = allTasks.some(isDoneTask);
+            if (hasAnyDoneTasks) continue;
+          } else if (filterParam === 'carryover') {
+            if (initiative.condition === '2-archived' && allTasks.length === 0) continue;
             if (!checkCarryover()) continue;
+          } else {
+            if (initiative.condition === '2-archived' && allTasks.length === 0) {
+               continue;
+            }
+            if (!hasDoneTasksInYear) continue;
           }
 
           if (filterParam === 'transferred') {
