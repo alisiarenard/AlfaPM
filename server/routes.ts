@@ -4291,17 +4291,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const isDoneTask = (task: any) => task.state === '3-done' && task.condition !== '3 - deleted';
 
           const checkCarryover = () => {
-            if (prevYearSprintIds) {
-              return teamTasks.filter(task => task.sprintId !== null && prevYearSprintIds!.has(task.sprintId)).some(isDoneTask);
-            }
-            return teamTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year - 1);
+            return allTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year - 1);
           };
 
           const checkTransferred = () => {
-            if (nextYearSprintIds) {
-              return teamTasks.filter(task => task.sprintId !== null && nextYearSprintIds!.has(task.sprintId)).some(isDoneTask);
-            }
-            return teamTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year + 1);
+            return allTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year + 1);
           };
 
           if (filterParam === 'carryover') {
