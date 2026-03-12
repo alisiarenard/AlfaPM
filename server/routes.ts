@@ -4291,7 +4291,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const isDoneTask = (task: any) => task.state === '3-done' && task.condition !== '3 - deleted';
 
           const checkCarryover = () => {
-            return allTasks.some(task => isDoneTask(task) && task.doneDate && new Date(task.doneDate).getFullYear() === year - 1);
+            return allTasks.some(task =>
+              task.condition !== '3 - deleted' &&
+              task.doneDate &&
+              new Date(task.doneDate).getFullYear() === year - 1
+            );
           };
 
           const checkTransferred = () => {
