@@ -4393,15 +4393,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? init.teamContributions.reduce((sum, tc) => sum + tc.spPrice, 0) / init.teamContributions.length
           : fallbackAvgSpPrice;
 
-        const plannedCost = (init.size || 0) * avgSpPrice;
         const actualCost = init.totalActualCost;
+        const plannedCost = (init.type === 'Compliance' || init.type === 'Enabler')
+          ? actualCost
+          : (init.size || 0) * avgSpPrice;
 
         let plannedEffect: number | null = null;
         let actualEffect: number | null = null;
 
         if (init.type === 'Compliance' || init.type === 'Enabler') {
           const includesPrevYear = (filterParam === 'carryover' || filterParam === 'all') && init.totalPrevYearActualCost > 0;
-          plannedEffect = includesPrevYear ? plannedCost + init.totalPrevYearActualCost : plannedCost;
+          plannedEffect = includesPrevYear ? actualCost + init.totalPrevYearActualCost : actualCost;
           actualEffect = includesPrevYear ? actualCost + init.totalPrevYearActualCost : actualCost;
         } else {
           plannedEffect = init.plannedValue && init.plannedValue.trim() !== '' ? parseFloat(init.plannedValue) : null;
