@@ -83,6 +83,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
   const { toast } = useToast();
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
+  const [bsModalOpen, setBsModalOpen] = useState(false);
+  interface BsModalData { sprintTitle: string; sprintDates: string; tasks: TaskInSprint[]; }
+  const [bsModalData, setBsModalData] = useState<BsModalData | null>(null);
   const [initiativeDetailsOpen, setInitiativeDetailsOpen] = useState(false);
   const [initiativeDetailsData, setInitiativeDetailsData] = useState<InitiativeDetailsData | null>(null);
   const [editingInitiativeId, setEditingInitiativeId] = useState<string | null>(null);
@@ -966,6 +969,17 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     return `${day}.${month}`;
   };
 
+  const handleBsSprintClick = (initiative: Initiative, sprintId: number) => {
+    const sprintInfo = getSprintInfo(sprintId);
+    const tasks = getSprintTasks(initiative, sprintId);
+    const sprintTitle = sprintInfo?.title || `Спринт`;
+    const start = sprintInfo ? formatDate(sprintInfo.startDate) : '';
+    const end = sprintInfo ? formatDate(sprintInfo.actualFinishDate || sprintInfo.finishDate) : '';
+    const sprintDates = start && end ? `${start} — ${end}` : '';
+    setBsModalData({ sprintTitle, sprintDates, tasks });
+    setBsModalOpen(true);
+  };
+
   const getStatusColor = (initiative: Initiative): string => {
     // Поддержка бизнеса - серый
     if (initiative.cardId === 0) {
@@ -1658,6 +1672,10 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                             </div>
                           </TooltipContent>
                         </Tooltip>
+                      ) : showBlock && sp > 0 && initiative.cardId === 0 ? (
+                        <div className="cursor-pointer" onClick={() => handleBsSprintClick(initiative, sprintId)}>
+                          {blockContent}
+                        </div>
                       ) : (
                         blockContent
                       )}
@@ -1669,6 +1687,88 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
           ))}
         </tbody>
       </table>
+
+      {/* Business Support Tasks Modal */}
+      <Dialog open={bsModalOpen} onOpenChange={setBsModalOpen}>
+        <DialogContent className="max-w-lg max-h-[70vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-4 pb-4 border-b border-border">
+            <DialogTitle className="text-base font-semibold">Поддержка бизнеса</DialogTitle>
+            {bsModalData?.sprintDates && (
+              <p className="text-xs text-muted-foreground mt-0.5">{bsModalData.sprintDates}</p>
+            )}
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {bsModalData && bsModalData.tasks.length > 0 ? (() => {
+              const typeToGroup: Record<string, string> = {
+                'Technical Debt': 'Technical Debt',
+                'Security': 'Security',
+                'Service Desk': 'Service Desk',
+                'Omni': 'Service Desk',
+                'Bugs': 'Bugs',
+              };
+              const groupOrder = ['Technical Debt', 'Security', 'Service Desk', 'Bugs'];
+              const grouped: Record<string, TaskInSprint[]> = {};
+              for (const task of bsModalData.tasks) {
+                const group = typeToGroup[task.type || ''] || 'Другие доработки';
+                if (!grouped[group]) grouped[group] = [];
+                grouped[group].push(task);
+              }
+              const orderedGroups = [...groupOrder, 'Другие доработки'].filter(g => grouped[g]?.length > 0);
+              const totalSP = bsModalData.tasks.reduce((s, t) => s + t.size, 0);
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Итого задач: {bsModalData.tasks.length}</span>
+                    <span className="text-sm font-medium">{roundSP(totalSP)} sp</span>
+                  </div>
+                  {orderedGroups.map((groupName) => {
+                    const tasks = grouped[groupName];
+                    const groupSP = tasks.reduce((s, t) => s + t.size, 0);
+                    return (
+                      <div key={groupName}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupName}</span>
+                          <span className="text-xs text-muted-foreground">{roundSP(groupSP)} sp</span>
+                        </div>
+                        <div className="space-y-1.5 pl-3 border-l-2 border-muted">
+                          {tasks.map((task, taskIdx) => (
+                            <div key={taskIdx} className="flex items-center justify-between gap-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <a
+                                    href={getKaitenCardUrl(team.spaceId, task.cardId, task.archived)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-sm text-foreground hover:text-primary transition-colors group flex-1 min-w-0"
+                                    style={{ maxWidth: '80%' }}
+                                  >
+                                    <span className="group-hover:underline truncate">{task.title}</span>
+                                    <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                  </a>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="max-w-sm">{task.title}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              {task.size === 0 ? (
+                                <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })() : (
+              <p className="text-sm text-muted-foreground text-center py-4">Нет задач</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Initiative Details Modal */}
       <Dialog open={initiativeDetailsOpen} onOpenChange={setInitiativeDetailsOpen}>
