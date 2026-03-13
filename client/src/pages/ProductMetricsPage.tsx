@@ -799,10 +799,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
                             </td>
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-vc-${group.type}`}>
-                              {group.totalPlannedEffect > 0 && group.totalPlannedCost > 0 ? (Math.round((group.totalPlannedEffect / group.totalPlannedCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
+                              {(() => { const denom = group.totalPlannedCost + group.totalPrevYearActualCost; return group.totalPlannedEffect > 0 && denom > 0 ? (Math.round((group.totalPlannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
                             </td>
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-vc-${group.type}`}>
-                              {group.totalActualEffect > 0 && group.totalActualCost > 0 ? (Math.round((group.totalActualEffect / group.totalActualCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
+                              {(() => { const denom = group.totalActualCost + group.totalPrevYearActualCost; return group.totalActualEffect > 0 && denom > 0 ? (Math.round((group.totalActualEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
                             </td>
                             {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-b border-border"></td>}
@@ -953,8 +953,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </td>
                       {(() => {
                         const inits = displayTableData!.initiatives;
-                        const totalPC = inits.reduce((s, i) => i.plannedEffect !== null ? s + i.plannedCost + (i.prevYearActualCost || 0) : s, 0);
-                        const totalAC = inits.reduce((s, i) => i.actualEffect !== null ? s + i.actualCost + (i.prevYearActualCost || 0) : s, 0);
+                        const totalPC = inits.reduce((s, i) => s + i.plannedCost + (i.prevYearActualCost || 0), 0);
+                        const totalAC = inits.reduce((s, i) => s + i.actualCost + (i.prevYearActualCost || 0), 0);
                         const totalPE = inits.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
                         const totalAE = inits.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
                         const vcPlan = totalPE > 0 && totalPC > 0 ? Math.round((totalPE / totalPC) * 10) / 10 : null;
