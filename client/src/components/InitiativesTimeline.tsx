@@ -1697,7 +1697,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               <p className="text-xs text-muted-foreground mt-0.5">{bsModalData.sprintDates}</p>
             )}
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto px-6 pt-4 pb-16 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto px-6 pt-4 pb-4 mb-6 custom-scrollbar">
             {bsModalData && bsModalData.tasks.length > 0 ? (() => {
               const typeToGroup: Record<string, string> = {
                 'Technical Debt': 'Technical Debt',
