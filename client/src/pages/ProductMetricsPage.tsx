@@ -728,7 +728,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-cost">
                       Затраты (план)
                     </th>
-                    {initiativeFilter === 'carryover' && (
+                    {(initiativeFilter === 'carryover' || initiativeFilter === 'all') && (
                       <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-prev-year-actual-cost">
                         Затраты пред. (факт)
                       </th>
@@ -792,7 +792,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
                               {group.totalPlannedCost > 0 ? group.totalPlannedCost.toLocaleString('ru-RU') : '—'}
                             </td>
-                            {initiativeFilter === 'carryover' && (
+                            {(initiativeFilter === 'carryover' || initiativeFilter === 'all') && (
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-prev-year-actual-cost-${group.type}`}>
                                 {group.totalPrevYearActualCost > 0 ? group.totalPrevYearActualCost.toLocaleString('ru-RU') : '—'}
                               </td>
@@ -839,7 +839,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
                                 {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
                               </td>
-                              {initiativeFilter === 'carryover' && (
+                              {(initiativeFilter === 'carryover' || initiativeFilter === 'all') && (
                                 <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-prev-year-actual-cost-${init.cardId}`}>
                                   {init.prevYearActualCost > 0 ? init.prevYearActualCost.toLocaleString('ru-RU') : '—'}
                                 </td>
@@ -901,13 +901,15 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
                                 {(() => {
-                                  const denom = initiativeFilter === 'carryover' ? init.plannedCost + (init.prevYearActualCost || 0) : init.plannedCost;
+                                  const prevCost = (init.prevYearActualCost || 0);
+                                  const denom = init.plannedCost + prevCost;
                                   return init.plannedEffect !== null && denom > 0 ? (Math.round((init.plannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
                                 })()}
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-vc-${init.cardId}`}>
                                 {(() => {
-                                  const denom = initiativeFilter === 'carryover' ? init.actualCost + (init.prevYearActualCost || 0) : init.actualCost;
+                                  const prevCost = (init.prevYearActualCost || 0);
+                                  const denom = init.actualCost + prevCost;
                                   return init.actualEffect !== null && denom > 0 ? (Math.round((init.actualEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
                                 })()}
                               </td>
@@ -953,7 +955,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
                         {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
                       </td>
-                      {initiativeFilter === 'carryover' && (
+                      {(initiativeFilter === 'carryover' || initiativeFilter === 'all') && (
                         <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-prev-year-actual-cost">
                           {displayTableData.initiatives.reduce((sum, i) => sum + (i.prevYearActualCost || 0), 0).toLocaleString('ru-RU')}
                         </td>
@@ -963,8 +965,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </td>
                       {(() => {
                         const inits = displayTableData!.initiatives;
-                        const totalPC = inits.reduce((s, i) => s + i.plannedCost + (initiativeFilter === 'carryover' ? (i.prevYearActualCost || 0) : 0), 0);
-                        const totalAC = inits.reduce((s, i) => s + i.actualCost + (initiativeFilter === 'carryover' ? (i.prevYearActualCost || 0) : 0), 0);
+                        const totalPC = inits.reduce((s, i) => s + i.plannedCost + (i.prevYearActualCost || 0), 0);
+                        const totalAC = inits.reduce((s, i) => s + i.actualCost + (i.prevYearActualCost || 0), 0);
                         const totalPE = inits.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
                         const totalAE = inits.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
                         const vcPlan = totalPE > 0 && totalPC > 0 ? Math.round((totalPE / totalPC) * 10) / 10 : null;

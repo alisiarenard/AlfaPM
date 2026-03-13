@@ -4301,7 +4301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (initiative.condition === '2-archived' && allTasks.length === 0) {
                continue;
             }
-            if (!hasDoneTasksInYear) continue;
+            if (!hasDoneTasksInYear && !checkCarryover()) continue;
           }
 
           if (filterParam === 'transferred') {
@@ -4400,13 +4400,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let actualEffect: number | null = null;
 
         if (init.type === 'Compliance' || init.type === 'Enabler') {
-          if (filterParam === 'carryover') {
-            plannedEffect = plannedCost + init.totalPrevYearActualCost;
-            actualEffect = actualCost + init.totalPrevYearActualCost;
-          } else {
-            plannedEffect = plannedCost;
-            actualEffect = actualCost;
-          }
+          const includesPrevYear = (filterParam === 'carryover' || filterParam === 'all') && init.totalPrevYearActualCost > 0;
+          plannedEffect = includesPrevYear ? plannedCost + init.totalPrevYearActualCost : plannedCost;
+          actualEffect = includesPrevYear ? actualCost + init.totalPrevYearActualCost : actualCost;
         } else {
           plannedEffect = init.plannedValue && init.plannedValue.trim() !== '' ? parseFloat(init.plannedValue) : null;
           actualEffect = init.factValue && init.factValue.trim() !== '' ? parseFloat(init.factValue) : null;
