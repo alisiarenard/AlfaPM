@@ -30,7 +30,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [initiativeFilter, setInitiativeFilter] = useState<string>("all");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['Epic', 'Compliance', 'Enabler']));
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['ar', 'effectType', 'contribution', 'participants']));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['effectType', 'contribution', 'participants']));
   const [filterTeamIds, setFilterTeamIds] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
   const [editingCell, setEditingCell] = useState<{ cardId: number; field: 'plannedEffect' | 'actualEffect' } | null>(null);
@@ -333,7 +333,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   }, []);
 
   const visibleColCount = useMemo(() => {
-    return 7 + (visibleColumns.has('ar') ? 1 : 0) + (visibleColumns.has('effectType') ? 1 : 0) + (visibleColumns.has('contribution') ? 1 : 0) + (visibleColumns.has('participants') ? 1 : 0);
+    return 7 + (visibleColumns.has('effectType') ? 1 : 0) + (visibleColumns.has('contribution') ? 1 : 0) + (visibleColumns.has('participants') ? 1 : 0);
   }, [visibleColumns]);
 
   const groupedInitiatives = useMemo(() => {
@@ -681,9 +681,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-white dark:bg-card">
-                    <DropdownMenuCheckboxItem checked={visibleColumns.has('ar')} onCheckedChange={() => toggleColumn('ar')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-ar">
-                      % АР
-                    </DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem checked={visibleColumns.has('effectType')} onCheckedChange={() => toggleColumn('effectType')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-effect-type">
                       Тип Эффекта
                     </DropdownMenuCheckboxItem>
@@ -748,11 +745,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-vc">
                       V/C (факт)
                     </th>
-                    {visibleColumns.has('ar') && (
-                      <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-ar-percent">
-                        % АР
-                      </th>
-                    )}
                     {visibleColumns.has('effectType') && (
                       <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-effect-type">
                         Тип Эффекта
@@ -812,7 +804,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-vc-${group.type}`}>
                               {group.totalActualEffect > 0 && group.totalActualCost > 0 ? (Math.round((group.totalActualEffect / group.totalActualCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
                             </td>
-                            {visibleColumns.has('ar') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-b border-border"></td>}
                             {visibleColumns.has('participants') && <td className="px-4 py-2.5 border-b border-border"></td>}
@@ -913,9 +904,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   return init.actualEffect !== null && denom > 0 ? (Math.round((init.actualEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
                                 })()}
                               </td>
-                              {visibleColumns.has('ar') && (
-                                <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>—</td>
-                              )}
                               {visibleColumns.has('effectType') && (
                                 <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>—</td>
                               )}
@@ -980,7 +968,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                           </>
                         );
                       })()}
-                      {visibleColumns.has('ar') && <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>}
                       {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
                       {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>}
                       {visibleColumns.has('participants') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
