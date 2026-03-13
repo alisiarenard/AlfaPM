@@ -4400,10 +4400,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let actualEffect: number | null = null;
 
         if (init.type === 'Compliance' || init.type === 'Enabler') {
-          plannedEffect = plannedCost;
-          actualEffect = filterParam === 'carryover'
-            ? actualCost + init.totalPrevYearActualCost
-            : actualCost;
+          if (filterParam === 'carryover') {
+            plannedEffect = plannedCost + init.totalPrevYearActualCost;
+            actualEffect = actualCost + init.totalPrevYearActualCost;
+          } else {
+            plannedEffect = plannedCost;
+            actualEffect = actualCost;
+          }
         } else {
           plannedEffect = init.plannedValue && init.plannedValue.trim() !== '' ? parseFloat(init.plannedValue) : null;
           actualEffect = init.factValue && init.factValue.trim() !== '' ? parseFloat(init.factValue) : null;

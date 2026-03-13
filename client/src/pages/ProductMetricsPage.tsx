@@ -900,10 +900,16 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 )}
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
-                                {init.plannedEffect !== null && init.plannedCost > 0 ? (Math.round((init.plannedEffect / init.plannedCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
+                                {(() => {
+                                  const denom = initiativeFilter === 'carryover' ? init.plannedCost + (init.prevYearActualCost || 0) : init.plannedCost;
+                                  return init.plannedEffect !== null && denom > 0 ? (Math.round((init.plannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
+                                })()}
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-vc-${init.cardId}`}>
-                                {init.actualEffect !== null && init.actualCost > 0 ? (Math.round((init.actualEffect / init.actualCost) * 10) / 10).toLocaleString('ru-RU') : '—'}
+                                {(() => {
+                                  const denom = initiativeFilter === 'carryover' ? init.actualCost + (init.prevYearActualCost || 0) : init.actualCost;
+                                  return init.actualEffect !== null && denom > 0 ? (Math.round((init.actualEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
+                                })()}
                               </td>
                               {visibleColumns.has('ar') && (
                                 <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-ar-percent-${init.cardId}`}>—</td>
@@ -957,8 +963,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </td>
                       {(() => {
                         const inits = displayTableData!.initiatives;
-                        const totalPC = inits.reduce((s, i) => s + i.plannedCost, 0);
-                        const totalAC = inits.reduce((s, i) => s + i.actualCost, 0);
+                        const totalPC = inits.reduce((s, i) => s + i.plannedCost + (initiativeFilter === 'carryover' ? (i.prevYearActualCost || 0) : 0), 0);
+                        const totalAC = inits.reduce((s, i) => s + i.actualCost + (initiativeFilter === 'carryover' ? (i.prevYearActualCost || 0) : 0), 0);
                         const totalPE = inits.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
                         const totalAE = inits.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
                         const vcPlan = totalPE > 0 && totalPC > 0 ? Math.round((totalPE / totalPC) * 10) / 10 : null;
