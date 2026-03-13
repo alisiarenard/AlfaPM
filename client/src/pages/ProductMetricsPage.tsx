@@ -953,8 +953,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </td>
                       {(() => {
                         const inits = displayTableData!.initiatives;
-                        const totalPC = inits.reduce((s, i) => s + i.plannedCost + (i.prevYearActualCost || 0), 0);
-                        const totalAC = inits.reduce((s, i) => s + i.actualCost + (i.prevYearActualCost || 0), 0);
+                        const totalPC = inits.reduce((s, i) => i.plannedEffect !== null ? s + i.plannedCost + (i.prevYearActualCost || 0) : s, 0);
+                        const totalAC = inits.reduce((s, i) => i.actualEffect !== null ? s + i.actualCost + (i.prevYearActualCost || 0) : s, 0);
                         const totalPE = inits.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
                         const totalAE = inits.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
                         const vcPlan = totalPE > 0 && totalPC > 0 ? Math.round((totalPE / totalPC) * 10) / 10 : null;
