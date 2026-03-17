@@ -1701,6 +1701,10 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             {bsModalData && bsModalData.tasks.length > 0 ? (() => {
               const typeToGroup: Record<string, string> = {
                 'Technical Debt': 'Technical Debt',
+                'Technical debt': 'Technical Debt',
+                'Tech Debt': 'Technical Debt',
+                'Tech debt': 'Technical Debt',
+                'Tech Task': 'Technical Debt',
                 'Security': 'Security',
                 'Service Desk': 'Service Desk',
                 'Omni': 'Service Desk',
@@ -2123,6 +2127,10 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                           {initiative.title === 'Поддержка бизнеса' ? (() => {
                             const typeToGroup: Record<string, string> = {
                               'Technical Debt': 'Technical Debt',
+                              'Technical debt': 'Technical Debt',
+                              'Tech Debt': 'Technical Debt',
+                              'Tech debt': 'Technical Debt',
+                              'Tech Task': 'Technical Debt',
                               'Security': 'Security',
                               'Service Desk': 'Service Desk',
                               'Omni': 'Service Desk',
