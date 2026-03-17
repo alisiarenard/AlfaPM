@@ -617,6 +617,23 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       transferredSheet['!cols'] = initSheetCols(false);
       XLSX.utils.book_append_sheet(workbook, transferredSheet, 'Перенесенные');
 
+      // === Листы 6-7: Топ 5 эпиков по Cost и по Value ===
+      const doneEpics = doneInits.filter((i: any) => i.type === 'Epic');
+
+      const top5ByCost = [...doneEpics]
+        .sort((a: any, b: any) => (b.actualCost || 0) - (a.actualCost || 0))
+        .slice(0, 5);
+      const top5CostSheet = XLSX.utils.aoa_to_sheet(buildInitiativesSheetRows(top5ByCost, false));
+      top5CostSheet['!cols'] = initSheetCols(false);
+      XLSX.utils.book_append_sheet(workbook, top5CostSheet, 'Топ 5 эпиков по Cost');
+
+      const top5ByValue = [...doneEpics]
+        .sort((a: any, b: any) => (b.actualEffect ?? b.plannedEffect ?? 0) - (a.actualEffect ?? a.plannedEffect ?? 0))
+        .slice(0, 5);
+      const top5ValueSheet = XLSX.utils.aoa_to_sheet(buildInitiativesSheetRows(top5ByValue, false));
+      top5ValueSheet['!cols'] = initSheetCols(false);
+      XLSX.utils.book_append_sheet(workbook, top5ValueSheet, 'Топ 5 эпиков по Value');
+
       const fileName = `Cost_Structure_${data.year}_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
