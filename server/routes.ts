@@ -74,7 +74,12 @@ function filterInitiativesForTimeline(
     if (init.type !== 'Epic' && init.type !== 'Compliance' && init.type !== 'Enabler') {
       return false;
     }
-    
+
+    const totalSp = init.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
+    if (totalSp === 0) {
+      return false;
+    }
+
     if (showActiveOnly && init.state !== "2-inProgress") {
       return false;
     }
@@ -88,12 +93,6 @@ function filterInitiativesForTimeline(
     }
     
     if (init.state === "3-done") {
-      const totalSp = init.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
-      
-      if (totalSp === 0) {
-        return false;
-      }
-      
       if (validYear) {
         const hasTasksInSelectedYear = init.sprints?.some((sprint: any) => 
           sprint.tasks?.some((task: any) => {
