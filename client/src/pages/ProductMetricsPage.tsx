@@ -374,18 +374,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       const data = await costStructureRes.json();
       const summaryData = summaryReportRes.ok ? await summaryReportRes.json() : null;
 
-      const selectedTeamsData = departmentTeams?.filter(t => selectedTeams.has(t.teamId)) || [];
-      const initiativesPromises = selectedTeamsData.map(async (team) => {
-        const url = `/api/initiatives/board/${team.initBoardId}?sprintBoardId=${team.sprintBoardId}&teamId=${team.teamId}&year=${selectedYear}&forReport=true&_t=${Date.now()}`;
-        const res = await fetch(url);
-        if (!res.ok) return [];
-        const initiatives = await res.json();
-        return initiatives.map((init: any) => ({ ...init, team }));
-      });
-
-      const initiativesArrays = await Promise.all(initiativesPromises);
-      const allInitiatives = initiativesArrays.flat();
-
       const XLSX = await import('xlsx');
       const workbook = XLSX.utils.book_new();
       const departmentName = departments?.find(d => d.id === selectedDepartment)?.department || 'Не указан';
@@ -496,148 +484,102 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       costSheet['!cols'] = [{ wch: 25 }, { wch: 15 }];
       XLSX.utils.book_append_sheet(workbook, costSheet, 'Структура затрат');
 
-      const uniqueTeamsMap = new Map<string, any>();
-      allInitiatives.forEach((initiative: any) => {
-        if (initiative.team && initiative.team.teamId && !uniqueTeamsMap.has(initiative.team.teamId)) {
-          uniqueTeamsMap.set(initiative.team.teamId, initiative.team);
-        }
-      });
-      const sortedTeams = Array.from(uniqueTeamsMap.values()).sort((a, b) => a.teamName.localeCompare(b.teamName));
+      // === Листы 3-5: Статус / Переходящие / Перенесенные ===
+      const currentYear = new Date().getFullYear();
+      const isCurrentYear = parseInt(selectedYear) === currentYear;
+      const baseUrl = `/api/metrics/initiatives-table?teamIds=${teamIdsParam}&year=${selectedYear}`;
 
-      const initiativesSheetData: any[][] = [];
-      initiativesSheetData.push([
-        '#', 'инициативы', 'сроки', '', '', 'затраты', '', 'тип эффекта', 'эффект по данным', 'эффект', '', '', 'V/C', '',
-        ...sortedTeams.map(team => team.teamName)
-      ]);
-      initiativesSheetData.push([
-        '', '', 'план', 'прод', 'эффект', 'план', 'факт текущего', '', '', 'план', 'факт', '% вклада', 'план', 'факт',
-        ...sortedTeams.map(() => '')
+      const [doneRes, carryoverRes, transferredRes] = await Promise.all([
+        fetch(`${baseUrl}&filter=done`),
+        fetch(`${baseUrl}&filter=carryover`),
+        isCurrentYear ? Promise.resolve(null) : fetch(`${baseUrl}&filter=transferred`),
       ]);
 
-      const formatDate = (dateString: string | null | undefined): string => {
-        if (!dateString) return '—';
-        try {
-          const date = new Date(dateString);
-          return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
-        } catch { return '—'; }
-      };
+      const doneInits: any[] = doneRes?.ok ? (await doneRes.json()).initiatives || [] : [];
+      const carryoverInits: any[] = carryoverRes?.ok ? (await carryoverRes.json()).initiatives || [] : [];
+      const transferredInits: any[] = (!isCurrentYear && transferredRes?.ok) ? (await transferredRes!.json()).initiatives || [] : [];
 
-      const initiativesByCardId = new Map<number, any[]>();
-      allInitiatives.forEach((initiative: any) => {
-        if (!initiativesByCardId.has(initiative.cardId)) {
-          initiativesByCardId.set(initiative.cardId, []);
-        }
-        initiativesByCardId.get(initiative.cardId)!.push(initiative);
-      });
+      const buildInitiativesSheetRows = (initiatives: any[], isCarryover: boolean): any[][] => {
+        const vcCalc = (effect: number | null, cost: number, prevCost: number) => {
+          const denom = cost + prevCost;
+          return effect !== null && effect > 0 && denom > 0 ? Math.round((effect / denom) * 10) / 10 : '—';
+        };
 
-      const processedInitiatives: any[] = [];
-      initiativesByCardId.forEach((initiatives) => {
-        const firstInit = initiatives[0];
-        const plannedSize = firstInit.size || 0;
-        let totalActualCost = 0;
-        let totalActualSp = 0;
-        let weightedSpPrice = 0;
-        const spByTeamId = new Map<string, number>();
+        const header = [
+          'Инициатива',
+          'Участники',
+          'Затраты (план)',
+          ...(isCarryover ? ['Затраты пред. (факт)'] : []),
+          'Затраты (факт)',
+          'Эффект (план)',
+          'Эффект (факт)',
+          'V/C (план)',
+          'V/C (факт)',
+        ];
+        const rows: any[][] = [header];
 
-        initiatives.forEach((initiative: any) => {
-          const team = initiative.team;
-          let actualSize = 0;
-          if (initiative.sprints && Array.isArray(initiative.sprints)) {
-            for (const sprint of initiative.sprints) {
-              if (sprint.tasks && Array.isArray(sprint.tasks)) {
-                for (const task of sprint.tasks) {
-                  if (task.state === '3-done' && task.condition !== '3 - deleted') {
-                    actualSize += task.size || 0;
-                  }
-                }
-              } else {
-                actualSize += sprint.sp || 0;
-              }
-            }
-          }
-          totalActualCost += actualSize * team.spPrice;
-          totalActualSp += actualSize;
-          weightedSpPrice += actualSize * team.spPrice;
-          spByTeamId.set(team.teamId, (spByTeamId.get(team.teamId) || 0) + actualSize);
-        });
+        for (const type of ['Epic', 'Compliance', 'Enabler']) {
+          const group = initiatives.filter(i => i.type === type);
+          if (group.length === 0) continue;
 
-        const avgSpPrice = totalActualSp > 0 ? weightedSpPrice / totalActualSp : firstInit.team?.spPrice || 0;
-        const totalPlannedCost = plannedSize * avgSpPrice;
+          const totPlanned = group.reduce((s, i) => s + (i.plannedCost || 0), 0);
+          const totPrev = group.reduce((s, i) => s + (i.prevYearActualCost || 0), 0);
+          const totActual = group.reduce((s, i) => s + (i.actualCost || 0), 0);
+          const totPlannedEff = group.reduce((s, i) => s + (i.plannedEffect || 0), 0);
+          const totActualEff = group.reduce((s, i) => s + (i.actualEffect || 0), 0);
 
-        let plannedValue: number | null;
-        let factValue: number | null;
-        if (firstInit.type === 'Compliance' || firstInit.type === 'Enabler') {
-          plannedValue = totalPlannedCost;
-          factValue = totalActualCost;
-        } else {
-          plannedValue = firstInit.plannedValue && firstInit.plannedValue.trim() !== '' ? parseFloat(firstInit.plannedValue) : null;
-          factValue = firstInit.factValue && firstInit.factValue.trim() !== '' ? parseFloat(firstInit.factValue) : null;
-        }
-
-        const plannedValueCost = plannedValue !== null && totalPlannedCost > 0 ? Math.round((plannedValue / totalPlannedCost) * 10) / 10 : null;
-        const factValueCost = factValue !== null && totalActualCost > 0 ? Math.round((factValue / totalActualCost) * 10) / 10 : null;
-        const productionDate = firstInit.state === '3-done' ? firstInit.dueDate : null;
-
-        processedInitiatives.push({
-          type: firstInit.type || '—', title: firstInit.title, cardId: firstInit.cardId,
-          dueDate: firstInit.dueDate, doneDate: productionDate,
-          totalPlannedCost, totalActualCost, plannedValue, factValue,
-          plannedValueCost, factValueCost, spByTeamId
-        });
-      });
-
-      const addInitiativesGroup = (initiatives: any[], typeName: string) => {
-        const initiativesWithActualCosts = initiatives.filter(init => init.totalActualCost > 0);
-        if (initiativesWithActualCosts.length === 0) return;
-
-        let sumPlannedCost = 0, sumActualCost = 0, sumPlannedValue = 0, sumFactValue = 0;
-        initiativesWithActualCosts.forEach((init) => {
-          sumPlannedCost += init.totalPlannedCost;
-          sumActualCost += init.totalActualCost;
-          if (init.plannedValue !== null) sumPlannedValue += init.plannedValue;
-          if (init.factValue !== null) sumFactValue += init.factValue;
-        });
-
-        const totalPlannedValueCost = sumPlannedValue > 0 && sumPlannedCost > 0 ? Math.round((sumPlannedValue / sumPlannedCost) * 10) / 10 : '—';
-        const totalFactValueCost = sumFactValue > 0 && sumActualCost > 0 ? Math.round((sumFactValue / sumActualCost) * 10) / 10 : '—';
-
-        const teamSpTotals = new Map<string, number>();
-        initiativesWithActualCosts.forEach((init) => {
-          init.spByTeamId?.forEach((sp: number, teamId: string) => {
-            teamSpTotals.set(teamId, (teamSpTotals.get(teamId) || 0) + sp);
-          });
-        });
-
-        initiativesSheetData.push([
-          'Всего', typeName, '', '', '', sumPlannedCost, sumActualCost, '', '',
-          sumPlannedValue || '—', sumFactValue || '—', '', totalPlannedValueCost, totalFactValueCost,
-          ...sortedTeams.map(team => teamSpTotals.get(team.teamId) || 0)
-        ]);
-
-        let rowNumber = 1;
-        initiativesWithActualCosts.forEach((init) => {
-          initiativesSheetData.push([
-            rowNumber++, init.title, formatDate(init.dueDate), formatDate(init.doneDate), '—',
-            init.totalPlannedCost, init.totalActualCost, '', '',
-            init.plannedValue ?? '—', init.factValue ?? '—', '',
-            init.plannedValueCost ?? '—', init.factValueCost ?? '—',
-            ...sortedTeams.map(team => init.spByTeamId?.get(team.teamId) || 0)
+          rows.push([
+            `${type} — итого (${group.length})`,
+            '',
+            totPlanned || '—',
+            ...(isCarryover ? [totPrev || '—'] : []),
+            totActual || '—',
+            totPlannedEff || '—',
+            totActualEff || '—',
+            vcCalc(totPlannedEff, totPlanned, totPrev),
+            vcCalc(totActualEff, totActual, totPrev),
           ]);
-        });
+
+          group.forEach((init) => {
+            rows.push([
+              init.title,
+              (init.participants || []).join(', '),
+              init.plannedCost || '—',
+              ...(isCarryover ? [init.prevYearActualCost || '—'] : []),
+              init.actualCost || '—',
+              init.plannedEffect ?? '—',
+              init.actualEffect ?? '—',
+              vcCalc(init.plannedEffect, init.plannedCost || 0, init.prevYearActualCost || 0),
+              vcCalc(init.actualEffect, init.actualCost || 0, init.prevYearActualCost || 0),
+            ]);
+          });
+        }
+        return rows;
       };
 
-      addInitiativesGroup(processedInitiatives.filter(i => i.type === 'Epic'), 'Epic');
-      addInitiativesGroup(processedInitiatives.filter(i => i.type === 'Compliance'), 'Compliance');
-      addInitiativesGroup(processedInitiatives.filter(i => i.type === 'Enabler'), 'Enabler');
-
-      const initiativesSheet = XLSX.utils.aoa_to_sheet(initiativesSheetData);
-      initiativesSheet['!cols'] = [
-        { wch: 6 }, { wch: 40 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 },
-        { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-        ...sortedTeams.map(() => ({ wch: 12 }))
+      const initSheetCols = (isCarryover: boolean) => [
+        { wch: 48 }, { wch: 28 },
+        { wch: 16 }, ...(isCarryover ? [{ wch: 18 }] : []),
+        { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 12 }, { wch: 12 },
       ];
-      XLSX.utils.book_append_sheet(workbook, initiativesSheet, 'Инициативы');
+
+      const statusSheet = XLSX.utils.aoa_to_sheet(buildInitiativesSheetRows(doneInits, false));
+      statusSheet['!cols'] = initSheetCols(false);
+      XLSX.utils.book_append_sheet(workbook, statusSheet, 'Статус');
+
+      const carryoverSheet = XLSX.utils.aoa_to_sheet(buildInitiativesSheetRows(carryoverInits, true));
+      carryoverSheet['!cols'] = initSheetCols(true);
+      XLSX.utils.book_append_sheet(workbook, carryoverSheet, 'Переходящие');
+
+      let transferredSheetData: any[][];
+      if (isCurrentYear) {
+        transferredSheetData = [['В текущем году перенесенных задач не может быть']];
+      } else {
+        transferredSheetData = buildInitiativesSheetRows(transferredInits, false);
+      }
+      const transferredSheet = XLSX.utils.aoa_to_sheet(transferredSheetData);
+      transferredSheet['!cols'] = initSheetCols(false);
+      XLSX.utils.book_append_sheet(workbook, transferredSheet, 'Перенесенные');
 
       const fileName = `Cost_Structure_${data.year}_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
