@@ -401,18 +401,22 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           ],
         ];
         const teamRows = summaryData.teams as any[];
+        const mC = (val: any) => {
+          if (val == null || val === 0) return '—';
+          return { v: Math.round(val / 1000), t: 'n', z: '#,##0' };
+        };
         teamRows.forEach((t: any) => {
           summarySheetData.push([
             t.teamName,
             `${t.ir}%`,
             `${t.compliancePercent}%`,
-            t.teamCost || 0,
-            t.epicPlannedCost || 0,
-            t.complianceCost || 0,
-            t.carryoverFromPrevYear || 0,
-            t.epicCurrentYearCost || 0,
-            t.transferToNextYear || 0,
-            t.totalEffect || 0,
+            mC(t.teamCost),
+            mC(t.epicPlannedCost),
+            mC(t.complianceCost),
+            mC(t.carryoverFromPrevYear),
+            mC(t.epicCurrentYearCost),
+            mC(t.transferToNextYear),
+            mC(t.totalEffect),
             t.valueCost ?? '—',
             t.valueCostNoCompliance ?? '—',
           ]);
@@ -435,13 +439,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           'Итого',
           `${totalIr}%`,
           `${totalCompPercent}%`,
-          totalTeamCost,
-          sum('epicPlannedCost'),
-          totalComplianceCost,
-          sum('carryoverFromPrevYear'),
-          sum('epicCurrentYearCost'),
-          sum('transferToNextYear'),
-          totalEffect,
+          mC(totalTeamCost),
+          mC(sum('epicPlannedCost')),
+          mC(totalComplianceCost),
+          mC(sum('carryoverFromPrevYear')),
+          mC(sum('epicCurrentYearCost')),
+          mC(sum('transferToNextYear')),
+          mC(totalEffect),
           vcTotal,
           vcNoC,
         ]);
@@ -504,6 +508,14 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
         .slice()
         .sort((a, b) => a.teamName.localeCompare(b.teamName));
 
+      // Money cell: divide by 1000, apply numeric format
+      const moneyCell = (val: any) => {
+        if (val == null || val === '—' || val === 0) return '—';
+        const num = typeof val === 'number' ? val : parseFloat(val);
+        if (isNaN(num) || num === 0) return '—';
+        return { v: Math.round(num / 1000), t: 'n', z: '#,##0' };
+      };
+
       const fmtDate = (dateStr: string | null | undefined): string => {
         if (!dateStr) return '—';
         try {
@@ -553,9 +565,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
           rows.push([
             '', 'Всего', type, '', '',
-            totPlanned || '—', totActual || '—',
-            ...(isCarryover ? [totPrev || '—'] : []),
-            '', totPlannedEff || '—', totActualEff || '—', '',
+            moneyCell(totPlanned), moneyCell(totActual),
+            ...(isCarryover ? [moneyCell(totPrev)] : []),
+            '', moneyCell(totPlannedEff), moneyCell(totActualEff), '',
             vcCalc(totPlannedEff, totPlanned, totPrev),
             vcCalc(totActualEff, totActual, totPrev),
             ...sortedTeams.map(t => teamSpTotals.get(t.teamId) || 0),
@@ -576,12 +588,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               init.title,
               fmtDate(init.dueDate),
               fmtDate(init.doneDate),
-              init.plannedCost || '—',
-              init.actualCost || '—',
-              ...(isCarryover ? [init.prevYearActualCost || '—'] : []),
+              moneyCell(init.plannedCost),
+              moneyCell(init.actualCost),
+              ...(isCarryover ? [moneyCell(init.prevYearActualCost)] : []),
               '',
-              init.plannedEffect ?? '—',
-              init.actualEffect ?? '—',
+              moneyCell(init.plannedEffect),
+              moneyCell(init.actualEffect),
               '',
               vcCalc(init.plannedEffect, init.plannedCost || 0, init.prevYearActualCost || 0),
               vcCalc(init.actualEffect, init.actualCost || 0, init.prevYearActualCost || 0),
