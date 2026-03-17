@@ -520,13 +520,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
         const teamCols = sortedTeams.map(t => t.teamName);
         const header = [
-          '#', 'инициативы', 'срок план', 'срок прод', 'затраты', '',
+          'ссылка', '#', 'инициативы', 'срок план', 'срок прод', 'затраты', '',
           ...(isCarryover ? [''] : []),
           'тип эффекта', 'эффект', '', '', 'V/C', '',
           ...teamCols,
         ];
         const subHeader = [
-          '', '', '', '', 'план', 'факт текущего',
+          '', '', '', '', '', 'план', 'факт текущего',
           ...(isCarryover ? ['факт пред.'] : []),
           '', 'план', 'факт', '% вклада', 'план', 'факт',
           ...teamCols.map(() => ''),
@@ -552,7 +552,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           });
 
           rows.push([
-            'Всего', type, '', '',
+            '', 'Всего', type, '', '',
             totPlanned || '—', totActual || '—',
             ...(isCarryover ? [totPrev || '—'] : []),
             '', totPlannedEff || '—', totActualEff || '—', '',
@@ -568,7 +568,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               spByTeam.set(tc.teamId, (spByTeam.get(tc.teamId) || 0) + (tc.actualSP || 0));
             });
 
+            const cardUrl = getKaitenCardUrl(init.spaceId, init.cardId, init.archived);
+
             rows.push([
+              { f: `HYPERLINK("${cardUrl}","Открыть")` },
               rowNum++,
               init.title,
               fmtDate(init.dueDate),
@@ -590,7 +593,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       };
 
       const initSheetCols = (isCarryover: boolean) => [
-        { wch: 6 }, { wch: 40 }, { wch: 12 }, { wch: 12 },
+        { wch: 10 }, { wch: 6 }, { wch: 40 }, { wch: 12 }, { wch: 12 },
         { wch: 15 }, { wch: 15 }, ...(isCarryover ? [{ wch: 15 }] : []),
         { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
         ...sortedTeams.map(() => ({ wch: 12 })),
