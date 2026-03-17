@@ -4492,6 +4492,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               archived: initiative.condition === '2-archived',
               plannedValue: initiative.plannedValue,
               factValue: initiative.factValue,
+              dueDate: initiative.dueDate || null,
+              doneDate: initiative.doneDate || null,
               totalPlannedCost: 0,
               totalActualCost: actualSP * yearlySpPrice,
               totalPrevYearActualCost: prevYearActualSP * prevYearlySpPrice,
@@ -4512,12 +4514,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cardId: number;
         spaceId: number;
         archived: boolean;
+        dueDate: string | null;
+        doneDate: string | null;
         plannedCost: number;
         prevYearActualCost: number;
         actualCost: number;
         plannedEffect: number | null;
         actualEffect: number | null;
         participants: string[];
+        teamContributions: Array<{ teamId: string; teamName: string; actualSP: number }>;
       }> = [];
 
       const fallbackAvgSpPrice = validTeams.length > 0
@@ -4565,12 +4570,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cardId: init.cardId,
           spaceId: init.spaceId,
           archived: init.archived,
+          dueDate: init.dueDate || null,
+          doneDate: init.doneDate || null,
           plannedCost: Math.round(plannedCost),
           prevYearActualCost: Math.round(init.totalPrevYearActualCost),
           actualCost: Math.round(actualCost),
           plannedEffect,
           actualEffect,
           participants,
+          teamContributions: init.teamContributions.map((tc: any) => ({
+            teamId: tc.teamId,
+            teamName: tc.teamName,
+            actualSP: tc.actualSP,
+          })),
         });
       }
 

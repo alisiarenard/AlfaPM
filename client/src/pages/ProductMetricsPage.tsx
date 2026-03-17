@@ -499,24 +499,39 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       const carryoverInits: any[] = carryoverRes?.ok ? (await carryoverRes.json()).initiatives || [] : [];
       const transferredInits: any[] = (!isCurrentYear && transferredRes?.ok) ? (await transferredRes!.json()).initiatives || [] : [];
 
+      // Sorted selected teams for per-team SP columns
+      const sortedTeams = (departmentTeams?.filter(t => selectedTeams.has(t.teamId)) || [])
+        .slice()
+        .sort((a, b) => a.teamName.localeCompare(b.teamName));
+
+      const fmtDate = (dateStr: string | null | undefined): string => {
+        if (!dateStr) return '—';
+        try {
+          const d = new Date(dateStr);
+          return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+        } catch { return '—'; }
+      };
+
       const buildInitiativesSheetRows = (initiatives: any[], isCarryover: boolean): any[][] => {
         const vcCalc = (effect: number | null, cost: number, prevCost: number) => {
           const denom = cost + prevCost;
           return effect !== null && effect > 0 && denom > 0 ? Math.round((effect / denom) * 10) / 10 : '—';
         };
 
+        const teamCols = sortedTeams.map(t => t.teamName);
         const header = [
-          'Инициатива',
-          'Участники',
-          'Затраты (план)',
-          ...(isCarryover ? ['Затраты пред. (факт)'] : []),
-          'Затраты (факт)',
-          'Эффект (план)',
-          'Эффект (факт)',
-          'V/C (план)',
-          'V/C (факт)',
+          '#', 'инициативы', 'срок план', 'срок прод', 'затраты', '',
+          ...(isCarryover ? [''] : []),
+          'тип эффекта', 'эффект', '', '', 'V/C', '',
+          ...teamCols,
         ];
-        const rows: any[][] = [header];
+        const subHeader = [
+          '', '', '', '', 'план', 'факт текущего',
+          ...(isCarryover ? ['факт пред.'] : []),
+          '', 'план', 'факт', '% вклада', 'план', 'факт',
+          ...teamCols.map(() => ''),
+        ];
+        const rows: any[][] = [header, subHeader];
 
         for (const type of ['Epic', 'Compliance', 'Enabler']) {
           const group = initiatives.filter(i => i.type === type);
@@ -528,29 +543,46 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           const totPlannedEff = group.reduce((s, i) => s + (i.plannedEffect || 0), 0);
           const totActualEff = group.reduce((s, i) => s + (i.actualEffect || 0), 0);
 
+          // Per-team SP totals for group row
+          const teamSpTotals = new Map<string, number>();
+          group.forEach(init => {
+            (init.teamContributions || []).forEach((tc: any) => {
+              teamSpTotals.set(tc.teamId, (teamSpTotals.get(tc.teamId) || 0) + (tc.actualSP || 0));
+            });
+          });
+
           rows.push([
-            `${type} — итого (${group.length})`,
-            '',
-            totPlanned || '—',
+            'Всего', type, '', '',
+            totPlanned || '—', totActual || '—',
             ...(isCarryover ? [totPrev || '—'] : []),
-            totActual || '—',
-            totPlannedEff || '—',
-            totActualEff || '—',
+            '', totPlannedEff || '—', totActualEff || '—', '',
             vcCalc(totPlannedEff, totPlanned, totPrev),
             vcCalc(totActualEff, totActual, totPrev),
+            ...sortedTeams.map(t => teamSpTotals.get(t.teamId) || 0),
           ]);
 
-          group.forEach((init) => {
+          let rowNum = 1;
+          group.forEach(init => {
+            const spByTeam = new Map<string, number>();
+            (init.teamContributions || []).forEach((tc: any) => {
+              spByTeam.set(tc.teamId, (spByTeam.get(tc.teamId) || 0) + (tc.actualSP || 0));
+            });
+
             rows.push([
+              rowNum++,
               init.title,
-              (init.participants || []).join(', '),
+              fmtDate(init.dueDate),
+              fmtDate(init.doneDate),
               init.plannedCost || '—',
-              ...(isCarryover ? [init.prevYearActualCost || '—'] : []),
               init.actualCost || '—',
+              ...(isCarryover ? [init.prevYearActualCost || '—'] : []),
+              '',
               init.plannedEffect ?? '—',
               init.actualEffect ?? '—',
+              '',
               vcCalc(init.plannedEffect, init.plannedCost || 0, init.prevYearActualCost || 0),
               vcCalc(init.actualEffect, init.actualCost || 0, init.prevYearActualCost || 0),
+              ...sortedTeams.map(t => spByTeam.get(t.teamId) || 0),
             ]);
           });
         }
@@ -558,9 +590,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       };
 
       const initSheetCols = (isCarryover: boolean) => [
-        { wch: 48 }, { wch: 28 },
-        { wch: 16 }, ...(isCarryover ? [{ wch: 18 }] : []),
-        { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 12 }, { wch: 12 },
+        { wch: 6 }, { wch: 40 }, { wch: 12 }, { wch: 12 },
+        { wch: 15 }, { wch: 15 }, ...(isCarryover ? [{ wch: 15 }] : []),
+        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+        ...sortedTeams.map(() => ({ wch: 12 })),
       ];
 
       const statusSheet = XLSX.utils.aoa_to_sheet(buildInitiativesSheetRows(doneInits, false));
