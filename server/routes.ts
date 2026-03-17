@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInitiativeSchema, insertTaskSchema, insertDepartmentSchema, type TaskRow } from "@shared/schema";
+import { insertInitiativeSchema, insertTaskSchema, insertDepartmentSchema, type TaskRow, type InitiativeRow } from "@shared/schema";
 import { kaitenClient } from "./kaiten";
 import { log } from "./vite";
 import { calculateInitiativesInvolvement } from "./utils/involvement";
@@ -3881,6 +3881,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         error: error instanceof Error ? error.message : "Failed to calculate cost structure" 
       });
+    }
+  });
+
+  app.get("/api/metrics/team-summary-report", async (req, res) => {
+    try {
+      const teamIdsParam = req.query.teamIds as string;
+      const yearParam = req.query.year as string;
+      if (!teamIdsParam) return res.status(400).json({ success: false, error: "teamIds parameter is required" });
+
+      const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
+      const prevYear = year - 1;
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+      const prevYearStart = new Date(prevYear, 0, 1);
+      const prevYearEnd = new Date(prevYear, 11, 31, 23, 59, 59);
+
+      const teamIds = teamIdsParam.split(',').map((id: string) => id.trim()).filter(Boolean);
+      const teams = await Promise.all(teamIds.map((id: string) => storage.getTeamById(id)));
+      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      if (validTeams.length === 0) return res.status(404).json({ success: false, error: "No valid teams found" });
+
+      const allTeams = await storage.getAllTeams();
+      const spPriceMap = await buildSpPriceMap(allTeams);
+      const allTasks = await storage.getAllTasks();
+
+      const teamResults = [];
+
+      for (const team of validTeams) {
+        const spPrice = getSpPriceForYear(spPriceMap, team.teamId, year, team.spPrice || 0);
+
+        let yearSprintIds = new Set<number>();
+        let prevYearSprintIds = new Set<number>();
+        if (team.sprintBoardId !== null) {
+          const sprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+          for (const sprint of sprints) {
+            const sy = new Date(sprint.startDate).getFullYear();
+            if (sy === year) yearSprintIds.add(sprint.sprintId);
+            else if (sy === prevYear) prevYearSprintIds.add(sprint.sprintId);
+          }
+        }
+
+        const teamAllTasks = allTasks.filter((t: TaskRow) => t.teamId === team.teamId && t.condition !== '3 - deleted');
+
+        let yearTasks: TaskRow[];
+        let prevYearTasks: TaskRow[];
+        if (yearSprintIds.size > 0) {
+          yearTasks = teamAllTasks.filter((t: TaskRow) => t.sprintId !== null && yearSprintIds.has(t.sprintId!) && t.state === '3-done');
+          prevYearTasks = teamAllTasks.filter((t: TaskRow) => t.sprintId !== null && prevYearSprintIds.has(t.sprintId!) && t.state === '3-done');
+        } else {
+          yearTasks = teamAllTasks.filter((t: TaskRow) => {
+            if (!t.doneDate) return false;
+            const d = new Date(t.doneDate); return d >= yearStart && d <= yearEnd;
+          });
+          prevYearTasks = teamAllTasks.filter((t: TaskRow) => {
+            if (!t.doneDate) return false;
+            const d = new Date(t.doneDate); return d >= prevYearStart && d <= prevYearEnd;
+          });
+        }
+
+        const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+        const epicInits = initiatives.filter((i: InitiativeRow) => i.type === 'Epic');
+        const complianceInits = initiatives.filter((i: InitiativeRow) => i.type === 'Compliance');
+        const enablerInits = initiatives.filter((i: InitiativeRow) => i.type === 'Enabler');
+
+        const epicCardIds = new Set(epicInits.map((i: InitiativeRow) => i.cardId));
+        const complianceCardIds = new Set(complianceInits.map((i: InitiativeRow) => i.cardId));
+        const enablerCardIds = new Set(enablerInits.map((i: InitiativeRow) => i.cardId));
+        const irCardIds = new Set([...epicCardIds, ...complianceCardIds, ...enablerCardIds]);
+
+        const totalSP = yearTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+        const teamCost = Math.round(totalSP * spPrice);
+
+        const irSP = yearTasks.filter((t: TaskRow) => t.initCardId !== null && irCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+        const compSP = yearTasks.filter((t: TaskRow) => t.initCardId !== null && complianceCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+        const ir = totalSP > 0 ? Math.round((irSP / totalSP) * 100) : 0;
+        const compliancePercent = totalSP > 0 ? Math.round((compSP / totalSP) * 100) : 0;
+
+        const epicYearTasks = yearTasks.filter((t: TaskRow) => t.initCardId !== null && epicCardIds.has(t.initCardId!));
+        const epicSP = epicYearTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+        const epicActualCost = Math.round(epicSP * spPrice);
+
+        const complianceCost = Math.round(compSP * spPrice);
+
+        const enablerSP = yearTasks.filter((t: TaskRow) => t.initCardId !== null && enablerCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+        const enablerCost = Math.round(enablerSP * spPrice);
+
+        const epicPlannedCost = Math.round(epicInits.reduce((s: number, i: InitiativeRow) => s + (i.size || 0) * spPrice, 0));
+
+        const prevYearEpicInitCardIds = new Set(
+          prevYearTasks.filter((t: TaskRow) => t.initCardId !== null && epicCardIds.has(t.initCardId!)).map((t: TaskRow) => t.initCardId!)
+        );
+        const carryoverTasks = epicYearTasks.filter((t: TaskRow) => t.initCardId !== null && prevYearEpicInitCardIds.has(t.initCardId!));
+        const carryoverSP = carryoverTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+        const carryoverFromPrevYear = Math.round(carryoverSP * spPrice);
+        const epicCurrentYearCost = epicActualCost - carryoverFromPrevYear;
+
+        const inProgressEpicCardIds = new Set(epicInits.filter((i: InitiativeRow) => i.state === '2-inProgress').map((i: InitiativeRow) => i.cardId));
+        const transferTasks = epicYearTasks.filter((t: TaskRow) => t.initCardId !== null && inProgressEpicCardIds.has(t.initCardId!));
+        const transferSP = transferTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+        const transferToNextYear = Math.round(transferSP * spPrice);
+
+        let epicEffect = 0;
+        for (const init of epicInits) {
+          const hasTasks = epicYearTasks.some((t: TaskRow) => t.initCardId === init.cardId);
+          if (hasTasks && init.plannedValue && init.plannedValue.trim() !== '') {
+            const pv = parseFloat(init.plannedValue);
+            if (!isNaN(pv) && pv > 0) epicEffect += pv;
+          }
+        }
+        const totalEffect = Math.round(epicEffect + complianceCost + enablerCost);
+
+        const vcDenom = epicActualCost;
+        const valueCost = vcDenom > 0 && totalEffect > 0 ? Math.round((totalEffect / vcDenom) * 100) / 100 : null;
+        const vcNoCNumerator = totalEffect - complianceCost;
+        const vcNoCDenom = vcDenom - complianceCost;
+        const valueCostNoCompliance = vcNoCDenom > 0 && vcNoCNumerator > 0 ? Math.round((vcNoCNumerator / vcNoCDenom) * 100) / 100 : null;
+
+        teamResults.push({
+          teamName: team.teamName,
+          ir,
+          compliancePercent,
+          teamCost,
+          epicPlannedCost,
+          complianceCost,
+          carryoverFromPrevYear,
+          epicCurrentYearCost,
+          transferToNextYear,
+          totalEffect,
+          valueCost,
+          valueCostNoCompliance,
+        });
+      }
+
+      res.json({ success: true, year, teams: teamResults });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed to calculate team summary" });
     }
   });
 

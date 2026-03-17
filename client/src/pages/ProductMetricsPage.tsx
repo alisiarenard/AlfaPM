@@ -366,9 +366,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
         description: "Пожалуйста, подождите...",
       });
 
-      const response = await fetch(`/api/metrics/cost-structure?teamIds=${teamIdsParam}&year=${selectedYear}`);
-      if (!response.ok) throw new Error('Failed to fetch cost structure data');
-      const data = await response.json();
+      const [costStructureRes, summaryReportRes] = await Promise.all([
+        fetch(`/api/metrics/cost-structure?teamIds=${teamIdsParam}&year=${selectedYear}`),
+        fetch(`/api/metrics/team-summary-report?teamIds=${teamIdsParam}&year=${selectedYear}`),
+      ]);
+      if (!costStructureRes.ok) throw new Error('Failed to fetch cost structure data');
+      const data = await costStructureRes.json();
+      const summaryData = summaryReportRes.ok ? await summaryReportRes.json() : null;
 
       const selectedTeamsData = departmentTeams?.filter(t => selectedTeams.has(t.teamId)) || [];
       const initiativesPromises = selectedTeamsData.map(async (team) => {
@@ -385,6 +389,82 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       const XLSX = await import('xlsx');
       const workbook = XLSX.utils.book_new();
       const departmentName = departments?.find(d => d.id === selectedDepartment)?.department || 'Не указан';
+
+      // === Лист 1: Сводные показатели ===
+      if (summaryData?.teams?.length > 0) {
+        const yr = selectedYear;
+        const prevYr = yr - 1;
+        const nextYr = yr + 1;
+        const summarySheetData: any[][] = [
+          [String(yr)],
+          [
+            'Команда',
+            `IR ${yr}`,
+            '%Compliance',
+            'Стоимость команды',
+            'Затраты на эпики',
+            'Compliance',
+            `Перенос из ${prevYr}`,
+            `Затраты на эпики ${yr}`,
+            `Перенос в ${nextYr}`,
+            'Эффект',
+            `Value/cost ${yr}`,
+            `Value/cost ${yr} без compliance`,
+          ],
+        ];
+        const teamRows = summaryData.teams as any[];
+        teamRows.forEach((t: any) => {
+          summarySheetData.push([
+            t.teamName,
+            `${t.ir}%`,
+            `${t.compliancePercent}%`,
+            t.teamCost || 0,
+            t.epicPlannedCost || 0,
+            t.complianceCost || 0,
+            t.carryoverFromPrevYear || 0,
+            t.epicCurrentYearCost || 0,
+            t.transferToNextYear || 0,
+            t.totalEffect || 0,
+            t.valueCost ?? '—',
+            t.valueCostNoCompliance ?? '—',
+          ]);
+        });
+        // Итого
+        const sum = (key: string) => teamRows.reduce((s: number, t: any) => s + (t[key] || 0), 0);
+        const totalEffect = sum('totalEffect');
+        const totalEpicActual = sum('epicCurrentYearCost') + sum('carryoverFromPrevYear');
+        const totalComplianceCost = sum('complianceCost');
+        const vcTotal = totalEpicActual > 0 && totalEffect > 0 ? Math.round((totalEffect / totalEpicActual) * 100) / 100 : '—';
+        const vcNoCNum = totalEffect - totalComplianceCost;
+        const vcNoCDen = totalEpicActual - totalComplianceCost;
+        const vcNoC = vcNoCDen > 0 && vcNoCNum > 0 ? Math.round((vcNoCNum / vcNoCDen) * 100) / 100 : '—';
+        const totalIrSP = teamRows.reduce((s: number, t: any) => s + (t.teamCost > 0 ? t.ir * t.teamCost / 100 : 0), 0);
+        const totalTeamCost = sum('teamCost');
+        const totalIr = totalTeamCost > 0 ? Math.round((totalIrSP / totalTeamCost) * 100) : 0;
+        const totalCompSP = teamRows.reduce((s: number, t: any) => s + (t.teamCost > 0 ? t.compliancePercent * t.teamCost / 100 : 0), 0);
+        const totalCompPercent = totalTeamCost > 0 ? Math.round((totalCompSP / totalTeamCost) * 100) : 0;
+        summarySheetData.push([
+          'Итого',
+          `${totalIr}%`,
+          `${totalCompPercent}%`,
+          totalTeamCost,
+          sum('epicPlannedCost'),
+          totalComplianceCost,
+          sum('carryoverFromPrevYear'),
+          sum('epicCurrentYearCost'),
+          sum('transferToNextYear'),
+          totalEffect,
+          vcTotal,
+          vcNoC,
+        ]);
+
+        const summarySheet = XLSX.utils.aoa_to_sheet(summarySheetData);
+        summarySheet['!cols'] = [
+          { wch: 28 }, { wch: 10 }, { wch: 14 }, { wch: 18 }, { wch: 18 },
+          { wch: 14 }, { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 24 },
+        ];
+        XLSX.utils.book_append_sheet(workbook, summarySheet, 'Сводные показатели');
+      }
 
       const epicPercent = data.typePercentages['Epic'] || 0;
       const compliancePercent = data.typePercentages['Compliance'] || 0;
