@@ -1700,18 +1700,18 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
           <div className="flex-1 overflow-y-auto px-6 pt-4 pb-4 mb-6 custom-scrollbar">
             {bsModalData && bsModalData.tasks.length > 0 ? (() => {
               const typeToGroup: Record<string, string> = {
-                'Technical Debt': 'Technical Debt',
-                'Technical debt': 'Technical Debt',
-                'Tech Debt': 'Technical Debt',
-                'Tech debt': 'Technical Debt',
-                'Tech Task': 'Technical Debt',
+                'Technical Debt': 'Технические задачи',
+                'Technical debt': 'Технические задачи',
+                'Tech Debt': 'Технические задачи',
+                'Tech debt': 'Технические задачи',
+                'Tech Task': 'Технические задачи',
                 'Security': 'Security',
                 'Service Desk': 'Service Desk',
                 'Omni': 'Service Desk',
                 'Bug': 'Bugs',
                 'Bugs': 'Bugs',
               };
-              const groupOrder = ['Technical Debt', 'Security', 'Service Desk', 'Bugs'];
+              const groupOrder = ['Технические задачи', 'Security', 'Service Desk', 'Bugs'];
               const grouped: Record<string, TaskInSprint[]> = {};
               for (const task of bsModalData.tasks) {
                 const group = typeToGroup[task.type || ''] || 'Другие доработки';
@@ -2126,18 +2126,18 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                         <div className="space-y-2 pl-8">
                           {initiative.title === 'Поддержка бизнеса' ? (() => {
                             const typeToGroup: Record<string, string> = {
-                              'Technical Debt': 'Technical Debt',
-                              'Technical debt': 'Technical Debt',
-                              'Tech Debt': 'Technical Debt',
-                              'Tech debt': 'Technical Debt',
-                              'Tech Task': 'Technical Debt',
+                              'Technical Debt': 'Технические задачи',
+                              'Technical debt': 'Технические задачи',
+                              'Tech Debt': 'Технические задачи',
+                              'Tech debt': 'Технические задачи',
+                              'Tech Task': 'Технические задачи',
                               'Security': 'Security',
                               'Service Desk': 'Service Desk',
                               'Omni': 'Service Desk',
                               'Bug': 'Bugs',
                               'Bugs': 'Bugs',
                             };
-                            const groupOrder = ['Technical Debt', 'Security', 'Service Desk', 'Bugs'];
+                            const groupOrder = ['Технические задачи', 'Security', 'Service Desk', 'Bugs'];
                             const grouped: Record<string, TaskInSprint[]> = {};
                             for (const task of initiative.tasks) {
                               const group = typeToGroup[task.type || ''] || 'Другие доработки';
