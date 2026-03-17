@@ -1704,6 +1704,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 'Security': 'Security',
                 'Service Desk': 'Service Desk',
                 'Omni': 'Service Desk',
+                'Bug': 'Bugs',
                 'Bugs': 'Bugs',
               };
               const groupOrder = ['Technical Debt', 'Security', 'Service Desk', 'Bugs'];
@@ -2125,6 +2126,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                               'Security': 'Security',
                               'Service Desk': 'Service Desk',
                               'Omni': 'Service Desk',
+                              'Bug': 'Bugs',
                               'Bugs': 'Bugs',
                             };
                             const groupOrder = ['Technical Debt', 'Security', 'Service Desk', 'Bugs'];
