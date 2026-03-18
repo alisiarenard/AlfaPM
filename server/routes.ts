@@ -3907,39 +3907,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const teamResults = [];
 
+      // Group teams by spaceId — one row per пространство
+      const teamsBySpace = new Map<number, typeof validTeams>();
       for (const team of validTeams) {
-        const spPrice = getSpPriceForYear(spPriceMap, team.teamId, year, team.spPrice || 0);
+        if (!teamsBySpace.has(team.spaceId)) teamsBySpace.set(team.spaceId, []);
+        teamsBySpace.get(team.spaceId)!.push(team);
+      }
 
-        let yearSprintIds = new Set<number>();
-        let prevYearSprintIds = new Set<number>();
-        if (team.sprintBoardId !== null) {
-          const sprints = await storage.getSprintsByBoardId(team.sprintBoardId);
-          for (const sprint of sprints) {
-            const sy = new Date(sprint.startDate).getFullYear();
-            if (sy === year) yearSprintIds.add(sprint.sprintId);
-            else if (sy === prevYear) prevYearSprintIds.add(sprint.sprintId);
+      for (const [, spaceTeams] of teamsBySpace) {
+        const spaceName = spaceTeams.map(t => t.teamName).join(' / ');
+
+        // Collect year tasks per team (respecting sprint-based vs date-based filtering)
+        let yearTasks: TaskRow[] = [];
+        let prevYearTasks: TaskRow[] = [];
+
+        for (const team of spaceTeams) {
+          const teamAllTasks = allTasks.filter((t: TaskRow) => t.teamId === team.teamId && t.condition !== '3 - deleted');
+          let teamYearSprintIds = new Set<number>();
+          let teamPrevYearSprintIds = new Set<number>();
+          let teamHasSprints = false;
+
+          if (team.sprintBoardId !== null) {
+            const sprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+            for (const sprint of sprints) {
+              const sy = new Date(sprint.startDate).getFullYear();
+              if (sy === year) { teamYearSprintIds.add(sprint.sprintId); teamHasSprints = true; }
+              else if (sy === prevYear) teamPrevYearSprintIds.add(sprint.sprintId);
+            }
+          }
+
+          if (teamHasSprints) {
+            yearTasks.push(...teamAllTasks.filter((t: TaskRow) => t.sprintId !== null && teamYearSprintIds.has(t.sprintId!) && t.state === '3-done'));
+            prevYearTasks.push(...teamAllTasks.filter((t: TaskRow) => t.sprintId !== null && teamPrevYearSprintIds.has(t.sprintId!) && t.state === '3-done'));
+          } else {
+            yearTasks.push(...teamAllTasks.filter((t: TaskRow) => {
+              if (!t.doneDate) return false;
+              const d = new Date(t.doneDate); return d >= yearStart && d <= yearEnd;
+            }));
+            prevYearTasks.push(...teamAllTasks.filter((t: TaskRow) => {
+              if (!t.doneDate) return false;
+              const d = new Date(t.doneDate); return d >= prevYearStart && d <= prevYearEnd;
+            }));
           }
         }
 
-        const teamAllTasks = allTasks.filter((t: TaskRow) => t.teamId === team.teamId && t.condition !== '3 - deleted');
-
-        let yearTasks: TaskRow[];
-        let prevYearTasks: TaskRow[];
-        if (yearSprintIds.size > 0) {
-          yearTasks = teamAllTasks.filter((t: TaskRow) => t.sprintId !== null && yearSprintIds.has(t.sprintId!) && t.state === '3-done');
-          prevYearTasks = teamAllTasks.filter((t: TaskRow) => t.sprintId !== null && prevYearSprintIds.has(t.sprintId!) && t.state === '3-done');
-        } else {
-          yearTasks = teamAllTasks.filter((t: TaskRow) => {
-            if (!t.doneDate) return false;
-            const d = new Date(t.doneDate); return d >= yearStart && d <= yearEnd;
-          });
-          prevYearTasks = teamAllTasks.filter((t: TaskRow) => {
-            if (!t.doneDate) return false;
-            const d = new Date(t.doneDate); return d >= prevYearStart && d <= prevYearEnd;
-          });
-        }
-
-        const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+        // Fetch initiatives once per space (shared initBoardId)
+        const initBoardId = spaceTeams[0].initBoardId;
+        const initiatives = await storage.getInitiativesByBoardId(initBoardId);
         const epicInits = initiatives.filter((i: InitiativeRow) => i.type === 'Epic');
         const complianceInits = initiatives.filter((i: InitiativeRow) => i.type === 'Compliance');
         const enablerInits = initiatives.filter((i: InitiativeRow) => i.type === 'Enabler');
@@ -3949,41 +3963,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const enablerCardIds = new Set(enablerInits.map((i: InitiativeRow) => i.cardId));
         const irCardIds = new Set([...epicCardIds, ...complianceCardIds, ...enablerCardIds]);
 
-        const totalSP = yearTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
-        const teamCost = Math.round(totalSP * spPrice);
+        // Aggregate costs per team (each team has own spPrice)
+        let totalSP = 0;
+        let teamCost = 0;
+        let epicActualCost = 0;
+        let complianceCost = 0;
+        let enablerCost = 0;
+        let carryoverFromPrevYear = 0;
+        let transferToNextYear = 0;
 
+        const inProgressEpicCardIds = new Set(epicInits.filter((i: InitiativeRow) => i.state === '2-inProgress').map((i: InitiativeRow) => i.cardId));
+
+        for (const team of spaceTeams) {
+          const spPrice = getSpPriceForYear(spPriceMap, team.teamId, year, team.spPrice || 0);
+          const teamYearTasks = yearTasks.filter((t: TaskRow) => t.teamId === team.teamId);
+          const teamPrevYearTasks = prevYearTasks.filter((t: TaskRow) => t.teamId === team.teamId);
+
+          const teamTotalSP = teamYearTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+          teamCost += Math.round(teamTotalSP * spPrice);
+          totalSP += teamTotalSP;
+
+          const teamEpicYearTasks = teamYearTasks.filter((t: TaskRow) => t.initCardId !== null && epicCardIds.has(t.initCardId!));
+          epicActualCost += Math.round(teamEpicYearTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0) * spPrice);
+
+          const teamCompSP = teamYearTasks.filter((t: TaskRow) => t.initCardId !== null && complianceCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+          complianceCost += Math.round(teamCompSP * spPrice);
+
+          const teamEnablerSP = teamYearTasks.filter((t: TaskRow) => t.initCardId !== null && enablerCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+          enablerCost += Math.round(teamEnablerSP * spPrice);
+
+          const prevYearEpicInitCardIds = new Set(
+            teamPrevYearTasks.filter((t: TaskRow) => t.initCardId !== null && epicCardIds.has(t.initCardId!)).map((t: TaskRow) => t.initCardId!)
+          );
+          const carryoverSP = teamEpicYearTasks.filter((t: TaskRow) => t.initCardId !== null && prevYearEpicInitCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+          carryoverFromPrevYear += Math.round(carryoverSP * spPrice);
+
+          const transferSP = teamEpicYearTasks.filter((t: TaskRow) => t.initCardId !== null && inProgressEpicCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
+          transferToNextYear += Math.round(transferSP * spPrice);
+        }
+
+        const epicCurrentYearCost = epicActualCost - carryoverFromPrevYear;
+
+        // epicPlannedCost: initiative size * avg spPrice (avoid double-counting shared initiatives)
+        const avgSpPrice = totalSP > 0 ? teamCost / totalSP : getSpPriceForYear(spPriceMap, spaceTeams[0].teamId, year, spaceTeams[0].spPrice || 0);
+        const epicPlannedCost = Math.round(epicInits.reduce((s: number, i: InitiativeRow) => s + (i.size || 0) * avgSpPrice, 0));
+
+        // IR and compliance: SP-based over all combined year tasks
         const irSP = yearTasks.filter((t: TaskRow) => t.initCardId !== null && irCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
         const compSP = yearTasks.filter((t: TaskRow) => t.initCardId !== null && complianceCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
         const ir = totalSP > 0 ? Math.round((irSP / totalSP) * 100) : 0;
         const compliancePercent = totalSP > 0 ? Math.round((compSP / totalSP) * 100) : 0;
 
-        const epicYearTasks = yearTasks.filter((t: TaskRow) => t.initCardId !== null && epicCardIds.has(t.initCardId!));
-        const epicSP = epicYearTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
-        const epicActualCost = Math.round(epicSP * spPrice);
-
-        const complianceCost = Math.round(compSP * spPrice);
-
-        const enablerSP = yearTasks.filter((t: TaskRow) => t.initCardId !== null && enablerCardIds.has(t.initCardId!)).reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
-        const enablerCost = Math.round(enablerSP * spPrice);
-
-        const epicPlannedCost = Math.round(epicInits.reduce((s: number, i: InitiativeRow) => s + (i.size || 0) * spPrice, 0));
-
-        const prevYearEpicInitCardIds = new Set(
-          prevYearTasks.filter((t: TaskRow) => t.initCardId !== null && epicCardIds.has(t.initCardId!)).map((t: TaskRow) => t.initCardId!)
-        );
-        const carryoverTasks = epicYearTasks.filter((t: TaskRow) => t.initCardId !== null && prevYearEpicInitCardIds.has(t.initCardId!));
-        const carryoverSP = carryoverTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
-        const carryoverFromPrevYear = Math.round(carryoverSP * spPrice);
-        const epicCurrentYearCost = epicActualCost - carryoverFromPrevYear;
-
-        const inProgressEpicCardIds = new Set(epicInits.filter((i: InitiativeRow) => i.state === '2-inProgress').map((i: InitiativeRow) => i.cardId));
-        const transferTasks = epicYearTasks.filter((t: TaskRow) => t.initCardId !== null && inProgressEpicCardIds.has(t.initCardId!));
-        const transferSP = transferTasks.reduce((s: number, t: TaskRow) => s + (t.size || 0), 0);
-        const transferToNextYear = Math.round(transferSP * spPrice);
-
+        // Epic effect
+        const allEpicYearTasks = yearTasks.filter((t: TaskRow) => t.initCardId !== null && epicCardIds.has(t.initCardId!));
         let epicEffect = 0;
         for (const init of epicInits) {
-          const hasTasks = epicYearTasks.some((t: TaskRow) => t.initCardId === init.cardId);
+          const hasTasks = allEpicYearTasks.some((t: TaskRow) => t.initCardId === init.cardId);
           if (hasTasks && init.plannedValue && init.plannedValue.trim() !== '') {
             const pv = parseFloat(init.plannedValue);
             if (!isNaN(pv) && pv > 0) epicEffect += pv;
@@ -3998,7 +4033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const valueCostNoCompliance = vcNoCDenom > 0 && vcNoCNumerator > 0 ? Math.round((vcNoCNumerator / vcNoCDenom) * 100) / 100 : null;
 
         teamResults.push({
-          teamName: team.teamName,
+          teamName: spaceName,
           ir,
           compliancePercent,
           teamCost,
