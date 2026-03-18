@@ -3915,7 +3915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       for (const [, spaceTeams] of teamsBySpace) {
-        const spaceName = spaceTeams.map(t => t.teamName).join(' / ');
+        const spaceName = spaceTeams[0].spaceName || spaceTeams.map(t => t.teamName).join(' / ');
 
         // Collect year tasks per team (respecting sprint-based vs date-based filtering)
         let yearTasks: TaskRow[] = [];
