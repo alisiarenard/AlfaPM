@@ -126,8 +126,8 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
     { key: 'Др. доработки', color: undefined, minWidth: '80px' },
   ];
 
-  const irBlock = (
-    <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
+  const irContent = (
+    <div className="px-4 py-3 flex flex-col justify-between h-full">
       <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
       <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
         {displayIR ? `${displayIR.actualIR}%` : '-'}
@@ -156,7 +156,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="w-[17%] cursor-help">
-              {irBlock}
+              {irContent}
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="flex flex-col gap-1 min-w-[160px]">
@@ -170,7 +170,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         </Tooltip>
       ) : (
         <div className="w-[17%]">
-          {irBlock}
+          {irContent}
         </div>
       )}
       <div className="border-l border-border my-3"></div>
