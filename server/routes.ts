@@ -4943,8 +4943,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         tasks = await storage.getTasksByTeamAndDoneDateRange(teamId, startDate, endDate);
       } else {
-        // Реальный спринт - выбираем по sprint_id
-        tasks = await storage.getTasksBySprint(sprintIdNum);
+        // Реальный спринт - выбираем по sprint_id, только выполненные задачи
+        const allSprintTasks = await storage.getTasksBySprint(sprintIdNum);
+        tasks = allSprintTasks.filter(t => t.state === '3-done');
       }
       
       // Получаем инициативы для группировки
