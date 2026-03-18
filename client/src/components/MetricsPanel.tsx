@@ -1,14 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { useRef, type ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+interface SpaceGroup {
+  spaceId: string;
+  spaceName: string;
+  teamIds: string[];
+}
 
 interface MetricsPanelProps {
   teamIds: string[];
   selectedYear: string;
+  spaceGroups?: SpaceGroup[];
   children?: ReactNode;
 }
 
-export function MetricsPanel({ teamIds, selectedYear, children }: MetricsPanelProps) {
+export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children }: MetricsPanelProps) {
   const teamIdsParam = teamIds.sort().join(',');
 
   const { data: innovationRateData, isFetching: isIRFetching } = useQuery<{
@@ -33,6 +40,30 @@ export function MetricsPanel({ teamIds, selectedYear, children }: MetricsPanelPr
     lastSuccessfulDataRef.current = innovationRateData;
   }
   const displayIR = innovationRateData || lastSuccessfulDataRef.current;
+
+  const spaceIRQueries = useQueries({
+    queries: spaceGroups.length > 1
+      ? spaceGroups.map((group) => ({
+          queryKey: ['/api/metrics/innovation-rate', { teamIds: group.teamIds.sort().join(','), year: selectedYear }],
+          queryFn: async () => {
+            const response = await fetch(`/api/metrics/innovation-rate?teamIds=${group.teamIds.sort().join(',')}&year=${selectedYear}`);
+            if (!response.ok) throw new Error('Failed to fetch innovation rate');
+            return response.json() as Promise<{ actualIR: number; plannedIR: number; diffFromPlanned: number }>;
+          },
+          enabled: group.teamIds.length > 0,
+          placeholderData: (prev: any) => prev,
+        }))
+      : [],
+  });
+
+  const spaceIRData = spaceGroups.length > 1
+    ? spaceGroups.map((group, i) => ({
+        spaceName: group.spaceName,
+        ir: (spaceIRQueries[i]?.data as any)?.actualIR ?? null,
+      }))
+    : [];
+
+  const showIRTooltip = spaceGroups.length > 1 && spaceIRData.some(s => s.ir !== null);
 
   const { data: costStructureData, isFetching: isCostStructureFetching } = useQuery<{
     success: boolean;
@@ -95,29 +126,53 @@ export function MetricsPanel({ teamIds, selectedYear, children }: MetricsPanelPr
     { key: 'Др. доработки', color: undefined, minWidth: '80px' },
   ];
 
+  const irBlock = (
+    <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
+      <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
+      <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
+        {displayIR ? `${displayIR.actualIR}%` : '-'}
+      </div>
+      <div className="text-[0.8rem] text-muted-foreground truncate">
+        {displayIR && (
+          <span
+            className="font-semibold"
+            style={{ color: displayIR.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
+          >
+            {displayIR.diffFromPlanned >= 0 ? '+' : ''}{displayIR.diffFromPlanned}%
+          </span>
+        )}
+        {displayIR && ' от планового значения'}
+      </div>
+    </div>
+  );
+
   return (
     <div
       className="w-full h-[110px] border border-border rounded-lg flex relative transition-opacity duration-300"
       style={{ opacity: isIRFetching || isCostStructureFetching || isValueCostFetching ? 0.5 : 1 }}
       data-testid="metrics-panel"
     >
-      <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
-        <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
-        <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
-          {displayIR ? `${displayIR.actualIR}%` : '-'}
+      {showIRTooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="w-[17%] cursor-help">
+              {irBlock}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="flex flex-col gap-1 min-w-[160px]">
+            {spaceIRData.map((s) => (
+              <div key={s.spaceName} className="flex justify-between gap-4">
+                <span className="text-muted-foreground">{s.spaceName}</span>
+                <span className="font-semibold">{s.ir !== null ? `${s.ir}%` : '—'}</span>
+              </div>
+            ))}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <div className="w-[17%]">
+          {irBlock}
         </div>
-        <div className="text-[0.8rem] text-muted-foreground truncate">
-          {displayIR && (
-            <span
-              className="font-semibold"
-              style={{ color: displayIR.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
-            >
-              {displayIR.diffFromPlanned >= 0 ? '+' : ''}{displayIR.diffFromPlanned}%
-            </span>
-          )}
-          {displayIR && ' от планового значения'}
-        </div>
-      </div>
+      )}
       <div className="border-l border-border my-3"></div>
       <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
         <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>

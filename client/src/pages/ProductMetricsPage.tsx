@@ -661,7 +661,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
           {selectedDepartment && teamIdsArray.length > 0 ? (
-            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear}>
+            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
