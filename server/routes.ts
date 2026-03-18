@@ -3907,15 +3907,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const teamResults = [];
 
-      // Group teams by spaceId — one row per пространство
+      // Group teams by initSpaceId || initBoardId — one row per пространство инициатив (same as frontend dropdown)
       const teamsBySpace = new Map<number, typeof validTeams>();
       for (const team of validTeams) {
-        if (!teamsBySpace.has(team.spaceId)) teamsBySpace.set(team.spaceId, []);
-        teamsBySpace.get(team.spaceId)!.push(team);
+        const key = team.initSpaceId || team.initBoardId;
+        if (!teamsBySpace.has(key)) teamsBySpace.set(key, []);
+        teamsBySpace.get(key)!.push(team);
       }
 
-      for (const [, spaceTeams] of teamsBySpace) {
-        const spaceName = spaceTeams[0].spaceName || spaceTeams.map(t => t.teamName).join(' / ');
+      for (const [key, spaceTeams] of teamsBySpace) {
+        const spaceName = spaceTeams[0].initSpaceName || `Пространство ${key}`;
 
         // Collect year tasks per team (respecting sprint-based vs date-based filtering)
         let yearTasks: TaskRow[] = [];
