@@ -340,7 +340,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     if (!displayTableData?.initiatives) return [];
     const types = ['Epic', 'Compliance', 'Enabler'] as const;
     return types.map(type => {
-      const items = displayTableData.initiatives.filter(i => i.type === type);
+      const items = displayTableData.initiatives.filter(i => i.type === type)
+        .sort((a, b) => (b.actualCost ?? 0) - (a.actualCost ?? 0));
       const totalPlannedCost = items.reduce((s, i) => s + i.plannedCost, 0);
       const totalPrevYearActualCost = items.reduce((s, i) => s + (i.prevYearActualCost || 0), 0);
       const totalActualCost = items.reduce((s, i) => s + i.actualCost, 0);
