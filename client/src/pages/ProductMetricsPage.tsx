@@ -528,7 +528,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       const buildInitiativesSheetRows = (initiatives: any[], isCarryover: boolean): any[][] => {
         const vcCalc = (effect: number | null, cost: number, prevCost: number) => {
           const denom = cost + prevCost;
-          return effect !== null && effect > 0 && denom > 0 ? Math.round((effect / denom) * 100) / 100 : '—';
+          return effect !== null && effect > 0 && denom > 0 ? Math.round((effect / denom) * 10) / 10 : '—';
         };
 
         const teamCols = sortedTeams.map(t => t.teamName);
@@ -887,7 +887,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
                             </td>
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-vc-${group.type}`}>
-                              {(() => { const denom = group.totalPlannedCost; return group.totalPlannedEffect > 0 && denom > 0 ? (Math.round((group.totalPlannedEffect / denom) * 100) / 100).toLocaleString('ru-RU') : '—'; })()}
+                              {(() => { const denom = group.totalPlannedCost; return group.totalPlannedEffect > 0 && denom > 0 ? (Math.round((group.totalPlannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
                             </td>
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-vc-${group.type}`}>
                               {(() => { const denom = group.totalActualCost + group.totalPrevYearActualCost; return group.totalActualEffect > 0 && denom > 0 ? (Math.round((group.totalActualEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
@@ -981,7 +981,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
                                 {(() => {
                                   const denom = init.plannedCost;
-                                  return init.plannedEffect !== null && denom > 0 ? (Math.round((init.plannedEffect / denom) * 100) / 100).toLocaleString('ru-RU') : '—';
+                                  return init.plannedEffect !== null && denom > 0 ? (Math.round((init.plannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
                                 })()}
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-vc-${init.cardId}`}>
@@ -1044,8 +1044,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         const totalAC = inits.reduce((s, i) => s + i.actualCost + (i.prevYearActualCost || 0), 0);
                         const totalPE = inits.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
                         const totalAE = inits.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
-                        const vcPlan = totalPE > 0 && totalPC > 0 ? Math.round((totalPE / totalPC) * 100) / 100 : null;
-                        const vcFact = totalAE > 0 && totalAC > 0 ? Math.round((totalAE / totalAC) * 100) / 100 : null;
+                        const vcPlan = totalPE > 0 && totalPC > 0 ? Math.round((totalPE / totalPC) * 10) / 10 : null;
+                        const vcFact = totalAE > 0 && totalAC > 0 ? Math.round((totalAE / totalAC) * 10) / 10 : null;
                         return (
                           <>
                             <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{totalPE > 0 ? totalPE.toLocaleString('ru-RU') : '—'}</td>
