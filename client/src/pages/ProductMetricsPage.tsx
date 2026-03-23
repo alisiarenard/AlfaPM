@@ -569,7 +569,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
             moneyCell(totPlanned), moneyCell(totActual),
             ...(isCarryover ? [moneyCell(totPrev)] : []),
             '', moneyCell(totPlannedEff), moneyCell(totActualEff), '',
-            vcCalc(totPlannedEff, totPlanned, 0),
+            vcCalc(totPlannedEff, totPlanned, ['Enabler', 'Compliance'].includes(type) ? totPrev : 0),
             vcCalc(totActualEff, totActual, totPrev),
             ...sortedTeams.map(t => teamSpTotals.get(t.teamId) || 0),
           ]);
@@ -596,7 +596,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               moneyCell(init.plannedEffect),
               moneyCell(init.actualEffect),
               '',
-              vcCalc(init.plannedEffect, init.plannedCost || 0, 0),
+              vcCalc(init.plannedEffect, init.plannedCost || 0, ['Enabler', 'Compliance'].includes(init.type) ? (init.prevYearActualCost || 0) : 0),
               vcCalc(init.actualEffect, init.actualCost || 0, init.prevYearActualCost || 0),
               ...sortedTeams.map(t => spByTeam.get(t.teamId) || 0),
             ]);
@@ -887,7 +887,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
                             </td>
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-vc-${group.type}`}>
-                              {(() => { const denom = group.totalPlannedCost; return group.totalPlannedEffect > 0 && denom > 0 ? (Math.round((group.totalPlannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
+                              {(() => { const inclPrev = ['Enabler', 'Compliance'].includes(group.type); const denom = group.totalPlannedCost + (inclPrev ? group.totalPrevYearActualCost : 0); return group.totalPlannedEffect > 0 && denom > 0 ? (Math.round((group.totalPlannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
                             </td>
                             <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-vc-${group.type}`}>
                               {(() => { const denom = group.totalActualCost + group.totalPrevYearActualCost; return group.totalActualEffect > 0 && denom > 0 ? (Math.round((group.totalActualEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
@@ -980,7 +980,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               </td>
                               <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
                                 {(() => {
-                                  const denom = init.plannedCost;
+                                  const inclPrev = ['Enabler', 'Compliance'].includes(init.type);
+                                  const denom = init.plannedCost + (inclPrev ? (init.prevYearActualCost || 0) : 0);
                                   return init.plannedEffect !== null && denom > 0 ? (Math.round((init.plannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
                                 })()}
                               </td>
@@ -1040,7 +1041,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </td>
                       {(() => {
                         const inits = displayTableData!.initiatives;
-                        const totalPC = inits.reduce((s, i) => s + i.plannedCost, 0);
+                        const totalPC = inits.reduce((s, i) => s + i.plannedCost + (['Enabler', 'Compliance'].includes(i.type) ? (i.prevYearActualCost || 0) : 0), 0);
                         const totalAC = inits.reduce((s, i) => s + i.actualCost + (i.prevYearActualCost || 0), 0);
                         const totalPE = inits.reduce((s, i) => s + (i.plannedEffect ?? 0), 0);
                         const totalAE = inits.reduce((s, i) => s + (i.actualEffect ?? 0), 0);
