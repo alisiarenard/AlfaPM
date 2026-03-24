@@ -80,7 +80,8 @@ function filterInitiativesForTimeline(
     }
     
     if (init.state === "1-queued") {
-      return true;
+      // Показываем только если есть задачи в спринтах
+      return (init.sprints?.length ?? 0) > 0;
     }
     
     if (init.state === "2-inProgress") {
@@ -862,18 +863,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Если указан sprintBoardId - фильтруем только инициативы с задачами в спринтах команды
-      // Инициативы в очереди показываем всегда
       const filteredInitiatives = teamSprintIds
         ? initiativesWithSprints.filter(init => {
             const hasSprints = init.sprints.length > 0;
             const isSupport = init.cardId === 0;
-            const isQueued = init.state === "1-queued";
-            const pass = hasSprints || isSupport || isQueued;
-            
-            if (isQueued) {
-            }
-            
-            return pass;
+            return hasSprints || isSupport;
           })
         : initiativesWithSprints;
       
@@ -1112,8 +1106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const filteredInitiatives = initiativesWithVirtualSprints.filter(init => {
             const hasSprints = init.sprints.length > 0;
             const isSupport = init.cardId === 0;
-            const isQueued = init.state === "1-queued";
-            return hasSprints || isSupport || isQueued;
+            return hasSprints || isSupport;
           });
 
           // Рассчитываем involvement для виртуальных спринтов
@@ -1192,12 +1185,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         });
 
-        // Фильтруем инициативы (с задачами, поддержка бизнеса, или в очереди)
+        // Фильтруем инициативы (с задачами или поддержка бизнеса)
         const filteredInitiatives = initiativesWithSprints.filter(init => {
           const hasSprints = init.sprints.length > 0;
           const isSupport = init.cardId === 0;
-          const isQueued = init.state === "1-queued";
-          return hasSprints || isSupport || isQueued;
+          return hasSprints || isSupport;
         });
 
         // Рассчитываем involvement для реальных спринтов
@@ -1363,12 +1355,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         });
 
-        // Фильтруем инициативы (с задачами, поддержка бизнеса, или в очереди)
+        // Фильтруем инициативы (с задачами или поддержка бизнеса)
         const filteredInitiatives = initiativesWithSprints.filter(init => {
           const hasSprints = init.sprints.length > 0;
           const isSupport = init.cardId === 0;
-          const isQueued = init.state === "1-queued";
-          return hasSprints || isSupport || isQueued;
+          return hasSprints || isSupport;
         });
 
         // Рассчитываем involvement для виртуальных спринтов
