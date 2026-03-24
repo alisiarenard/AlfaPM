@@ -33,6 +33,7 @@ interface InitiativesTimelineProps {
   allInitiatives: Initiative[]; // Все инициативы без фильтра для расчёта ИР
   team: Team;
   sprints: SprintRow[];
+  sprintActualIRs?: Record<number, number>;
 }
 
 interface InitiativeWithTasks {
@@ -82,7 +83,7 @@ interface InitiativeDetailsData {
 
 type EditableField = 'plannedSize' | 'plannedValue' | 'factValue';
 
-export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints }: InitiativesTimelineProps) {
+export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints, sprintActualIRs }: InitiativesTimelineProps) {
   const { toast } = useToast();
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
@@ -984,20 +985,21 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     return `${ir}%`;
   };
 
-  // Фактический ИР: только выполненные задачи внутри дат спринта
+  // Фактический ИР: берём данные с бэка (те же что в модале)
   const calculateSprintIRActual = (sprintId: number): string => {
+    if (sprintActualIRs && sprintActualIRs[sprintId] !== undefined) {
+      return `${sprintActualIRs[sprintId]}%`;
+    }
+    // Фолбэк на локальные данные
     let totalSP = 0;
     let spWithoutSupport = 0;
-
     allInitiatives.forEach(init => {
       const sp = getActualSprintSP(init, sprintId);
       totalSP += sp;
       if (init.cardId !== 0) spWithoutSupport += sp;
     });
-
     if (totalSP === 0) return '—';
-    const ir = Math.round((spWithoutSupport / totalSP) * 100);
-    return `${ir}%`;
+    return `${Math.round((spWithoutSupport / totalSP) * 100)}%`;
   };
 
   // Получить информацию о спринте по ID

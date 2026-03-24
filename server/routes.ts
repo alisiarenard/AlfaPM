@@ -1929,6 +1929,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/teams/:teamId/sprint-actual-irs", async (req, res) => {
+    try {
+      const teamId = req.params.teamId;
+      const team = await storage.getTeamById(teamId);
+      if (!team || !team.sprintBoardId) {
+        return res.json({});
+      }
+
+      const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
+      if (teamSprints.length === 0) {
+        return res.json({});
+      }
+
+      const sprintTasksAll = await Promise.all(
+        teamSprints.map(sprint => storage.getTasksBySprint(sprint.sprintId))
+      );
+
+      const irMap: Record<number, number> = {};
+
+      teamSprints.forEach((sprint, idx) => {
+        const tasks = sprintTasksAll[idx];
+        const sprintEndDate = sprint.actualFinishDate || sprint.finishDate;
+        const sprintEndTime = sprintEndDate ? new Date(sprintEndDate).getTime() : Date.now();
+        const sprintStartTime = sprint.startDate ? new Date(sprint.startDate).getTime() : 0;
+
+        let doneSP = 0;
+        let doneOtherSP = 0;
+
+        tasks.forEach(task => {
+          if (task.state !== '3-done' || task.condition === '3 - deleted' || !task.doneDate) return;
+          const taskTime = new Date(task.doneDate).getTime();
+          if (taskTime < sprintStartTime || taskTime > sprintEndTime) return;
+
+          doneSP += task.size;
+          const initiativeId = task.initCardId || 0;
+          if (initiativeId !== 0) {
+            doneOtherSP += task.size;
+          }
+        });
+
+        if (doneSP > 0) {
+          irMap[sprint.sprintId] = Math.round((doneOtherSP / doneSP) * 100);
+        }
+      });
+
+      res.json(irMap);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to compute sprint actual IRs" });
+    }
+  });
+
   app.get("/api/sprints/:sprintId/stats", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);

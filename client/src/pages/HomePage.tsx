@@ -338,6 +338,16 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     },
     enabled: !!team.teamId && !!team.initBoardId && showActiveOnly,
   });
+
+  const { data: sprintActualIRs } = useQuery<Record<number, number>>({
+    queryKey: ["/api/teams", team.teamId, "sprint-actual-irs"],
+    queryFn: async () => {
+      const response = await fetch(`/api/teams/${team.teamId}/sprint-actual-irs`);
+      if (!response.ok) throw new Error('Failed to fetch sprint actual IRs');
+      return response.json();
+    },
+    enabled: !!team.teamId && !!team.sprintBoardId,
+  });
   
   // Сбрасываем флаг синхронизации при смене команды
   useEffect(() => {
@@ -619,7 +629,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       />
       <div className="overflow-auto custom-scrollbar pr-6" style={{ height: '60vh' }}>
         {viewTab === "initiatives" ? (
-          <InitiativesTimeline initiatives={sortedInitiatives} allInitiatives={allInitiatives} team={teamData} sprints={sprints || []} />
+          <InitiativesTimeline initiatives={sortedInitiatives} allInitiatives={allInitiatives} team={teamData} sprints={sprints || []} sprintActualIRs={sprintActualIRs} />
         ) : (
           <MetricsCharts team={team} selectedYear={selectedYear} />
         )}
