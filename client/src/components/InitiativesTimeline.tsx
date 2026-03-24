@@ -2074,7 +2074,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
         <DialogContent className="max-w-3xl max-h-[60vh] flex flex-col p-0">
           {/* Фиксированный хедер */}
-          <DialogHeader className="px-6 pt-[0.7rem] pb-4">
+          <DialogHeader className="px-6 pt-[0.7rem] pb-0">
             <DialogTitle className="text-lg font-semibold">
               <div>
                 <div>
