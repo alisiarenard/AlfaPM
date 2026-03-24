@@ -2095,7 +2095,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
           <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
             {/* Карточка с метриками */}
             <div className="w-full border border-border rounded-lg flex mb-4">
-              <div className="flex-1 px-4 py-3 flex flex-col justify-between">
+              <div className="flex-1 px-4 py-4 flex flex-col justify-between min-h-[100px]">
                 <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
                 {sprintModalData?.isCurrent ? (
                   // Текущий спринт — только плановый ИР
@@ -2109,12 +2109,12 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                         return `${Math.round((otherSP / totalSP) * 100)}%`;
                       })()}
                     </div>
-                    <div className="text-xs text-muted-foreground">план</div>
+                    <div className="text-xs text-muted-foreground">плановый</div>
                   </>
                 ) : (
                   // Закрытый спринт — плановый и фактический ИР
-                  <div className="flex justify-around items-end">
-                    <div>
+                  <div className="flex w-full flex-1 mt-1">
+                    <div className="w-1/2 flex flex-col justify-between">
                       <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate-planned">
                         {(() => {
                           const businessSP = sprintModalData?.businessSupportSP || 0;
@@ -2124,9 +2124,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                           return `${Math.round((otherSP / totalSP) * 100)}%`;
                         })()}
                       </div>
-                      <div className="text-xs text-muted-foreground">план</div>
+                      <div className="text-xs text-muted-foreground">плановый</div>
                     </div>
-                    <div>
+                    <div className="w-1/2 flex flex-col justify-between">
                       <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate-actual">
                         {(() => {
                           const businessSP = sprintModalData?.actualBusinessSupportSP || 0;
@@ -2136,13 +2136,13 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                           return `${Math.round((otherSP / totalSP) * 100)}%`;
                         })()}
                       </div>
-                      <div className="text-xs text-muted-foreground">факт</div>
+                      <div className="text-xs text-muted-foreground">фактический</div>
                     </div>
                   </div>
                 )}
               </div>
               <div className="border-l border-border my-3"></div>
-              <div className="flex-1 px-4 py-3 flex flex-col justify-between">
+              <div className="flex-1 px-4 py-4 flex flex-col justify-between min-h-[100px]">
                 <div className="text-sm font-bold text-muted-foreground">Velocity</div>
                 <div className="text-2xl font-semibold" data-testid="sprint-velocity">
                   {(() => {
@@ -2157,7 +2157,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               {sprintModalData?.deliveryPlanCompliance !== undefined && (
                 <>
                   <div className="border-l border-border my-3"></div>
-                  <div className="flex-1 px-4 py-3 flex flex-col justify-between">
+                  <div className="flex-1 px-4 py-4 flex flex-col justify-between min-h-[100px]">
                     <div className="text-sm font-bold text-muted-foreground">СПД</div>
                     <div 
                       className="text-2xl font-semibold"
