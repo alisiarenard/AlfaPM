@@ -54,9 +54,12 @@ interface SprintModalData {
   initiatives: InitiativeProgress[];
   businessSupportSP: number;
   otherInitiativesSP: number;
+  actualBusinessSupportSP: number;
+  actualOtherInitiativesSP: number;
   sprintId: number;
   teamName: string;
   teamId: string;
+  isCurrent: boolean;
   totalSP?: number;
   doneSP?: number;
   deliveryPlanCompliance?: number;
@@ -548,6 +551,29 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     return roundSP(totalSP);
   };
 
+  // SP только из выполненных задач внутри дат спринта (фактический)
+  const getActualSprintSP = (initiative: Initiative, sprintId: number): number => {
+    const tasks = getSprintTasks(initiative, sprintId);
+    if (tasks.length === 0) return 0;
+
+    const sprintInfo = getSprintInfo(sprintId);
+    const sprintStartTime = sprintInfo ? new Date(sprintInfo.startDate).getTime() : null;
+    const sprintEndTime = sprintInfo ? new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate).getTime() : null;
+    if (sprintStartTime === null || sprintEndTime === null) return 0;
+
+    let totalSP = 0;
+    tasks.forEach(task => {
+      if (task.doneDate) {
+        const taskTime = new Date(task.doneDate).getTime();
+        if (taskTime >= sprintStartTime && taskTime <= sprintEndTime) {
+          totalSP += task.size;
+        }
+      }
+    });
+    
+    return roundSP(totalSP);
+  };
+
 
   // Получить задачи для конкретной инициативы в конкретном спринте
   const getSprintTasks = (initiative: Initiative, sprintId: number): TaskInSprint[] => {
@@ -618,6 +644,15 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     let finalBusinessSupportSP = businessSupportSP;
     let finalOtherInitiativesSP = otherInitiativesSP;
     
+    // Фактический ИР (только done-задачи внутри дат спринта) — из локальных данных
+    let finalActualBusinessSupportSP = 0;
+    let finalActualOtherInitiativesSP = 0;
+    allInitiatives.forEach(init => {
+      const sp = getActualSprintSP(init, sprintId);
+      if (init.cardId === 0) finalActualBusinessSupportSP += sp;
+      else finalActualOtherInitiativesSP += sp;
+    });
+    
     if (!isGenerated && sprintId > 0) {
       try {
         const response = await fetch(`/api/sprints/${sprintId}/info`);
@@ -638,6 +673,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             finalBusinessSupportSP = 0;
             finalOtherInitiativesSP = 0;
             
+            finalActualBusinessSupportSP = 0;
+            finalActualOtherInitiativesSP = 0;
+            
             data.tasks.forEach((task: any) => {
               const initiativeId = task.initiativeCardId || 0;
               if (!tasksByInitiative[initiativeId]) {
@@ -645,11 +683,20 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               }
               tasksByInitiative[initiativeId].push(task);
               
-              // Суммируем SP по типам инициатив
+              // Суммируем плановый SP по типам инициатив (все tasksInside)
               if (initiativeId === 0) {
                 finalBusinessSupportSP += task.size;
               } else {
                 finalOtherInitiativesSP += task.size;
+              }
+              
+              // Суммируем фактический SP (только done-задачи)
+              if (task.state === '3-done') {
+                if (initiativeId === 0) {
+                  finalActualBusinessSupportSP += task.size;
+                } else {
+                  finalActualOtherInitiativesSP += task.size;
+                }
               }
             });
             
@@ -774,9 +821,12 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       initiatives: finalInitiativesProgress,
       businessSupportSP: finalBusinessSupportSP,
       otherInitiativesSP: finalOtherInitiativesSP,
+      actualBusinessSupportSP: finalActualBusinessSupportSP,
+      actualOtherInitiativesSP: finalActualOtherInitiativesSP,
       sprintId,
       teamName: team.name,
       teamId: team.teamId,
+      isCurrent: isCurrentSprint(sprintId),
       ...sprintStats
     });
     setSprintModalOpen(true);
@@ -901,7 +951,8 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
   // Рассчитать Investment Ratio для спринта (процент SP всех инициатив кроме "Поддержка бизнеса" от всех SP спринта)
   // Используем allInitiatives чтобы ИР не менялся при фильтрации
-  const calculateSprintIR = (sprintId: number): string => {
+  // Плановый ИР: задачи без doneDate + задачи выполненные внутри дат спринта
+  const calculateSprintIRPlanned = (sprintId: number): string => {
     const sprintInfo = getSprintInfo(sprintId);
     if (!sprintInfo) return '—';
     
@@ -913,8 +964,6 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
     allInitiatives.forEach(init => {
       const tasks = getSprintTasks(init, sprintId);
-      
-      // Считаем SP только для задач без doneDate ИЛИ с doneDate внутри дат спринта
       let initSP = 0;
       tasks.forEach(task => {
         let countSP = false;
@@ -924,23 +973,29 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
           const taskTime = new Date(task.doneDate).getTime();
           countSP = taskTime >= sprintStartTime && taskTime <= sprintEndTime;
         }
-        if (countSP) {
-          initSP += task.size;
-        }
+        if (countSP) initSP += task.size;
       });
-      
       totalSP += initSP;
-      
-      // Добавляем SP только если это НЕ "Поддержка бизнеса" (cardId !== 0)
-      if (init.cardId !== 0) {
-        spWithoutSupport += initSP;
-      }
+      if (init.cardId !== 0) spWithoutSupport += initSP;
     });
 
-    if (totalSP === 0) {
-      return '—';
-    }
+    if (totalSP === 0) return '—';
+    const ir = Math.round((spWithoutSupport / totalSP) * 100);
+    return `${ir}%`;
+  };
 
+  // Фактический ИР: только выполненные задачи внутри дат спринта
+  const calculateSprintIRActual = (sprintId: number): string => {
+    let totalSP = 0;
+    let spWithoutSupport = 0;
+
+    allInitiatives.forEach(init => {
+      const sp = getActualSprintSP(init, sprintId);
+      totalSP += sp;
+      if (init.cardId !== 0) spWithoutSupport += sp;
+    });
+
+    if (totalSP === 0) return '—';
     const ir = Math.round((spWithoutSupport / totalSP) * 100);
     return `${ir}%`;
   };
@@ -1403,7 +1458,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
                       <span className="text-xs text-muted-foreground font-normal">
-                        IR: {calculateSprintIR(sprintId)}
+                        IR: {isCurrent ? calculateSprintIRPlanned(sprintId) : calculateSprintIRActual(sprintId)}
                       </span>
                     </button>
                   ) : (
@@ -1412,7 +1467,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
                       <span className="text-xs text-muted-foreground font-normal">
-                        IR: {calculateSprintIR(sprintId)}
+                        IR: {isCurrent ? calculateSprintIRPlanned(sprintId) : calculateSprintIRActual(sprintId)}
                       </span>
                     </div>
                   )}
@@ -2039,20 +2094,52 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
           {/* Прокручиваемый контент с кастомным скроллом */}
           <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
             {/* Карточка с метриками */}
-            <div className="w-full h-[90px] border border-border rounded-lg flex mb-4">
+            <div className="w-full border border-border rounded-lg flex mb-4">
               <div className="flex-1 px-4 py-3 flex flex-col justify-between">
                 <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
-                <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">
-                  {(() => {
-                    const businessSP = sprintModalData?.businessSupportSP || 0;
-                    const otherSP = sprintModalData?.otherInitiativesSP || 0;
-                    const totalSP = businessSP + otherSP;
-                    if (totalSP === 0) return '-';
-                    const ir = Math.round((otherSP / totalSP) * 100);
-                    return `${ir}%`;
-                  })()}
-                </div>
-                <div></div>
+                {sprintModalData?.isCurrent ? (
+                  // Текущий спринт — только плановый ИР
+                  <>
+                    <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">
+                      {(() => {
+                        const businessSP = sprintModalData?.businessSupportSP || 0;
+                        const otherSP = sprintModalData?.otherInitiativesSP || 0;
+                        const totalSP = businessSP + otherSP;
+                        if (totalSP === 0) return '-';
+                        return `${Math.round((otherSP / totalSP) * 100)}%`;
+                      })()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">план</div>
+                  </>
+                ) : (
+                  // Закрытый спринт — плановый и фактический ИР
+                  <div className="flex gap-4 items-end">
+                    <div>
+                      <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate-planned">
+                        {(() => {
+                          const businessSP = sprintModalData?.businessSupportSP || 0;
+                          const otherSP = sprintModalData?.otherInitiativesSP || 0;
+                          const totalSP = businessSP + otherSP;
+                          if (totalSP === 0) return '-';
+                          return `${Math.round((otherSP / totalSP) * 100)}%`;
+                        })()}
+                      </div>
+                      <div className="text-xs text-muted-foreground">план</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate-actual">
+                        {(() => {
+                          const businessSP = sprintModalData?.actualBusinessSupportSP || 0;
+                          const otherSP = sprintModalData?.actualOtherInitiativesSP || 0;
+                          const totalSP = businessSP + otherSP;
+                          if (totalSP === 0) return '-';
+                          return `${Math.round((otherSP / totalSP) * 100)}%`;
+                        })()}
+                      </div>
+                      <div className="text-xs text-muted-foreground">факт</div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="border-l border-border my-3"></div>
               <div className="flex-1 px-4 py-3 flex flex-col justify-between">
