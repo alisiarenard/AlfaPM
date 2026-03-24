@@ -75,11 +75,6 @@ function filterInitiativesForTimeline(
       return false;
     }
 
-    const totalSp = init.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
-    if (totalSp === 0) {
-      return false;
-    }
-
     if (showActiveOnly && init.state !== "2-inProgress") {
       return false;
     }
@@ -89,9 +84,16 @@ function filterInitiativesForTimeline(
     }
     
     if (init.state === "2-inProgress") {
+      // Для inProgress показываем всегда — даже если задач с doneDate ещё нет
       return true;
     }
     
+    // Для done — проверяем наличие SP и задач в выбранном году
+    const totalSp = init.sprints?.reduce((sum: number, sprint: any) => sum + sprint.sp, 0) || 0;
+    if (totalSp === 0) {
+      return false;
+    }
+
     if (init.state === "3-done") {
       if (validYear) {
         const hasTasksInSelectedYear = init.sprints?.some((sprint: any) => 
