@@ -563,7 +563,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
     let totalSP = 0;
     tasks.forEach(task => {
-      if (task.doneDate) {
+      if (task.doneDate && task.state === '3-done' && task.condition !== '3 - deleted') {
         const taskTime = new Date(task.doneDate).getTime();
         if (taskTime >= sprintStartTime && taskTime <= sprintEndTime) {
           totalSP += task.size;

@@ -139,6 +139,8 @@ export interface TaskInSprint {
   size: number;
   archived: boolean;
   doneDate: string | null;
+  state?: string | null;
+  condition?: string | null;
 }
 
 export interface SprintAllocation {
