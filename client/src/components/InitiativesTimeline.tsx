@@ -2113,7 +2113,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   </>
                 ) : (
                   // Закрытый спринт — плановый и фактический ИР
-                  <div className="flex gap-4 items-end">
+                  <div className="flex justify-around items-end">
                     <div>
                       <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate-planned">
                         {(() => {
