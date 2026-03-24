@@ -4814,6 +4814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         finishDate: string;
         velocity: number;
         innovationRate: number;
+        plannedIR: number;
         deliveryPlanCompliance: number;
       }> = [];
 
@@ -4840,34 +4841,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let totalSP = 0;
           let doneSP = 0;
           let innovationSP = 0;
-          
+          let plannedInnovationSP = 0;
+
           for (const task of allTasks) {
             const taskSize = task.size || 0;
             totalSP += taskSize;
-            
-            // Done tasks inside sprint dates
-            if (task.state === '3-done' && task.condition !== '3 - deleted') {
-              if (task.doneDate) {
-                const taskDoneTime = new Date(task.doneDate).getTime();
-                if (taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime) {
-                  doneSP += taskSize;
-                  
-                  // Check if task is from innovation initiative
-                  if (task.initCardId) {
-                    const init = initiativesMap.get(task.initCardId);
-                    if (init && (init.type === 'Epic' || init.type === 'Compliance' || init.type === 'Enabler')) {
-                      innovationSP += taskSize;
-                    }
-                  }
-                }
+
+            const isInnovation = task.initCardId
+              ? (() => { const init = initiativesMap.get(task.initCardId!); return !!(init && (init.type === 'Epic' || init.type === 'Compliance' || init.type === 'Enabler')); })()
+              : false;
+
+            // Плановый ИР: все задачи спринта (включая незакрытые)
+            if (isInnovation) plannedInnovationSP += taskSize;
+
+            // Фактический ИР: только done-задачи внутри дат спринта
+            if (task.state === '3-done' && task.condition !== '3 - deleted' && task.doneDate) {
+              const taskDoneTime = new Date(task.doneDate).getTime();
+              if (taskDoneTime >= sprintStartTime && taskDoneTime <= sprintEndTime) {
+                doneSP += taskSize;
+                if (isInnovation) innovationSP += taskSize;
               }
             }
           }
-          
+
           const velocity = doneSP;
           const innovationRate = doneSP > 0 ? Math.round((innovationSP / doneSP) * 100) : 0;
+          const plannedIR = totalSP > 0 ? Math.round((plannedInnovationSP / totalSP) * 100) : 0;
           const deliveryPlanCompliance = totalSP > 0 ? Math.round((doneSP / totalSP) * 100) : 0;
-          
+
           metricsData.push({
             sprintId: sprint.sprintId,
             sprintTitle: sprint.title || `Sprint ${sprint.sprintId}`,
@@ -4875,6 +4876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             finishDate: sprint.finishDate,
             velocity,
             innovationRate,
+            plannedIR,
             deliveryPlanCompliance
           });
         }
@@ -4934,6 +4936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             finishDate: new Date(parseInt(yearStr), monthIndex + 1, 0).toISOString(),
             velocity,
             innovationRate,
+            plannedIR: innovationRate,
             deliveryPlanCompliance
           });
         });
