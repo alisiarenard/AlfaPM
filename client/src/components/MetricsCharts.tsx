@@ -244,7 +244,10 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex items-center justify-center gap-4 mt-2">
+        <div className="text-center text-sm font-medium text-muted-foreground mt-2">
+          Innovation Rate
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-1">
           <div className="flex items-center gap-1.5">
             <svg width="20" height="8">
               <line x1="0" y1="4" x2="20" y2="4" stroke={PLANNED_COLOR} strokeWidth="2" strokeDasharray="4 3" />
@@ -257,9 +260,6 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
             </svg>
             <span className="text-xs text-muted-foreground">фактический</span>
           </div>
-        </div>
-        <div className="text-center text-sm font-medium text-muted-foreground mt-1">
-          Innovation Rate
         </div>
       </div>
 
