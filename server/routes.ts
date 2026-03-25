@@ -3118,8 +3118,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Получаем детальную информацию по карточке чтобы получить parents_ids
           const card = await kaitenClient.getCard(sprintCard.id);
           
-          // sprintCard.sprint_id === null означает "удалена из спринта" (Kaiten docs)
-          console.log(`[SYNC-SPRINT] Card ${card.id} "${card.title?.substring(0, 30)}": sprintCard.sprint_id=${(sprintCard as any).sprint_id}, card.archived=${card.archived}`);
+          // Логируем ВСЕ поля sprintCard чтобы найти правильный признак "удалена из спринта"
+          console.log(`[SYNC-SPRINT] Card ${card.id} "${card.title?.substring(0, 30)}" sprintCard fields:`, JSON.stringify(sprintCard));
+          console.log(`[SYNC-SPRINT] Card ${card.id} fullCard fields: sprint_id=${card.sprint_id}, condition=${card.condition}, archived=${card.archived}`);
           
           // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
           let initCardId: number | null = null;
@@ -3408,8 +3409,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results.push({
           cardId: sprintCard.id,
           title: fullCard.title?.substring(0, 50),
-          sprintCard_sprint_id: sprintCardSprintId,
+          // Полный объект sprintCard (из getSprint) — для поиска правильного поля "удалена"
+          sprintCard_raw: sprintCard,
+          // Ключевые поля fullCard (из getCard)
           fullCard_sprint_id: fullCard.sprint_id,
+          fullCard_condition: fullCard.condition,
           fullCard_archived: fullCard.archived,
           isDeletedFromSprint,
           expected_condition: isDeletedFromSprint ? '3 - deleted' : (fullCard.archived ? '2-archived' : '1-live'),
