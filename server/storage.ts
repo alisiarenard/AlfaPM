@@ -700,6 +700,13 @@ export class DbStorage implements IStorage {
     const existing = await this.getTaskByCardId(cardId);
     
     if (existing) {
+      // DEBUG: log condition changes
+      if (existing.condition !== condition) {
+        console.log(`[DB-SYNC] Task ${cardId} "${title?.substring(0,30)}" condition: "${existing.condition}" → "${condition}"`);
+      }
+      if (condition === '3 - deleted') {
+        console.log(`[DB-SYNC] ✓ Marking task ${cardId} "${title?.substring(0,30)}" as DELETED FROM SPRINT`);
+      }
       const [updated] = await db
         .update(tasks)
         .set({ 

@@ -1835,6 +1835,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const allSprintTasks = await storage.getTasksBySprint(sprintId);
       
+      // DEBUG: log всех задач спринта из БД
+      console.log(`[SPRINT-INFO] Sprint ${sprintId}: ${allSprintTasks.length} tasks in DB`);
+      allSprintTasks.forEach(t => {
+        console.log(`[SPRINT-INFO]   cardId=${t.cardId} condition="${t.condition}" state="${t.state}" title="${t.title?.substring(0,40)}"`);
+      });
+      
       const initCardIds = [...new Set(allSprintTasks.map(t => t.initCardId).filter(id => id !== null && id !== 0))];
       const initiativeInfoMap = new Map<number, { title: string; type: string | null; condition: string | null }>();
       for (const cardId of initCardIds) {
