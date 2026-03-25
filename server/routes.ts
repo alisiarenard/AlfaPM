@@ -457,8 +457,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       state = "1-queued";
                     }
                     
-                    // card.sprint_id === null означает "удалена из спринта" (Kaiten docs)
-                    const condition: "1-live" | "2-archived" | "3 - deleted" = !card.sprint_id ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
+                    // sprintCard.sprint_id === null означает "удалена из спринта" (Kaiten docs)
+                    const condition: "1-live" | "2-archived" | "3 - deleted" = (sprintCard as any).sprint_id == null ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
                     
                     await storage.syncTaskFromKaiten(
                       card.id,
@@ -2077,8 +2077,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 state = "1-queued";
               }
               
-              // card.sprint_id === null означает "удалена из спринта" (Kaiten docs)
-              const condition: "1-live" | "2-archived" | "3 - deleted" = !card.sprint_id ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
+              // sprintCard.sprint_id === null означает "удалена из спринта" (Kaiten docs)
+              const condition: "1-live" | "2-archived" | "3 - deleted" = (sprintCard as any).sprint_id == null ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
               
               await storage.syncTaskFromKaiten(
                 card.id,
@@ -2301,9 +2301,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (kaitenSprint.cards && Array.isArray(kaitenSprint.cards)) {
         
-        // Параллельно получаем все карточки
+        // Параллельно получаем все карточки, сохраняем sprintCard.sprint_id для определения "удалена из спринта"
         const cardPromises = kaitenSprint.cards.map(sprintCard => 
           kaitenClient.getCard(sprintCard.id)
+            .then(card => ({ card, sprintCardSprintId: (sprintCard as any).sprint_id as number | null }))
             .catch(err => {
               const errorMessage = err instanceof Error ? err.message : String(err);
               errors.push(`Card ${sprintCard.id}: ${errorMessage}`);
@@ -2314,10 +2315,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const cardResults = await Promise.all(cardPromises);
         
         // Сохраняем все задачи (независимо от статуса)
-        const validCardResults = cardResults.filter(r => r !== null) as any[];
+        const validCardResults = cardResults.filter(r => r !== null) as { card: any; sprintCardSprintId: number | null }[];
         
         // Сохраняем все карточки
-        for (const card of validCardResults) {
+        for (const { card, sprintCardSprintId } of validCardResults) {
           try {
             // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
             let initCardId = 0;
@@ -2339,9 +2340,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             else {
             }
 
-            // card.sprint_id === null означает "удалена из спринта" (Kaiten docs)
+            // sprintCard.sprint_id === null означает "удалена из спринта" (Kaiten docs)
             let conditionStr: "1-live" | "2-archived" | "3 - deleted" = "1-live";
-            if (!card.sprint_id) conditionStr = "3 - deleted";
+            if (sprintCardSprintId == null) conditionStr = "3 - deleted";
             else if (card.archived) conditionStr = "2-archived";
             else conditionStr = "1-live";
 
@@ -3117,8 +3118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Получаем детальную информацию по карточке чтобы получить parents_ids
           const card = await kaitenClient.getCard(sprintCard.id);
           
-          // card.sprint_id === null означает "удалена из спринта" (Kaiten docs)
-          console.log(`[SYNC-SPRINT] Card ${card.id} "${card.title?.substring(0, 30)}": card.sprint_id=${card.sprint_id}, card.archived=${card.archived}`);
+          // sprintCard.sprint_id === null означает "удалена из спринта" (Kaiten docs)
+          console.log(`[SYNC-SPRINT] Card ${card.id} "${card.title?.substring(0, 30)}": sprintCard.sprint_id=${(sprintCard as any).sprint_id}, card.archived=${card.archived}`);
           
           // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
           let initCardId: number | null = null;
@@ -3140,7 +3141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             state = "1-queued";
           }
           
-          const condition: "1-live" | "2-archived" | "3 - deleted" = !card.sprint_id ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
+          const condition: "1-live" | "2-archived" | "3 - deleted" = (sprintCard as any).sprint_id == null ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
 
           const synced = await storage.syncTaskFromKaiten(
             card.id,
@@ -3246,8 +3247,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 state = "1-queued";
               }
               
-              // card.sprint_id === null означает "удалена из спринта" (Kaiten docs)
-              const condition: "1-live" | "2-archived" | "3 - deleted" = !card.sprint_id ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
+              // sprintCard.sprint_id === null означает "удалена из спринта" (Kaiten docs)
+              const condition: "1-live" | "2-archived" | "3 - deleted" = (sprintCard as any).sprint_id == null ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
               
               // Получаем team по board_id для team_id
               const team = await storage.getTeamBySprintBoardId(boardId);
@@ -3401,12 +3402,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const sprintCard of allCards) {
         const fullCard = await kaitenClient.getCard(sprintCard.id);
         const dbTask = await storage.getTaskByCardId(sprintCard.id);
-        const isDeletedFromSprint = !fullCard.sprint_id;
+        // sprintCard.sprint_id === null в ответе getSprint означает "удалена из спринта"
+        const sprintCardSprintId = (sprintCard as any).sprint_id;
+        const isDeletedFromSprint = sprintCardSprintId == null;
         results.push({
           cardId: sprintCard.id,
           title: fullCard.title?.substring(0, 50),
-          card_sprint_id: fullCard.sprint_id,
-          card_archived: fullCard.archived,
+          sprintCard_sprint_id: sprintCardSprintId,
+          fullCard_sprint_id: fullCard.sprint_id,
+          fullCard_archived: fullCard.archived,
           isDeletedFromSprint,
           expected_condition: isDeletedFromSprint ? '3 - deleted' : (fullCard.archived ? '2-archived' : '1-live'),
           db_condition: dbTask?.condition ?? 'NOT IN DB',
@@ -3534,8 +3538,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 try {
                   const card = await kaitenClient.getCard(sprintCard.id);
                   
-                  // card.sprint_id === null означает "удалена из спринта" (Kaiten docs)
-                  console.log(`[SMART-SYNC]   Card ${card.id} "${card.title?.substring(0,30)}": card.sprint_id=${card.sprint_id}, isDeleted=${!card.sprint_id}`);
+                  // sprintCard.sprint_id === null означает "удалена из спринта" (Kaiten docs)
+                  console.log(`[SMART-SYNC]   Card ${card.id} "${card.title?.substring(0,30)}": sprintCard.sprint_id=${(sprintCard as any).sprint_id}, isDeleted=${(sprintCard as any).sprint_id == null}`);
                   
                   let initCardId: number | null = null;
                   
@@ -3554,7 +3558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     state = "1-queued";
                   }
                   
-                  const condition: "1-live" | "2-archived" | "3 - deleted" = !card.sprint_id ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
+                  const condition: "1-live" | "2-archived" | "3 - deleted" = (sprintCard as any).sprint_id == null ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
                   
                   await storage.syncTaskFromKaiten(
                     card.id,
