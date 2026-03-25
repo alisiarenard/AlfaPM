@@ -684,17 +684,15 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               }
               tasksByInitiative[initiativeId].push(task);
               
-              // Суммируем плановый SP (кроме удалённых из спринта)
-              if (task.condition !== '3 - deleted') {
-                if (initiativeId === 0) {
-                  finalBusinessSupportSP += task.size;
-                } else {
-                  finalOtherInitiativesSP += task.size;
-                }
+              // Суммируем плановый SP по типам инициатив (все tasksInside)
+              if (initiativeId === 0) {
+                finalBusinessSupportSP += task.size;
+              } else {
+                finalOtherInitiativesSP += task.size;
               }
               
-              // Суммируем фактический SP (только done-задачи, кроме удалённых)
-              if (task.state === '3-done' && task.condition !== '3 - deleted') {
+              // Суммируем фактический SP (только done-задачи)
+              if (task.state === '3-done') {
                 if (initiativeId === 0) {
                   finalActualBusinessSupportSP += task.size;
                 } else {
@@ -715,7 +713,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               .map(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
                 
-                const sp = backedTasks.filter((t: any) => t.condition !== '3 - deleted').reduce((sum: number, t: any) => sum + t.size, 0);
+                const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
                 const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
                 
                 const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
@@ -725,8 +723,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   size: task.size,
                   archived: false,
                   type: task.type || null,
-                  doneDate: task.doneDate || null,
-                  condition: task.condition || null
+                  doneDate: task.doneDate || null
                 }));
                 
                 return {
@@ -765,8 +762,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                     size: task.size,
                     archived: false,
                     type: task.type || null,
-                    doneDate: task.doneDate || null,
-                    condition: task.condition || null
+                    doneDate: task.doneDate || null
                   });
                 });
               } else {
@@ -780,8 +776,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   size: task.size,
                   archived: isArchived,
                   type: task.type || null,
-                  doneDate: task.doneDate || null,
-                  condition: task.condition || null
+                  doneDate: task.doneDate || null
                 }));
                 
                 finalInitiativesProgress.push({
@@ -1817,9 +1812,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                   <p className="max-w-sm">{task.title}</p>
                                 </TooltipContent>
                               </Tooltip>
-                              {task.condition === '3 - deleted' ? (
-                                <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
-                              ) : task.size === 0 ? (
+                              {task.size === 0 ? (
                                 <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
                               ) : (
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
@@ -2271,9 +2264,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                             <p className="max-w-sm">{task.title}</p>
                                           </TooltipContent>
                                         </Tooltip>
-                                        {task.condition === '3 - deleted' ? (
-                                          <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
-                                        ) : task.size === 0 ? (
+                                        {task.size === 0 ? (
                                           <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
                                         ) : (
                                           <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
@@ -2306,9 +2297,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                       <p className="max-w-sm">{task.title}</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  {task.condition === '3 - deleted' ? (
-                                    <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
-                                  ) : task.size === 0 ? (
+                                  {task.size === 0 ? (
                                     <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
                                   ) : (
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
