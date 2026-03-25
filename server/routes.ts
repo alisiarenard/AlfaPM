@@ -3394,6 +3394,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DEBUG endpoint: shows raw Kaiten data and DB state for a sprint
+  app.get("/api/debug/sprint/:sprintId", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      const kaitenSprint = await kaitenClient.getSprint(sprintId);
+      const allCards = kaitenSprint.cards || [];
+      
+      const results = [];
+      for (const sprintCard of allCards) {
+        const fullCard = await kaitenClient.getCard(sprintCard.id);
+        const dbTask = await storage.getTaskByCardId(sprintCard.id);
+        results.push({
+          cardId: sprintCard.id,
+          title: fullCard.title?.substring(0, 50),
+          sprintCard_condition: (sprintCard as any).condition,
+          fullCard_condition: fullCard.condition,
+          fullCard_archived: fullCard.archived,
+          db_condition: dbTask?.condition ?? 'NOT IN DB',
+          db_state: dbTask?.state ?? 'NOT IN DB',
+        });
+      }
+      
+      res.json({ sprintId, totalCards: allCards.length, cards: results });
+    } catch (error) {
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
   app.post("/api/kaiten/smart-sync/:teamId", async (req, res) => {
     res.setTimeout(300000);
     try {
@@ -3501,11 +3529,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const dbSprint of sprintsToSync) {
           try {
             const sprintDetails = await kaitenClient.getSprint(dbSprint.sprintId);
+            console.log(`[SMART-SYNC] Sprint ${dbSprint.sprintId} "${dbSprint.title}": ${sprintDetails.cards?.length ?? 0} cards`);
             
             if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
               for (const sprintCard of sprintDetails.cards) {
                 try {
                   const card = await kaitenClient.getCard(sprintCard.id);
+                  
+                  // sprintCard.condition === 3 означает "удалена из спринта" (card.condition может быть 1)
+                  const isDeletedFromSprint = (sprintCard as any).condition === 3;
+                  console.log(`[SMART-SYNC]   Card ${card.id} "${card.title?.substring(0,30)}": sprintCard.condition=${(sprintCard as any).condition}, card.condition=${card.condition}, isDeleted=${isDeletedFromSprint}`);
                   
                   let initCardId: number | null = null;
                   
@@ -3524,8 +3557,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     state = "1-queued";
                   }
                   
-                  // sprintCard.condition === 3 означает "удалена из спринта" (card.condition может быть 1)
-                  const isDeletedFromSprint = (sprintCard as any).condition === 3;
                   const condition: "1-live" | "2-archived" | "3 - deleted" = isDeletedFromSprint ? "3 - deleted" : (card.condition === 3 ? "3 - deleted" : (card.archived ? "2-archived" : "1-live"));
                   
                   await storage.syncTaskFromKaiten(
