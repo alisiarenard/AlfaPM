@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const initiativeStateEnum = pgEnum("initiative_state", ["1-queued", "2-inProgress", "3-done"]);
-export const initiativeConditionEnum = pgEnum("initiative_condition", ["1-live", "2-archived"]);
+export const initiativeConditionEnum = pgEnum("initiative_condition", ["1-live", "2-archived", "3 - deleted"]);
 
 export const initiatives = pgTable("initiatives", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
