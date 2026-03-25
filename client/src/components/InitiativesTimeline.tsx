@@ -684,15 +684,17 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               }
               tasksByInitiative[initiativeId].push(task);
               
-              // Суммируем плановый SP по типам инициатив (все tasksInside)
-              if (initiativeId === 0) {
-                finalBusinessSupportSP += task.size;
-              } else {
-                finalOtherInitiativesSP += task.size;
+              // Суммируем плановый SP (кроме удалённых из спринта)
+              if (task.condition !== '3 - deleted') {
+                if (initiativeId === 0) {
+                  finalBusinessSupportSP += task.size;
+                } else {
+                  finalOtherInitiativesSP += task.size;
+                }
               }
               
-              // Суммируем фактический SP (только done-задачи)
-              if (task.state === '3-done') {
+              // Суммируем фактический SP (только done-задачи, кроме удалённых)
+              if (task.state === '3-done' && task.condition !== '3 - deleted') {
                 if (initiativeId === 0) {
                   finalActualBusinessSupportSP += task.size;
                 } else {
@@ -713,7 +715,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               .map(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
                 
-                const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
+                const sp = backedTasks.filter((t: any) => t.condition !== '3 - deleted').reduce((sum: number, t: any) => sum + t.size, 0);
                 const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
                 
                 const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({

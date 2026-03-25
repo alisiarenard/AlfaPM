@@ -442,11 +442,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   for (const sprintCard of kaitenSprint.cards) {
                     const card = await kaitenClient.getCard(sprintCard.id);
                     
-                    // Пропускаем удаленные карточки (condition === 3)
-                    if (card.condition === 3) {
-                      continue;
-                    }
-                    
                     // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
                     let initCardId = 0;
                     if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
@@ -462,7 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       state = "1-queued";
                     }
                     
-                    const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+                    const condition: "1-live" | "2-archived" | "3 - deleted" = card.condition === 3 ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
                     
                     await storage.syncTaskFromKaiten(
                       card.id,
@@ -1887,9 +1882,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let totalSP = 0;
       let doneSP = 0;
       
-      // Всего SP = ВСЕ задачи
+      // Всего SP = задачи кроме удалённых из спринта
       allSprintTasks.forEach(task => {
-        totalSP += task.size || 0;
+        if (task.condition !== '3 - deleted') {
+          totalSP += task.size || 0;
+        }
       });
       
       // Done SP = только done задачи с doneDate внутри дат спринта
@@ -2057,10 +2054,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               const card = await kaitenClient.getCard(sprintCard.id);
               
-              if (card.condition === 3) {
-                continue;
-              }
-              
               let initCardId: number | null = null;
               if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
                 initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
@@ -2077,7 +2070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 state = "1-queued";
               }
               
-              const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+              const condition: "1-live" | "2-archived" | "3 - deleted" = card.condition === 3 ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
               
               await storage.syncTaskFromKaiten(
                 card.id,
@@ -2317,11 +2310,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Сохраняем все карточки
         for (const card of validCards) {
           try {
-            // Пропускаем удаленные карточки (condition === 3)
-            if (card.condition === 3) {
-              continue;
-            }
-            
             // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
             let initCardId = 0;
             if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
@@ -2342,11 +2330,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             else {
             }
 
-            let conditionStr: "1-live" | "2-archived" = "1-live";
-            if (card.condition === 1) conditionStr = "1-live";
+            let conditionStr: "1-live" | "2-archived" | "3 - deleted" = "1-live";
+            if (card.condition === 3) conditionStr = "3 - deleted";
             else if (card.condition === 2) conditionStr = "2-archived";
-            else {
-            }
+            else conditionStr = "1-live";
 
             // Сохраняем задачу
             await storage.syncTaskFromKaiten(
@@ -3228,11 +3215,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               const card = await kaitenClient.getCard(sprintCard.id);
               
-              // Пропускаем удаленные карточки (condition === 3)
-              if (card.condition === 3) {
-                continue;
-              }
-              
               // Ищем инициативу в родительской цепочке
               let initCardId: number | null = null;
               
@@ -3251,7 +3233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 state = "1-queued";
               }
               
-              const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+              const condition: "1-live" | "2-archived" | "3 - deleted" = card.condition === 3 ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
               
               // Получаем team по board_id для team_id
               const team = await storage.getTeamBySprintBoardId(boardId);
@@ -3507,10 +3489,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 try {
                   const card = await kaitenClient.getCard(sprintCard.id);
                   
-                  if (card.condition === 3) {
-                    continue;
-                  }
-                  
                   let initCardId: number | null = null;
                   
                   if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
@@ -3528,7 +3506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     state = "1-queued";
                   }
                   
-                  const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+                  const condition: "1-live" | "2-archived" | "3 - deleted" = card.condition === 3 ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
                   
                   await storage.syncTaskFromKaiten(
                     card.id,
