@@ -534,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       state = "1-queued";
                     }
                     
-                    const condition: "1-live" | "2-archived" = childCard.archived ? "2-archived" : "1-live";
+                    const condition: "1-live" | "2-archived" | "3 - deleted" = childCard.condition === 3 ? "3 - deleted" : (childCard.archived ? "2-archived" : "1-live");
                     
                     await storage.syncTaskFromKaiten(
                       childCard.id,
@@ -2885,7 +2885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             state = "1-queued";
           }
           
-          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+          const condition: "1-live" | "2-archived" | "3 - deleted" = card.condition === 3 ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
 
 
           const synced = await storage.syncTaskFromKaiten(
@@ -3127,7 +3127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             state = "1-queued";
           }
           
-          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+          const condition: "1-live" | "2-archived" | "3 - deleted" = card.condition === 3 ? "3 - deleted" : (card.archived ? "2-archived" : "1-live");
 
           const synced = await storage.syncTaskFromKaiten(
             card.id,
@@ -3330,7 +3330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             state = "1-queued";
           }
           
-          const condition: "1-live" | "2-archived" = taskCard.archived ? "2-archived" : "1-live";
+          const condition: "1-live" | "2-archived" | "3 - deleted" = taskCard.condition === 3 ? "3 - deleted" : (taskCard.archived ? "2-archived" : "1-live");
           
           // Lookup team by initBoardId
           const team = await storage.getTeamByInitBoardId(initBoardId);
