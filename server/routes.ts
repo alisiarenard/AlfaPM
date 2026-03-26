@@ -1933,6 +1933,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({});
       }
 
+      // Загружаем инициативы чтобы знать какие cardId относятся к Epic/Compliance/Enabler
+      const allInitiatives = await storage.getAllInitiatives();
+      const innovationCardIds = new Set(
+        allInitiatives
+          .filter(i => i.type === 'Epic' || i.type === 'Compliance' || i.type === 'Enabler')
+          .map(i => i.cardId)
+      );
+
       const sprintTasksAll = await Promise.all(
         teamSprints.map(sprint => storage.getTasksBySprint(sprint.sprintId))
       );
@@ -1955,7 +1963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           doneSP += task.size;
           const initiativeId = task.initCardId || 0;
-          if (initiativeId !== 0) {
+          if (initiativeId !== 0 && innovationCardIds.has(initiativeId)) {
             doneOtherSP += task.size;
           }
         });
