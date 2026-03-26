@@ -1824,7 +1824,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                 </TooltipContent>
                               </Tooltip>
                               {isDeletedFromSprint(task, bsModalData.sprintStart, bsModalData.sprintEnd) ? (
-                                <span className="text-xs text-destructive font-medium whitespace-nowrap">Удалена из спринта</span>
+                                <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
                               ) : task.size === 0 ? (
                                 <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
                               ) : (
@@ -2282,7 +2282,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                           const sStart = sd && typeof sd === 'object' ? sd.start : null;
                                           const sEnd = sd && typeof sd === 'object' ? sd.end : null;
                                           return isDeletedFromSprint(task, sStart, sEnd) ? (
-                                            <span className="text-xs text-destructive font-medium whitespace-nowrap">Удалена из спринта</span>
+                                            <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
                                           ) : task.size === 0 ? (
                                             <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
                                           ) : (
@@ -2322,7 +2322,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                     const sStart = sd && typeof sd === 'object' ? sd.start : null;
                                     const sEnd = sd && typeof sd === 'object' ? sd.end : null;
                                     return isDeletedFromSprint(task, sStart, sEnd) ? (
-                                      <span className="text-xs text-destructive font-medium whitespace-nowrap">Удалена из спринта</span>
+                                      <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
                                     ) : task.size === 0 ? (
                                       <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
                                     ) : (
