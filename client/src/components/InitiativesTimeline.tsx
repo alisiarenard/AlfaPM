@@ -88,7 +88,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
   const [bsModalOpen, setBsModalOpen] = useState(false);
-  interface BsModalData { sprintTitle: string; sprintDates: string; tasks: TaskInSprint[]; }
+  interface BsModalData { sprintTitle: string; sprintDates: string; sprintStart: string | null; sprintEnd: string | null; tasks: TaskInSprint[]; }
   const [bsModalData, setBsModalData] = useState<BsModalData | null>(null);
   const [initiativeDetailsOpen, setInitiativeDetailsOpen] = useState(false);
   const [initiativeDetailsData, setInitiativeDetailsData] = useState<InitiativeDetailsData | null>(null);
@@ -1030,11 +1030,22 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     const sprintInfo = getSprintInfo(sprintId);
     const tasks = getSprintTasks(initiative, sprintId);
     const sprintTitle = sprintInfo?.title || `Спринт`;
-    const start = sprintInfo ? formatDate(sprintInfo.startDate) : '';
-    const end = sprintInfo ? formatDate(sprintInfo.actualFinishDate || sprintInfo.finishDate) : '';
-    const sprintDates = start && end ? `${start} — ${end}` : '';
-    setBsModalData({ sprintTitle, sprintDates, tasks });
+    const startFormatted = sprintInfo ? formatDate(sprintInfo.startDate) : '';
+    const endFormatted = sprintInfo ? formatDate(sprintInfo.actualFinishDate || sprintInfo.finishDate) : '';
+    const sprintDates = startFormatted && endFormatted ? `${startFormatted} — ${endFormatted}` : '';
+    const sprintStart = sprintInfo?.startDate || null;
+    const sprintEnd = sprintInfo ? (sprintInfo.actualFinishDate || sprintInfo.finishDate) : null;
+    setBsModalData({ sprintTitle, sprintDates, sprintStart, sprintEnd, tasks });
     setBsModalOpen(true);
+  };
+
+  const isDeletedFromSprint = (task: TaskInSprint, sprintStart: string | null, sprintEnd: string | null): boolean => {
+    if (!task.doneDate) return true;
+    if (!sprintStart || !sprintEnd) return false;
+    const taskTime = new Date(task.doneDate).getTime();
+    const startTime = new Date(sprintStart).getTime();
+    const endTime = new Date(sprintEnd).getTime();
+    return taskTime < startTime || taskTime > endTime;
   };
 
   const getStatusColor = (initiative: Initiative): string => {
@@ -1812,7 +1823,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                   <p className="max-w-sm">{task.title}</p>
                                 </TooltipContent>
                               </Tooltip>
-                              {task.size === 0 ? (
+                              {isDeletedFromSprint(task, bsModalData.sprintStart, bsModalData.sprintEnd) ? (
+                                <span className="text-xs text-destructive font-medium whitespace-nowrap">Удалена из спринта</span>
+                              ) : task.size === 0 ? (
                                 <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
                               ) : (
                                 <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
@@ -2264,11 +2277,18 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                             <p className="max-w-sm">{task.title}</p>
                                           </TooltipContent>
                                         </Tooltip>
-                                        {task.size === 0 ? (
-                                          <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
-                                        ) : (
-                                          <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
-                                        )}
+                                        {(() => {
+                                          const sd = sprintModalData?.sprintDates;
+                                          const sStart = sd && typeof sd === 'object' ? sd.start : null;
+                                          const sEnd = sd && typeof sd === 'object' ? sd.end : null;
+                                          return isDeletedFromSprint(task, sStart, sEnd) ? (
+                                            <span className="text-xs text-destructive font-medium whitespace-nowrap">Удалена из спринта</span>
+                                          ) : task.size === 0 ? (
+                                            <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
+                                          ) : (
+                                            <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
+                                          );
+                                        })()}
                                       </div>
                                     ))}
                                   </div>
@@ -2297,11 +2317,18 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                       <p className="max-w-sm">{task.title}</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                  {task.size === 0 ? (
-                                    <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
-                                  )}
+                                  {(() => {
+                                    const sd = sprintModalData?.sprintDates;
+                                    const sStart = sd && typeof sd === 'object' ? sd.start : null;
+                                    const sEnd = sd && typeof sd === 'object' ? sd.end : null;
+                                    return isDeletedFromSprint(task, sStart, sEnd) ? (
+                                      <span className="text-xs text-destructive font-medium whitespace-nowrap">Удалена из спринта</span>
+                                    ) : task.size === 0 ? (
+                                      <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground whitespace-nowrap">{task.size} sp</span>
+                                    );
+                                  })()}
                                 </div>
                               ))}
                             </>
