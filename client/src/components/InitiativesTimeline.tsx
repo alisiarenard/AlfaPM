@@ -88,7 +88,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
   const [sprintModalOpen, setSprintModalOpen] = useState(false);
   const [sprintModalData, setSprintModalData] = useState<SprintModalData | null>(null);
   const [bsModalOpen, setBsModalOpen] = useState(false);
-  interface BsModalData { sprintTitle: string; sprintDates: string; sprintStart: string | null; sprintEnd: string | null; tasks: TaskInSprint[]; }
+  interface BsModalData { sprintTitle: string; sprintDates: string; sprintStart: string | null; sprintEnd: string | null; isCurrent: boolean; tasks: TaskInSprint[]; }
   const [bsModalData, setBsModalData] = useState<BsModalData | null>(null);
   const [initiativeDetailsOpen, setInitiativeDetailsOpen] = useState(false);
   const [initiativeDetailsData, setInitiativeDetailsData] = useState<InitiativeDetailsData | null>(null);
@@ -1035,7 +1035,8 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     const sprintDates = startFormatted && endFormatted ? `${startFormatted} — ${endFormatted}` : '';
     const sprintStart = sprintInfo?.startDate || null;
     const sprintEnd = sprintInfo ? (sprintInfo.actualFinishDate || sprintInfo.finishDate) : null;
-    setBsModalData({ sprintTitle, sprintDates, sprintStart, sprintEnd, tasks });
+    const isCurrent = isCurrentSprint(sprintId);
+    setBsModalData({ sprintTitle, sprintDates, sprintStart, sprintEnd, isCurrent, tasks });
     setBsModalOpen(true);
   };
 
@@ -1823,7 +1824,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                   <p className="max-w-sm">{task.title}</p>
                                 </TooltipContent>
                               </Tooltip>
-                              {isDeletedFromSprint(task, bsModalData.sprintStart, bsModalData.sprintEnd) ? (
+                              {!bsModalData.isCurrent && isDeletedFromSprint(task, bsModalData.sprintStart, bsModalData.sprintEnd) ? (
                                 <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
                               ) : task.size === 0 ? (
                                 <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
@@ -2281,7 +2282,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                           const sd = sprintModalData?.sprintDates;
                                           const sStart = sd && typeof sd === 'object' ? sd.start : null;
                                           const sEnd = sd && typeof sd === 'object' ? sd.end : null;
-                                          return isDeletedFromSprint(task, sStart, sEnd) ? (
+                                          return !sprintModalData?.isCurrent && isDeletedFromSprint(task, sStart, sEnd) ? (
                                             <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
                                           ) : task.size === 0 ? (
                                             <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
@@ -2321,7 +2322,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                                     const sd = sprintModalData?.sprintDates;
                                     const sStart = sd && typeof sd === 'object' ? sd.start : null;
                                     const sEnd = sd && typeof sd === 'object' ? sd.end : null;
-                                    return isDeletedFromSprint(task, sStart, sEnd) ? (
+                                    return !sprintModalData?.isCurrent && isDeletedFromSprint(task, sStart, sEnd) ? (
                                       <span className="text-xs text-destructive font-medium whitespace-nowrap">удалена из спринта</span>
                                     ) : task.size === 0 ? (
                                       <span className="text-xs text-destructive font-medium whitespace-nowrap">нет оценки</span>
