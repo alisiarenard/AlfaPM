@@ -693,10 +693,12 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               
               // Суммируем фактический SP (только done-задачи)
               if (task.state === '3-done') {
-                if (initiativeId === 0) {
-                  finalActualBusinessSupportSP += task.size;
-                } else {
+                const initType = task.initiativeType || null;
+                const isInnovation = initiativeId !== 0 && (initType === 'Epic' || initType === 'Compliance' || initType === 'Enabler');
+                if (isInnovation) {
                   finalActualOtherInitiativesSP += task.size;
+                } else {
+                  finalActualBusinessSupportSP += task.size;
                 }
               }
             });
