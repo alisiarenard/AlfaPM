@@ -2363,10 +2363,24 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 setIsSyncingSprintData(true);
                 
                 try {
-                  const response = await fetch(`/api/kaiten/sync-sprint/${sprintModalData.sprintId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                  });
+                  let response: Response;
+                  
+                  if (sprintModalData.sprintId < 0) {
+                    // Виртуальный спринт — синхронизируем по дате начала периода
+                    const startDate = typeof sprintModalData.sprintDates === 'object'
+                      ? sprintModalData.sprintDates.start
+                      : new Date(new Date().getFullYear(), 0, 1).toISOString();
+                    response = await fetch(
+                      `/api/kaiten/sync-virtual-period/${sprintModalData.teamId}?startDate=${encodeURIComponent(startDate)}`,
+                      { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+                    );
+                  } else {
+                    // Реальный спринт — стандартный sync-sprint
+                    response = await fetch(`/api/kaiten/sync-sprint/${sprintModalData.sprintId}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+                  }
                   
                   if (!response.ok) {
                     throw new Error('Failed to sync sprint data');
@@ -2374,19 +2388,14 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   
                   const result = await response.json();
                   
-                  // Сначала сбрасываем лоадер
                   setIsSyncingSprintData(false);
-                  
-                  // Инвалидируем кэш
                   queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
                   
-                  // Показываем тост
                   toast({
                     title: "Данные обновлены",
                     description: `Синхронизировано ${result.synced || 0} задач`,
                   });
                   
-                  // Закрываем модалку последним
                   setSprintModalOpen(false);
                 } catch (error) {
                   console.error('Error syncing sprint:', error);

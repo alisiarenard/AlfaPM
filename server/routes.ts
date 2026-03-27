@@ -3171,6 +3171,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Синхронизация виртуального периода (для команд без реальных спринтов)
+  // Синхронизирует задачи с доски команды начиная с указанной даты
+  app.post("/api/kaiten/sync-virtual-period/:teamId", async (req, res) => {
+    res.setTimeout(300000);
+    try {
+      const { teamId } = req.params;
+      const { startDate } = req.query as { startDate?: string };
+
+      if (!startDate) {
+        return res.status(400).json({ success: false, error: "startDate query param is required" });
+      }
+
+      const team = await storage.getTeamById(teamId);
+      if (!team) {
+        return res.status(404).json({ success: false, error: "Team not found" });
+      }
+
+      const taskBoardId = team.sprintBoardId || team.initBoardId;
+
+      const cards = await kaitenClient.getCardsWithDateFilter({
+        boardId: taskBoardId,
+        lastMovedToDoneAtAfter: startDate,
+        limit: 1000
+      });
+
+      let synced = 0;
+      let errors = 0;
+
+      for (const card of cards) {
+        try {
+          let initCardId = 0;
+          if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+            initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+          }
+
+          let state: "1-queued" | "2-inProgress" | "3-done";
+          if (card.state === 3) state = "3-done";
+          else if (card.state === 2) state = "2-inProgress";
+          else state = "1-queued";
+
+          const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+          await storage.syncTaskFromKaiten(
+            card.id,
+            card.board_id,
+            card.title,
+            card.created || new Date().toISOString(),
+            state,
+            card.size || 0,
+            condition,
+            card.archived || false,
+            initCardId,
+            card.type?.name,
+            card.completed_at ?? undefined,
+            null,
+            card.last_moved_to_done_at,
+            team.teamId
+          );
+          synced++;
+        } catch (cardError) {
+          errors++;
+          console.error(`[SYNC-VIRTUAL] Error card ${card.id}:`, cardError instanceof Error ? cardError.message : String(cardError));
+        }
+      }
+
+      res.json({ success: true, synced, errors, boardId: taskBoardId, startDate });
+    } catch (error) {
+      console.error(`[SYNC-VIRTUAL] Error:`, error instanceof Error ? error.message : String(error));
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed to sync virtual period" });
+    }
+  });
+
   app.post("/api/kaiten/sync-sprints/:boardId", async (req, res) => {
     res.setTimeout(300000);
     try {
