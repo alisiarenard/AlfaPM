@@ -1409,9 +1409,17 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastSprintIndex;
     }
 
+    const currentSprintIndex = allSprintIds.indexOf(sprintId);
+
+    // Если у инициативы есть фактические задачи в этом спринте — показываем блок
+    // независимо от прогноза (реальная работа всегда должна быть видна)
+    const hasActualSprint = initiative.sprints.some(s => s.sprint_id === sprintId);
+    if (hasActualSprint) {
+      return currentSprintIndex >= firstSprintIndex;
+    }
+
     // Индекс последнего прогнозируемого спринта
     const lastForecastedIndex = firstSprintIndex + forecastedSprintCount - 1;
-    const currentSprintIndex = allSprintIds.indexOf(sprintId);
 
     return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastForecastedIndex;
   };
