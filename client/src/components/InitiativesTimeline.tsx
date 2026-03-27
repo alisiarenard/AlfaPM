@@ -1350,7 +1350,11 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
   // Определить, нужно ли показывать цветной блок (прогнозируемый срок)
   const shouldShowColorBlock = (initiative: Initiative, sprintId: number): boolean => {
+    const isVirtual = sprintId < 0;
+    const hasTasksInThisSprint = initiative.sprints.some(s => s.sprint_id === sprintId);
+
     if (initiative.sprints.length === 0) {
+      if (isVirtual && hasTasksInThisSprint) console.log('[DEBUG shouldShow] NO SPRINTS', initiative.title, sprintId);
       return false;
     }
 
@@ -1373,6 +1377,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       .sort((a, b) => a.startDate!.getTime() - b.startDate!.getTime());
 
     if (initiativeSprintsWithDates.length === 0) {
+      if (isVirtual && hasTasksInThisSprint) console.log('[DEBUG shouldShow] DATES EMPTY — sprint info not found for sprint_ids:', initiative.sprints.map(s => s.sprint_id), '— allSprintIds:', allSprintIds, '— title:', initiative.title);
       return false;
     }
 
@@ -1395,7 +1400,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       const lastSprintId = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1].sprintId;
       const lastSprintIndex = allSprintIds.indexOf(lastSprintId);
       const currentSprintIndex = allSprintIds.indexOf(sprintId);
-      return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastSprintIndex;
+      const result = currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastSprintIndex;
+      if (isVirtual && hasTasksInThisSprint && !result) console.log('[DEBUG shouldShow] DONE BRANCH BLOCKED:', initiative.title, { sprintId, state: initiative.state, isCompleted, firstSprintIndex, lastSprintIndex, currentSprintIndex, initiativeSprints: initiative.sprints.map(s => s.sprint_id) });
+      return result;
     }
 
     // Рассчитываем прогнозируемое количество спринтов
@@ -1406,7 +1413,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       const lastSprintId = initiativeSprintsWithDates[initiativeSprintsWithDates.length - 1].sprintId;
       const lastSprintIndex = allSprintIds.indexOf(lastSprintId);
       const currentSprintIndex = allSprintIds.indexOf(sprintId);
-      return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastSprintIndex;
+      const result = currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastSprintIndex;
+      if (isVirtual && hasTasksInThisSprint && !result) console.log('[DEBUG shouldShow] FORECAST=0 BRANCH BLOCKED:', initiative.title, { sprintId, firstSprintIndex, lastSprintIndex, currentSprintIndex, initiativeSprints: initiative.sprints.map(s => s.sprint_id) });
+      return result;
     }
 
     const currentSprintIndex = allSprintIds.indexOf(sprintId);
