@@ -965,7 +965,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     let totalSP = 0;
     let spWithoutSupport = 0;
 
-    allInitiatives.forEach(init => {
+    initiatives.forEach(init => {
       const tasks = getSprintTasks(init, sprintId);
       let initSP = 0;
       tasks.forEach(task => {
@@ -995,7 +995,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     // Фолбэк на локальные данные
     let totalSP = 0;
     let spWithoutSupport = 0;
-    allInitiatives.forEach(init => {
+    initiatives.forEach(init => {
       const sp = getActualSprintSP(init, sprintId);
       totalSP += sp;
       if (init.cardId !== 0) spWithoutSupport += sp;
