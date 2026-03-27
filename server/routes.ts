@@ -502,6 +502,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           let totalTasks = 0;
           
+          // Начало текущего года — загружаем задачи только с этой даты
+          const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
+          
           // Для каждой инициативы синхронизируем её дочерние карточки
           for (const initiative of initiatives) {
             try {
@@ -518,6 +521,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     // Пропускаем архивные
                     if (childCard.archived) {
                       continue;
+                    }
+                    
+                    // Пропускаем задачи, завершённые до начала текущего года
+                    if (childCard.last_moved_to_done_at) {
+                      const doneDate = new Date(childCard.last_moved_to_done_at);
+                      if (doneDate < currentYearStart) {
+                        continue;
+                      }
                     }
                     
                     // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
@@ -1246,11 +1257,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // РЕЖИМ: Виртуальные спринты (hasSprints === false)
         // Создаём виртуальные спринты на основе sprintDuration
 
-        // Фильтруем задачи с doneDate (для виртуальных спринтов берём ВСЕ задачи с датой закрытия)
-        const tasksForVirtual = initiativeTasks.filter(task => 
-          task.doneDate !== null && 
-          task.doneDate !== ''
-        );
+        // Определяем год для виртуальных спринтов
+        const virtualYear = year ?? new Date().getFullYear();
+        const yearStartDate = new Date(virtualYear, 0, 1); // 1 января запрошенного года
+        const yearEndDate = new Date(virtualYear, 11, 31, 23, 59, 59); // 31 декабря
+
+        // Фильтруем задачи с doneDate — только за запрошенный год
+        const tasksForVirtual = initiativeTasks.filter(task => {
+          if (!task.doneDate || task.doneDate === '') return false;
+          const taskDate = new Date(task.doneDate);
+          return taskDate >= yearStartDate && taskDate <= yearEndDate;
+        });
 
 
         if (tasksForVirtual.length === 0) {
@@ -1272,12 +1289,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return dateA.getTime() - dateB.getTime();
         });
 
-        const firstDate = new Date(sortedTasks[0].doneDate!);
+        // Последняя задача определяет конец генерации периодов
         const lastDate = new Date(sortedTasks[sortedTasks.length - 1].doneDate!);
 
         const virtualSprints: any[] = [];
         const virtualSprintTasksMap = new Map<number, any[]>();
-        let currentStartDate = new Date(firstDate);
+        // Всегда начинаем с 1 января запрошенного года
+        let currentStartDate = new Date(yearStartDate);
         let sprintNumber = 1;
 
         while (currentStartDate <= lastDate) {
