@@ -491,11 +491,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (syncError) {
         }
-      } else if (teamData.sprintBoardId || teamData.initBoardId) {
+      } else if (teamData.sprintBoardId) {
         // РЕЖИМ: Виртуальные спринты (нет sprintIds / hasSprints=false)
-        // Задачи ищем на доске команды (sprintBoardId = "ID доски"), не на доске инициатив
+        // Задачи ищем ТОЛЬКО на доске команды (sprintBoardId), никогда на доске инициатив
         try {
-          const taskBoardId = teamData.sprintBoardId || teamData.initBoardId;
+          const taskBoardId = teamData.sprintBoardId;
           const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
           
           const cards = await kaitenClient.getCardsWithDateFilter({
@@ -3190,7 +3190,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ success: false, error: "Team not found" });
       }
 
-      const taskBoardId = team.sprintBoardId || team.initBoardId;
+      const taskBoardId = team.sprintBoardId;
+      if (!taskBoardId) {
+        return res.status(400).json({ success: false, error: "Team has no task board configured (sprintBoardId)" });
+      }
 
       const cards = await kaitenClient.getCardsWithDateFilter({
         boardId: taskBoardId,
@@ -3620,10 +3623,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error(`[SMART-SYNC] Error sprint ${dbSprint.sprintId}:`, sprintError instanceof Error ? sprintError.message : String(sprintError));
           }
         }
-      } else if (team.sprintBoardId || team.initBoardId) {
+      } else if (team.sprintBoardId) {
         // РЕЖИМ: Виртуальные спринты — нет реальных спринтов
-        // Задачи ищем на доске команды (sprintBoardId = "ID доски"), не на доске инициатив
-        const taskBoardId = team.sprintBoardId || team.initBoardId;
+        // Задачи ищем ТОЛЬКО на доске команды (sprintBoardId), никогда на доске инициатив
+        const taskBoardId = team.sprintBoardId;
         const yearStart = syncYear
           ? new Date(syncYear, 0, 1).toISOString()
           : new Date(new Date().getFullYear(), 0, 1).toISOString();
