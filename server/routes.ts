@@ -4839,7 +4839,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let avgVelocity: number | null = null;
       let avgSPD: number | null = null;
 
-      if (team.sprintBoardId !== null) {
+      if (!team.hasSprints) {
+        // РЕЖИМ: Виртуальные спринты — считаем velocity из задач по периодам
+        const yearlyData = await storage.getTeamYearlyData(team.teamId, year);
+        const sprintDuration = yearlyData?.sprintDuration ?? team.sprintDuration ?? 14;
+
+        // Получаем все задачи команды в году
+        const teamTasks = await storage.getTasksByTeamAndDoneDateRange(team.teamId, yearStart, yearEnd);
+
+        if (teamTasks.length > 0) {
+          // Генерируем виртуальные периоды
+          const periods: { start: Date; end: Date }[] = [];
+          let currentStart = new Date(yearStart);
+          const today = new Date();
+
+          while (currentStart <= yearEnd && currentStart <= today) {
+            const currentEnd = new Date(currentStart);
+            currentEnd.setDate(currentEnd.getDate() + sprintDuration - 1);
+            if (currentEnd > yearEnd) currentEnd.setTime(yearEnd.getTime());
+            if (currentEnd > today) currentEnd.setTime(today.getTime());
+            periods.push({ start: new Date(currentStart), end: new Date(currentEnd) });
+            currentStart = new Date(currentEnd);
+            currentStart.setDate(currentStart.getDate() + 1);
+          }
+
+          // Считаем SP per period
+          const periodVelocities: number[] = [];
+          for (const period of periods) {
+            const periodSP = teamTasks
+              .filter(task => {
+                if (!task.doneDate) return false;
+                const doneTime = new Date(task.doneDate).getTime();
+                return doneTime >= period.start.getTime() && doneTime <= period.end.getTime();
+              })
+              .reduce((sum, task) => sum + (task.size || 0), 0);
+            if (periodSP > 0) periodVelocities.push(periodSP);
+          }
+
+          if (periodVelocities.length > 0) {
+            avgVelocity = Math.round(
+              periodVelocities.reduce((s, v) => s + v, 0) / periodVelocities.length * 10
+            ) / 10;
+          }
+          // avgSPD не применимо для виртуальных спринтов
+        }
+      } else if (team.sprintBoardId !== null) {
+        // РЕЖИМ: Реальные спринты — считаем velocity из спринтов в БД
         const teamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
         const yearSprints = teamSprints.filter(sprint => {
           const sprintStart = new Date(sprint.startDate);
