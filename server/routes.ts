@@ -927,8 +927,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Фильтруем задачи по teamId (без фильтра по allInitiativeCardIds — 
       // задачи из инициатив с других досок должны попадать в "Поддержку бизнеса")
       // Берём ВСЕ задачи команды, включая с initCardId=null (они станут "Поддержкой бизнеса")
+      // Исключаем карточки, чей cardId совпадает с cardId инициатив —
+      // это сами инициативные карточки, которые могли быть синхронизированы как задачи
       let initiativeTasks = allTasks
-        .filter(task => task.teamId === teamId)
+        .filter(task => task.teamId === teamId && !allInitiativeCardIds.has(task.cardId))
         .map(task => task.initCardId === null ? { ...task, initCardId: 0 } : task);
       
       // Создаем Map для быстрого поиска типа инициативы по cardId
