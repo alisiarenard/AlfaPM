@@ -3475,8 +3475,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Шаг 2: Синхронизируем задачи
       let tasksSynced = 0;
       
+      console.log(`[SMART-SYNC] Команда: teamId=${team.teamId}, hasSprints=${team.hasSprints}, sprintBoardId=${team.sprintBoardId}, initBoardId=${team.initBoardId}`);
+      
       if (team.hasSprints && team.sprintBoardId) {
         // РЕЖИМ: Реальные спринты — синхронизируем задачи через спринты
+        console.log(`[SMART-SYNC] Ветка: РЕАЛЬНЫЕ СПРИНТЫ (hasSprints=true, sprintBoardId=${team.sprintBoardId})`);
         const allSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
         
         const sprintsToSync = syncYear
@@ -3553,11 +3556,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? new Date(syncYear, 0, 1).toISOString()
           : new Date(new Date().getFullYear(), 0, 1).toISOString();
 
+        console.log(`[SMART-SYNC] Ветка: ВИРТУАЛЬНЫЕ СПРИНТЫ, taskBoardId=${taskBoardId}, yearStart=${yearStart}`);
+
         const cards = await kaitenClient.getCardsWithDateFilter({
           boardId: taskBoardId,
           lastMovedToDoneAtAfter: yearStart,
           limit: 1000
         });
+
+        console.log(`[SMART-SYNC] Kaiten вернул ${cards.length} карточек для board_id=${taskBoardId}`);
+        if (cards.length > 0) {
+          console.log(`[SMART-SYNC] Первые 3 карточки:`, cards.slice(0, 3).map(c => ({
+            id: c.id,
+            title: c.title?.slice(0, 40),
+            state: c.state,
+            archived: c.archived,
+            last_moved_to_done_at: c.last_moved_to_done_at,
+            parents_ids: c.parents_ids,
+            size: c.size
+          })));
+        }
 
         for (const card of cards) {
           try {
@@ -3568,6 +3586,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
               initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
             }
+
+            console.log(`[SMART-SYNC] card.id=${card.id} "${card.title?.slice(0, 30)}" → initCardId=${initCardId}, size=${card.size}, last_moved_to_done_at=${card.last_moved_to_done_at}`);
 
             let state: "1-queued" | "2-inProgress" | "3-done";
             if (card.state === 3) state = "3-done";
@@ -3598,6 +3618,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error(`[SMART-SYNC] Error syncing card ${card.id}:`, cardError instanceof Error ? cardError.message : String(cardError));
           }
         }
+        console.log(`[SMART-SYNC] Записано задач: ${tasksSynced}`);
+      } else {
+        console.log(`[SMART-SYNC] Не вошли ни в одну ветку синка задач! hasSprints=${team.hasSprints}, sprintBoardId=${team.sprintBoardId}, initBoardId=${team.initBoardId}`);
       }
       
       

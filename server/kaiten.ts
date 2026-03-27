@@ -160,19 +160,23 @@ export class KaitenClient {
     }
     
     const url = `/cards?${queryParams.toString()}`;
+    console.log(`[KAITEN] getCardsWithDateFilter → запрос: ${url}`);
     
     const response = await this.makeRequest<{ data?: KaitenCard[]; [key: string]: any }>(url);
     
     // Kaiten API returns an object wrapper: { data: [...], meta: {...} }
     if (response.data && Array.isArray(response.data)) {
+      console.log(`[KAITEN] getCardsWithDateFilter → ответ (data array): ${response.data.length} карточек`);
       return response.data;
     }
     
     // Fallback: if response is directly an array
     if (Array.isArray(response)) {
+      console.log(`[KAITEN] getCardsWithDateFilter → ответ (прямой массив): ${(response as unknown as KaitenCard[]).length} карточек`);
       return response as unknown as KaitenCard[];
     }
     
+    console.log(`[KAITEN] getCardsWithDateFilter → ответ пустой или неожиданный формат:`, typeof response, Object.keys(response || {}).slice(0, 5));
     return [];
   }
 
