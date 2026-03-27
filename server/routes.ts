@@ -491,14 +491,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (syncError) {
         }
-      } else if (teamData.initBoardId) {
+      } else if (teamData.sprintBoardId || teamData.initBoardId) {
         // РЕЖИМ: Виртуальные спринты (нет sprintIds / hasSprints=false)
-        // Получаем все завершённые карточки с доски за текущий год
+        // Задачи ищем на доске команды (sprintBoardId = "ID доски"), не на доске инициатив
         try {
+          const taskBoardId = teamData.sprintBoardId || teamData.initBoardId;
           const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
           
           const cards = await kaitenClient.getCardsWithDateFilter({
-            boardId: teamData.initBoardId,
+            boardId: taskBoardId,
             lastMovedToDoneAtAfter: yearStart,
             limit: 1000
           });
@@ -3471,10 +3472,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.archiveInitiativesNotInList(team.initBoardId, syncedCardIds);
       
-      // Шаг 2: Синхронизируем все спринты из таблицы спринтов
+      // Шаг 2: Синхронизируем задачи
       let tasksSynced = 0;
       
-      if (team.sprintBoardId) {
+      if (team.hasSprints && team.sprintBoardId) {
+        // РЕЖИМ: Реальные спринты — синхронизируем задачи через спринты
         const allSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
         
         const sprintsToSync = syncYear
@@ -3543,15 +3545,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error(`[SMART-SYNC] Error sprint ${dbSprint.sprintId}:`, sprintError instanceof Error ? sprintError.message : String(sprintError));
           }
         }
-      } else if (team.initBoardId) {
-        // РЕЖИМ: Виртуальные спринты — нет sprintBoardId
-        // Получаем завершённые карточки с доски за запрошенный год
+      } else if (team.sprintBoardId || team.initBoardId) {
+        // РЕЖИМ: Виртуальные спринты — нет реальных спринтов
+        // Задачи ищем на доске команды (sprintBoardId = "ID доски"), не на доске инициатив
+        const taskBoardId = team.sprintBoardId || team.initBoardId;
         const yearStart = syncYear
           ? new Date(syncYear, 0, 1).toISOString()
           : new Date(new Date().getFullYear(), 0, 1).toISOString();
 
         const cards = await kaitenClient.getCardsWithDateFilter({
-          boardId: team.initBoardId,
+          boardId: taskBoardId,
           lastMovedToDoneAtAfter: yearStart,
           limit: 1000
         });
