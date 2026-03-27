@@ -4589,7 +4589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let teamSprintIds: Set<number> | null = null;
         let prevYearSprintIds: Set<number> | null = null;
         let nextYearSprintIds: Set<number> | null = null;
-        if (team.sprintBoardId !== null) {
+        if (team.hasSprints && team.sprintBoardId !== null) {
           const allTeamSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
           const yearSprints = allTeamSprints.filter(sprint => {
             const sprintStart = new Date(sprint.startDate);
