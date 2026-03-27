@@ -3346,6 +3346,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: 1000
       });
       
+      console.log(`[INIT-TASKS] boardId=${initBoardId}, yearStart=${yearStart}, found cards: ${tasks.length}`);
+      if (tasks.length > 0) {
+        console.log(`[INIT-TASKS] Sample card[0]: id=${tasks[0].id}, title="${tasks[0].title}", type=${tasks[0].type?.name}, doneDate=${tasks[0].last_moved_to_done_at}`);
+      }
       
       let totalTasksSynced = 0;
       const syncedTasks = [];
@@ -3514,6 +3518,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Шаг 2: Синхронизируем все спринты из таблицы спринтов
       let tasksSynced = 0;
       
+      console.log(`[SMART-SYNC] Team: hasSprints=${team.hasSprints}, sprintBoardId=${team.sprintBoardId}, initBoardId=${team.initBoardId}`);
+      
       if (team.sprintBoardId) {
         const allSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
         
@@ -3583,30 +3589,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error(`[SMART-SYNC] Error sprint ${dbSprint.sprintId}:`, sprintError instanceof Error ? sprintError.message : String(sprintError));
           }
         }
-      } else if (!team.hasSprints && team.initBoardId) {
-        // РЕЖИМ: Виртуальные спринты (hasSprints === false)
+      } else if (team.initBoardId) {
+        // РЕЖИМ: Виртуальные спринты — нет sprintBoardId или hasSprints=false
         // Синхронизируем дочерние карточки каждой инициативы
         const yearStart = syncYear
           ? new Date(syncYear, 0, 1)
           : new Date(new Date().getFullYear(), 0, 1);
 
+        console.log(`[SMART-SYNC] No-sprint team ${team.teamId}, initBoardId=${team.initBoardId}, yearStart=${yearStart.toISOString()}`);
+
         const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
+        console.log(`[SMART-SYNC] Found ${initiatives.length} initiatives in DB`);
 
         for (const initiative of initiatives) {
           try {
             const initiativeCard = await kaitenClient.getCard(initiative.cardId);
+            const childrenIds = initiativeCard.children_ids;
+            console.log(`[SMART-SYNC] Initiative ${initiative.cardId} "${initiative.title}": children_ids=${JSON.stringify(childrenIds)}`);
 
-            if (!initiativeCard.children_ids || !Array.isArray(initiativeCard.children_ids)) continue;
+            if (!childrenIds || !Array.isArray(childrenIds) || childrenIds.length === 0) continue;
 
-            for (const childId of initiativeCard.children_ids) {
+            for (const childId of childrenIds) {
               try {
                 const childCard = await kaitenClient.getCard(childId);
+                console.log(`[SMART-SYNC] Child ${childId}: archived=${childCard.archived}, doneDate=${childCard.last_moved_to_done_at}, size=${childCard.size}`);
 
                 if (childCard.archived) continue;
 
                 // Пропускаем задачи, завершённые до начала запрошенного года
                 if (childCard.last_moved_to_done_at) {
-                  if (new Date(childCard.last_moved_to_done_at) < yearStart) continue;
+                  if (new Date(childCard.last_moved_to_done_at) < yearStart) {
+                    console.log(`[SMART-SYNC] Child ${childId} skipped: doneDate before yearStart`);
+                    continue;
+                  }
                 }
 
                 let initCardId = initiative.cardId;
@@ -3648,6 +3663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error(`[SMART-SYNC] Error initiative ${initiative.cardId}:`, initError instanceof Error ? initError.message : String(initError));
           }
         }
+        console.log(`[SMART-SYNC] No-sprint tasks synced: ${tasksSynced}`);
       }
       
       
