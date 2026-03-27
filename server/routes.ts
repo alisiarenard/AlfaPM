@@ -506,8 +506,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           for (const card of cards) {
             try {
-              if (card.archived) continue;
-              
               // Ищем инициативу в родительской цепочке
               let initCardId = 0;
               if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
@@ -3579,15 +3577,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const card of cards) {
           try {
-            if (card.archived) continue;
-
             // Ищем инициативу в родительской цепочке
             let initCardId = 0;
             if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
               initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
             }
 
-            console.log(`[SMART-SYNC] card.id=${card.id} "${card.title?.slice(0, 30)}" → initCardId=${initCardId}, size=${card.size}, last_moved_to_done_at=${card.last_moved_to_done_at}`);
+            console.log(`[SMART-SYNC] card.id=${card.id} "${card.title?.slice(0, 30)}" archived=${card.archived} → initCardId=${initCardId}, size=${card.size}, last_moved_to_done_at=${card.last_moved_to_done_at}`);
 
             let state: "1-queued" | "2-inProgress" | "3-done";
             if (card.state === 3) state = "3-done";
