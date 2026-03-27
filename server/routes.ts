@@ -492,95 +492,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (syncError) {
         }
       } else if (teamData.initBoardId) {
-        // РЕЖИМ: Виртуальные спринты (hasSprints === false)
-        // Синхронизируем дочерние карточки инициатив (children)
-        // Виртуальные спринты создадутся автоматически в /api/timeline на основе sprintDuration
+        // РЕЖИМ: Виртуальные спринты (нет sprintIds / hasSprints=false)
+        // Получаем все завершённые карточки с доски за текущий год
         try {
+          const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
           
-          // Получаем все инициативы, которые были синхронизированы на шаге 1
-          const initiatives = await storage.getInitiativesByBoardId(teamData.initBoardId);
+          const cards = await kaitenClient.getCardsWithDateFilter({
+            boardId: teamData.initBoardId,
+            lastMovedToDoneAtAfter: yearStart,
+            limit: 1000
+          });
           
-          let totalTasks = 0;
-          
-          // Начало текущего года — загружаем задачи только с этой даты
-          const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
-          
-          // Для каждой инициативы синхронизируем её дочерние карточки
-          for (const initiative of initiatives) {
+          for (const card of cards) {
             try {
-              // Получаем полную карточку инициативы из Kaiten для доступа к children_ids
-              const initiativeCard = await kaitenClient.getCard(initiative.cardId);
+              if (card.archived) continue;
               
-              if (initiativeCard.children_ids && Array.isArray(initiativeCard.children_ids) && initiativeCard.children_ids.length > 0) {
-                
-                // Синхронизируем каждую дочернюю карточку
-                for (const childId of initiativeCard.children_ids) {
-                  try {
-                    const childCard = await kaitenClient.getCard(childId);
-                    
-                    // Пропускаем архивные
-                    if (childCard.archived) {
-                      continue;
-                    }
-                    
-                    // Пропускаем задачи, завершённые до начала текущего года
-                    if (childCard.last_moved_to_done_at) {
-                      const doneDate = new Date(childCard.last_moved_to_done_at);
-                      if (doneDate < currentYearStart) {
-                        continue;
-                      }
-                    }
-                    
-                    // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
-                    let initCardId = initiative.cardId; // По умолчанию - родительская инициатива
-                    if (childCard.parents_ids && Array.isArray(childCard.parents_ids) && childCard.parents_ids.length > 0) {
-                      // Если у дочерней карточки есть parents_ids, ищем инициативу через цепочку
-                      const foundInitCardId = await findInitiativeInParentChain(childCard.parents_ids[0]);
-                      if (foundInitCardId !== 0) {
-                        initCardId = foundInitCardId;
-                      }
-                    }
-                    
-                    let state: "1-queued" | "2-inProgress" | "3-done";
-                    if (childCard.state === 3) {
-                      state = "3-done";
-                    } else if (childCard.state === 2) {
-                      state = "2-inProgress";
-                    } else {
-                      state = "1-queued";
-                    }
-                    
-                    const condition: "1-live" | "2-archived" = childCard.archived ? "2-archived" : "1-live";
-                    
-                    await storage.syncTaskFromKaiten(
-                      childCard.id,
-                      childCard.board_id,
-                      childCard.title,
-                      childCard.created || new Date().toISOString(),
-                      state,
-                      childCard.size || 0,
-                      condition,
-                      childCard.archived || false,
-                      initCardId, // Используем найденную инициативу
-                      childCard.type?.name,
-                      childCard.completed_at ?? undefined,
-                      null, // Нет sprint_id для виртуальных спринтов
-                      childCard.last_moved_to_done_at,
-                      team.teamId
-                    );
-                    
-                    totalTasks++;
-                  } catch (childError: unknown) {
-                    const errorMessage = childError instanceof Error ? childError.message : String(childError);
-                  }
-                }
+              // Ищем инициативу в родительской цепочке
+              let initCardId = 0;
+              if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
               }
-            } catch (initError: unknown) {
-              const errorMessage = initError instanceof Error ? initError.message : String(initError);
+              
+              let state: "1-queued" | "2-inProgress" | "3-done";
+              if (card.state === 3) state = "3-done";
+              else if (card.state === 2) state = "2-inProgress";
+              else state = "1-queued";
+              
+              const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+              
+              await storage.syncTaskFromKaiten(
+                card.id,
+                card.board_id,
+                card.title,
+                card.created || new Date().toISOString(),
+                state,
+                card.size || 0,
+                condition,
+                card.archived || false,
+                initCardId,
+                card.type?.name,
+                card.completed_at ?? undefined,
+                null,
+                card.last_moved_to_done_at,
+                team.teamId
+              );
+            } catch (cardError: unknown) {
+              console.error(`[CREATE-TEAM] Error syncing card ${card.id}:`, cardError instanceof Error ? cardError.message : String(cardError));
             }
           }
-          
         } catch (syncError) {
+          console.error(`[CREATE-TEAM] Error syncing no-sprint tasks:`, syncError instanceof Error ? syncError.message : String(syncError));
         }
       }
       
@@ -3346,11 +3307,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: 1000
       });
       
-      console.log(`[INIT-TASKS] boardId=${initBoardId}, yearStart=${yearStart}, found cards: ${tasks.length}`);
-      if (tasks.length > 0) {
-        console.log(`[INIT-TASKS] Sample card[0]: id=${tasks[0].id}, title="${tasks[0].title}", type=${tasks[0].type?.name}, doneDate=${tasks[0].last_moved_to_done_at}`);
-      }
-      
       let totalTasksSynced = 0;
       const syncedTasks = [];
       
@@ -3518,8 +3474,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Шаг 2: Синхронизируем все спринты из таблицы спринтов
       let tasksSynced = 0;
       
-      console.log(`[SMART-SYNC] Team: hasSprints=${team.hasSprints}, sprintBoardId=${team.sprintBoardId}, initBoardId=${team.initBoardId}`);
-      
       if (team.sprintBoardId) {
         const allSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
         
@@ -3590,80 +3544,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       } else if (team.initBoardId) {
-        // РЕЖИМ: Виртуальные спринты — нет sprintBoardId или hasSprints=false
-        // Синхронизируем дочерние карточки каждой инициативы
+        // РЕЖИМ: Виртуальные спринты — нет sprintBoardId
+        // Получаем завершённые карточки с доски за запрошенный год
         const yearStart = syncYear
-          ? new Date(syncYear, 0, 1)
-          : new Date(new Date().getFullYear(), 0, 1);
+          ? new Date(syncYear, 0, 1).toISOString()
+          : new Date(new Date().getFullYear(), 0, 1).toISOString();
 
-        console.log(`[SMART-SYNC] No-sprint team ${team.teamId}, initBoardId=${team.initBoardId}, yearStart=${yearStart.toISOString()}`);
+        const cards = await kaitenClient.getCardsWithDateFilter({
+          boardId: team.initBoardId,
+          lastMovedToDoneAtAfter: yearStart,
+          limit: 1000
+        });
 
-        const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
-        console.log(`[SMART-SYNC] Found ${initiatives.length} initiatives in DB`);
-
-        for (const initiative of initiatives) {
+        for (const card of cards) {
           try {
-            const initiativeCard = await kaitenClient.getCard(initiative.cardId);
-            const childrenIds = initiativeCard.children_ids;
-            console.log(`[SMART-SYNC] Initiative ${initiative.cardId} "${initiative.title}": children_ids=${JSON.stringify(childrenIds)}`);
+            if (card.archived) continue;
 
-            if (!childrenIds || !Array.isArray(childrenIds) || childrenIds.length === 0) continue;
-
-            for (const childId of childrenIds) {
-              try {
-                const childCard = await kaitenClient.getCard(childId);
-                console.log(`[SMART-SYNC] Child ${childId}: archived=${childCard.archived}, doneDate=${childCard.last_moved_to_done_at}, size=${childCard.size}`);
-
-                if (childCard.archived) continue;
-
-                // Пропускаем задачи, завершённые до начала запрошенного года
-                if (childCard.last_moved_to_done_at) {
-                  if (new Date(childCard.last_moved_to_done_at) < yearStart) {
-                    console.log(`[SMART-SYNC] Child ${childId} skipped: doneDate before yearStart`);
-                    continue;
-                  }
-                }
-
-                let initCardId = initiative.cardId;
-                if (childCard.parents_ids && Array.isArray(childCard.parents_ids) && childCard.parents_ids.length > 0) {
-                  const found = await findInitiativeInParentChain(childCard.parents_ids[0]);
-                  if (found !== 0) initCardId = found;
-                }
-
-                let state: "1-queued" | "2-inProgress" | "3-done";
-                if (childCard.state === 3) state = "3-done";
-                else if (childCard.state === 2) state = "2-inProgress";
-                else state = "1-queued";
-
-                const condition: "1-live" | "2-archived" = childCard.archived ? "2-archived" : "1-live";
-
-                await storage.syncTaskFromKaiten(
-                  childCard.id,
-                  childCard.board_id,
-                  childCard.title,
-                  childCard.created || new Date().toISOString(),
-                  state,
-                  childCard.size || 0,
-                  condition,
-                  childCard.archived || false,
-                  initCardId,
-                  childCard.type?.name,
-                  childCard.completed_at ?? undefined,
-                  null,
-                  childCard.last_moved_to_done_at,
-                  team.teamId
-                );
-
-                tasksSynced++;
-              } catch (childError) {
-                console.error(`[SMART-SYNC] Error syncing child ${childId}:`, childError instanceof Error ? childError.message : String(childError));
-              }
+            // Ищем инициативу в родительской цепочке
+            let initCardId = 0;
+            if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+              initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
             }
-          } catch (initError) {
-            console.error(`[SMART-SYNC] Error initiative ${initiative.cardId}:`, initError instanceof Error ? initError.message : String(initError));
+
+            let state: "1-queued" | "2-inProgress" | "3-done";
+            if (card.state === 3) state = "3-done";
+            else if (card.state === 2) state = "2-inProgress";
+            else state = "1-queued";
+
+            const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+
+            await storage.syncTaskFromKaiten(
+              card.id,
+              card.board_id,
+              card.title,
+              card.created || new Date().toISOString(),
+              state,
+              card.size || 0,
+              condition,
+              card.archived || false,
+              initCardId,
+              card.type?.name,
+              card.completed_at ?? undefined,
+              null,
+              card.last_moved_to_done_at,
+              team.teamId
+            );
+
+            tasksSynced++;
+          } catch (cardError) {
+            console.error(`[SMART-SYNC] Error syncing card ${card.id}:`, cardError instanceof Error ? cardError.message : String(cardError));
           }
         }
-        console.log(`[SMART-SYNC] No-sprint tasks synced: ${tasksSynced}`);
       }
       
       
