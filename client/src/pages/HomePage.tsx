@@ -606,7 +606,8 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     initBoardId: team.initBoardId,
     sprintBoardId: team.sprintBoardId,
     spaceId: team.spaceId,
-    spPrice: team.spPrice
+    spPrice: team.spPrice,
+    hasSprints: team.hasSprints,
   };
 
   const handleSync = () => {

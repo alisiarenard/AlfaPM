@@ -61,6 +61,7 @@ interface SprintModalData {
   teamName: string;
   teamId: string;
   isCurrent: boolean;
+  hasSprints: boolean;
   totalSP?: number;
   doneSP?: number;
   deliveryPlanCompliance?: number;
@@ -830,6 +831,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       teamName: team.name,
       teamId: team.teamId,
       isCurrent: isCurrentSprint(sprintId),
+      hasSprints: team.hasSprints,
       ...sprintStats
     });
     setSprintModalOpen(true);
@@ -2132,7 +2134,18 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             <div className="w-full border border-border rounded-lg flex mb-4">
               <div className="flex-1 px-4 py-4 flex flex-col justify-between min-h-[100px]">
                 <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
-                {sprintModalData?.isCurrent ? (
+                {!sprintModalData?.hasSprints ? (
+                  // Команда без спринтов — один ИР без подписи
+                  <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">
+                    {(() => {
+                      const businessSP = sprintModalData?.actualBusinessSupportSP || 0;
+                      const otherSP = sprintModalData?.actualOtherInitiativesSP || 0;
+                      const totalSP = businessSP + otherSP;
+                      if (totalSP === 0) return '-';
+                      return `${Math.round((otherSP / totalSP) * 100)}%`;
+                    })()}
+                  </div>
+                ) : sprintModalData?.isCurrent ? (
                   // Текущий спринт — только плановый ИР
                   <>
                     <div className="text-2xl font-semibold" data-testid="sprint-innovation-rate">

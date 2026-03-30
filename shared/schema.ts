@@ -181,6 +181,7 @@ export interface Team {
   sprintBoardId: number | null;
   spaceId: number;
   spPrice: number;
+  hasSprints: boolean;
 }
 
 export interface TeamData {
