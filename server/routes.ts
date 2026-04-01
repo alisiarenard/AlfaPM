@@ -174,6 +174,14 @@ function getSpPriceForYear(
   return fallbackSpPrice;
 }
 
+// Получает doneDate таски: сначала проверяет кастомное поле id_421,
+// если дата не заполнена — берёт last_moved_to_done_at
+function getTaskDoneDate(card: { properties?: Record<string, any>; last_moved_to_done_at?: string | null }): string | null {
+  const prop = card.properties?.['id_421'];
+  if (prop?.date) return prop.date;
+  return card.last_moved_to_done_at || null;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/config", (_req, res) => {
     res.json({
@@ -477,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       card.type?.name,
                       card.completed_at ?? undefined,
                       sprint.id,
-                      card.last_moved_to_done_at ?? null,
+                      getTaskDoneDate(card),
                       team.teamId
                     );
                     
@@ -532,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 card.type?.name,
                 card.completed_at ?? undefined,
                 null,
-                card.last_moved_to_done_at,
+                getTaskDoneDate(card),
                 team.teamId
               );
             } catch (cardError: unknown) {
@@ -1755,7 +1763,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             state: card.state === 3 ? "3-done" : (card.state === 2 ? "2-inProgress" : "1-queued"),
             initiativeCardId: initCardId,
             initiativeTitle: initiativeTitle,
-            doneDate: card.last_moved_to_done_at || null,
+            doneDate: getTaskDoneDate(card),
             condition: card.condition,
           };
 
@@ -2080,7 +2088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 card.type?.name,
                 card.completed_at ?? undefined,
                 sprintId,
-                card.last_moved_to_done_at ?? null,
+                getTaskDoneDate(card),
                 team.teamId
               );
               
@@ -2350,7 +2358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.type?.name,
               card.completed_at || undefined,
               sprintId,
-              card.last_moved_to_done_at || null,  // Используем last_moved_to_done_at для doneDate
+              getTaskDoneDate(card),
               teamId
             );
 
@@ -2902,7 +2910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.type?.name,
             card.completed_at ?? undefined,
             card.sprint_id ?? null, // sprint_id from Kaiten
-            card.last_moved_to_done_at ?? null,
+            getTaskDoneDate(card),
             team.teamId
           );
           
@@ -3143,7 +3151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.type?.name,
             card.completed_at ?? undefined,
             sprintId,
-            card.last_moved_to_done_at ?? null,
+            getTaskDoneDate(card),
             team.teamId
           );
           
@@ -3231,7 +3239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.type?.name,
             card.completed_at ?? undefined,
             null,
-            card.last_moved_to_done_at,
+            getTaskDoneDate(card),
             team.teamId
           );
           synced++;
@@ -3333,7 +3341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 card.type?.name,
                 card.completed_at ?? undefined,
                 sprintDetails.id,
-                card.last_moved_to_done_at ?? null,
+                getTaskDoneDate(card),
                 teamId
               );
               
@@ -3609,7 +3617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     card.type?.name,
                     card.completed_at ?? undefined,
                     dbSprint.sprintId,
-                    card.last_moved_to_done_at ?? null,
+                    getTaskDoneDate(card),
                     team.teamId
                   );
                   
@@ -3682,7 +3690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.type?.name,
               card.completed_at ?? undefined,
               null,
-              card.last_moved_to_done_at,
+              getTaskDoneDate(card),
               team.teamId
             );
 
