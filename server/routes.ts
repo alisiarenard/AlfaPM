@@ -4991,7 +4991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryPlanCompliance: number;
       }> = [];
 
-      if (team.sprintBoardId) {
+      if (team.hasSprints && team.sprintBoardId) {
         // Команда со спринтами
         const sprints = await storage.getSprintsByBoardId(team.sprintBoardId);
         const now = new Date();
@@ -5119,7 +5119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         teamId,
         year,
-        hasSprints: !!team.sprintBoardId,
+        hasSprints: team.hasSprints,
         data: metricsData
       });
     } catch (error) {
