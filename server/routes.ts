@@ -1698,7 +1698,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprintId = parseInt(req.params.sprintId);
       const offset = parseInt(req.query.offset as string) || 0;
       const limit = parseInt(req.query.limit as string) || 10;
-      console.log(`[PREVIEW] GET /api/sprints/${sprintId}/preview offset=${offset} limit=${limit}`);
+      const metaOnly = req.query.metaOnly === 'true';
+      console.log(`[PREVIEW] GET /api/sprints/${sprintId}/preview offset=${offset} limit=${limit} metaOnly=${metaOnly}`);
 
       if (isNaN(sprintId)) {
         console.warn(`[PREVIEW] Invalid sprintId: ${req.params.sprintId}`);
@@ -1725,6 +1726,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const allCards = kaitenSprint.cards && Array.isArray(kaitenSprint.cards) ? kaitenSprint.cards : [];
       const totalCards = allCards.length;
+
+      // Быстрый возврат только метаданных — без обработки карточек
+      if (metaOnly) {
+        return res.json({ sprint, totalCards });
+      }
+
       const batch = allCards.slice(offset, offset + limit);
 
       const sprintEndDate = kaitenSprint.actual_finish_date || kaitenSprint.finish_date;
