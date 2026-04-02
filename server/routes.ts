@@ -1736,45 +1736,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tasksOutside: any[] = [];
 
       console.log(`[PREVIEW] Processing batch of ${batch.length} cards (offset=${offset})...`);
-      if (batch.length > 0) {
-        const firstCard = batch[0];
-        console.log(`[PREVIEW] First sprintCard keys:`, Object.keys(firstCard));
-        console.log(`[PREVIEW] First sprintCard sample:`, JSON.stringify({
-          id: firstCard.id, state: firstCard.state, condition: firstCard.condition,
-          size: firstCard.size, parents_ids: firstCard.parents_ids,
-          last_moved_to_done_at: firstCard.last_moved_to_done_at,
-          properties: firstCard.properties ? Object.keys(firstCard.properties) : null,
-          type: firstCard.type,
-        }));
-      }
-      for (let i = 0; i < batch.length; i++) {
-        const sprintCard = batch[i];
+      // Кэш initCardId по parentId в рамках одного запроса — не дублируем Kaiten API вызовы
+      const parentInitCache = new Map<number, number>();
+      for (const sprintCard of batch) {
         try {
-          console.log(`[PREVIEW] Card ${i + 1}/${batch.length}: fetching card ${sprintCard.id} from Kaiten...`);
-          const card = await kaitenClient.getCard(sprintCard.id);
-          console.log(`[PREVIEW] Card ${sprintCard.id}: got, condition=${card.condition}, parents=${card.parents_ids?.length ?? 0}`);
-          if (card.condition === 3) { console.log(`[PREVIEW] Card ${sprintCard.id}: skipped (condition=3)`); continue; }
+          // sprintCard из Kaiten уже содержит все нужные поля — не делаем отдельный getCard()
+          const card = sprintCard as any;
+          if (card.condition === 3) continue;
 
           let initCardId = 0;
           let initiativeTitle = null;
           if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
             try {
-              console.log(`[PREVIEW] Card ${sprintCard.id}: finding initiative in parent chain (parent=${card.parents_ids[0]})...`);
-              initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
-              console.log(`[PREVIEW] Card ${sprintCard.id}: initCardId=${initCardId}`);
+              const parentId = card.parents_ids[0];
+              if (parentInitCache.has(parentId)) {
+                initCardId = parentInitCache.get(parentId)!;
+              } else {
+                initCardId = await findInitiativeInParentChain(parentId);
+                parentInitCache.set(parentId, initCardId);
+              }
               if (initCardId > 0) {
                 const initiative = await storage.getInitiative(initCardId.toString());
-                if (!initiative) {
-                  const initiativeCard = await kaitenClient.getCard(initCardId);
-                  initiativeTitle = initiativeCard.title;
-                } else {
-                  initiativeTitle = initiative.title;
+                initiativeTitle = initiative ? initiative.title : null;
+                if (!initiativeTitle) {
+                  try {
+                    const initiativeCard = await kaitenClient.getCard(initCardId);
+                    initiativeTitle = initiativeCard.title;
+                  } catch {}
                 }
               }
             } catch (parentError) {
-              console.error(`[Sprint Preview] Error finding initiative for card ${sprintCard.id}:`, parentError);
+              console.error(`[Sprint Preview] Error finding initiative for card ${card.id}:`, parentError);
             }
           }
+
+          // В спринт-ответе properties — массив ключей, поэтому используем last_moved_to_done_at
+          const doneDate = card.last_moved_to_done_at || null;
 
           const taskData = {
             id: card.id.toString(),
@@ -1784,7 +1781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             state: card.state === 3 ? "3-done" : (card.state === 2 ? "2-inProgress" : "1-queued"),
             initiativeCardId: initCardId,
             initiativeTitle: initiativeTitle,
-            doneDate: getTaskDoneDate(card),
+            doneDate,
             condition: card.condition,
           };
 
