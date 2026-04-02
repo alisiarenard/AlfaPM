@@ -55,14 +55,18 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
   const loadBatch = useCallback(async (searchSprintId: number, offset: number) => {
     setIsLoadingBatch(true);
     setError(null);
+    console.log(`[SprintDialog] loadBatch → GET /api/sprints/${searchSprintId}/preview?offset=${offset}&limit=${BATCH_SIZE}`);
     try {
       const response = await fetch(`/api/sprints/${searchSprintId}/preview?offset=${offset}&limit=${BATCH_SIZE}`);
+      console.log(`[SprintDialog] preview response status: ${response.status}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
+        console.error('[SprintDialog] preview error body:', errorData);
         const detail = errorData?.details || errorData?.error || `HTTP ${response.status}`;
         throw new Error(detail);
       }
       const data = await response.json();
+      console.log('[SprintDialog] preview data:', { sprint: data.sprint, totalCards: data.totalCards, tasksCount: data.tasks?.length, tasksOutsideCount: data.tasksOutside?.length });
 
       if (offset === 0) {
         setSprint(data.sprint);
@@ -84,6 +88,7 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
 
   const handleSearch = () => {
     const id = parseInt(sprintId, 10);
+    console.log('[SprintDialog] handleSearch called, raw input:', sprintId, '→ parsed id:', id);
     if (!isNaN(id)) {
       setSprint(null);
       setTasks([]);
@@ -93,6 +98,8 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
       setHasMore(false);
       setError(null);
       loadBatch(id, 0);
+    } else {
+      console.warn('[SprintDialog] sprintId is NaN, skipping fetch');
     }
   };
 
@@ -106,7 +113,9 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
   const saveMutation = useMutation({
     mutationFn: async () => {
       const id = parseInt(sprintId, 10);
+      console.log('[SprintDialog] saveMutation called, sprintId:', sprintId, '→ parsed id:', id);
       if (isNaN(id)) throw new Error('No sprint selected');
+      console.log(`[SprintDialog] POST /api/sprints/${id}/save`);
       return apiRequest('POST', `/api/sprints/${id}/save`);
     },
     onSuccess: () => {

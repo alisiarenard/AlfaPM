@@ -1698,12 +1698,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sprintId = parseInt(req.params.sprintId);
       const offset = parseInt(req.query.offset as string) || 0;
       const limit = parseInt(req.query.limit as string) || 10;
+      console.log(`[PREVIEW] GET /api/sprints/${sprintId}/preview offset=${offset} limit=${limit}`);
 
       if (isNaN(sprintId)) {
+        console.warn(`[PREVIEW] Invalid sprintId: ${req.params.sprintId}`);
         return res.status(400).json({ success: false, error: "Invalid sprint ID" });
       }
 
+      console.log(`[PREVIEW] Fetching sprint ${sprintId} from Kaiten...`);
       const kaitenSprint = await kaitenClient.getSprint(sprintId);
+      console.log(`[PREVIEW] kaitenSprint:`, kaitenSprint ? `found (board_id=${kaitenSprint.board_id}, cards=${kaitenSprint.cards?.length ?? 'no cards field'})` : 'null');
       if (!kaitenSprint) {
         return res.status(404).json({ success: false, error: "Sprint not found in Kaiten" });
       }
@@ -2240,14 +2244,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/sprints/:sprintId/save", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);
+      console.log(`[SAVE-SPRINT] POST /api/sprints/${sprintId}/save`);
       if (isNaN(sprintId)) {
+        console.warn(`[SAVE-SPRINT] Invalid sprintId: ${req.params.sprintId}`);
         return res.status(400).json({ 
           success: false, 
           error: "Invalid sprint ID" 
         });
       }
 
+      console.log(`[SAVE-SPRINT] Fetching sprint ${sprintId} from Kaiten...`);
       const kaitenSprint = await kaitenClient.getSprint(sprintId);
+      console.log(`[SAVE-SPRINT] kaitenSprint:`, kaitenSprint ? `found (board_id=${kaitenSprint.board_id}, cards=${kaitenSprint.cards?.length ?? 'no cards'})` : 'null');
       
       if (!kaitenSprint) {
         return res.status(404).json({ 
@@ -2256,9 +2264,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      
       // Валидируем обязательные поля
       if (!kaitenSprint.board_id || !kaitenSprint.start_date || !kaitenSprint.finish_date) {
+        console.warn(`[SAVE-SPRINT] Missing fields: board_id=${kaitenSprint.board_id}, start_date=${kaitenSprint.start_date}, finish_date=${kaitenSprint.finish_date}`);
         return res.status(400).json({
           success: false,
           error: "Sprint is missing required fields (board_id, start_date, or finish_date)"
@@ -2266,6 +2274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Проверяем наличие команды ДО сохранения спринта
+      console.log(`[SAVE-SPRINT] Looking up team by sprintBoardId=${kaitenSprint.board_id}...`);
       const team = await storage.getTeamBySprintBoardId(kaitenSprint.board_id);
       if (!team) {
         return res.status(400).json({
