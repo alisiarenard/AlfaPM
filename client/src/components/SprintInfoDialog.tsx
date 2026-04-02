@@ -38,7 +38,7 @@ interface SprintData {
   goal: string | null;
 }
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 25;
 
 export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialogProps) {
   const [sprintId, setSprintId] = useState("");
