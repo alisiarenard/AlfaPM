@@ -1735,16 +1735,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tasks: any[] = [];
       const tasksOutside: any[] = [];
 
-      for (const sprintCard of batch) {
+      console.log(`[PREVIEW] Processing batch of ${batch.length} cards (offset=${offset})...`);
+      if (batch.length > 0) {
+        const firstCard = batch[0];
+        console.log(`[PREVIEW] First sprintCard keys:`, Object.keys(firstCard));
+        console.log(`[PREVIEW] First sprintCard sample:`, JSON.stringify({
+          id: firstCard.id, state: firstCard.state, condition: firstCard.condition,
+          size: firstCard.size, parents_ids: firstCard.parents_ids,
+          last_moved_to_done_at: firstCard.last_moved_to_done_at,
+          properties: firstCard.properties ? Object.keys(firstCard.properties) : null,
+          type: firstCard.type,
+        }));
+      }
+      for (let i = 0; i < batch.length; i++) {
+        const sprintCard = batch[i];
         try {
+          console.log(`[PREVIEW] Card ${i + 1}/${batch.length}: fetching card ${sprintCard.id} from Kaiten...`);
           const card = await kaitenClient.getCard(sprintCard.id);
-          if (card.condition === 3) continue;
+          console.log(`[PREVIEW] Card ${sprintCard.id}: got, condition=${card.condition}, parents=${card.parents_ids?.length ?? 0}`);
+          if (card.condition === 3) { console.log(`[PREVIEW] Card ${sprintCard.id}: skipped (condition=3)`); continue; }
 
           let initCardId = 0;
           let initiativeTitle = null;
           if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
             try {
+              console.log(`[PREVIEW] Card ${sprintCard.id}: finding initiative in parent chain (parent=${card.parents_ids[0]})...`);
               initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+              console.log(`[PREVIEW] Card ${sprintCard.id}: initCardId=${initCardId}`);
               if (initCardId > 0) {
                 const initiative = await storage.getInitiative(initCardId.toString());
                 if (!initiative) {
