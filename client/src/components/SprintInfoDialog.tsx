@@ -65,7 +65,8 @@ export function SprintInfoDialog({ open, onOpenChange, teamId }: SprintInfoDialo
     mutationFn: async () => {
       const id = parseInt(sprintId, 10);
       if (isNaN(id)) throw new Error('No sprint selected');
-      return apiRequest('POST', `/api/sprints/${id}/save`);
+      const res = await apiRequest('POST', `/api/sprints/${id}/save`);
+      return res.json();
     },
     onSuccess: (data: any) => {
       toast({
