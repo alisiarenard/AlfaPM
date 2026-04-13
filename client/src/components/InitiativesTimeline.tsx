@@ -1006,6 +1006,33 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     return `${Math.round((spWithoutSupport / totalSP) * 100)}%`;
   };
 
+  const getSprintPlannedVelocity = (sprintId: number): string => {
+    const sprintInfo = getSprintInfo(sprintId);
+    if (!sprintInfo) return '—';
+    const sprintStartTime = new Date(sprintInfo.startDate).getTime();
+    const sprintEndTime = new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate).getTime();
+    let totalSP = 0;
+    initiatives.forEach(init => {
+      const tasks = getSprintTasks(init, sprintId);
+      tasks.forEach(task => {
+        const inRange = !task.doneDate || (() => {
+          const t = new Date(task.doneDate).getTime();
+          return t >= sprintStartTime && t <= sprintEndTime;
+        })();
+        if (inRange) totalSP += task.size;
+      });
+    });
+    return totalSP > 0 ? String(Math.round(totalSP)) : '—';
+  };
+
+  const getSprintActualVelocity = (sprintId: number): string => {
+    let totalSP = 0;
+    allInitiatives.forEach(init => {
+      totalSP += getActualSprintSP(init, sprintId);
+    });
+    return totalSP > 0 ? String(Math.round(totalSP)) : '—';
+  };
+
   // Получить информацию о спринте по ID
   const getSprintInfo = (sprintId: number): SprintRow | undefined => {
     return allSprintsWithGenerated.find(s => s.sprintId === sprintId);
@@ -1502,18 +1529,42 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                       <span className={`text-xs text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
-                      <span className="text-xs text-muted-foreground font-normal">
-                        IR: {isCurrent ? calculateSprintIRPlanned(sprintId) : calculateSprintIRActual(sprintId)}
-                      </span>
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground font-normal">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-default">{isCurrent ? calculateSprintIRPlanned(sprintId) : calculateSprintIRActual(sprintId)}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>Innovation Rate</TooltipContent>
+                        </Tooltip>
+                        <span className="opacity-40">|</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-default">{isCurrent ? getSprintPlannedVelocity(sprintId) : getSprintActualVelocity(sprintId)}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>Velocity</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </button>
                   ) : (
                     <div className="flex flex-col gap-0.5">
                       <span className={`text-xs text-foreground ${isCurrent ? 'font-semibold' : 'font-normal'}`}>
                         {formatDateShort(sprintInfo?.startDate)} - {formatDateShort(sprintInfo?.actualFinishDate || sprintInfo?.finishDate)}
                       </span>
-                      <span className="text-xs text-muted-foreground font-normal">
-                        IR: {isCurrent ? calculateSprintIRPlanned(sprintId) : calculateSprintIRActual(sprintId)}
-                      </span>
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground font-normal">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-default">{isCurrent ? calculateSprintIRPlanned(sprintId) : calculateSprintIRActual(sprintId)}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>Innovation Rate</TooltipContent>
+                        </Tooltip>
+                        <span className="opacity-40">|</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-default">{isCurrent ? getSprintPlannedVelocity(sprintId) : getSprintActualVelocity(sprintId)}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>Velocity</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   )}
                 </th>
