@@ -182,6 +182,19 @@ function getTaskDoneDate(card: { properties?: Record<string, any>; last_moved_to
   return card.last_moved_to_done_at || null;
 }
 
+function getNoSprintBoardIds(team: { sprintBoardId?: number | null; extraBoards?: {spaceId: number; boardId: number}[] | null }): number[] {
+  const boards: number[] = [];
+  if (team.sprintBoardId) boards.push(team.sprintBoardId);
+  if (team.extraBoards && Array.isArray(team.extraBoards)) {
+    for (const eb of team.extraBoards) {
+      if (eb.boardId && !boards.includes(eb.boardId)) {
+        boards.push(eb.boardId);
+      }
+    }
+  }
+  return boards;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/config", (_req, res) => {
     res.json({
@@ -501,16 +514,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else if (teamData.sprintBoardId) {
         // РЕЖИМ: Виртуальные спринты (нет sprintIds / hasSprints=false)
-        // Задачи ищем ТОЛЬКО на доске команды (sprintBoardId), никогда на доске инициатив
+        // Задачи собираем со всех досок команды (sprintBoardId + extraBoards)
         try {
-          const taskBoardId = teamData.sprintBoardId;
+          const boardIds = getNoSprintBoardIds(team);
           const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
           
-          const cards = await kaitenClient.getCardsWithDateFilter({
-            boardId: taskBoardId,
-            lastMovedToDoneAtAfter: yearStart,
-            limit: 1000
-          });
+          const allCardsArrays = await Promise.all(
+            boardIds.map(boardId => kaitenClient.getCardsWithDateFilter({
+              boardId,
+              lastMovedToDoneAtAfter: yearStart,
+              limit: 1000
+            }))
+          );
+          const cards = allCardsArrays.flat();
           
           for (const card of cards) {
             try {
@@ -3228,16 +3244,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ success: false, error: "Team not found" });
       }
 
-      const taskBoardId = team.sprintBoardId;
-      if (!taskBoardId) {
+      const boardIds = getNoSprintBoardIds(team);
+      if (boardIds.length === 0) {
         return res.status(400).json({ success: false, error: "Team has no task board configured (sprintBoardId)" });
       }
 
-      const cards = await kaitenClient.getCardsWithDateFilter({
-        boardId: taskBoardId,
-        lastMovedToDoneAtAfter: startDate,
-        limit: 1000
-      });
+      const allCardsArrays = await Promise.all(
+        boardIds.map(boardId => kaitenClient.getCardsWithDateFilter({
+          boardId,
+          lastMovedToDoneAtAfter: startDate,
+          limit: 1000
+        }))
+      );
+      const cards = allCardsArrays.flat();
 
       let synced = 0;
       let errors = 0;
@@ -3664,20 +3683,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (team.sprintBoardId) {
         // РЕЖИМ: Виртуальные спринты — нет реальных спринтов
         // Задачи ищем ТОЛЬКО на доске команды (sprintBoardId), никогда на доске инициатив
-        const taskBoardId = team.sprintBoardId;
+        const boardIds = getNoSprintBoardIds(team);
         const yearStart = syncYear
           ? new Date(syncYear, 0, 1).toISOString()
           : new Date(new Date().getFullYear(), 0, 1).toISOString();
 
-        console.log(`[SMART-SYNC] Ветка: ВИРТУАЛЬНЫЕ СПРИНТЫ, taskBoardId=${taskBoardId}, yearStart=${yearStart}`);
+        console.log(`[SMART-SYNC] Ветка: ВИРТУАЛЬНЫЕ СПРИНТЫ, boardIds=${boardIds.join(',')}, yearStart=${yearStart}`);
 
-        const cards = await kaitenClient.getCardsWithDateFilter({
-          boardId: taskBoardId,
-          lastMovedToDoneAtAfter: yearStart,
-          limit: 1000
-        });
+        const allCardsArrays = await Promise.all(
+          boardIds.map(boardId => kaitenClient.getCardsWithDateFilter({
+            boardId,
+            lastMovedToDoneAtAfter: yearStart,
+            limit: 1000
+          }))
+        );
+        const cards = allCardsArrays.flat();
 
-        console.log(`[SMART-SYNC] Kaiten вернул ${cards.length} карточек для board_id=${taskBoardId}`);
+        console.log(`[SMART-SYNC] Kaiten вернул ${cards.length} карточек для boardIds=${boardIds.join(',')}`);
         if (cards.length > 0) {
           console.log(`[SMART-SYNC] Первые 3 карточки:`, cards.slice(0, 3).map(c => ({
             id: c.id,

@@ -106,12 +106,14 @@ export const teams = pgTable("teams", {
   spPrice: integer("sp_price").notNull(),
   hasSprints: boolean("has_sprints").notNull().default(true),
   omniBoardId: integer("omni_board_id"),
+  extraBoards: jsonb("extra_boards").$type<{spaceId: number; boardId: number}[]>(),
 });
 
 export const insertTeamSchema = createInsertSchema(teams)
   .omit({ teamId: true, sprintBoardId: true })
   .extend({
     sprintBoardId: z.number().nullable().optional(),
+    extraBoards: z.array(z.object({ spaceId: z.number(), boardId: z.number() })).nullable().optional(),
   });
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type TeamRow = typeof teams.$inferSelect;

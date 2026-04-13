@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Users, Trash2, ChevronRight, ChevronDown } from "lucide-react";
+import { Plus, X, Users, Trash2, ChevronRight, ChevronDown } from "lucide-react";
 import { MdAccountTree } from "react-icons/md";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -116,6 +116,7 @@ export default function SettingsPage() {
   const [plannedIr, setPlannedIr] = useState("");
   const [initSpaceId, setInitSpaceId] = useState("");
   const [omniBoardId, setOmniBoardId] = useState("");
+  const [extraBoards, setExtraBoards] = useState<{spaceId: string; boardId: string}[]>([]);
   const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
   const [sprintIds, setSprintIds] = useState("");
 
@@ -186,6 +187,7 @@ export default function SettingsPage() {
       initBoardId: number; 
       initSpaceId?: number;
       omniBoardId?: number;
+      extraBoards?: {spaceId: number; boardId: number}[];
       vilocity: number; 
       sprintDuration: number; 
       spPrice?: number;
@@ -225,6 +227,7 @@ export default function SettingsPage() {
       setSpPrice("");
       setHasSprints(true);
       setSprintIds("");
+      setExtraBoards([]);
     },
     onError: (error: Error) => {
       let errorMessage = "Не удалось создать команду";
@@ -258,6 +261,7 @@ export default function SettingsPage() {
       initBoardId?: number; 
       initSpaceId?: number;
       omniBoardId?: number | null;
+      extraBoards?: {spaceId: number; boardId: number}[] | null;
       vilocity?: number; 
       sprintDuration?: number; 
       spPrice?: number;
@@ -281,6 +285,7 @@ export default function SettingsPage() {
       setInitBoardId(updatedTeam.initBoardId.toString());
       setInitSpaceId(updatedTeam.initSpaceId?.toString() || "");
       setOmniBoardId(updatedTeam.omniBoardId?.toString() || "");
+      setExtraBoards((updatedTeam.extraBoards || []).map(b => ({ spaceId: b.spaceId.toString(), boardId: b.boardId.toString() })));
       setVelocity(updatedTeam.vilocity.toString());
       setSprintDuration(updatedTeam.sprintDuration.toString());
       setSpPrice(updatedTeam.spPrice.toString());
@@ -395,6 +400,7 @@ export default function SettingsPage() {
       setInitBoardId(editingTeam.initBoardId.toString());
       setInitSpaceId(editingTeam.initSpaceId?.toString() || "");
       setOmniBoardId(editingTeam.omniBoardId?.toString() || "");
+      setExtraBoards((editingTeam.extraBoards || []).map(b => ({ spaceId: b.spaceId.toString(), boardId: b.boardId.toString() })));
       setHasSprints(true);
       setSprintIds("");
     }
@@ -434,6 +440,7 @@ export default function SettingsPage() {
     setInitBoardId(team.initBoardId.toString());
     setInitSpaceId(team.initSpaceId?.toString() || "");
     setOmniBoardId(team.omniBoardId?.toString() || "");
+    setExtraBoards((team.extraBoards || []).map(b => ({ spaceId: b.spaceId.toString(), boardId: b.boardId.toString() })));
     setHasSprints(true);
     setSprintIds("");
     setMetricsYear(new Date().getFullYear().toString());
@@ -815,6 +822,66 @@ export default function SettingsPage() {
                               />
                             </div>
                           </div>
+                          {!hasSprints && (
+                            <div className="space-y-2 pt-1">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">Дополнительные доски</Label>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  type="button"
+                                  data-testid="button-add-extra-board"
+                                  onClick={() => setExtraBoards([...extraBoards, { spaceId: "", boardId: "" }])}
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Добавить
+                                </Button>
+                              </div>
+                              {extraBoards.map((board, idx) => (
+                                <div key={idx} className="flex gap-2 items-end">
+                                  <div className="flex-1 space-y-1">
+                                    <Label className="text-xs text-muted-foreground">ID пространства</Label>
+                                    <Input
+                                      type="number"
+                                      placeholder="0"
+                                      value={board.spaceId}
+                                      onChange={e => {
+                                        const nb = [...extraBoards];
+                                        nb[idx] = { ...nb[idx], spaceId: e.target.value };
+                                        setExtraBoards(nb);
+                                      }}
+                                      className="no-arrows"
+                                      data-testid={`input-extra-board-space-${idx}`}
+                                    />
+                                  </div>
+                                  <div className="flex-1 space-y-1">
+                                    <Label className="text-xs text-muted-foreground">ID доски</Label>
+                                    <Input
+                                      type="number"
+                                      placeholder="0"
+                                      value={board.boardId}
+                                      onChange={e => {
+                                        const nb = [...extraBoards];
+                                        nb[idx] = { ...nb[idx], boardId: e.target.value };
+                                        setExtraBoards(nb);
+                                      }}
+                                      className="no-arrows"
+                                      data-testid={`input-extra-board-board-${idx}`}
+                                    />
+                                  </div>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    type="button"
+                                    data-testid={`button-remove-extra-board-${idx}`}
+                                    onClick={() => setExtraBoards(extraBoards.filter((_, i) => i !== idx))}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -838,6 +905,9 @@ export default function SettingsPage() {
                                 initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
                                 initSpaceId: parseInt(initSpaceId),
                                 omniBoardId: omniBoardId ? parseInt(omniBoardId) : null,
+                                extraBoards: extraBoards.length > 0
+                                  ? extraBoards.filter(b => b.spaceId && b.boardId).map(b => ({ spaceId: parseInt(b.spaceId), boardId: parseInt(b.boardId) }))
+                                  : null,
                                 vilocity: vel,
                                 sprintDuration: sd,
                                 spPrice: sp,
@@ -1050,6 +1120,66 @@ export default function SettingsPage() {
                               />
                             </div>
                           </div>
+                          {!hasSprints && (
+                            <div className="space-y-2 pt-1">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">Дополнительные доски</Label>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  type="button"
+                                  data-testid="button-add-extra-board-new"
+                                  onClick={() => setExtraBoards([...extraBoards, { spaceId: "", boardId: "" }])}
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Добавить
+                                </Button>
+                              </div>
+                              {extraBoards.map((board, idx) => (
+                                <div key={idx} className="flex gap-2 items-end">
+                                  <div className="flex-1 space-y-1">
+                                    <Label className="text-xs text-muted-foreground">ID пространства</Label>
+                                    <Input
+                                      type="number"
+                                      placeholder="0"
+                                      value={board.spaceId}
+                                      onChange={e => {
+                                        const nb = [...extraBoards];
+                                        nb[idx] = { ...nb[idx], spaceId: e.target.value };
+                                        setExtraBoards(nb);
+                                      }}
+                                      className="no-arrows"
+                                      data-testid={`input-new-extra-board-space-${idx}`}
+                                    />
+                                  </div>
+                                  <div className="flex-1 space-y-1">
+                                    <Label className="text-xs text-muted-foreground">ID доски</Label>
+                                    <Input
+                                      type="number"
+                                      placeholder="0"
+                                      value={board.boardId}
+                                      onChange={e => {
+                                        const nb = [...extraBoards];
+                                        nb[idx] = { ...nb[idx], boardId: e.target.value };
+                                        setExtraBoards(nb);
+                                      }}
+                                      className="no-arrows"
+                                      data-testid={`input-new-extra-board-board-${idx}`}
+                                    />
+                                  </div>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    type="button"
+                                    data-testid={`button-remove-new-extra-board-${idx}`}
+                                    onClick={() => setExtraBoards(extraBoards.filter((_, i) => i !== idx))}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1078,6 +1208,9 @@ export default function SettingsPage() {
                             initBoardId: parseInt(initBoardId),
                             initSpaceId: parseInt(initSpaceId),
                             omniBoardId: omniBoardId ? parseInt(omniBoardId) : undefined,
+                            extraBoards: extraBoards.length > 0
+                              ? extraBoards.filter(b => b.spaceId && b.boardId).map(b => ({ spaceId: parseInt(b.spaceId), boardId: parseInt(b.boardId) }))
+                              : undefined,
                             vilocity: parseInt(velocity),
                             sprintDuration: parseInt(sprintDuration),
                             spPrice: spPrice ? parseInt(spPrice) : undefined,
