@@ -1435,6 +1435,8 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastForecastedIndex;
   };
 
+  const totalTeamSP = initiatives.reduce((sum, init) => sum + (init.totalDoneSP || getTotalSP(init)), 0);
+
   return (
     <TooltipProvider>
       <div className="w-full max-w-full">
@@ -1451,12 +1453,17 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 Выполнено
               </span>
             </th>
-            <th className="sticky left-[440px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+            <th className="sticky left-[440px] z-[120] bg-background px-2 py-3 text-left min-w-[90px] max-w-[90px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+              <span className="text-xs font-normal tracking-wide text-muted-foreground">
+                % затрат
+              </span>
+            </th>
+            <th className="sticky left-[530px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Фокус(план)
               </span>
             </th>
-            <th className="sticky left-[540px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+            <th className="sticky left-[630px] z-[120] bg-background px-2 py-3 text-left min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
               <span className="text-xs font-normal tracking-wide text-muted-foreground">
                 Фокус (факт)
               </span>
@@ -1638,8 +1645,23 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   );
                 })()}
               </td>
+              <td className="sticky left-[440px] z-[100] bg-background px-2 py-3 min-w-[90px] max-w-[90px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+                {(() => {
+                  const initDoneSP = initiative.totalDoneSP || getTotalSP(initiative);
+                  if (totalTeamSP <= 0 || initDoneSP <= 0) return <span className="text-xs text-muted-foreground tabular-nums">—</span>;
+                  const pct = Math.round((initDoneSP / totalTeamSP) * 100);
+                  return (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-xs text-foreground tabular-nums cursor-default">{pct}%</span>
+                      </TooltipTrigger>
+                      <TooltipContent>{initDoneSP.toFixed(1)} из {totalTeamSP.toFixed(1)} SP</TooltipContent>
+                    </Tooltip>
+                  );
+                })()}
+              </td>
               <td 
-                className="sticky left-[440px] z-[100] bg-background min-w-[100px] max-w-[100px]"
+                className="sticky left-[530px] z-[100] bg-background min-w-[100px] max-w-[100px]"
                 style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}
                 data-testid={`cell-planned-involvement-${initiative.id}`}
               >
@@ -1679,7 +1701,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   )}
                 </div>
               </td>
-              <td className="sticky left-[540px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+              <td className="sticky left-[630px] z-[100] bg-background px-2 py-3 min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 <span className="text-xs text-foreground">
                   {formatInvolvement(initiative.involvement)}
                 </span>
