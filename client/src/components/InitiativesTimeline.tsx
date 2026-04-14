@@ -1807,19 +1807,21 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 </span>
               </td>
               {(() => {
-                // Найти индексы первого и последнего блока
-                // Показываем блок только если есть SP: фактический (done) для прошлых, плановый для остальных
+                // Диапазон блока определяется shouldShowColorBlock (первый спринт с SP → прогнозный конец).
+                // Для прошлых спринтов внутри диапазона цвет показываем только если есть фактический SP.
+                // Для текущих/будущих — цвет показываем всегда (прогнозные блоки без задач допустимы).
                 const blocksToShow = allSprintIds.map((id, idx) => {
-                  const base = shouldShowColorBlock(initiative, id);
-                  if (!base) return { id, idx, show: false };
-                  const blockSP = isPastSprint(id)
-                    ? getActualSprintSP(initiative, id)
-                    : getFilteredSprintSP(initiative, id);
-                  return { id, idx, show: blockSP > 0 };
+                  const inRange = shouldShowColorBlock(initiative, id);
+                  if (!inRange) return { id, idx, show: false, showColor: false };
+                  const showColor = isPastSprint(id)
+                    ? getActualSprintSP(initiative, id) > 0
+                    : true;
+                  return { id, idx, show: true, showColor };
                 });
-                const shownBlocks = blocksToShow.filter(b => b.show);
-                const firstBlockIdx = shownBlocks.length > 0 ? shownBlocks[0].idx : -1;
-                const lastBlockIdx = shownBlocks.length > 0 ? shownBlocks[shownBlocks.length - 1].idx : -1;
+                // Скруглённые края считаем по блокам с цветом
+                const coloredBlocks = blocksToShow.filter(b => b.showColor);
+                const firstBlockIdx = coloredBlocks.length > 0 ? coloredBlocks[0].idx : -1;
+                const lastBlockIdx = coloredBlocks.length > 0 ? coloredBlocks[coloredBlocks.length - 1].idx : -1;
 
                 const tooltipData = getInitiativeTooltip(initiative);
                 
@@ -1828,13 +1830,14 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                     ? getActualSprintSP(initiative, sprintId)
                     : getFilteredSprintSP(initiative, sprintId);
                   const showBlock = blocksToShow[idx].show;
+                  const showColor = blocksToShow[idx].showColor;
                   const isFirst = idx === firstBlockIdx;
                   const isLast = idx === lastBlockIdx;
                   const plannedBorders = getPlannedBorders(initiative, sprintId);
                   const isCurrent = isCurrentSprint(sprintId);
 
                   let roundedClass = '';
-                  if (showBlock) {
+                  if (showColor) {
                     if (isFirst && isLast) {
                       roundedClass = 'rounded-[6px]';
                     } else if (isFirst) {
@@ -1863,11 +1866,11 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                     <div
                       className={`h-[30px] w-full flex items-center justify-center ${roundedClass} ${plannedBorderClasses} ${plannedRadiusClass}`}
                       style={{ 
-                        backgroundColor: showBlock ? getStatusColor(initiative) : 'transparent',
+                        backgroundColor: showColor ? getStatusColor(initiative) : 'transparent',
                         borderColor: (plannedBorders.top || plannedBorders.bottom || plannedBorders.left || plannedBorders.right) ? 'rgba(205, 37, 61, 0.3)' : undefined
                       }}
                     >
-                      {showBlock && sp > 0 && (
+                      {showColor && sp > 0 && (
                         <span className="text-xs font-semibold text-foreground">
                           {sp}
                         </span>
@@ -1881,7 +1884,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                       className={`p-0 min-w-[100px] ${isCurrent ? 'bg-muted/50' : ''}`}
                       data-testid={`cell-initiative-${initiative.id}-sprint-${sprintId}`}
                     >
-                      {showBlock && tooltipData && initiative.cardId !== 0 ? (
+                      {showColor && tooltipData && initiative.cardId !== 0 ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             {blockContent}
@@ -1894,7 +1897,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                             </div>
                           </TooltipContent>
                         </Tooltip>
-                      ) : showBlock && sp > 0 && initiative.cardId === 0 ? (
+                      ) : showColor && sp > 0 && initiative.cardId === 0 ? (
                         <div className="cursor-pointer" onClick={() => handleBsSprintClick(initiative, sprintId)}>
                           {blockContent}
                         </div>
