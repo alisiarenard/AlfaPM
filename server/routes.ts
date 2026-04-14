@@ -3888,33 +3888,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Создаем мапу инициатив по cardId для быстрого поиска
       const initiativesMap = new Map(initiatives.map(init => [init.cardId, init]));
-      
+      // Исключаем карточки-инициативы (те же cardId что у инициатив) — аналогично timeline API
+      const initiativeCardIds = new Set(initiatives.map(init => init.cardId));
 
-      // Подсчитываем SP по типам (как в Cost Structure)
-      const typeStats: Record<string, number> = {};
+      // Подсчитываем SP по типам
+      // Логика полностью зеркалит timeline API: non-Epic/Compliance/Enabler → поддержка бизнеса
+      let innovationSP = 0;
       let totalSP = 0;
 
       for (const task of relevantTasks) {
+        // Исключаем карточки чей cardId совпадает с cardId инициатив (аналог фильтра !allInitiativeCardIds.has в timeline)
+        if (initiativeCardIds.has(task.cardId)) continue;
         const taskSize = task.size || 0;
         totalSP += taskSize;
 
-        // Проверяем, привязан ли таск к инициативе
+        // Проверяем тип инициативы: только Epic/Compliance/Enabler считаем innovation
         if (task.initCardId !== null && task.initCardId !== 0) {
           const initiative = initiativesMap.get(task.initCardId);
-          if (initiative && initiative.type) {
-            typeStats[initiative.type] = (typeStats[initiative.type] || 0) + taskSize;
+          if (initiative && (initiative.type === 'Epic' || initiative.type === 'Compliance' || initiative.type === 'Enabler')) {
+            innovationSP += taskSize;
           }
         }
       }
 
-      // Рассчитываем проценты для каждого типа (с округлением, как в Cost Structure)
-      const epicPercent = totalSP > 0 ? Math.round(((typeStats['Epic'] || 0) / totalSP) * 100) : 0;
-      const compliancePercent = totalSP > 0 ? Math.round(((typeStats['Compliance'] || 0) / totalSP) * 100) : 0;
-      const enablerPercent = totalSP > 0 ? Math.round(((typeStats['Enabler'] || 0) / totalSP) * 100) : 0;
-      
-      // IR - это сумма округленных процентов (как в Excel)
-      const actualIR = epicPercent + compliancePercent + enablerPercent;
-      const innovationSP = (typeStats['Epic'] || 0) + (typeStats['Compliance'] || 0) + (typeStats['Enabler'] || 0);
+      // IR как единое округление (не сумма отдельно округлённых), чтобы IR% + BS% = 100%
+      const actualIR = totalSP > 0 ? Math.round((innovationSP / totalSP) * 100) : 0;
 
       
       // Берём плановый IR из годовых данных команды (если есть), иначе из департамента
