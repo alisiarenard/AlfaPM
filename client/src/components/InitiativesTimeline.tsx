@@ -805,7 +805,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   });
                 });
               } else {
-                const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
+                const percent = listDenominator > 0 ? Math.round((sp / listDenominator) * 100) : 0;
                 const initTitle = backedTasks[0]?.initiativeTitle || `Инициатива #${initId}`;
                 
                 const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
@@ -835,10 +835,10 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               if (bsIndex >= 0) {
                 finalInitiativesProgress[bsIndex].tasks.push(...extraBusinessSupportTasks);
                 finalInitiativesProgress[bsIndex].sp += extraBusinessSupportSP;
-                finalInitiativesProgress[bsIndex].percent = totalBackendSP > 0 
-                  ? Math.round((finalInitiativesProgress[bsIndex].sp / totalBackendSP) * 100) : 0;
+                finalInitiativesProgress[bsIndex].percent = listDenominator > 0 
+                  ? Math.round((finalInitiativesProgress[bsIndex].sp / listDenominator) * 100) : 0;
               } else {
-                const percent = totalBackendSP > 0 ? Math.round((extraBusinessSupportSP / totalBackendSP) * 100) : 0;
+                const percent = listDenominator > 0 ? Math.round((extraBusinessSupportSP / listDenominator) * 100) : 0;
                 finalInitiativesProgress.push({
                   title: 'Поддержка бизнеса',
                   sp: extraBusinessSupportSP,
