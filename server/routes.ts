@@ -3837,17 +3837,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           if (yearSprints.length > 0) {
-            // Команда имеет реальные спринты в этом году - берем только done-задачи из спринтов
-            const sprintIds = new Set(yearSprints.map(s => s.sprintId));
+            // Команда имеет реальные спринты в этом году - берем done-задачи по doneDate внутри дат спринта
+            // (аналогично sprint-actual-irs и getActualSprintSP на фронте, чтобы IR совпадал с % затрат)
+            const sprintRanges = yearSprints.map(s => ({
+              start: new Date(s.startDate).getTime(),
+              end: new Date(s.actualFinishDate || s.finishDate).getTime(),
+            }));
             const allTasks = await storage.getAllTasks();
-            const teamSprintTasks = allTasks.filter(task => 
-              task.teamId === team.teamId &&
-              task.sprintId !== null && 
-              sprintIds.has(task.sprintId) && 
-              task.state === '3-done' &&  // Только done-задачи
-              task.condition !== '3 - deleted' &&  // Исключаем удаленные
-              !processedTaskIds.has(task.cardId)
-            );
+            const teamSprintTasks = allTasks.filter(task => {
+              if (
+                task.teamId !== team.teamId ||
+                task.state !== '3-done' ||
+                task.condition === '3 - deleted' ||
+                !task.doneDate ||
+                processedTaskIds.has(task.cardId)
+              ) return false;
+              const doneTime = new Date(task.doneDate).getTime();
+              return sprintRanges.some(r => doneTime >= r.start && doneTime <= r.end);
+            });
             teamSprintTasks.forEach(task => {
               relevantTasks.push(task);
               processedTaskIds.add(task.cardId);
