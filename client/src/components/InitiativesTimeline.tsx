@@ -994,10 +994,10 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     if (sprintActualIRs && sprintActualIRs[sprintId] !== undefined) {
       return `${sprintActualIRs[sprintId]}%`;
     }
-    // Фолбэк на локальные данные
+    // Фолбэк на локальные данные (используем allInitiatives для того же знаменателя что и % затрат)
     let totalSP = 0;
     let spWithoutSupport = 0;
-    initiatives.forEach(init => {
+    allInitiatives.forEach(init => {
       const sp = getActualSprintSP(init, sprintId);
       totalSP += sp;
       if (init.cardId !== 0) spWithoutSupport += sp;
