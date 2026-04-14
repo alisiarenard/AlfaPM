@@ -1462,10 +1462,10 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     return currentSprintIndex >= firstSprintIndex && currentSprintIndex <= lastForecastedIndex;
   };
 
-  const totalTeamCost = initiatives.reduce((sum, init) => {
-    const breakdown = (init as any).teamBreakdown as Record<string, number> | undefined;
-    return sum + (breakdown?.[team.name] || 0);
-  }, 0);
+  const getInitiativeTotalDoneSP = (init: Initiative): number =>
+    allSprintIds.reduce((sum, sprintId) => sum + getActualSprintSP(init, sprintId), 0);
+
+  const totalTeamDoneSP = allInitiatives.reduce((sum, init) => sum + getInitiativeTotalDoneSP(init), 0);
 
   return (
     <TooltipProvider>
@@ -1701,16 +1701,15 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               </td>
               <td className="sticky left-[440px] z-[100] bg-background px-2 py-3 min-w-[90px] max-w-[90px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 {(() => {
-                  const breakdown = (initiative as any).teamBreakdown as Record<string, number> | undefined;
-                  const initTeamCost = breakdown?.[team.name] || 0;
-                  if (totalTeamCost <= 0 || initTeamCost <= 0) return <span className="text-xs text-muted-foreground tabular-nums">—</span>;
-                  const pct = Math.round((initTeamCost / totalTeamCost) * 100);
+                  const initDoneSP = getInitiativeTotalDoneSP(initiative);
+                  if (totalTeamDoneSP <= 0 || initDoneSP <= 0) return <span className="text-xs text-muted-foreground tabular-nums">—</span>;
+                  const pct = Math.round((initDoneSP / totalTeamDoneSP) * 100);
                   return (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="text-xs text-foreground tabular-nums cursor-default">{pct}%</span>
                       </TooltipTrigger>
-                      <TooltipContent>{Math.round(initTeamCost / 1000).toLocaleString('ru')} из {Math.round(totalTeamCost / 1000).toLocaleString('ru')} тыс.</TooltipContent>
+                      <TooltipContent>{roundSP(initDoneSP)} из {roundSP(totalTeamDoneSP)} SP</TooltipContent>
                     </Tooltip>
                   );
                 })()}
