@@ -1808,7 +1808,13 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               </td>
               {(() => {
                 // Найти индексы первого и последнего блока
-                const blocksToShow = allSprintIds.map((id, idx) => ({ id, idx, show: shouldShowColorBlock(initiative, id) }));
+                // Для закрытых спринтов блок виден только если есть фактический SP
+                const blocksToShow = allSprintIds.map((id, idx) => {
+                  const base = shouldShowColorBlock(initiative, id);
+                  if (!base) return { id, idx, show: false };
+                  if (isPastSprint(id) && getActualSprintSP(initiative, id) === 0) return { id, idx, show: false };
+                  return { id, idx, show: true };
+                });
                 const shownBlocks = blocksToShow.filter(b => b.show);
                 const firstBlockIdx = shownBlocks.length > 0 ? shownBlocks[0].idx : -1;
                 const lastBlockIdx = shownBlocks.length > 0 ? shownBlocks[shownBlocks.length - 1].idx : -1;
@@ -1819,7 +1825,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   const sp = isPastSprint(sprintId)
                     ? getActualSprintSP(initiative, sprintId)
                     : getFilteredSprintSP(initiative, sprintId);
-                  const showBlock = shouldShowColorBlock(initiative, sprintId);
+                  const showBlock = blocksToShow[idx].show;
                   const isFirst = idx === firstBlockIdx;
                   const isLast = idx === lastBlockIdx;
                   const plannedBorders = getPlannedBorders(initiative, sprintId);
