@@ -1271,8 +1271,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       return { top: false, bottom: false, left: false, right: false, isFirst: false, isLast: false };
     }
 
-    // Находим спринты инициативы с их датами для правильного упорядочивания
+    // Находим спринты инициативы с SP > 0 и их датами для правильного упорядочивания
     const initiativeSprintsWithDates = initiative.sprints
+      .filter(s => s.sp > 0)
       .map(s => {
         const sprintInfo = getSprintInfo(s.sprint_id);
         return {
@@ -1287,7 +1288,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       return { top: false, bottom: false, left: false, right: false, isFirst: false, isLast: false };
     }
 
-    // Первый спринт с SP (по дате)
+    // Первый спринт с SP > 0 (по дате)
     const firstSprintId = initiativeSprintsWithDates[0].sprintId;
     
     // Находим индекс первого спринта в общем списке
@@ -1337,8 +1338,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       return null;
     }
 
-    // Находим спринты инициативы с их датами для правильного упорядочивания
+    // Находим спринты инициативы с SP > 0 и их датами для правильного упорядочивания
     const initiativeSprintsWithDates = initiative.sprints
+      .filter(s => s.sp > 0)
       .map(s => {
         const sprintInfo = getSprintInfo(s.sprint_id);
         return {
@@ -1354,7 +1356,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       return null;
     }
 
-    // Первый спринт с SP (по дате)
+    // Первый спринт с SP > 0 (по дате)
     const firstSprintId = initiativeSprintsWithDates[0].sprintId;
     const firstSprintIndex = allSprintIds.indexOf(firstSprintId);
     
@@ -1439,8 +1441,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       return sp > 0;
     }
 
-    // Находим спринты инициативы с их датами для правильного упорядочивания
+    // Находим спринты инициативы с SP > 0 и их датами для правильного упорядочивания
     const initiativeSprintsWithDates = initiative.sprints
+      .filter(s => s.sp > 0)
       .map(s => {
         const sprintInfo = getSprintInfo(s.sprint_id);
         return {
@@ -1456,7 +1459,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       return false;
     }
 
-    // Первый спринт с SP (по дате)
+    // Первый спринт с SP > 0 (по дате)
     const firstSprintId = initiativeSprintsWithDates[0].sprintId;
     
     // Находим индекс первого спринта в общем списке
