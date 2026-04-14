@@ -1808,12 +1808,14 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               </td>
               {(() => {
                 // Найти индексы первого и последнего блока
-                // Для закрытых спринтов блок виден только если есть фактический SP
+                // Показываем блок только если есть SP: фактический (done) для прошлых, плановый для остальных
                 const blocksToShow = allSprintIds.map((id, idx) => {
                   const base = shouldShowColorBlock(initiative, id);
                   if (!base) return { id, idx, show: false };
-                  if (isPastSprint(id) && getActualSprintSP(initiative, id) === 0) return { id, idx, show: false };
-                  return { id, idx, show: true };
+                  const blockSP = isPastSprint(id)
+                    ? getActualSprintSP(initiative, id)
+                    : getFilteredSprintSP(initiative, id);
+                  return { id, idx, show: blockSP > 0 };
                 });
                 const shownBlocks = blocksToShow.filter(b => b.show);
                 const firstBlockIdx = shownBlocks.length > 0 ? shownBlocks[0].idx : -1;
