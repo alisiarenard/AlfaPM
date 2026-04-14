@@ -1808,17 +1808,12 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               </td>
               {(() => {
                 // Диапазон блока определяется shouldShowColorBlock (первый спринт с SP → прогнозный конец).
-                // Для прошлых спринтов внутри диапазона цвет показываем только если есть фактический SP.
-                // Для текущих/будущих — цвет показываем всегда (прогнозные блоки без задач допустимы).
+                // Цвет показываем для всех спринтов в диапазоне — без разрывов.
+                // Для "Поддержки бизнеса" shouldShowColorBlock уже учитывает SP.
                 const blocksToShow = allSprintIds.map((id, idx) => {
                   const inRange = shouldShowColorBlock(initiative, id);
-                  if (!inRange) return { id, idx, show: false, showColor: false };
-                  const showColor = isPastSprint(id)
-                    ? getActualSprintSP(initiative, id) > 0
-                    : true;
-                  return { id, idx, show: true, showColor };
+                  return { id, idx, show: inRange, showColor: inRange };
                 });
-                // Скруглённые края считаем по блокам с цветом
                 const coloredBlocks = blocksToShow.filter(b => b.showColor);
                 const firstBlockIdx = coloredBlocks.length > 0 ? coloredBlocks[0].idx : -1;
                 const lastBlockIdx = coloredBlocks.length > 0 ? coloredBlocks[coloredBlocks.length - 1].idx : -1;
