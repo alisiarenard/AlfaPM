@@ -1273,7 +1273,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
     // Находим спринты инициативы с SP > 0 и их датами для правильного упорядочивания
     const initiativeSprintsWithDates = initiative.sprints
-      .filter(s => s.sp > 0)
+      .filter(s => (isPastSprint(s.sprint_id) ? getActualSprintSP(initiative, s.sprint_id) : getFilteredSprintSP(initiative, s.sprint_id)) > 0)
       .map(s => {
         const sprintInfo = getSprintInfo(s.sprint_id);
         return {
@@ -1340,7 +1340,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
     // Находим спринты инициативы с SP > 0 и их датами для правильного упорядочивания
     const initiativeSprintsWithDates = initiative.sprints
-      .filter(s => s.sp > 0)
+      .filter(s => (isPastSprint(s.sprint_id) ? getActualSprintSP(initiative, s.sprint_id) : getFilteredSprintSP(initiative, s.sprint_id)) > 0)
       .map(s => {
         const sprintInfo = getSprintInfo(s.sprint_id);
         return {
@@ -1443,7 +1443,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
     // Находим спринты инициативы с SP > 0 и их датами для правильного упорядочивания
     const initiativeSprintsWithDates = initiative.sprints
-      .filter(s => s.sp > 0)
+      .filter(s => (isPastSprint(s.sprint_id) ? getActualSprintSP(initiative, s.sprint_id) : getFilteredSprintSP(initiative, s.sprint_id)) > 0)
       .map(s => {
         const sprintInfo = getSprintInfo(s.sprint_id);
         return {
