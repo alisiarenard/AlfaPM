@@ -61,6 +61,7 @@ interface SprintModalData {
   teamName: string;
   teamId: string;
   isCurrent: boolean;
+  isPast: boolean;
   hasSprints: boolean;
   totalSP?: number;
   doneSP?: number;
@@ -521,6 +522,14 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     return now >= start && now <= end;
   };
 
+  const isPastSprint = (sprintId: number): boolean => {
+    const sprintInfo = getSprintInfo(sprintId);
+    if (!sprintInfo) return false;
+    const now = new Date();
+    const end = new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate);
+    return now > end;
+  };
+
   // Получить SP для конкретной инициативы в конкретном спринте (кэшированное значение)
   const getSprintSP = (initiative: Initiative, sprintId: number): number => {
     const sprint = initiative.sprints.find(s => s.sprint_id === sprintId);
@@ -587,6 +596,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
   const handleSprintHeaderClick = async (sprintId: number) => {
     const sprintInfo = getSprintInfo(sprintId);
     const isGenerated = isGeneratedSprint(sprintId);
+    const isPast = isPastSprint(sprintId);
     
     // Рассчитываем распределение SP для ИР используя allInitiatives
     // чтобы ИР не менялся при фильтрации
@@ -604,15 +614,25 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       }
     });
     
+    // Для закрытых спринтов список инициатив строится по фактическому SP (только done-задачи)
+    let listTotalSP = 0;
+    const listSPPerInit: number[] = allInitiatives.map(initiative => {
+      const sp = isPast
+        ? getActualSprintSP(initiative, sprintId)
+        : getFilteredSprintSP(initiative, sprintId);
+      listTotalSP += sp;
+      return sp;
+    });
+
     // Собираем инициативы с их SP, процентами и задачами (используем allInitiatives чтобы проценты суммировались в 100%)
     let initiativesProgress: InitiativeProgress[] = allInitiatives
-      .map(initiative => {
+      .map((initiative, i) => {
+        const sp = listSPPerInit[i];
+        // Для закрытых спринтов пропускаем инициативы с нулевым фактическим SP
+        if (sp === 0) return null;
         const tasks = getSprintTasks(initiative, sprintId);
-        // Пропускаем инициативы без тасок в этом спринте
-        if (tasks.length === 0) return null;
         
-        const sp = getFilteredSprintSP(initiative, sprintId);
-        const percent = totalSP > 0 ? Math.round((sp / totalSP) * 100) : 0;
+        const percent = listTotalSP > 0 ? Math.round((sp / listTotalSP) * 100) : 0;
         
         return {
           title: initiative.title,
@@ -705,19 +725,30 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             });
             
             const totalBackendSP = finalBusinessSupportSP + finalOtherInitiativesSP;
+            // Для закрытых спринтов знаменатель — фактически выполненный SP
+            const actualTotalBackendSP = isPast
+              ? data.tasks.filter((t: any) => t.state === '3-done').reduce((s: number, t: any) => s + t.size, 0)
+              : totalBackendSP;
+            const listDenominator = isPast ? actualTotalBackendSP : totalBackendSP;
             
             const knownCardIds = new Set(allInitiatives.map(i => i.cardId));
             
             finalInitiativesProgress = allInitiatives
               .filter(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
-                return backedTasks.length > 0;
+                if (!isPast) return backedTasks.length > 0;
+                // Для закрытых спринтов показываем только инициативы с done-задачами
+                return backedTasks.some((t: any) => t.state === '3-done');
               })
               .map(initiative => {
                 const backedTasks = tasksByInitiative[initiative.cardId] || [];
+                // Для закрытых спринтов SP = только выполненные задачи
+                const relevantTasks = isPast
+                  ? backedTasks.filter((t: any) => t.state === '3-done')
+                  : backedTasks;
                 
-                const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
-                const percent = totalBackendSP > 0 ? Math.round((sp / totalBackendSP) * 100) : 0;
+                const sp = relevantTasks.reduce((sum: number, t: any) => sum + t.size, 0);
+                const percent = listDenominator > 0 ? Math.round((sp / listDenominator) * 100) : 0;
                 
                 const formattedTasks: TaskInSprint[] = backedTasks.map((task: any) => ({
                   id: task.id,
@@ -753,7 +784,12 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
               const isIRType = initType === 'Epic' || initType === 'Compliance' || initType === 'Enabler';
               const isArchived = initCondition === '2-archived';
               
-              const sp = backedTasks.reduce((sum: number, t: any) => sum + t.size, 0);
+              // Для закрытых спринтов считаем только выполненные задачи
+              const relevantOrphanTasks = isPast
+                ? backedTasks.filter((t: any) => t.state === '3-done')
+                : backedTasks;
+              if (relevantOrphanTasks.length === 0) continue;
+              const sp = relevantOrphanTasks.reduce((sum: number, t: any) => sum + t.size, 0);
               
               if (!isIRType && !isArchived) {
                 extraBusinessSupportSP += sp;
@@ -831,6 +867,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       teamName: team.name,
       teamId: team.teamId,
       isCurrent: isCurrentSprint(sprintId),
+      isPast,
       hasSprints: team.hasSprints,
       ...sprintStats
     });
@@ -1389,7 +1426,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
     // Для "Поддержки бизнеса" показываем блоки только там, где есть задачи
     if (initiative.cardId === 0) {
-      const sp = getFilteredSprintSP(initiative, sprintId);
+      const sp = isPastSprint(sprintId)
+        ? getActualSprintSP(initiative, sprintId)
+        : getFilteredSprintSP(initiative, sprintId);
       return sp > 0;
     }
 
@@ -1770,7 +1809,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 const tooltipData = getInitiativeTooltip(initiative);
                 
                 return allSprintIds.map((sprintId, idx) => {
-                  const sp = getFilteredSprintSP(initiative, sprintId);
+                  const sp = isPastSprint(sprintId)
+                    ? getActualSprintSP(initiative, sprintId)
+                    : getFilteredSprintSP(initiative, sprintId);
                   const showBlock = shouldShowColorBlock(initiative, sprintId);
                   const isFirst = idx === firstBlockIdx;
                   const isLast = idx === lastBlockIdx;
@@ -2270,8 +2311,14 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 <div className="text-sm font-bold text-muted-foreground">Velocity</div>
                 <div className="text-2xl font-semibold" data-testid="sprint-velocity">
                   {(() => {
-                    const businessSP = sprintModalData?.businessSupportSP || 0;
-                    const otherSP = sprintModalData?.otherInitiativesSP || 0;
+                    // Для закрытых спринтов показываем фактически выполненный SP
+                    const usePast = sprintModalData?.isPast && !sprintModalData?.isCurrent;
+                    const businessSP = usePast
+                      ? (sprintModalData?.actualBusinessSupportSP || 0)
+                      : (sprintModalData?.businessSupportSP || 0);
+                    const otherSP = usePast
+                      ? (sprintModalData?.actualOtherInitiativesSP || 0)
+                      : (sprintModalData?.otherInitiativesSP || 0);
                     const totalSP = businessSP + otherSP;
                     return totalSP ? Math.round(totalSP) : '-';
                   })()}
