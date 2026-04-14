@@ -854,6 +854,13 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
       }
     }
     
+    // Поддержка бизнеса всегда первой
+    finalInitiativesProgress.sort((a, b) => {
+      if (a.title === 'Поддержка бизнеса') return -1;
+      if (b.title === 'Поддержка бизнеса') return 1;
+      return 0;
+    });
+
     setSprintModalData({
       sprintTitle: sprintInfo?.title || `Спринт ${sprintId}`,
       sprintDates,
