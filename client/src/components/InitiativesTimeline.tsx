@@ -1748,8 +1748,9 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                             </a>
                           ) : (
                             <span
-                              className="text-sm text-foreground font-semibold text-left"
+                              className={`text-sm text-foreground font-semibold text-left${isBS ? ' cursor-pointer select-none' : ''}`}
                               data-testid={`text-initiative-${initiative.id}`}
+                              onClick={isBS ? () => setIsBsExpanded(v => !v) : undefined}
                             >
                               {initiative.title}
                             </span>
