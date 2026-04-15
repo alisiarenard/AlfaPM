@@ -533,6 +533,10 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
 
   // Константы для группировки задач Поддержки бизнеса по типам
   const BS_TYPE_TO_GROUP: Record<string, string> = {
+    'Technical Debt': 'Технические задачи',
+    'Technical debt': 'Технические задачи',
+    'Tech Debt': 'Технические задачи',
+    'Tech debt': 'Технические задачи',
     'Tech Task': 'Технические задачи',
     'Security': 'Security',
     'Service Desk': 'Service Desk',
@@ -1990,7 +1994,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                       className="flex items-center gap-2 pl-6 overflow-hidden transition-all duration-300 ease-in-out"
                       style={{ maxHeight: isBsExpanded ? '34px' : '0px', opacity: isBsExpanded ? 1 : 0 }}
                     >
-                      <span className="text-xs text-muted-foreground py-2 whitespace-nowrap">{groupName}</span>
+                      <span className="text-xs text-foreground py-2 whitespace-nowrap">{groupName}</span>
                     </div>
                   </td>
                   <td className="sticky left-[300px] z-[100] bg-background min-w-[140px] max-w-[140px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}><div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ maxHeight: isBsExpanded ? '34px' : '0px' }} /></td>
@@ -2007,7 +2011,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                           style={{ maxHeight: isBsExpanded ? '34px' : '0px', opacity: isBsExpanded ? 1 : 0 }}
                         >
                           {groupSP > 0 && (
-                            <span className="text-xs text-muted-foreground tabular-nums py-2">{roundSP(groupSP)}</span>
+                            <span className="text-xs text-foreground tabular-nums py-2">{roundSP(groupSP)}</span>
                           )}
                         </div>
                       </td>
