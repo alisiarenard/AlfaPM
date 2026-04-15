@@ -3298,7 +3298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.json({ success: true, synced, errors, boardId: taskBoardId, startDate });
+      res.json({ success: true, synced, errors, boardIds, startDate });
     } catch (error) {
       console.error(`[SYNC-VIRTUAL] Error:`, error instanceof Error ? error.message : String(error));
       res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed to sync virtual period" });
