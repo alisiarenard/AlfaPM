@@ -22,7 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
-import { ExternalLink, Check, RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
+import { ExternalLink, Check, RefreshCw, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -1693,10 +1693,10 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                       className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5"
                       data-testid="button-bs-expand"
                     >
-                      {isBsExpanded
-                        ? <ChevronDown className="w-4 h-4" />
-                        : <ChevronRight className="w-4 h-4" />
-                      }
+                      <ChevronRight
+                        className="w-4 h-4 transition-transform duration-300 ease-in-out"
+                        style={{ transform: isBsExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                      />
                     </button>
                   ) : getStatusIcon(initiative)}
                   {(() => {
@@ -1978,37 +1978,44 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             </tr>
             );
 
-            if (!isExpandedBS) return [mainRow];
-
-            const subRows = bsGroups.map((groupName, groupIdx) => (
-              <tr
-                key={`bs-group-${groupName}`}
-                className={`${groupIdx < bsGroups.length - 1 || !isLast ? 'border-b border-border' : ''}`}
-              >
-                <td className="sticky left-0 z-[100] bg-background pl-4 pr-2 py-2 min-w-[300px] max-w-[300px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
-                  <div className="flex items-center gap-2 pl-6">
-                    <span className="text-xs text-muted-foreground">{groupName}</span>
-                  </div>
-                </td>
-                <td className="sticky left-[300px] z-[100] bg-background px-2 py-2 min-w-[140px] max-w-[140px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}} />
-                <td className="sticky left-[440px] z-[100] bg-background px-2 py-2 min-w-[90px] max-w-[90px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}} />
-                <td className="sticky left-[530px] z-[100] bg-background px-2 py-2 min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}} />
-                <td className="sticky left-[630px] z-[100] bg-background px-2 py-2 min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}} />
-                {allSprintIds.map(sprintId => {
-                  const groupSP = getBsGroupSprintSP(initiative, sprintId, groupName);
-                  const isCurrent = isCurrentSprint(sprintId);
-                  return (
-                    <td key={sprintId} className={`p-0 min-w-[100px] ${isCurrent ? 'bg-muted/50' : ''}`}>
-                      <div className="h-[30px] w-full flex items-center justify-center">
-                        {groupSP > 0 && (
-                          <span className="text-xs text-muted-foreground tabular-nums">{roundSP(groupSP)}</span>
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ));
+            const subRows = bsGroups.map((groupName, groupIdx) => {
+              const isSubLast = groupIdx === bsGroups.length - 1;
+              return (
+                <tr
+                  key={`bs-group-${groupName}`}
+                  className={`transition-colors duration-300 ${isBsExpanded && (!isSubLast || !isLast) ? 'border-b border-border' : 'border-b border-transparent'}`}
+                >
+                  <td className="sticky left-0 z-[100] bg-background pl-4 pr-2 min-w-[300px] max-w-[300px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+                    <div
+                      className="flex items-center gap-2 pl-6 overflow-hidden transition-all duration-300 ease-in-out"
+                      style={{ maxHeight: isBsExpanded ? '34px' : '0px', opacity: isBsExpanded ? 1 : 0 }}
+                    >
+                      <span className="text-xs text-muted-foreground py-2 whitespace-nowrap">{groupName}</span>
+                    </div>
+                  </td>
+                  <td className="sticky left-[300px] z-[100] bg-background min-w-[140px] max-w-[140px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}><div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ maxHeight: isBsExpanded ? '34px' : '0px' }} /></td>
+                  <td className="sticky left-[440px] z-[100] bg-background min-w-[90px] max-w-[90px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}><div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ maxHeight: isBsExpanded ? '34px' : '0px' }} /></td>
+                  <td className="sticky left-[530px] z-[100] bg-background min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}><div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ maxHeight: isBsExpanded ? '34px' : '0px' }} /></td>
+                  <td className="sticky left-[630px] z-[100] bg-background min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}><div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ maxHeight: isBsExpanded ? '34px' : '0px' }} /></td>
+                  {allSprintIds.map(sprintId => {
+                    const groupSP = getBsGroupSprintSP(initiative, sprintId, groupName);
+                    const isCurrent = isCurrentSprint(sprintId);
+                    return (
+                      <td key={sprintId} className={`p-0 min-w-[100px] ${isCurrent ? 'bg-muted/50' : ''}`}>
+                        <div
+                          className="w-full flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out"
+                          style={{ maxHeight: isBsExpanded ? '34px' : '0px', opacity: isBsExpanded ? 1 : 0 }}
+                        >
+                          {groupSP > 0 && (
+                            <span className="text-xs text-muted-foreground tabular-nums py-2">{roundSP(groupSP)}</span>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            });
 
             return [mainRow, ...subRows];
           })}
