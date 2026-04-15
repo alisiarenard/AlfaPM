@@ -22,7 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MdPlayCircleOutline, MdCheckCircleOutline, MdPauseCircleOutline } from "react-icons/md";
-import { ExternalLink, Check, RefreshCw } from "lucide-react";
+import { ExternalLink, Check, RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -106,6 +106,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
   const [savingField, setSavingField] = useState<EditableField | null>(null);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const [isSyncingSprintData, setIsSyncingSprintData] = useState(false);
+  const [isBsExpanded, setIsBsExpanded] = useState(false);
   const fieldInputRef = useRef<HTMLInputElement>(null);
   const currentSprintRef = useRef<HTMLTableCellElement>(null);
 
@@ -528,6 +529,57 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
     const now = new Date();
     const end = new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate);
     return now > end;
+  };
+
+  // Константы для группировки задач Поддержки бизнеса по типам
+  const BS_TYPE_TO_GROUP: Record<string, string> = {
+    'Tech Task': 'Технические задачи',
+    'Security': 'Security',
+    'Service Desk': 'Service Desk',
+    'Omni': 'Service Desk',
+    'Bug': 'Bugs',
+    'Bugs': 'Bugs',
+  };
+  const BS_GROUP_ORDER = ['Технические задачи', 'Security', 'Service Desk', 'Bugs', 'Другие доработки'];
+
+  // SP конкретной группы типов BS в спринте (фактический для прошлых, плановый для остальных)
+  const getBsGroupSprintSP = (initiative: Initiative, sprintId: number, groupName: string): number => {
+    const tasks = getSprintTasks(initiative, sprintId);
+    if (tasks.length === 0) return 0;
+    const sprintInfo = getSprintInfo(sprintId);
+    if (isPastSprint(sprintId) && sprintInfo) {
+      const startTime = new Date(sprintInfo.startDate).getTime();
+      const endTime = new Date(sprintInfo.actualFinishDate || sprintInfo.finishDate).getTime();
+      return tasks
+        .filter(t => {
+          const group = BS_TYPE_TO_GROUP[t.type || ''] || 'Другие доработки';
+          if (group !== groupName) return false;
+          if (t.state !== '3-done' || t.condition === '3-deleted') return false;
+          if (!t.doneDate) return false;
+          const doneTime = new Date(t.doneDate).getTime();
+          return doneTime >= startTime && doneTime <= endTime;
+        })
+        .reduce((sum, t) => sum + t.size, 0);
+    }
+    return tasks
+      .filter(t => {
+        const group = BS_TYPE_TO_GROUP[t.type || ''] || 'Другие доработки';
+        return group === groupName;
+      })
+      .reduce((sum, t) => sum + t.size, 0);
+  };
+
+  // Какие группы типов есть у BS-инициативы (хотя бы в одном спринте SP > 0)
+  const getBsGroups = (initiative: Initiative): string[] => {
+    const found = new Set<string>();
+    for (const sprintId of allSprintIds) {
+      const tasks = getSprintTasks(initiative, sprintId);
+      for (const t of tasks) {
+        const group = BS_TYPE_TO_GROUP[t.type || ''] || 'Другие доработки';
+        found.add(group);
+      }
+    }
+    return BS_GROUP_ORDER.filter(g => found.has(g));
   };
 
   // Получить SP для конкретной инициативы в конкретном спринте (кэшированное значение)
@@ -1622,15 +1674,31 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
           </tr>
         </thead>
         <tbody>
-          {initiatives.map((initiative, index) => (
+          {initiatives.flatMap((initiative, index) => {
+            const isBS = initiative.cardId === 0;
+            const bsGroups = isBS ? getBsGroups(initiative) : [];
+            const isLast = index === initiatives.length - 1;
+            const isExpandedBS = isBS && isBsExpanded;
+            const mainRow = (
             <tr
               key={initiative.id}
-              className={`${index !== initiatives.length - 1 ? 'border-b border-border' : ''}`}
+              className={`${(!isLast || isExpandedBS) ? 'border-b border-border' : ''}`}
               data-testid={`row-initiative-${initiative.id}`}
             >
               <td className="sticky left-0 z-[100] bg-background pl-4 pr-2 py-3 min-w-[300px] max-w-[300px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
                 <div className="flex items-start gap-2">
-                  {getStatusIcon(initiative)}
+                  {isBS ? (
+                    <button
+                      onClick={() => setIsBsExpanded(v => !v)}
+                      className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors mt-0.5"
+                      data-testid="button-bs-expand"
+                    >
+                      {isBsExpanded
+                        ? <ChevronDown className="w-4 h-4" />
+                        : <ChevronRight className="w-4 h-4" />
+                      }
+                    </button>
+                  ) : getStatusIcon(initiative)}
                   {(() => {
                     // Проверяем, есть ли данные у инициативы
                     const hasData = (initiative.size && initiative.size > 0) || getTotalSP(initiative) > 0;
@@ -1907,7 +1975,42 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                 });
               })()}
             </tr>
-          ))}
+            );
+
+            if (!isExpandedBS) return [mainRow];
+
+            const subRows = bsGroups.map((groupName, groupIdx) => (
+              <tr
+                key={`bs-group-${groupName}`}
+                className={`${groupIdx < bsGroups.length - 1 || !isLast ? 'border-b border-border' : ''}`}
+              >
+                <td className="sticky left-0 z-[100] bg-background pl-4 pr-2 py-2 min-w-[300px] max-w-[300px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}}>
+                  <div className="flex items-center gap-2 pl-6">
+                    <span className="text-xs text-muted-foreground">{groupName}</span>
+                  </div>
+                </td>
+                <td className="sticky left-[300px] z-[100] bg-background px-2 py-2 min-w-[140px] max-w-[140px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}} />
+                <td className="sticky left-[440px] z-[100] bg-background px-2 py-2 min-w-[90px] max-w-[90px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}} />
+                <td className="sticky left-[530px] z-[100] bg-background px-2 py-2 min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}} />
+                <td className="sticky left-[630px] z-[100] bg-background px-2 py-2 min-w-[100px] max-w-[100px]" style={{boxShadow: '2px 0 0 0 hsl(var(--background))'}} />
+                {allSprintIds.map(sprintId => {
+                  const groupSP = getBsGroupSprintSP(initiative, sprintId, groupName);
+                  const isCurrent = isCurrentSprint(sprintId);
+                  return (
+                    <td key={sprintId} className={`p-0 min-w-[100px] ${isCurrent ? 'bg-muted/50' : ''}`}>
+                      <div className="h-[30px] w-full flex items-center justify-center">
+                        {groupSP > 0 && (
+                          <span className="text-xs text-muted-foreground tabular-nums">{roundSP(groupSP)}</span>
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ));
+
+            return [mainRow, ...subRows];
+          })}
         </tbody>
       </table>
 
