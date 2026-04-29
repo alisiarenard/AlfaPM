@@ -361,7 +361,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     
     const runBackgroundSync = async () => {
       // Только для команд со спринтами
-      if (!team.teamId || !team.sprintBoardId || !team.spaceId) return;
+      if (!team.teamId || !team.hasSprints || !team.sprintBoardId || !team.spaceId) return;
       // Не запускать повторно (ни во время синхронизации, ни если уже синхронизировали)
       if (isBackgroundSyncing || hasSyncedRef.current) {
         return;
@@ -442,7 +442,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
       isMounted = false;
       abortController.abort();
     };
-  }, [team.teamId, team.sprintBoardId, team.spaceId, timelineData, timelineLoading]);
+  }, [team.teamId, team.hasSprints, team.sprintBoardId, team.spaceId, timelineData, timelineLoading]);
 
   // Фоновая синхронизация текущего виртуального периода (только для команд без спринтов)
   useEffect(() => {
