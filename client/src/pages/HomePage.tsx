@@ -444,6 +444,77 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
     };
   }, [team.teamId, team.sprintBoardId, team.spaceId, timelineData, timelineLoading]);
 
+  // Фоновая синхронизация текущего виртуального периода (только для команд без спринтов)
+  useEffect(() => {
+    let isMounted = true;
+    const abortController = new AbortController();
+
+    const runSprintlessBackgroundSync = async () => {
+      // Только для команд без спринтов и только для текущего года
+      if (!team.teamId || team.hasSprints) return;
+      if (isBackgroundSyncing || hasSyncedRef.current) return;
+      hasSyncedRef.current = true;
+
+      // Синхронизируем только если смотрим текущий год
+      const currentYear = new Date().getFullYear();
+      if (parseInt(selectedYear) !== currentYear) return;
+
+      // Вычисляем начало периода, в который попадает сегодня
+      const now = new Date();
+      const sprintDuration = team.sprintDuration || 14;
+      let periodStart = new Date(currentYear, 0, 1); // 1 января
+      while (true) {
+        const periodEnd = new Date(periodStart);
+        periodEnd.setDate(periodEnd.getDate() + sprintDuration - 1);
+        if (now <= periodEnd) break;
+        periodStart = new Date(periodEnd);
+        periodStart.setDate(periodStart.getDate() + 1);
+      }
+      const startDateStr = periodStart.toISOString().split('T')[0];
+
+      try {
+        if (!isMounted) return;
+        setIsBackgroundSyncing(true);
+
+        const syncResponse = await fetch(
+          `/api/kaiten/sync-virtual-period/${team.teamId}?startDate=${encodeURIComponent(startDateStr)}`,
+          { method: 'POST', signal: abortController.signal }
+        );
+        if (!syncResponse.ok || !isMounted) return;
+
+        const syncData = await syncResponse.json();
+
+        if (syncData.synced > 0) {
+          queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/innovation-rate'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/cost-structure'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/metrics/value-cost'] });
+
+          if (isMounted) {
+            toast({
+              title: "Данные обновлены",
+              description: `Синхронизировано ${syncData.synced} задач`,
+            });
+          }
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        console.error('[Sprintless Background Sync] Error:', error);
+      } finally {
+        if (isMounted) setIsBackgroundSyncing(false);
+      }
+    };
+
+    if (timelineData && !timelineLoading) {
+      runSprintlessBackgroundSync();
+    }
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
+  }, [team.teamId, team.hasSprints, team.sprintDuration, selectedYear, timelineData, timelineLoading]);
+
   const initiativeRows = timelineData?.initiatives;
   const allInitiativeRows = showActiveOnly ? (allTimelineData?.initiatives || initiativeRows) : initiativeRows;
   const sprints = timelineData?.sprints;
