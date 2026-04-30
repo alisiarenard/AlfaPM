@@ -100,7 +100,7 @@ function AppLayout() {
                     onValueChange={setSelectedDepartment}
                     data-testid="select-department"
                   >
-                    <SelectTrigger className="w-[200px] bg-white">
+                    <SelectTrigger className="w-[250px] bg-white">
                       <SelectValue placeholder="Выберите департамент" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
