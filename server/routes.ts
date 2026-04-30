@@ -14,32 +14,33 @@ import { calculateInitiativesInvolvement } from "./utils/involvement";
  * @returns ID инициативы или 0, если не найдена
  */
 async function findInitiativeInParentChain(parentCardId: number, depth = 0, originalTaskId?: number): Promise<number> {
-  if (depth > 10) {
+  if (depth > 10) return 0;
+
+  // Проверяем, является ли текущая карточка инициативой
+  const initiative = await storage.getInitiativeByCardId(parentCardId);
+  if (initiative) return parentCardId;
+
+  let card;
+  try {
+    card = await kaitenClient.getCard(parentCardId);
+  } catch {
     return 0;
   }
-  
-  let lastFoundInitiativeId = 0;
-  let currentCardId = parentCardId;
-  
-  for (let d = depth; d <= 10; d++) {
-    const initiative = await storage.getInitiativeByCardId(currentCardId);
-    if (initiative) {
-      lastFoundInitiativeId = currentCardId;
-    }
-    
-    try {
-      const card = await kaitenClient.getCard(currentCardId);
-      if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-        currentCardId = card.parents_ids[0];
-      } else {
-        break;
-      }
-    } catch (error) {
-      break;
-    }
+
+  if (!card.parents_ids || !Array.isArray(card.parents_ids) || card.parents_ids.length === 0) {
+    return 0;
   }
-  
-  return lastFoundInitiativeId;
+
+  // Ищем инициативу через первого родителя
+  const firstResult = await findInitiativeInParentChain(card.parents_ids[0], depth + 1);
+  if (firstResult !== 0) return firstResult;
+
+  // Если не нашли — ищем через второго родителя (если есть)
+  if (card.parents_ids.length > 1) {
+    return await findInitiativeInParentChain(card.parents_ids[1], depth + 1);
+  }
+
+  return 0;
 }
 
 /**
