@@ -1232,26 +1232,30 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   const avgCtS = ctPos.length ? ctPos.reduce((a, v) => a + v.s, 0) / ctPos.length * 100 : null;
                   const avgCtE = ctPos.length ? ctPos.reduce((a, v) => a + v.e, 0) / ctPos.length * 100 : null;
 
-                  // Aggregate avg duration per status column — only within TTM range
-                  const colAgg = new Map<string, { columnType: number | null; totalMs: number; count: number; order: number }>();
-                  let colOrder = 0;
+                  // Aggregate avg duration per status column — only within TTM range, sorted by avg start position
+                  const colAgg = new Map<string, { columnType: number | null; totalMs: number; count: number; totalStartRel: number }>();
                   cards.filter(c => c.ttm).forEach(card => {
                     const ttmStart = card.ttm!.startMs;
                     const ttmEnd = card.ttm!.endMs;
+                    const ttmSpanLocal = ttmEnd - ttmStart;
+                    if (ttmSpanLocal === 0) return;
                     card.statusSegments?.forEach(seg => {
                       const segEnd = seg.startMs + seg.durationMs;
                       if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return;
-                      const clippedMs = Math.min(segEnd, ttmEnd) - Math.max(seg.startMs, ttmStart);
+                      const clippedStart = Math.max(seg.startMs, ttmStart);
+                      const clippedMs = Math.min(segEnd, ttmEnd) - clippedStart;
+                      const startRel = (clippedStart - ttmStart) / ttmSpanLocal;
                       if (!colAgg.has(seg.columnName)) {
-                        colAgg.set(seg.columnName, { columnType: seg.columnType, totalMs: 0, count: 0, order: colOrder++ });
+                        colAgg.set(seg.columnName, { columnType: seg.columnType, totalMs: 0, count: 0, totalStartRel: 0 });
                       }
                       const a = colAgg.get(seg.columnName)!;
                       a.totalMs += clippedMs;
                       a.count += 1;
+                      a.totalStartRel += startRel;
                     });
                   });
                   const avgSegs = Array.from(colAgg.entries())
-                    .sort((a, b) => a[1].order - b[1].order)
+                    .sort((a, b) => (a[1].totalStartRel / a[1].count) - (b[1].totalStartRel / b[1].count))
                     .map(([name, a]) => ({ columnName: name, columnType: a.columnType, avgMs: a.totalMs / a.count }));
                   const totalAvgMs = avgSegs.reduce((a, s) => a + s.avgMs, 0);
 
