@@ -1168,7 +1168,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     </div>
 
     <Dialog open={flowMetricsOpen} onOpenChange={(open) => { setFlowMetricsOpen(open); if (!open) setFlowMetricsData(null); }}>
-      <DialogContent className="max-w-6xl w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
+      <DialogContent className="max-w-[95vw] w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
         <DialogHeader className="shrink-0 pb-3 border-b border-border">
           <DialogTitle className="text-lg font-semibold">
             {flowMetricsFetching ? "Загрузка..." : flowMetricsData ? flowMetricsData.spaceName : "Flow-метрики"}
