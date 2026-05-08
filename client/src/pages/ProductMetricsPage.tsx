@@ -1311,7 +1311,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                           </div>
                           <div className="border-l border-border my-3 shrink-0" />
                           <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                            <div className="text-xs font-bold text-muted-foreground truncate">Waiting For Decision</div>
+                            <div className="text-xs font-bold text-muted-foreground truncate">Waiting Time</div>
                             <div className="text-lg font-semibold truncate">{avgWfd !== null ? `${avgWfd}%` : '—'}</div>
                             <div />
                           </div>
