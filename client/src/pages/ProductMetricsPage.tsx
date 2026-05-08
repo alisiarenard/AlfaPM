@@ -1296,7 +1296,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <div className="w-full h-[110px] border border-border rounded-lg flex">
 
                         {/* Left 60%: 4 metrics */}
-                        <div className="w-[60%] flex min-w-0">
+                        <div className="w-[55%] flex min-w-0">
                           <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
                             <div className="text-xs font-bold text-muted-foreground truncate">Time To Market</div>
                             <div className="text-lg font-semibold truncate">{avgTtm !== null ? formatDurationShort(avgTtm) : '—'}</div>
@@ -1326,7 +1326,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         <div className="border-l border-border my-3 shrink-0" />
 
                         {/* Right 40%: avg status bar */}
-                        <div className="w-[40%] px-4 py-3 flex flex-col justify-between min-w-0">
+                        <div className="w-[45%] px-4 py-3 flex flex-col justify-between min-w-0">
                           <div />
 
                           {/* Bar + brackets wrapper */}
