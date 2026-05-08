@@ -60,7 +60,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [flowMetricsOpen, setFlowMetricsOpen] = useState(false);
   const [flowMetricsFetching, setFlowMetricsFetching] = useState(false);
   type MetricSpan = { ms: number; startMs: number; endMs: number };
-  type StatusSegment = { columnName: string; startMs: number; durationMs: number };
+  type StatusSegment = { columnName: string; columnType: number | null; startMs: number; durationMs: number };
   const [flowMetricsData, setFlowMetricsData] = useState<{
     spaceName: string;
     kaitenSpaceId: number | null;
@@ -1184,10 +1184,19 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     return { left: Math.max(0, left), width: Math.max(0.5, width) };
                   };
 
-                  const STATUS_COLORS = [
-                    '#c0392b', '#d94f3f', '#e86555', '#f07a6a',
-                    '#f59080', '#f8a898', '#fbbfb0', '#fdd5cc',
-                  ];
+                  // Kaiten column types: 1=queue, 2=in-progress, 3=done
+                  const columnTypeColor = (type: number | null): string => {
+                    if (type === 1) return '#f0a898'; // queue — светло-розовый
+                    if (type === 2) return '#e04535'; // in progress — насыщенный красный
+                    if (type === 3) return '#8b1a1a'; // done — тёмно-бордовый
+                    return '#c8a0a0';                 // неизвестный
+                  };
+                  const columnTypeLabel = (type: number | null): string => {
+                    if (type === 1) return 'Очередь';
+                    if (type === 2) return 'В работе';
+                    if (type === 3) return 'Готово';
+                    return '';
+                  };
 
                   const cardUrl = flowMetricsData.kaitenSpaceId
                     ? getKaitenCardUrl(flowMetricsData.kaitenSpaceId, card.cardId, card.archived)
@@ -1228,7 +1237,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             {card.statusSegments.map((seg, idx) => {
                               const left = ((seg.startMs - card.totalStartMs!) / totalSpan) * 100;
                               const width = Math.max(0.5, (seg.durationMs / totalSpan) * 100);
-                              const color = STATUS_COLORS[idx % STATUS_COLORS.length];
+                              const color = columnTypeColor(seg.columnType);
+                              const typeLabel = columnTypeLabel(seg.columnType);
                               return (
                                 <Tooltip key={idx}>
                                   <TooltipTrigger asChild>
@@ -1239,7 +1249,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   </TooltipTrigger>
                                   <TooltipContent side="top" className="text-xs space-y-0.5">
                                     <div className="font-semibold">{seg.columnName}</div>
-                                    <div className="text-muted-foreground">{formatDuration(seg.durationMs)}</div>
+                                    {typeLabel && <div className="text-muted-foreground">{typeLabel}</div>}
+                                    <div>{formatDuration(seg.durationMs)}</div>
                                   </TooltipContent>
                                 </Tooltip>
                               );
@@ -1250,9 +1261,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <div key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <span
                                   className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                                  style={{ background: STATUS_COLORS[idx % STATUS_COLORS.length] }}
+                                  style={{ background: columnTypeColor(seg.columnType) }}
                                 />
-                                {seg.columnName}
+                                <span>{seg.columnName}</span>
+                                {columnTypeLabel(seg.columnType) && (
+                                  <span className="opacity-60">· {columnTypeLabel(seg.columnType)}</span>
+                                )}
                               </div>
                             ))}
                           </div>

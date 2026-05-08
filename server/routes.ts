@@ -275,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
         kaitenClient.getBoardColumns(dept.kaitenBoardId),
       ]);
-      const columnMap = new Map(columns.map(c => [c.id, c.title]));
+      const columnMap = new Map(columns.map(c => [c.id, { title: c.title, type: c.type }]));
 
       const filteredCards = allCards.filter(card => {
         const typeName = (card.type?.name ?? '').toLowerCase();
@@ -308,14 +308,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const cycleTimeSpan = calcSpan(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
 
         // Build per-status segments: time spent in each column
-        const statusSegments: { columnName: string; startMs: number; durationMs: number }[] = [];
+        const statusSegments: { columnName: string; columnType: number | null; startMs: number; durationMs: number }[] = [];
         for (let i = 0; i < history.length; i++) {
           const startMs = new Date(history[i].changed).getTime();
           const endMs = i + 1 < history.length ? new Date(history[i + 1].changed).getTime() : startMs;
           const durationMs = endMs - startMs;
           if (durationMs > 0) {
+            const colInfo = columnMap.get(history[i].column_id);
             statusSegments.push({
-              columnName: columnMap.get(history[i].column_id) ?? `#${history[i].column_id}`,
+              columnName: colInfo?.title ?? `#${history[i].column_id}`,
+              columnType: colInfo?.type ?? null,
               startMs,
               durationMs,
             });
