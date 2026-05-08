@@ -23,6 +23,26 @@ interface ProductMetricsPageProps {
   setPageSubtitle: (subtitle: string) => void;
 }
 
+function formatDuration(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const sec = totalSec % 60;
+  const totalMin = Math.floor(totalSec / 60);
+  const min = totalMin % 60;
+  const totalHours = Math.floor(totalMin / 60);
+  const hours = totalHours % 24;
+  const totalDays = Math.floor(totalHours / 24);
+  const days = totalDays % 365;
+  const years = Math.floor(totalDays / 365);
+
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} г.`);
+  if (days > 0) parts.push(`${days} д.`);
+  if (hours > 0) parts.push(`${hours} ч.`);
+  if (min > 0) parts.push(`${min} мин.`);
+  if (sec > 0 || parts.length === 0) parts.push(`${sec} сек.`);
+  return parts.join(' ');
+}
+
 export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle }: ProductMetricsPageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,9 +75,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       size: number;
       archived: boolean;
       history: { column_id: number; columnName: string; changed: string }[];
-      ttm: number | null;
-      leadTime: number | null;
-      cycleTime: number | null;
+      ttm: number | null;   // milliseconds
+      leadTime: number | null;   // milliseconds
+      cycleTime: number | null;  // milliseconds
     }[];
   } | null>(null);
 
@@ -1175,9 +1195,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <div className="flex gap-2"><span className="text-muted-foreground">last_moved_to_done:</span><span>{card.lastMovedToDoneAt ? new Date(card.lastMovedToDoneAt).toLocaleString('ru-RU') : '—'}</span></div>
                     </div>
                     <div className="flex gap-4 pt-1 border-t border-border">
-                      <div className="flex gap-2"><span className="text-muted-foreground">TTM:</span><span className="font-medium">{card.ttm !== null ? `${card.ttm} дн.` : '—'}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">Lead Time:</span><span className="font-medium">{card.leadTime !== null ? `${card.leadTime} дн.` : '—'}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">Cycle Time:</span><span className="font-medium">{card.cycleTime !== null ? `${card.cycleTime} дн.` : '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">TTM:</span><span className="font-medium">{card.ttm !== null ? formatDuration(card.ttm) : '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">Lead Time:</span><span className="font-medium">{card.leadTime !== null ? formatDuration(card.leadTime) : '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">Cycle Time:</span><span className="font-medium">{card.cycleTime !== null ? formatDuration(card.cycleTime) : '—'}</span></div>
                     </div>
                     {card.history.length > 0 && (
                       <div className="pt-1 border-t border-border">

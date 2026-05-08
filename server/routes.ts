@@ -272,15 +272,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
       const columnMap = new Map(columns.map(c => [c.id, c.title]));
 
-      const calcDays = (history: { column_id: number; changed: string }[], startColId: number | null, endColId: number | null): number | null => {
+      const calcMs = (history: { column_id: number; changed: string }[], startColId: number | null, endColId: number | null): number | null => {
         if (!startColId || !endColId) return null;
         const startEntry = history.find(h => h.column_id === startColId);
         if (!startEntry) return null;
         const startTime = new Date(startEntry.changed).getTime();
         const endEntry = history.filter(h => h.column_id === endColId && new Date(h.changed).getTime() >= startTime).pop();
         if (!endEntry) return null;
-        const diff = new Date(endEntry.changed).getTime() - startTime;
-        return Math.round(diff / (1000 * 60 * 60 * 24));
+        return new Date(endEntry.changed).getTime() - startTime;
       };
 
       const RATE_DELAY = 220;
@@ -289,9 +288,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const history = await kaitenClient.getCardLocationHistory(card.id);
         await new Promise(resolve => setTimeout(resolve, RATE_DELAY));
 
-        const ttm = calcDays(history, dept.ttmStartColumnId, dept.ttmEndColumnId);
-        const leadTime = calcDays(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
-        const cycleTime = calcDays(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
+        const ttm = calcMs(history, dept.ttmStartColumnId, dept.ttmEndColumnId);
+        const leadTime = calcMs(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
+        const cycleTime = calcMs(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
 
         results.push({
           cardId: card.id,
