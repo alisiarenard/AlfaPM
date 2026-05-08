@@ -1148,16 +1148,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     </div>
 
     <Dialog open={flowMetricsOpen} onOpenChange={(open) => { setFlowMetricsOpen(open); if (!open) setFlowMetricsData(null); }}>
-      <DialogContent className="max-w-4xl w-full max-h-[85vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
+      <DialogContent className="max-w-6xl w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
         <DialogHeader className="shrink-0 pb-3 border-b border-border">
           <DialogTitle className="text-lg font-semibold">
             {flowMetricsFetching ? "Загрузка..." : flowMetricsData ? flowMetricsData.spaceName : "Flow-метрики"}
           </DialogTitle>
-          {!flowMetricsFetching && flowMetricsData && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Каждый цветной сегмент — статус карточки. Наведите на сегмент, чтобы увидеть название и длительность.
-            </p>
-          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
@@ -1172,7 +1167,62 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 <p className="text-sm text-muted-foreground">Нет завершённых Epic-карточек за последние 12 месяцев</p>
               </div>
             ) : (
-              <div className="divide-y divide-border">
+              <>
+                {(() => {
+                  const cards = flowMetricsData.cards;
+                  const ttmVals = cards.filter(c => c.ttm).map(c => c.ttm!.ms);
+                  const leadVals = cards.filter(c => c.leadTime).map(c => c.leadTime!.ms);
+                  const cycleVals = cards.filter(c => c.cycleTime).map(c => c.cycleTime!.ms);
+                  const avgMs = (vals: number[]) => vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+                  const avgTtm = avgMs(ttmVals);
+                  const avgLead = avgMs(leadVals);
+                  const avgCycle = avgMs(cycleVals);
+                  const feVals = cards
+                    .map(c => {
+                      const span = c.totalStartMs !== null && c.totalEndMs !== null ? c.totalEndMs - c.totalStartMs : 0;
+                      if (span === 0 || !c.statusSegments?.length) return null;
+                      const inProgMs = c.statusSegments.filter(s => s.columnType === 2).reduce((a, s) => a + s.durationMs, 0);
+                      return (inProgMs / span) * 100;
+                    })
+                    .filter((v): v is number => v !== null);
+                  const avgFe = feVals.length ? Math.round(feVals.reduce((a, b) => a + b, 0) / feVals.length) : null;
+                  return (
+                    <div className="px-5 pt-4 pb-2 shrink-0">
+                      <div className="w-full h-[110px] border border-border rounded-lg flex">
+                        <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
+                          <div className="text-sm font-bold text-muted-foreground">Тайм Ту Маркет</div>
+                          <div className="text-xl font-semibold truncate">{avgTtm !== null ? formatDuration(avgTtm) : '—'}</div>
+                          <div className="text-[0.75rem] text-muted-foreground">
+                            {ttmVals.length > 0 ? `среднее по ${ttmVals.length} эпикам` : 'нет данных'}
+                          </div>
+                        </div>
+                        <div className="border-l border-border my-3 shrink-0" />
+                        <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
+                          <div className="text-sm font-bold text-muted-foreground">Лид Тайм</div>
+                          <div className="text-xl font-semibold truncate">{avgLead !== null ? formatDuration(avgLead) : '—'}</div>
+                          <div className="text-[0.75rem] text-muted-foreground">
+                            {leadVals.length > 0 ? `среднее по ${leadVals.length} эпикам` : 'нет данных'}
+                          </div>
+                        </div>
+                        <div className="border-l border-border my-3 shrink-0" />
+                        <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
+                          <div className="text-sm font-bold text-muted-foreground">Сайкл Тайм</div>
+                          <div className="text-xl font-semibold truncate">{avgCycle !== null ? formatDuration(avgCycle) : '—'}</div>
+                          <div className="text-[0.75rem] text-muted-foreground">
+                            {cycleVals.length > 0 ? `среднее по ${cycleVals.length} эпикам` : 'нет данных'}
+                          </div>
+                        </div>
+                        <div className="border-l border-border my-3 shrink-0" />
+                        <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
+                          <div className="text-sm font-bold text-muted-foreground">Флоу Эфишинси</div>
+                          <div className="text-xl font-semibold">{avgFe !== null ? `${avgFe}%` : '—'}</div>
+                          <div className="text-[0.75rem] text-muted-foreground">% времени в работе</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+                <div className="divide-y divide-border">
                 {flowMetricsData.cards.map((card) => {
                   const totalSpan = (card.totalStartMs !== null && card.totalEndMs !== null)
                     ? card.totalEndMs - card.totalStartMs : 0;
@@ -1285,6 +1335,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   );
                 })}
               </div>
+              </>
             )
           ) : null}
         </div>
