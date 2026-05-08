@@ -1222,7 +1222,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         </div>
                       </div>
 
-                      {totalSpan > 0 && card.statusSegments.length > 0 && (
+                      {totalSpan > 0 && (card.statusSegments?.length ?? 0) > 0 && (
                         <div className="relative w-full h-[7px] bg-muted rounded-full">
                           {card.statusSegments.map((seg, idx) => {
                             const left = ((seg.startMs - card.totalStartMs!) / totalSpan) * 100;
@@ -1245,7 +1245,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                           })}
                         </div>
                       )}
-                      {(totalSpan === 0 || card.statusSegments.length === 0) && (
+                      {(totalSpan === 0 || (card.statusSegments?.length ?? 0) === 0) && (
                         <div className="w-full h-[7px] bg-muted rounded-full" />
                       )}
                     </div>
