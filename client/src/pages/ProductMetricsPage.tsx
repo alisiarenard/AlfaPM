@@ -1422,9 +1422,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                           )}
                         </div>
                         <div className="shrink-0 text-right text-xs text-muted-foreground flex items-center gap-2">
-                          {card.ttm && <span>TTM: <span className="text-foreground font-medium">{formatDuration(card.ttm.ms)}</span></span>}
-                          {card.leadTime && <span>LT: <span className="text-foreground font-medium">{formatDuration(card.leadTime.ms)}</span></span>}
-                          {card.cycleTime && <span>CT: <span className="text-foreground font-medium">{formatDuration(card.cycleTime.ms)}</span></span>}
+                          {card.ttm && <span>TTM: <span className="text-foreground font-medium">{formatDurationShort(card.ttm.ms)}</span></span>}
+                          {card.leadTime && <span>LT: <span className="text-foreground font-medium">{formatDurationShort(card.leadTime.ms)}</span></span>}
+                          {card.cycleTime && <span>CT: <span className="text-foreground font-medium">{formatDurationShort(card.cycleTime.ms)}</span></span>}
                         </div>
                       </div>
 
