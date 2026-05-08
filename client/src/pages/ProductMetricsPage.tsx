@@ -1231,24 +1231,48 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </div>
 
                       {totalSpan > 0 && (
-                        <div className="relative w-full h-[7px] bg-muted rounded-full overflow-hidden">
+                        <div className="relative w-full h-[7px] bg-muted rounded-full">
                           {ttmBar && (
-                            <div
-                              className="absolute inset-y-0 rounded-full"
-                              style={{ left: `${ttmBar.left}%`, width: `${ttmBar.width}%`, background: '#8b1a2a' }}
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="absolute inset-y-0 rounded-full cursor-default"
+                                  style={{ left: `${ttmBar.left}%`, width: `${ttmBar.width}%`, background: '#8b1a2a' }}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                <div className="font-semibold">TTM</div>
+                                <div>{formatDuration(card.ttm!.ms)}</div>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                           {leadBar && (
-                            <div
-                              className="absolute inset-y-0 rounded-full"
-                              style={{ left: `${leadBar.left}%`, width: `${leadBar.width}%`, background: '#cd253d' }}
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="absolute inset-y-0 rounded-full cursor-default"
+                                  style={{ left: `${leadBar.left}%`, width: `${leadBar.width}%`, background: '#cd253d' }}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                <div className="font-semibold">Lead Time</div>
+                                <div>{formatDuration(card.leadTime!.ms)}</div>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                           {cycleBar && (
-                            <div
-                              className="absolute inset-y-0 rounded-full"
-                              style={{ left: `${cycleBar.left}%`, width: `${cycleBar.width}%`, background: '#e8738a' }}
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  className="absolute inset-y-0 rounded-full cursor-default"
+                                  style={{ left: `${cycleBar.left}%`, width: `${cycleBar.width}%`, background: '#e8738a' }}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">
+                                <div className="font-semibold">Cycle Time</div>
+                                <div>{formatDuration(card.cycleTime!.ms)}</div>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       )}
