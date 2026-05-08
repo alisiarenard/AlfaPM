@@ -1207,6 +1207,29 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     .filter((v): v is number => v !== null);
                   const avgFe = feVals.length ? Math.round(feVals.reduce((a, b) => a + b, 0) / feVals.length) : null;
 
+                  // Average relative positions of LT / CT spans across all cards
+                  const ltPos = cards
+                    .filter(c => c.leadTime && c.totalStartMs !== null && c.totalEndMs !== null)
+                    .map(c => {
+                      const span = c.totalEndMs! - c.totalStartMs!;
+                      if (span === 0) return null;
+                      return { s: (c.leadTime!.startMs - c.totalStartMs!) / span, e: (c.leadTime!.endMs - c.totalStartMs!) / span };
+                    })
+                    .filter((v): v is { s: number; e: number } => v !== null);
+                  const avgLtS = ltPos.length ? ltPos.reduce((a, v) => a + v.s, 0) / ltPos.length * 100 : null;
+                  const avgLtE = ltPos.length ? ltPos.reduce((a, v) => a + v.e, 0) / ltPos.length * 100 : null;
+
+                  const ctPos = cards
+                    .filter(c => c.cycleTime && c.totalStartMs !== null && c.totalEndMs !== null)
+                    .map(c => {
+                      const span = c.totalEndMs! - c.totalStartMs!;
+                      if (span === 0) return null;
+                      return { s: (c.cycleTime!.startMs - c.totalStartMs!) / span, e: (c.cycleTime!.endMs - c.totalStartMs!) / span };
+                    })
+                    .filter((v): v is { s: number; e: number } => v !== null);
+                  const avgCtS = ctPos.length ? ctPos.reduce((a, v) => a + v.s, 0) / ctPos.length * 100 : null;
+                  const avgCtE = ctPos.length ? ctPos.reduce((a, v) => a + v.e, 0) / ctPos.length * 100 : null;
+
                   // Aggregate avg duration per status column for the bar
                   const colAgg = new Map<string, { columnType: number | null; totalMs: number; count: number; order: number }>();
                   let colOrder = 0;
@@ -1274,26 +1297,54 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         {/* Right 50%: avg status bar */}
                         <div className="w-1/2 px-4 py-3 flex flex-col justify-between min-w-0">
                           <div className="text-xs font-bold text-muted-foreground">Avg Time by Status</div>
-                          <div className="relative w-full h-[7px] bg-muted rounded-full">
-                            {totalAvgMs > 0 && avgSegs.map((seg, idx) => {
-                              const leftPct = avgSegs.slice(0, idx).reduce((a, s) => a + s.avgMs, 0) / totalAvgMs * 100;
-                              const widthPct = Math.max(0.5, seg.avgMs / totalAvgMs * 100);
-                              return (
-                                <Tooltip key={idx}>
-                                  <TooltipTrigger asChild>
-                                    <div
-                                      className="absolute inset-y-0 rounded-full cursor-default"
-                                      style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: avgSegColors[idx] }}
-                                    />
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="text-xs space-y-0.5">
-                                    <div className="font-semibold">{seg.columnName}</div>
-                                    <div>{formatDurationShort(Math.round(seg.avgMs))}</div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              );
-                            })}
+
+                          {/* Bar + brackets wrapper */}
+                          <div className="relative w-full" style={{ height: '43px' }}>
+
+                            {/* LT bracket above bar */}
+                            {avgLtS !== null && avgLtE !== null && (
+                              <div className="absolute" style={{ left: `${avgLtS}%`, right: `${100 - avgLtE}%`, top: 0, height: '16px' }}>
+                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: 0, left: '50%', transform: 'translateX(-50%)' }}>LT</div>
+                                <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '7px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '7px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                              </div>
+                            )}
+
+                            {/* Bar */}
+                            <div className="absolute w-full h-[7px] bg-muted rounded-full" style={{ top: '18px' }}>
+                              {totalAvgMs > 0 && avgSegs.map((seg, idx) => {
+                                const leftPct = avgSegs.slice(0, idx).reduce((a, s) => a + s.avgMs, 0) / totalAvgMs * 100;
+                                const widthPct = Math.max(0.5, seg.avgMs / totalAvgMs * 100);
+                                return (
+                                  <Tooltip key={idx}>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className="absolute inset-y-0 rounded-full cursor-default"
+                                        style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: avgSegColors[idx] }}
+                                      />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="text-xs space-y-0.5">
+                                      <div className="font-semibold">{seg.columnName}</div>
+                                      <div>{formatDurationShort(Math.round(seg.avgMs))}</div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                );
+                              })}
+                            </div>
+
+                            {/* CT bracket below bar */}
+                            {avgCtS !== null && avgCtE !== null && (
+                              <div className="absolute" style={{ left: `${avgCtS}%`, right: `${100 - avgCtE}%`, top: '27px', height: '16px' }}>
+                                <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '7px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '7px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: 0, left: '50%', transform: 'translateX(-50%)' }}>CT</div>
+                              </div>
+                            )}
+
                           </div>
+
                           <div />
                         </div>
 
