@@ -1301,7 +1301,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
                         {/* Right 50%: avg status bar */}
                         <div className="w-1/2 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-xs font-bold text-muted-foreground">Avg Time by Status</div>
+                          <div />
 
                           {/* Bar + brackets wrapper */}
                           <div className="relative w-full" style={{ height: '43px' }}>
@@ -1310,11 +1310,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             {avgLtS !== null && avgLtE !== null && (
                               <div className="absolute" style={{ left: `${avgLtS}%`, right: `${100 - avgLtE}%`, top: 0, height: '16px' }}>
                                 {/* horizontal at top */}
-                                <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* left vertical going down */}
-                                <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* right vertical going down */}
-                                <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* label centered on top line */}
                                 <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>LT</div>
                               </div>
@@ -1346,11 +1346,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             {avgCtS !== null && avgCtE !== null && (
                               <div className="absolute" style={{ left: `${avgCtS}%`, right: `${100 - avgCtE}%`, top: '27px', height: '16px' }}>
                                 {/* left vertical going up from bottom */}
-                                <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* right vertical going up from bottom */}
-                                <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* horizontal at bottom */}
-                                <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* label centered on bottom line */}
                                 <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>CT</div>
                               </div>
