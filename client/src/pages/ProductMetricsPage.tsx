@@ -1171,7 +1171,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       <DialogContent className="max-w-[95vw] w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
         <DialogHeader className="shrink-0 pb-3">
           <DialogTitle className="text-lg font-semibold">
-            {flowMetricsFetching ? "Загрузка..." : flowMetricsData ? flowMetricsData.spaceName : "Flow-метрики"}
+            {flowMetricsData ? flowMetricsData.spaceName : "Flow-метрики"}
           </DialogTitle>
         </DialogHeader>
 
