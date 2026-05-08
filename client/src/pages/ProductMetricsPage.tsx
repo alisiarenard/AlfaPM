@@ -84,6 +84,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [flowMetricsData, setFlowMetricsData] = useState<{
     spaceName: string;
     kaitenSpaceId: number | null;
+    columnOrder: string[];
     cards: {
       cardId: number;
       title: string;
@@ -1254,8 +1255,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       a.totalStartRel += startRel;
                     });
                   });
+                  const colOrderIdx = (name: string) => { const i = flowMetricsData.columnOrder.indexOf(name); return i === -1 ? 9999 : i; };
                   const avgSegs = Array.from(colAgg.entries())
-                    .sort((a, b) => (a[1].totalStartRel / a[1].count) - (b[1].totalStartRel / b[1].count))
+                    .sort((a, b) => colOrderIdx(a[0]) - colOrderIdx(b[0]))
                     .map(([name, a]) => ({ columnName: name, columnType: a.columnType, avgMs: a.totalMs / a.count }));
                   const totalAvgMs = avgSegs.reduce((a, s) => a + s.avgMs, 0);
 
@@ -1377,7 +1379,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   const ttmEnd = card.ttm?.endMs ?? null;
                   const ttmSpan = (ttmStart !== null && ttmEnd !== null) ? ttmEnd - ttmStart : 0;
 
-                  // Filter and clip segments to TTM range
+                  // Filter and clip segments to TTM range, sorted by board column order
                   type ClippedSeg = { columnName: string; columnType: number | null; clippedStartMs: number; clippedMs: number; durationMs: number };
                   const ttmSegs: ClippedSeg[] = (card.statusSegments ?? [])
                     .flatMap(seg => {
@@ -1387,6 +1389,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       const clippedStart = Math.max(seg.startMs, ttmStart);
                       const clippedEndMs = Math.min(segEnd, ttmEnd);
                       return [{ columnName: seg.columnName, columnType: seg.columnType, clippedStartMs: clippedStart, clippedMs: clippedEndMs - clippedStart, durationMs: seg.durationMs }];
+                    })
+                    .sort((a, b) => {
+                      const ai = flowMetricsData.columnOrder.indexOf(a.columnName);
+                      const bi = flowMetricsData.columnOrder.indexOf(b.columnName);
+                      return (ai === -1 ? 9999 : ai) - (bi === -1 ? 9999 : bi);
                     });
 
                   // Kaiten column types: 1=queue (grey), 2=in-progress (red), 3=done (dark)

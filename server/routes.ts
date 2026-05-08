@@ -276,6 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         kaitenClient.getBoardColumns(dept.kaitenBoardId),
       ]);
       const columnMap = new Map(columns.map(c => [c.id, { title: c.title, type: c.type }]));
+      const columnOrder: string[] = columns.map(c => c.title);
 
       const filteredCards = allCards.filter(card => {
         const typeName = (card.type?.name ?? '').toLowerCase();
@@ -338,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({ success: true, spaceName, kaitenSpaceId: dept.kaitenSpaceId, cards: results });
+      res.json({ success: true, spaceName, kaitenSpaceId: dept.kaitenSpaceId, columnOrder, cards: results });
     } catch (error: any) {
       console.error("[flow-metrics]", error);
       res.status(500).json({ success: false, error: error.message || "Failed to compute flow metrics" });
