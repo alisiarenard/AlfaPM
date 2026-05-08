@@ -1384,7 +1384,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     </div>
                   );
                 })()}
-                <div className="divide-y divide-border">
+                <div>
                 {flowMetricsData.cards.map((card) => {
                   const ttmStart = card.ttm?.startMs ?? null;
                   const ttmEnd = card.ttm?.endMs ?? null;
@@ -1492,17 +1492,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               );
                             })}
                           </div>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                            {ttmSegs.map((seg, idx) => (
-                              <div key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <span
-                                  className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                                  style={{ background: segmentColors[idx] }}
-                                />
-                                <span>{seg.columnName}</span>
-                              </div>
-                            ))}
-                          </div>
                         </>
                       ) : (
                         <div className="w-full h-[7px] bg-muted rounded-full" />
@@ -1515,6 +1504,43 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
             )
           ) : null}
         </div>
+
+        {/* Fixed legend panel */}
+        {flowMetricsData && flowMetricsData.cards.length > 0 && (() => {
+          const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
+          const RED_SHADES  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
+          const colTypeMap = new Map<string, number | null>();
+          flowMetricsData.cards.forEach(c => {
+            (c.statusSegments ?? []).forEach(s => {
+              if (!colTypeMap.has(s.columnName)) colTypeMap.set(s.columnName, s.columnType);
+            });
+          });
+          const typeCounters: Record<number, number> = {};
+          const legendItems = flowMetricsData.columnOrder
+            .filter(col => colTypeMap.has(col))
+            .map(col => {
+              const type = colTypeMap.get(col) ?? 0;
+              const idx = typeCounters[type] ?? 0;
+              typeCounters[type] = idx + 1;
+              let color = '#9ca3af';
+              if (type === 1) color = GREY_SHADES[idx % GREY_SHADES.length];
+              else if (type === 2) color = RED_SHADES[idx % RED_SHADES.length];
+              else if (type === 3) color = '#7f1d1d';
+              return { col, color };
+            });
+          return (
+            <div className="shrink-0 border-t border-border px-5 py-3 bg-background">
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {legendItems.map(({ col, color }) => (
+                  <div key={col} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: color }} />
+                    <span>{col}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </DialogContent>
     </Dialog>
     </>
