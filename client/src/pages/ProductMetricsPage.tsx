@@ -85,6 +85,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     spaceName: string;
     kaitenSpaceId: number | null;
     columnOrder: string[];
+    ttmStartColumnName: string | null;
+    ttmEndColumnName: string | null;
     cards: {
       cardId: number;
       title: string;
@@ -1510,24 +1512,23 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
           const RED_SHADES  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
 
-          // Collect columns+types that appear in TTM range of any card
+          // Slice columnOrder from TTM start to TTM end column (inclusive)
           const colTypeMap = new Map<string, number | null>();
           flowMetricsData.cards.forEach(c => {
-            const ttmStart = c.ttm?.startMs ?? null;
-            const ttmEnd   = c.ttm?.endMs   ?? null;
-            if (ttmStart === null || ttmEnd === null) return;
             (c.statusSegments ?? []).forEach(s => {
-              const segEnd = s.startMs + s.durationMs;
-              if (segEnd <= ttmStart || s.startMs >= ttmEnd) return;
-              const clippedMs = Math.min(segEnd, ttmEnd) - Math.max(s.startMs, ttmStart);
-              if (clippedMs > 0 && !colTypeMap.has(s.columnName)) {
-                colTypeMap.set(s.columnName, s.columnType);
-              }
+              if (!colTypeMap.has(s.columnName)) colTypeMap.set(s.columnName, s.columnType);
             });
           });
 
+          const order = flowMetricsData.columnOrder;
+          const startIdx = flowMetricsData.ttmStartColumnName ? order.indexOf(flowMetricsData.ttmStartColumnName) : -1;
+          const endIdx   = flowMetricsData.ttmEndColumnName   ? order.indexOf(flowMetricsData.ttmEndColumnName)   : -1;
+          const ttmColumns = (startIdx !== -1 && endIdx !== -1 && startIdx <= endIdx)
+            ? order.slice(startIdx, endIdx + 1)
+            : order;
+
           const typeCounters: Record<number, number> = {};
-          const legendItems = flowMetricsData.columnOrder
+          const legendItems = ttmColumns
             .filter(col => colTypeMap.has(col))
             .map(col => {
               const type = colTypeMap.get(col) ?? 0;

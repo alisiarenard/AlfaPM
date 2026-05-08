@@ -353,7 +353,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({ success: true, spaceName, kaitenSpaceId: dept.kaitenSpaceId, columnOrder, cards: results });
+      const ttmStartColumnName = dept.ttmStartColumnId ? (columnMap.get(dept.ttmStartColumnId)?.title ?? null) : null;
+      const ttmEndColumnName   = dept.ttmEndColumnId   ? (columnMap.get(dept.ttmEndColumnId)?.title   ?? null) : null;
+      res.json({ success: true, spaceName, kaitenSpaceId: dept.kaitenSpaceId, columnOrder, ttmStartColumnName, ttmEndColumnName, cards: results });
     } catch (error: any) {
       console.error("[flow-metrics]", error);
       res.status(500).json({ success: false, error: error.message || "Failed to compute flow metrics" });
