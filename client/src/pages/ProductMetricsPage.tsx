@@ -63,6 +63,22 @@ function formatDurationShort(ms: number): string {
   return parts.slice(0, 2).join(' ');
 }
 
+function formatDurationTop1(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const totalMin = Math.floor(totalSec / 60);
+  const totalHours = Math.floor(totalMin / 60);
+  const totalDays = Math.floor(totalHours / 24);
+  const years = Math.floor(totalDays / 365);
+  if (years > 0) return `${years} г.`;
+  const days = totalDays % 365;
+  if (days > 0) return `${days} д.`;
+  const hours = totalHours % 24;
+  if (hours > 0) return `${hours} ч.`;
+  const min = totalMin % 60;
+  if (min > 0) return `${min} мин.`;
+  return `${totalSec % 60} сек.`;
+}
+
 export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle }: ProductMetricsPageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1295,23 +1311,23 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <div className="px-5 pt-4 pb-2 shrink-0 sticky top-0 z-10 bg-background">
                       <div className="w-full h-[110px] border border-border rounded-lg flex">
 
-                        {/* Left 60%: 4 metrics */}
-                        <div className="w-[55%] flex min-w-0">
+                        {/* Left 50%: 4 metrics */}
+                        <div className="w-[50%] flex min-w-0">
                           <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
                             <div className="text-xs font-bold text-muted-foreground truncate">Time To Market</div>
-                            <div className="text-lg font-semibold truncate">{avgTtm !== null ? formatDurationShort(avgTtm) : '—'}</div>
+                            <div className="text-lg font-semibold truncate">{avgTtm !== null ? formatDurationTop1(avgTtm) : '—'}</div>
                             <div />
                           </div>
                           <div className="border-l border-border my-3 shrink-0" />
                           <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
                             <div className="text-xs font-bold text-muted-foreground truncate">Lead Time</div>
-                            <div className="text-lg font-semibold truncate">{avgLead !== null ? formatDurationShort(avgLead) : '—'}</div>
+                            <div className="text-lg font-semibold truncate">{avgLead !== null ? formatDurationTop1(avgLead) : '—'}</div>
                             <div />
                           </div>
                           <div className="border-l border-border my-3 shrink-0" />
                           <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
                             <div className="text-xs font-bold text-muted-foreground truncate">Cycle Time</div>
-                            <div className="text-lg font-semibold truncate">{avgCycle !== null ? formatDurationShort(avgCycle) : '—'}</div>
+                            <div className="text-lg font-semibold truncate">{avgCycle !== null ? formatDurationTop1(avgCycle) : '—'}</div>
                             <div />
                           </div>
                           <div className="border-l border-border my-3 shrink-0" />
@@ -1325,8 +1341,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         {/* Center divider */}
                         <div className="border-l border-border my-3 shrink-0" />
 
-                        {/* Right 40%: avg status bar */}
-                        <div className="w-[45%] px-4 py-3 flex flex-col justify-between min-w-0">
+                        {/* Right 50%: avg status bar */}
+                        <div className="w-[50%] px-4 py-3 flex flex-col justify-between min-w-0">
                           <div />
 
                           {/* Bar + brackets wrapper */}
