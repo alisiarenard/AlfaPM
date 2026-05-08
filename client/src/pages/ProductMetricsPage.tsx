@@ -1420,16 +1420,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                           ) : (
                             <span className="text-sm font-semibold text-foreground">{card.title}</span>
                           )}
-                          {card.lastMovedToDoneAt && (
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                              Завершено: {new Date(card.lastMovedToDoneAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                            </div>
-                          )}
                         </div>
-                        <div className="shrink-0 text-right text-xs text-muted-foreground space-y-0.5">
-                          {card.ttm && <div>TTM: <span className="text-foreground font-medium">{formatDuration(card.ttm.ms)}</span></div>}
-                          {card.leadTime && <div>Lead: <span className="text-foreground font-medium">{formatDuration(card.leadTime.ms)}</span></div>}
-                          {card.cycleTime && <div>Cycle: <span className="text-foreground font-medium">{formatDuration(card.cycleTime.ms)}</span></div>}
+                        <div className="shrink-0 text-right text-xs text-muted-foreground flex items-center gap-2">
+                          {card.ttm && <span>TTM: <span className="text-foreground font-medium">{formatDuration(card.ttm.ms)}</span></span>}
+                          {card.leadTime && <span>LT: <span className="text-foreground font-medium">{formatDuration(card.leadTime.ms)}</span></span>}
+                          {card.cycleTime && <span>CT: <span className="text-foreground font-medium">{formatDuration(card.cycleTime.ms)}</span></span>}
                         </div>
                       </div>
 
