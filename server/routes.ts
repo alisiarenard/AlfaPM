@@ -272,6 +272,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
       const columnMap = new Map(columns.map(c => [c.id, c.title]));
 
+      const cutoff = Date.now() - 365 * 24 * 60 * 60 * 1000;
+      const filteredCards = cards.filter(card => {
+        const typeName = (card.type?.name ?? '').toLowerCase();
+        const isEpic = typeName === 'epic' || typeName === 'эпик';
+        const movedToDone = card.last_moved_to_done_at ? new Date(card.last_moved_to_done_at).getTime() : null;
+        const doneRecently = movedToDone !== null && movedToDone >= cutoff;
+        return isEpic && doneRecently;
+      });
+
       const calcMs = (history: { column_id: number; changed: string }[], startColId: number | null, endColId: number | null): number | null => {
         if (!startColId || !endColId) return null;
         const startEntry = history.find(h => h.column_id === startColId);
@@ -284,7 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const RATE_DELAY = 220;
       const results = [];
-      for (const card of cards) {
+      for (const card of filteredCards) {
         const history = await kaitenClient.getCardLocationHistory(card.id);
         await new Promise(resolve => setTimeout(resolve, RATE_DELAY));
 
