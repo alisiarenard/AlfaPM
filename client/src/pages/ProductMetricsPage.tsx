@@ -1185,8 +1185,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   };
 
                   const STATUS_COLORS = [
-                    '#4a0000', '#7b0f0f', '#a01818', '#bf2c2c',
-                    '#d94545', '#e87070', '#f0a0a0', '#f7c8c8',
+                    '#c0392b', '#d94f3f', '#e86555', '#f07a6a',
+                    '#f59080', '#f8a898', '#fbbfb0', '#fdd5cc',
                   ];
 
                   const cardUrl = flowMetricsData.kaitenSpaceId
