@@ -289,9 +289,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const startEntry = history.find(h => h.column_id === startColId);
         if (!startEntry) return null;
         const startMs = new Date(startEntry.changed).getTime();
-        const endEntry = history.filter(h => h.column_id === endColId && new Date(h.changed).getTime() >= startMs).pop();
-        if (!endEntry) return null;
-        const endMs = new Date(endEntry.changed).getTime();
+        // Find the last entry in endColId after startMs
+        let endIdx = -1;
+        for (let i = history.length - 1; i >= 0; i--) {
+          if (history[i].column_id === endColId && new Date(history[i].changed).getTime() >= startMs) {
+            endIdx = i;
+            break;
+          }
+        }
+        if (endIdx === -1) return null;
+        // Include time spent IN the end column: extend to next entry or Date.now()
+        const nextEntry = history[endIdx + 1];
+        const endMs = nextEntry ? new Date(nextEntry.changed).getTime() : Date.now();
         return { ms: endMs - startMs, startMs, endMs };
       };
 
@@ -317,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const statusSegments: { columnName: string; columnType: number | null; startMs: number; durationMs: number }[] = [];
         for (let i = 0; i < history.length; i++) {
           const startMs = new Date(history[i].changed).getTime();
-          const endMs = i + 1 < history.length ? new Date(history[i + 1].changed).getTime() : startMs;
+          const endMs = i + 1 < history.length ? new Date(history[i + 1].changed).getTime() : Date.now();
           const durationMs = endMs - startMs;
           if (durationMs > 0) {
             const colInfo = columnMap.get(history[i].column_id);
