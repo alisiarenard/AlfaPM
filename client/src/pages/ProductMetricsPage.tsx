@@ -43,6 +43,26 @@ function formatDuration(ms: number): string {
   return parts.join(' ');
 }
 
+function formatDurationShort(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const sec = totalSec % 60;
+  const totalMin = Math.floor(totalSec / 60);
+  const min = totalMin % 60;
+  const totalHours = Math.floor(totalMin / 60);
+  const hours = totalHours % 24;
+  const totalDays = Math.floor(totalHours / 24);
+  const days = totalDays % 365;
+  const years = Math.floor(totalDays / 365);
+
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} г.`);
+  if (days > 0) parts.push(`${days} д.`);
+  if (hours > 0) parts.push(`${hours} ч.`);
+  if (min > 0) parts.push(`${min} мин.`);
+  if (sec > 0 || parts.length === 0) parts.push(`${sec} сек.`);
+  return parts.slice(0, 2).join(' ');
+}
+
 export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle }: ProductMetricsPageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1190,33 +1210,27 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <div className="px-5 pt-4 pb-2 shrink-0">
                       <div className="w-full h-[110px] border border-border rounded-lg flex">
                         <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-sm font-bold text-muted-foreground">Тайм Ту Маркет</div>
-                          <div className="text-xl font-semibold truncate">{avgTtm !== null ? formatDuration(avgTtm) : '—'}</div>
-                          <div className="text-[0.75rem] text-muted-foreground">
-                            {ttmVals.length > 0 ? `среднее по ${ttmVals.length} эпикам` : 'нет данных'}
-                          </div>
+                          <div className="text-sm font-bold text-muted-foreground">Time To Market</div>
+                          <div className="text-xl font-semibold truncate">{avgTtm !== null ? formatDurationShort(avgTtm) : '—'}</div>
+                          <div />
                         </div>
                         <div className="border-l border-border my-3 shrink-0" />
                         <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-sm font-bold text-muted-foreground">Лид Тайм</div>
-                          <div className="text-xl font-semibold truncate">{avgLead !== null ? formatDuration(avgLead) : '—'}</div>
-                          <div className="text-[0.75rem] text-muted-foreground">
-                            {leadVals.length > 0 ? `среднее по ${leadVals.length} эпикам` : 'нет данных'}
-                          </div>
+                          <div className="text-sm font-bold text-muted-foreground">Lead Time</div>
+                          <div className="text-xl font-semibold truncate">{avgLead !== null ? formatDurationShort(avgLead) : '—'}</div>
+                          <div />
                         </div>
                         <div className="border-l border-border my-3 shrink-0" />
                         <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-sm font-bold text-muted-foreground">Сайкл Тайм</div>
-                          <div className="text-xl font-semibold truncate">{avgCycle !== null ? formatDuration(avgCycle) : '—'}</div>
-                          <div className="text-[0.75rem] text-muted-foreground">
-                            {cycleVals.length > 0 ? `среднее по ${cycleVals.length} эпикам` : 'нет данных'}
-                          </div>
+                          <div className="text-sm font-bold text-muted-foreground">Cycle Time</div>
+                          <div className="text-xl font-semibold truncate">{avgCycle !== null ? formatDurationShort(avgCycle) : '—'}</div>
+                          <div />
                         </div>
                         <div className="border-l border-border my-3 shrink-0" />
                         <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-sm font-bold text-muted-foreground">Флоу Эфишинси</div>
+                          <div className="text-sm font-bold text-muted-foreground">Flow Efficiency</div>
                           <div className="text-xl font-semibold">{avgFe !== null ? `${avgFe}%` : '—'}</div>
-                          <div className="text-[0.75rem] text-muted-foreground">% времени в работе</div>
+                          <div />
                         </div>
                       </div>
                     </div>
