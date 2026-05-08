@@ -1505,16 +1505,27 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           ) : null}
         </div>
 
-        {/* Fixed legend panel */}
+        {/* Fixed legend panel — only columns present in TTM range of at least one card */}
         {flowMetricsData && flowMetricsData.cards.length > 0 && (() => {
           const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
           const RED_SHADES  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
+
+          // Collect columns+types that appear in TTM range of any card
           const colTypeMap = new Map<string, number | null>();
           flowMetricsData.cards.forEach(c => {
+            const ttmStart = c.ttm?.startMs ?? null;
+            const ttmEnd   = c.ttm?.endMs   ?? null;
+            if (ttmStart === null || ttmEnd === null) return;
             (c.statusSegments ?? []).forEach(s => {
-              if (!colTypeMap.has(s.columnName)) colTypeMap.set(s.columnName, s.columnType);
+              const segEnd = s.startMs + s.durationMs;
+              if (segEnd <= ttmStart || s.startMs >= ttmEnd) return;
+              const clippedMs = Math.min(segEnd, ttmEnd) - Math.max(s.startMs, ttmStart);
+              if (clippedMs > 0 && !colTypeMap.has(s.columnName)) {
+                colTypeMap.set(s.columnName, s.columnType);
+              }
             });
           });
+
           const typeCounters: Record<number, number> = {};
           const legendItems = flowMetricsData.columnOrder
             .filter(col => colTypeMap.has(col))
@@ -1528,6 +1539,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               else if (type === 3) color = '#7f1d1d';
               return { col, color };
             });
+
+          if (legendItems.length === 0) return null;
           return (
             <div className="shrink-0 border-t border-border px-5 py-3 bg-background">
               <div className="flex flex-wrap gap-x-4 gap-y-1.5">
