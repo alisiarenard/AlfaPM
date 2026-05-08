@@ -1290,8 +1290,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     <div className="px-5 pt-4 pb-2 shrink-0 sticky top-0 z-10 bg-background">
                       <div className="w-full h-[110px] border border-border rounded-lg flex">
 
-                        {/* Left 50%: 4 metrics */}
-                        <div className="w-1/2 flex min-w-0">
+                        {/* Left 2/3: 4 metrics */}
+                        <div className="w-2/3 flex min-w-0">
                           <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
                             <div className="text-xs font-bold text-muted-foreground truncate">Time To Market</div>
                             <div className="text-lg font-semibold truncate">{avgTtm !== null ? formatDurationShort(avgTtm) : '—'}</div>
@@ -1320,8 +1320,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         {/* Center divider */}
                         <div className="border-l border-border my-3 shrink-0" />
 
-                        {/* Right 50%: avg status bar */}
-                        <div className="w-1/2 px-4 py-3 flex flex-col justify-between min-w-0">
+                        {/* Right 1/3: avg status bar */}
+                        <div className="w-1/3 px-4 py-3 flex flex-col justify-between min-w-0">
                           <div />
 
                           {/* Bar + brackets wrapper */}
