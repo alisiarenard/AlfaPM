@@ -308,6 +308,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const leadTimeSpan = calcSpan(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
         const cycleTimeSpan = calcSpan(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
 
+        // Fallback: if card history starts from LT or CT, inherit parent metrics
+        const effectiveTtm = ttmSpan ?? leadTimeSpan ?? cycleTimeSpan;
+        const effectiveLt = leadTimeSpan ?? cycleTimeSpan;
+        const effectiveCt = cycleTimeSpan;
+
         // Build per-status segments: time spent in each column
         const statusSegments: { columnName: string; columnType: number | null; startMs: number; durationMs: number }[] = [];
         for (let i = 0; i < history.length; i++) {
@@ -333,9 +338,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalStartMs,
           totalEndMs,
           statusSegments,
-          ttm: ttmSpan,
-          leadTime: leadTimeSpan,
-          cycleTime: cycleTimeSpan,
+          ttm: effectiveTtm,
+          leadTime: effectiveLt,
+          cycleTime: effectiveCt,
         });
       }
 
