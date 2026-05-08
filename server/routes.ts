@@ -266,19 +266,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (spaceInfo?.title) spaceName = spaceInfo.title;
       }
 
-      const [cards, columns] = await Promise.all([
-        kaitenClient.getAllCardsByBoard(dept.kaitenBoardId),
+      const cutoffDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+
+      const [allCards, columns] = await Promise.all([
+        kaitenClient.getCardsWithDateFilter({
+          boardId: dept.kaitenBoardId,
+          lastMovedToDoneAtAfter: cutoffDate,
+        }),
         kaitenClient.getBoardColumns(dept.kaitenBoardId),
       ]);
       const columnMap = new Map(columns.map(c => [c.id, c.title]));
 
-      const cutoff = Date.now() - 365 * 24 * 60 * 60 * 1000;
-      const filteredCards = cards.filter(card => {
+      const filteredCards = allCards.filter(card => {
         const typeName = (card.type?.name ?? '').toLowerCase();
-        const isEpic = typeName === 'epic' || typeName === 'эпик';
-        const movedToDone = card.last_moved_to_done_at ? new Date(card.last_moved_to_done_at).getTime() : null;
-        const doneRecently = movedToDone !== null && movedToDone >= cutoff;
-        return isEpic && doneRecently;
+        return typeName === 'epic' || typeName === 'эпик';
       });
 
       const calcMs = (history: { column_id: number; changed: string }[], startColId: number | null, endColId: number | null): number | null => {
