@@ -290,11 +290,13 @@ export class KaitenClient {
     return [];
   }
 
-  async getCardLocationHistory(cardId: number): Promise<{ column_id: number; created: string }[]> {
+  async getCardLocationHistory(cardId: number): Promise<{ column_id: number; changed: string }[]> {
     try {
-      const response = await this.makeRequest<{ column_id: number; created: string }[]>(`/cards/${cardId}/location-history`);
+      const response = await this.makeRequest<{ column_id: number; changed: string }[]>(`/cards/${cardId}/location-history`);
       if (Array.isArray(response)) {
-        return response.sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
+        return (response as any[])
+          .map((h: any) => ({ column_id: h.column_id, changed: h.changed }))
+          .sort((a, b) => new Date(a.changed).getTime() - new Date(b.changed).getTime());
       }
       return [];
     } catch (error) {

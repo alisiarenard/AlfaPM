@@ -266,16 +266,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (spaceInfo?.title) spaceName = spaceInfo.title;
       }
 
-      const cards = await kaitenClient.getAllCardsByBoard(dept.kaitenBoardId);
+      const [cards, columns] = await Promise.all([
+        kaitenClient.getAllCardsByBoard(dept.kaitenBoardId),
+        kaitenClient.getBoardColumns(dept.kaitenBoardId),
+      ]);
+      const columnMap = new Map(columns.map(c => [c.id, c.title]));
 
-      const calcDays = (history: { column_id: number; created: string }[], startColId: number | null, endColId: number | null): number | null => {
+      const calcDays = (history: { column_id: number; changed: string }[], startColId: number | null, endColId: number | null): number | null => {
         if (!startColId || !endColId) return null;
         const startEntry = history.find(h => h.column_id === startColId);
         if (!startEntry) return null;
-        const startTime = new Date(startEntry.created).getTime();
-        const endEntry = history.filter(h => h.column_id === endColId && new Date(h.created).getTime() >= startTime).pop();
+        const startTime = new Date(startEntry.changed).getTime();
+        const endEntry = history.filter(h => h.column_id === endColId && new Date(h.changed).getTime() >= startTime).pop();
         if (!endEntry) return null;
-        const diff = new Date(endEntry.created).getTime() - startTime;
+        const diff = new Date(endEntry.changed).getTime() - startTime;
         return Math.round(diff / (1000 * 60 * 60 * 24));
       };
 
@@ -302,7 +306,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastMovedToDoneAt: card.last_moved_to_done_at ?? null,
           size: card.size,
           archived: card.archived,
-          history,
+          history: history.map(h => ({
+            column_id: h.column_id,
+            columnName: columnMap.get(h.column_id) ?? `col ${h.column_id}`,
+            changed: h.changed,
+          })),
           ttm,
           leadTime,
           cycleTime,

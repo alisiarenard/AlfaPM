@@ -54,7 +54,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       lastMovedToDoneAt: string | null;
       size: number;
       archived: boolean;
-      history: { column_id: number; created: string }[];
+      history: { column_id: number; columnName: string; changed: string }[];
       ttm: number | null;
       leadTime: number | null;
       cycleTime: number | null;
@@ -1185,8 +1185,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         <div className="space-y-0.5 font-mono">
                           {card.history.map((h, idx) => (
                             <div key={idx} className="flex gap-3 text-muted-foreground">
-                              <span className="text-foreground">col {h.column_id}</span>
-                              <span>{new Date(h.created).toLocaleString('ru-RU')}</span>
+                              <span className="text-foreground min-w-[180px]">{h.columnName}</span>
+                              <span>{new Date(h.changed).toLocaleString('ru-RU')}</span>
                             </div>
                           ))}
                         </div>
