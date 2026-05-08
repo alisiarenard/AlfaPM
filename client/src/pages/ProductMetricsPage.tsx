@@ -1294,14 +1294,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               );
                             })}
                           </div>
-                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 overflow-hidden max-h-[28px]">
-                            {avgSegs.map((seg, idx) => (
-                              <div key={idx} className="flex items-center gap-1 text-[0.65rem] text-muted-foreground">
-                                <span className="inline-block w-2 h-2 rounded-sm shrink-0" style={{ background: avgSegColors[idx] }} />
-                                <span className="truncate max-w-[90px]">{seg.columnName}</span>
-                              </div>
-                            ))}
-                          </div>
+                          <div />
                         </div>
 
                       </div>
