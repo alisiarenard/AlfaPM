@@ -282,6 +282,14 @@ export class KaitenClient {
     });
   }
 
+  async getBoardColumns(boardId: number): Promise<{ id: number; title: string; type: number; sort_order: number }[]> {
+    const response = await this.makeRequest<{ id: number; title: string; type: number; sort_order: number }[]>(`/boards/${boardId}/columns`);
+    if (Array.isArray(response)) {
+      return response.sort((a, b) => a.sort_order - b.sort_order);
+    }
+    return [];
+  }
+
   async getBoardCardsFromSpace(spaceId: number, boardId: number): Promise<KaitenCard[]> {
     try {
       const response = await this.makeRequest<{ cards?: KaitenCard[]; [key: string]: any }>(`/spaces/${spaceId}/boards/${boardId}`);

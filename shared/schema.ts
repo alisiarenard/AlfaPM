@@ -84,6 +84,14 @@ export const departments = pgTable("departments", {
   department: varchar("department").notNull(),
   plannedIr: integer("planned_ir"),
   plannedVc: integer("planned_vc"),
+  kaitenSpaceId: integer("kaiten_space_id"),
+  kaitenBoardId: integer("kaiten_board_id"),
+  ttmStartColumnId: integer("ttm_start_column_id"),
+  ttmEndColumnId: integer("ttm_end_column_id"),
+  leadTimeStartColumnId: integer("lead_time_start_column_id"),
+  leadTimeEndColumnId: integer("lead_time_end_column_id"),
+  cycleTimeStartColumnId: integer("cycle_time_start_column_id"),
+  cycleTimeEndColumnId: integer("cycle_time_end_column_id"),
 });
 
 export const insertDepartmentSchema = createInsertSchema(departments).omit({ id: true });

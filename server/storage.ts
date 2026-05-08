@@ -8,8 +8,8 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getDepartments(): Promise<DepartmentWithTeamCount[]>;
-  createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department>;
-  updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined>;
+  createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }): Promise<Department>;
+  updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }): Promise<Department | undefined>;
   getAllTeams(): Promise<TeamRow[]>;
   getTeamsByDepartment(departmentId: string): Promise<TeamRow[]>;
   getTeamById(teamId: string): Promise<TeamRow | undefined>;
@@ -413,12 +413,12 @@ export class DbStorage implements IStorage {
     return result;
   }
 
-  async createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department> {
+  async createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }): Promise<Department> {
     const [newDepartment] = await db.insert(departments).values(department).returning();
     return newDepartment;
   }
 
-  async updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined> {
+  async updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }): Promise<Department | undefined> {
     const [updated] = await db.update(departments)
       .set(department)
       .where(eq(departments.id, id))

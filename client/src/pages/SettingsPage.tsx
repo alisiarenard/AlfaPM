@@ -119,13 +119,21 @@ export default function SettingsPage() {
   const [extraBoards, setExtraBoards] = useState<{spaceId: string; boardId: string}[]>([]);
   const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
   const [sprintIds, setSprintIds] = useState("");
+  const [ttmSpaceId, setTtmSpaceId] = useState("");
+  const [ttmBoardId, setTtmBoardId] = useState("");
+  const [ttmStartColumnId, setTtmStartColumnId] = useState("");
+  const [ttmEndColumnId, setTtmEndColumnId] = useState("");
+  const [leadTimeStartColumnId, setLeadTimeStartColumnId] = useState("");
+  const [leadTimeEndColumnId, setLeadTimeEndColumnId] = useState("");
+  const [cycleTimeStartColumnId, setCycleTimeStartColumnId] = useState("");
+  const [cycleTimeEndColumnId, setCycleTimeEndColumnId] = useState("");
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
   });
 
   const createDepartmentMutation = useMutation({
-    mutationFn: async (data: { department: string; plannedIr?: number | null; plannedVc?: number | null }) => {
+    mutationFn: async (data: { department: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }) => {
       const res = await apiRequest("POST", "/api/departments", data);
       return await res.json();
     },
@@ -141,6 +149,14 @@ export default function SettingsPage() {
       setBlockName(departmentWithCount.department);
       setInnovationRate(departmentWithCount.plannedIr?.toString() || "");
       setValueCost(departmentWithCount.plannedVc?.toString() || "");
+      setTtmSpaceId(departmentWithCount.kaitenSpaceId?.toString() || "");
+      setTtmBoardId(departmentWithCount.kaitenBoardId?.toString() || "");
+      setTtmStartColumnId(departmentWithCount.ttmStartColumnId?.toString() || "");
+      setTtmEndColumnId(departmentWithCount.ttmEndColumnId?.toString() || "");
+      setLeadTimeStartColumnId(departmentWithCount.leadTimeStartColumnId?.toString() || "");
+      setLeadTimeEndColumnId(departmentWithCount.leadTimeEndColumnId?.toString() || "");
+      setCycleTimeStartColumnId(departmentWithCount.cycleTimeStartColumnId?.toString() || "");
+      setCycleTimeEndColumnId(departmentWithCount.cycleTimeEndColumnId?.toString() || "");
     },
     onError: (error) => {
       toast({
@@ -151,7 +167,7 @@ export default function SettingsPage() {
   });
 
   const updateDepartmentMutation = useMutation({
-    mutationFn: async (data: { id: string; department?: string; plannedIr?: number | null; plannedVc?: number | null }) => {
+    mutationFn: async (data: { id: string; department?: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }) => {
       const { id, ...updateData } = data;
       const res = await apiRequest("PATCH", `/api/departments/${id}`, updateData);
       return await res.json();
@@ -170,6 +186,14 @@ export default function SettingsPage() {
       setBlockName(departmentWithCount.department);
       setInnovationRate(departmentWithCount.plannedIr?.toString() || "");
       setValueCost(departmentWithCount.plannedVc?.toString() || "");
+      setTtmSpaceId(departmentWithCount.kaitenSpaceId?.toString() || "");
+      setTtmBoardId(departmentWithCount.kaitenBoardId?.toString() || "");
+      setTtmStartColumnId(departmentWithCount.ttmStartColumnId?.toString() || "");
+      setTtmEndColumnId(departmentWithCount.ttmEndColumnId?.toString() || "");
+      setLeadTimeStartColumnId(departmentWithCount.leadTimeStartColumnId?.toString() || "");
+      setLeadTimeEndColumnId(departmentWithCount.leadTimeEndColumnId?.toString() || "");
+      setCycleTimeStartColumnId(departmentWithCount.cycleTimeStartColumnId?.toString() || "");
+      setCycleTimeEndColumnId(departmentWithCount.cycleTimeEndColumnId?.toString() || "");
     },
     onError: (error) => {
       toast({
@@ -344,6 +368,17 @@ export default function SettingsPage() {
     },
   });
 
+  const { data: kaitenColumns, isLoading: columnsLoading } = useQuery<{ id: number; title: string; type: number }[]>({
+    queryKey: ["/api/kaiten/boards", ttmBoardId, "columns"],
+    queryFn: async () => {
+      const res = await fetch(`/api/kaiten/boards/${ttmBoardId}/columns`);
+      if (!res.ok) throw new Error("Failed to fetch columns");
+      return await res.json();
+    },
+    enabled: !!ttmBoardId && !isNaN(parseInt(ttmBoardId)) && parseInt(ttmBoardId) > 0,
+    staleTime: 60000,
+  });
+
   const { data: yearlyData, isLoading: yearlyDataLoading } = useQuery<TeamYearlyDataRow | null>({
     queryKey: ["/api/team-yearly-data", editingTeam?.teamId, { year: metricsYear }],
     queryFn: async () => {
@@ -378,10 +413,26 @@ export default function SettingsPage() {
       setBlockName(editingDepartment.department);
       setInnovationRate(editingDepartment.plannedIr?.toString() || "");
       setValueCost(editingDepartment.plannedVc?.toString() || "");
+      setTtmSpaceId(editingDepartment.kaitenSpaceId?.toString() || "");
+      setTtmBoardId(editingDepartment.kaitenBoardId?.toString() || "");
+      setTtmStartColumnId(editingDepartment.ttmStartColumnId?.toString() || "");
+      setTtmEndColumnId(editingDepartment.ttmEndColumnId?.toString() || "");
+      setLeadTimeStartColumnId(editingDepartment.leadTimeStartColumnId?.toString() || "");
+      setLeadTimeEndColumnId(editingDepartment.leadTimeEndColumnId?.toString() || "");
+      setCycleTimeStartColumnId(editingDepartment.cycleTimeStartColumnId?.toString() || "");
+      setCycleTimeEndColumnId(editingDepartment.cycleTimeEndColumnId?.toString() || "");
     } else if (rightPanelMode === "addBlock") {
       setBlockName("");
       setInnovationRate("");
       setValueCost("");
+      setTtmSpaceId("");
+      setTtmBoardId("");
+      setTtmStartColumnId("");
+      setTtmEndColumnId("");
+      setLeadTimeStartColumnId("");
+      setLeadTimeEndColumnId("");
+      setCycleTimeStartColumnId("");
+      setCycleTimeEndColumnId("");
     } else if (rightPanelMode === "addTeam") {
       setTeamName("");
       setSpaceId("");
@@ -454,7 +505,15 @@ export default function SettingsPage() {
       const nameChanged = blockName.trim() !== editingDepartment.department;
       const irChanged = (innovationRate ? parseInt(innovationRate) : null) !== editingDepartment.plannedIr;
       const vcChanged = (valueCost ? parseInt(valueCost) : null) !== editingDepartment.plannedVc;
-      return nameChanged || irChanged || vcChanged;
+      const ttmSpaceChanged = (ttmSpaceId ? parseInt(ttmSpaceId) : null) !== (editingDepartment.kaitenSpaceId ?? null);
+      const ttmBoardChanged = (ttmBoardId ? parseInt(ttmBoardId) : null) !== (editingDepartment.kaitenBoardId ?? null);
+      const ttmStartChanged = (ttmStartColumnId ? parseInt(ttmStartColumnId) : null) !== (editingDepartment.ttmStartColumnId ?? null);
+      const ttmEndChanged = (ttmEndColumnId ? parseInt(ttmEndColumnId) : null) !== (editingDepartment.ttmEndColumnId ?? null);
+      const ltStartChanged = (leadTimeStartColumnId ? parseInt(leadTimeStartColumnId) : null) !== (editingDepartment.leadTimeStartColumnId ?? null);
+      const ltEndChanged = (leadTimeEndColumnId ? parseInt(leadTimeEndColumnId) : null) !== (editingDepartment.leadTimeEndColumnId ?? null);
+      const ctStartChanged = (cycleTimeStartColumnId ? parseInt(cycleTimeStartColumnId) : null) !== (editingDepartment.cycleTimeStartColumnId ?? null);
+      const ctEndChanged = (cycleTimeEndColumnId ? parseInt(cycleTimeEndColumnId) : null) !== (editingDepartment.cycleTimeEndColumnId ?? null);
+      return nameChanged || irChanged || vcChanged || ttmSpaceChanged || ttmBoardChanged || ttmStartChanged || ttmEndChanged || ltStartChanged || ltEndChanged || ctStartChanged || ctEndChanged;
     }
     if (rightPanelMode === "editTeam" && editingTeam) {
       const nameChanged = teamName.trim() !== editingTeam.teamName;
@@ -485,6 +544,14 @@ export default function SettingsPage() {
         department: blockName.trim(),
         plannedIr: innovationRate ? parseInt(innovationRate) : null,
         plannedVc: valueCost ? parseInt(valueCost) : null,
+        kaitenSpaceId: ttmSpaceId ? parseInt(ttmSpaceId) : null,
+        kaitenBoardId: ttmBoardId ? parseInt(ttmBoardId) : null,
+        ttmStartColumnId: ttmStartColumnId ? parseInt(ttmStartColumnId) : null,
+        ttmEndColumnId: ttmEndColumnId ? parseInt(ttmEndColumnId) : null,
+        leadTimeStartColumnId: leadTimeStartColumnId ? parseInt(leadTimeStartColumnId) : null,
+        leadTimeEndColumnId: leadTimeEndColumnId ? parseInt(leadTimeEndColumnId) : null,
+        cycleTimeStartColumnId: cycleTimeStartColumnId ? parseInt(cycleTimeStartColumnId) : null,
+        cycleTimeEndColumnId: cycleTimeEndColumnId ? parseInt(cycleTimeEndColumnId) : null,
       });
     } else if (rightPanelMode === "editBlock" && editingDepartment) {
       updateDepartmentMutation.mutate({
@@ -492,9 +559,18 @@ export default function SettingsPage() {
         department: blockName.trim(),
         plannedIr: innovationRate ? parseInt(innovationRate) : null,
         plannedVc: valueCost ? parseInt(valueCost) : null,
+        kaitenSpaceId: ttmSpaceId ? parseInt(ttmSpaceId) : null,
+        kaitenBoardId: ttmBoardId ? parseInt(ttmBoardId) : null,
+        ttmStartColumnId: ttmStartColumnId ? parseInt(ttmStartColumnId) : null,
+        ttmEndColumnId: ttmEndColumnId ? parseInt(ttmEndColumnId) : null,
+        leadTimeStartColumnId: leadTimeStartColumnId ? parseInt(leadTimeStartColumnId) : null,
+        leadTimeEndColumnId: leadTimeEndColumnId ? parseInt(leadTimeEndColumnId) : null,
+        cycleTimeStartColumnId: cycleTimeStartColumnId ? parseInt(cycleTimeStartColumnId) : null,
+        cycleTimeEndColumnId: cycleTimeEndColumnId ? parseInt(cycleTimeEndColumnId) : null,
       });
     }
   };
+
 
   return (
     <div className="bg-background flex-1" data-testid="page-settings">
@@ -609,6 +685,176 @@ export default function SettingsPage() {
                             className="no-arrows"
                             data-testid="input-value-cost"
                           />
+                        </div>
+                      </div>
+
+                      <div className="pt-2">
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-3">Данные Kaiten для расчёта Time To Market, Lead Time, Cycle Time</h3>
+                        <div className="space-y-3">
+                          <div className="flex gap-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="ttm-space-id">ID пространства</Label>
+                              <Input
+                                id="ttm-space-id"
+                                type="number"
+                                placeholder="0"
+                                value={ttmSpaceId}
+                                onChange={(e) => setTtmSpaceId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-ttm-space-id"
+                              />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="ttm-board-id">ID доски</Label>
+                              <Input
+                                id="ttm-board-id"
+                                type="number"
+                                placeholder="0"
+                                value={ttmBoardId}
+                                onChange={(e) => setTtmBoardId(e.target.value)}
+                                className="no-arrows"
+                                data-testid="input-ttm-board-id"
+                              />
+                            </div>
+                          </div>
+
+                          {columnsLoading && ttmBoardId && (
+                            <p className="text-xs text-muted-foreground">Загрузка колонок...</p>
+                          )}
+
+                          <div className="space-y-3">
+                            <div>
+                              <h4 className="text-xs font-semibold text-foreground mb-2">Time To Market</h4>
+                              <div className="flex gap-4">
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Начальная колонка</Label>
+                                  <Select
+                                    value={ttmStartColumnId}
+                                    onValueChange={setTtmStartColumnId}
+                                    disabled={!kaitenColumns || kaitenColumns.length === 0}
+                                  >
+                                    <SelectTrigger data-testid="select-ttm-start-column">
+                                      <SelectValue placeholder={kaitenColumns ? "Выберите колонку" : "Введите ID доски"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[300]">
+                                      {kaitenColumns?.map((col) => (
+                                        <SelectItem key={col.id} value={col.id.toString()}>
+                                          {col.title}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Конечная колонка</Label>
+                                  <Select
+                                    value={ttmEndColumnId}
+                                    onValueChange={setTtmEndColumnId}
+                                    disabled={!kaitenColumns || kaitenColumns.length === 0}
+                                  >
+                                    <SelectTrigger data-testid="select-ttm-end-column">
+                                      <SelectValue placeholder={kaitenColumns ? "Выберите колонку" : "Введите ID доски"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[300]">
+                                      {kaitenColumns?.map((col) => (
+                                        <SelectItem key={col.id} value={col.id.toString()}>
+                                          {col.title}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <h4 className="text-xs font-semibold text-foreground mb-2">Lead Time</h4>
+                              <div className="flex gap-4">
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Начальная колонка</Label>
+                                  <Select
+                                    value={leadTimeStartColumnId}
+                                    onValueChange={setLeadTimeStartColumnId}
+                                    disabled={!kaitenColumns || kaitenColumns.length === 0}
+                                  >
+                                    <SelectTrigger data-testid="select-lead-time-start-column">
+                                      <SelectValue placeholder={kaitenColumns ? "Выберите колонку" : "Введите ID доски"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[300]">
+                                      {kaitenColumns?.map((col) => (
+                                        <SelectItem key={col.id} value={col.id.toString()}>
+                                          {col.title}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Конечная колонка</Label>
+                                  <Select
+                                    value={leadTimeEndColumnId}
+                                    onValueChange={setLeadTimeEndColumnId}
+                                    disabled={!kaitenColumns || kaitenColumns.length === 0}
+                                  >
+                                    <SelectTrigger data-testid="select-lead-time-end-column">
+                                      <SelectValue placeholder={kaitenColumns ? "Выберите колонку" : "Введите ID доски"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[300]">
+                                      {kaitenColumns?.map((col) => (
+                                        <SelectItem key={col.id} value={col.id.toString()}>
+                                          {col.title}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <h4 className="text-xs font-semibold text-foreground mb-2">Cycle Time</h4>
+                              <div className="flex gap-4">
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Начальная колонка</Label>
+                                  <Select
+                                    value={cycleTimeStartColumnId}
+                                    onValueChange={setCycleTimeStartColumnId}
+                                    disabled={!kaitenColumns || kaitenColumns.length === 0}
+                                  >
+                                    <SelectTrigger data-testid="select-cycle-time-start-column">
+                                      <SelectValue placeholder={kaitenColumns ? "Выберите колонку" : "Введите ID доски"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[300]">
+                                      {kaitenColumns?.map((col) => (
+                                        <SelectItem key={col.id} value={col.id.toString()}>
+                                          {col.title}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Конечная колонка</Label>
+                                  <Select
+                                    value={cycleTimeEndColumnId}
+                                    onValueChange={setCycleTimeEndColumnId}
+                                    disabled={!kaitenColumns || kaitenColumns.length === 0}
+                                  >
+                                    <SelectTrigger data-testid="select-cycle-time-end-column">
+                                      <SelectValue placeholder={kaitenColumns ? "Выберите колонку" : "Введите ID доски"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[300]">
+                                      {kaitenColumns?.map((col) => (
+                                        <SelectItem key={col.id} value={col.id.toString()}>
+                                          {col.title}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

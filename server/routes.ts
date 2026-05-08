@@ -236,6 +236,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/kaiten/boards/:boardId/columns", async (req, res) => {
+    try {
+      const boardId = parseInt(req.params.boardId);
+      if (isNaN(boardId)) {
+        return res.status(400).json({ success: false, error: "Invalid board ID" });
+      }
+      const columns = await kaitenClient.getBoardColumns(boardId);
+      res.json(columns);
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || "Failed to fetch columns" });
+    }
+  });
+
   app.patch("/api/departments/:id", async (req, res) => {
     try {
       const { id } = req.params;
