@@ -1206,32 +1206,104 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     })
                     .filter((v): v is number => v !== null);
                   const avgFe = feVals.length ? Math.round(feVals.reduce((a, b) => a + b, 0) / feVals.length) : null;
+
+                  // Aggregate avg duration per status column for the bar
+                  const colAgg = new Map<string, { columnType: number | null; totalMs: number; count: number; order: number }>();
+                  let colOrder = 0;
+                  cards.forEach(card => {
+                    card.statusSegments?.forEach(seg => {
+                      if (!colAgg.has(seg.columnName)) {
+                        colAgg.set(seg.columnName, { columnType: seg.columnType, totalMs: 0, count: 0, order: colOrder++ });
+                      }
+                      const a = colAgg.get(seg.columnName)!;
+                      a.totalMs += seg.durationMs;
+                      a.count += 1;
+                    });
+                  });
+                  const avgSegs = Array.from(colAgg.entries())
+                    .sort((a, b) => a[1].order - b[1].order)
+                    .map(([name, a]) => ({ columnName: name, columnType: a.columnType, avgMs: a.totalMs / a.count }));
+                  const totalAvgMs = avgSegs.reduce((a, s) => a + s.avgMs, 0);
+
+                  const BAR_GREY = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
+                  const BAR_RED  = ['#b91c1c', '#dc2626', '#ef4444', '#f87171', '#fca5a5'];
+                  const btc: Record<number, number> = {};
+                  const avgSegColors = avgSegs.map(seg => {
+                    const t = seg.columnType ?? 0;
+                    const i = btc[t] ?? 0; btc[t] = i + 1;
+                    if (t === 1) return BAR_GREY[i % BAR_GREY.length];
+                    if (t === 2) return BAR_RED[i % BAR_RED.length];
+                    if (t === 3) return '#7f1d1d';
+                    return '#9ca3af';
+                  });
+
                   return (
                     <div className="px-5 pt-4 pb-2 shrink-0">
                       <div className="w-full h-[110px] border border-border rounded-lg flex">
-                        <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-sm font-bold text-muted-foreground">Time To Market</div>
-                          <div className="text-xl font-semibold truncate">{avgTtm !== null ? formatDurationShort(avgTtm) : '—'}</div>
-                          <div />
+
+                        {/* Left 50%: 4 metrics */}
+                        <div className="w-1/2 flex min-w-0">
+                          <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
+                            <div className="text-xs font-bold text-muted-foreground truncate">Time To Market</div>
+                            <div className="text-lg font-semibold truncate">{avgTtm !== null ? formatDurationShort(avgTtm) : '—'}</div>
+                            <div />
+                          </div>
+                          <div className="border-l border-border my-3 shrink-0" />
+                          <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
+                            <div className="text-xs font-bold text-muted-foreground truncate">Lead Time</div>
+                            <div className="text-lg font-semibold truncate">{avgLead !== null ? formatDurationShort(avgLead) : '—'}</div>
+                            <div />
+                          </div>
+                          <div className="border-l border-border my-3 shrink-0" />
+                          <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
+                            <div className="text-xs font-bold text-muted-foreground truncate">Cycle Time</div>
+                            <div className="text-lg font-semibold truncate">{avgCycle !== null ? formatDurationShort(avgCycle) : '—'}</div>
+                            <div />
+                          </div>
+                          <div className="border-l border-border my-3 shrink-0" />
+                          <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
+                            <div className="text-xs font-bold text-muted-foreground truncate">Flow Efficiency</div>
+                            <div className="text-lg font-semibold">{avgFe !== null ? `${avgFe}%` : '—'}</div>
+                            <div />
+                          </div>
                         </div>
+
+                        {/* Center divider */}
                         <div className="border-l border-border my-3 shrink-0" />
-                        <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-sm font-bold text-muted-foreground">Lead Time</div>
-                          <div className="text-xl font-semibold truncate">{avgLead !== null ? formatDurationShort(avgLead) : '—'}</div>
-                          <div />
+
+                        {/* Right 50%: avg status bar */}
+                        <div className="w-1/2 px-4 py-3 flex flex-col justify-between min-w-0">
+                          <div className="text-xs font-bold text-muted-foreground">Avg Time by Status</div>
+                          <div className="relative w-full h-[7px] bg-muted rounded-full">
+                            {totalAvgMs > 0 && avgSegs.map((seg, idx) => {
+                              const leftPct = avgSegs.slice(0, idx).reduce((a, s) => a + s.avgMs, 0) / totalAvgMs * 100;
+                              const widthPct = Math.max(0.5, seg.avgMs / totalAvgMs * 100);
+                              return (
+                                <Tooltip key={idx}>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className="absolute inset-y-0 rounded-full cursor-default"
+                                      style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: avgSegColors[idx] }}
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs space-y-0.5">
+                                    <div className="font-semibold">{seg.columnName}</div>
+                                    <div>{formatDurationShort(Math.round(seg.avgMs))}</div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                          </div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 overflow-hidden max-h-[28px]">
+                            {avgSegs.map((seg, idx) => (
+                              <div key={idx} className="flex items-center gap-1 text-[0.65rem] text-muted-foreground">
+                                <span className="inline-block w-2 h-2 rounded-sm shrink-0" style={{ background: avgSegColors[idx] }} />
+                                <span className="truncate max-w-[90px]">{seg.columnName}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="border-l border-border my-3 shrink-0" />
-                        <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-sm font-bold text-muted-foreground">Cycle Time</div>
-                          <div className="text-xl font-semibold truncate">{avgCycle !== null ? formatDurationShort(avgCycle) : '—'}</div>
-                          <div />
-                        </div>
-                        <div className="border-l border-border my-3 shrink-0" />
-                        <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div className="text-sm font-bold text-muted-foreground">Flow Efficiency</div>
-                          <div className="text-xl font-semibold">{avgFe !== null ? `${avgFe}%` : '—'}</div>
-                          <div />
-                        </div>
+
                       </div>
                     </div>
                   );
