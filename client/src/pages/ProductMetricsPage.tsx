@@ -1240,19 +1240,30 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     const ttmEnd = card.ttm!.endMs;
                     const ttmSpanLocal = ttmEnd - ttmStart;
                     if (ttmSpanLocal === 0) return;
+                    // Sum per column for this card first (merge repeated visits)
+                    const cardColSum = new Map<string, { columnType: number | null; totalMs: number; minStartRel: number }>();
                     card.statusSegments?.forEach(seg => {
                       const segEnd = seg.startMs + seg.durationMs;
                       if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return;
                       const clippedStart = Math.max(seg.startMs, ttmStart);
                       const clippedMs = Math.min(segEnd, ttmEnd) - clippedStart;
                       const startRel = (clippedStart - ttmStart) / ttmSpanLocal;
-                      if (!colAgg.has(seg.columnName)) {
-                        colAgg.set(seg.columnName, { columnType: seg.columnType, totalMs: 0, count: 0, totalStartRel: 0 });
+                      if (!cardColSum.has(seg.columnName)) {
+                        cardColSum.set(seg.columnName, { columnType: seg.columnType, totalMs: 0, minStartRel: startRel });
                       }
-                      const a = colAgg.get(seg.columnName)!;
-                      a.totalMs += clippedMs;
+                      const c = cardColSum.get(seg.columnName)!;
+                      c.totalMs += clippedMs;
+                      c.minStartRel = Math.min(c.minStartRel, startRel);
+                    });
+                    // Add per-card totals to global aggregate (count = 1 per card per column)
+                    cardColSum.forEach((val, colName) => {
+                      if (!colAgg.has(colName)) {
+                        colAgg.set(colName, { columnType: val.columnType, totalMs: 0, count: 0, totalStartRel: 0 });
+                      }
+                      const a = colAgg.get(colName)!;
+                      a.totalMs += val.totalMs;
                       a.count += 1;
-                      a.totalStartRel += startRel;
+                      a.totalStartRel += val.minStartRel;
                     });
                   });
                   const colOrderIdx = (name: string) => { const i = flowMetricsData.columnOrder.indexOf(name); return i === -1 ? 9999 : i; };
@@ -1394,7 +1405,17 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       const ai = flowMetricsData.columnOrder.indexOf(a.columnName);
                       const bi = flowMetricsData.columnOrder.indexOf(b.columnName);
                       return (ai === -1 ? 9999 : ai) - (bi === -1 ? 9999 : bi);
-                    });
+                    })
+                    .reduce<ClippedSeg[]>((acc, seg) => {
+                      const existing = acc.find(s => s.columnName === seg.columnName);
+                      if (existing) {
+                        existing.clippedMs += seg.clippedMs;
+                        existing.clippedStartMs = Math.min(existing.clippedStartMs, seg.clippedStartMs);
+                      } else {
+                        acc.push({ ...seg });
+                      }
+                      return acc;
+                    }, []);
 
                   // Kaiten column types: 1=queue (grey), 2=in-progress (red), 3=done (dark)
                   const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
@@ -1465,7 +1486,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   <TooltipContent side="top" className="text-xs space-y-0.5">
                                     <div className="font-semibold">{seg.columnName}</div>
                                     {typeLabel && <div className="text-muted-foreground">{typeLabel}</div>}
-                                    <div>{formatDuration(seg.clippedMs)}</div>
+                                    <div>{formatDurationShort(seg.clippedMs)}</div>
                                   </TooltipContent>
                                 </Tooltip>
                               );
