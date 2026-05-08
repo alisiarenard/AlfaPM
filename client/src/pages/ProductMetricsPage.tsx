@@ -46,6 +46,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
   const currentDepartment = useMemo(() => departments?.find(d => d.id === selectedDepartment), [departments, selectedDepartment]);
 
+  useEffect(() => {
+    setFlowMetricsData(null);
+  }, [selectedDepartment]);
+
   const handleOpenFlowMetrics = async () => {
     if (!selectedDepartment) return;
     setFlowMetricsOpen(true);
@@ -1120,7 +1124,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 : "Flow-метрики"}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Epic-карточки за последние 12 месяцев — Time To Market, Lead Time, Cycle Time
+            Все карточки с доски — Time To Market, Lead Time, Cycle Time
           </p>
         </DialogHeader>
 

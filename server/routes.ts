@@ -260,17 +260,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ success: false, error: "Kaiten board not configured for this department" });
       }
 
-      const dueDateAfter = new Date();
-      dueDateAfter.setFullYear(dueDateAfter.getFullYear() - 1);
-      const dueDateAfterStr = dueDateAfter.toISOString().split('T')[0];
-
       let spaceName = dept.department;
       if (dept.kaitenSpaceId) {
         const spaceInfo = await kaitenClient.getSpaceInfo(dept.kaitenSpaceId);
         if (spaceInfo?.title) spaceName = spaceInfo.title;
       }
 
-      const cards = await kaitenClient.getEpicCardsByBoard(dept.kaitenBoardId, dueDateAfterStr);
+      const cards = await kaitenClient.getAllCardsByBoard(dept.kaitenBoardId);
 
       const calcDays = (history: { column_id: number; created: string }[], startColId: number | null, endColId: number | null): number | null => {
         if (!startColId || !endColId) return null;

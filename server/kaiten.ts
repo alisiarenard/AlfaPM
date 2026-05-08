@@ -302,7 +302,7 @@ export class KaitenClient {
     }
   }
 
-  async getEpicCardsByBoard(boardId: number, dueDateAfter: string): Promise<KaitenCard[]> {
+  async getAllCardsByBoard(boardId: number): Promise<KaitenCard[]> {
     const allCards: KaitenCard[] = [];
     const limit = 500;
     let skip = 0;
@@ -325,14 +325,7 @@ export class KaitenClient {
       }
     }
 
-    const cutoff = new Date(dueDateAfter).getTime();
-    return allCards.filter(card => {
-      if (!card.due_date) return false;
-      const due = new Date(card.due_date).getTime();
-      if (isNaN(due) || due < cutoff) return false;
-      const typeName = card.type?.name?.toLowerCase() || '';
-      return typeName === 'epic' || typeName === 'эпик';
-    });
+    return allCards;
   }
 
   async getBoardCardsFromSpace(spaceId: number, boardId: number): Promise<KaitenCard[]> {
