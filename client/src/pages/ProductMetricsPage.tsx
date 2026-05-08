@@ -1184,13 +1184,22 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     return { left: Math.max(0, left), width: Math.max(0.5, width) };
                   };
 
-                  // Kaiten column types: 1=queue, 2=in-progress, 3=done
-                  const columnTypeColor = (type: number | null): string => {
-                    if (type === 1) return '#f0a898'; // queue — светло-розовый
-                    if (type === 2) return '#e04535'; // in progress — насыщенный красный
-                    if (type === 3) return '#8b1a1a'; // done — тёмно-бордовый
-                    return '#c8a0a0';                 // неизвестный
-                  };
+                  // Kaiten column types: 1=queue (grey), 2=in-progress (red), 3=done (dark)
+                  const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
+                  const RED_SHADES  = ['#b91c1c', '#dc2626', '#ef4444', '#f87171', '#fca5a5'];
+
+                  // Count occurrences of each type before the current index
+                  const typeCounters: Record<number, number> = {};
+                  const segmentColors = card.statusSegments?.map((seg) => {
+                    const t = seg.columnType ?? 0;
+                    const idx = typeCounters[t] ?? 0;
+                    typeCounters[t] = idx + 1;
+                    if (t === 1) return GREY_SHADES[idx % GREY_SHADES.length];
+                    if (t === 2) return RED_SHADES[idx % RED_SHADES.length];
+                    if (t === 3) return '#7f1d1d';
+                    return '#9ca3af';
+                  }) ?? [];
+
                   const columnTypeLabel = (type: number | null): string => {
                     if (type === 1) return 'Очередь';
                     if (type === 2) return 'В работе';
@@ -1237,7 +1246,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             {card.statusSegments.map((seg, idx) => {
                               const left = ((seg.startMs - card.totalStartMs!) / totalSpan) * 100;
                               const width = Math.max(0.5, (seg.durationMs / totalSpan) * 100);
-                              const color = columnTypeColor(seg.columnType);
+                              const color = segmentColors[idx];
                               const typeLabel = columnTypeLabel(seg.columnType);
                               return (
                                 <Tooltip key={idx}>
@@ -1261,7 +1270,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <div key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <span
                                   className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
-                                  style={{ background: columnTypeColor(seg.columnType) }}
+                                  style={{ background: segmentColors[idx] }}
                                 />
                                 <span>{seg.columnName}</span>
                                 {columnTypeLabel(seg.columnType) && (
