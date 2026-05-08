@@ -282,14 +282,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return typeName === 'epic' || typeName === 'эпик';
       });
 
-      const calcMs = (history: { column_id: number; changed: string }[], startColId: number | null, endColId: number | null): number | null => {
+      type MetricSpan = { ms: number; startMs: number; endMs: number };
+      const calcSpan = (history: { column_id: number; changed: string }[], startColId: number | null, endColId: number | null): MetricSpan | null => {
         if (!startColId || !endColId) return null;
         const startEntry = history.find(h => h.column_id === startColId);
         if (!startEntry) return null;
-        const startTime = new Date(startEntry.changed).getTime();
-        const endEntry = history.filter(h => h.column_id === endColId && new Date(h.changed).getTime() >= startTime).pop();
+        const startMs = new Date(startEntry.changed).getTime();
+        const endEntry = history.filter(h => h.column_id === endColId && new Date(h.changed).getTime() >= startMs).pop();
         if (!endEntry) return null;
-        return new Date(endEntry.changed).getTime() - startTime;
+        const endMs = new Date(endEntry.changed).getTime();
+        return { ms: endMs - startMs, startMs, endMs };
       };
 
       const RATE_DELAY = 220;
@@ -298,35 +300,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const history = await kaitenClient.getCardLocationHistory(card.id);
         await new Promise(resolve => setTimeout(resolve, RATE_DELAY));
 
-        const ttm = calcMs(history, dept.ttmStartColumnId, dept.ttmEndColumnId);
-        const leadTime = calcMs(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
-        const cycleTime = calcMs(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
+        const totalStartMs = history.length > 0 ? new Date(history[0].changed).getTime() : null;
+        const totalEndMs = history.length > 0 ? new Date(history[history.length - 1].changed).getTime() : null;
+
+        const ttmSpan = calcSpan(history, dept.ttmStartColumnId, dept.ttmEndColumnId);
+        const leadTimeSpan = calcSpan(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
+        const cycleTimeSpan = calcSpan(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
 
         results.push({
           cardId: card.id,
           title: card.title,
-          type: card.type?.name ?? null,
-          state: card.state,
-          condition: card.condition,
-          columnId: card.column_id,
-          created: card.created ?? null,
-          dueDate: card.due_date ?? null,
-          completedAt: card.completed_at ?? null,
-          lastMovedToDoneAt: card.last_moved_to_done_at ?? null,
-          size: card.size,
           archived: card.archived,
-          history: history.map(h => ({
-            column_id: h.column_id,
-            columnName: columnMap.get(h.column_id) ?? `col ${h.column_id}`,
-            changed: h.changed,
-          })),
-          ttm,
-          leadTime,
-          cycleTime,
+          lastMovedToDoneAt: card.last_moved_to_done_at ?? null,
+          totalStartMs,
+          totalEndMs,
+          ttm: ttmSpan,
+          leadTime: leadTimeSpan,
+          cycleTime: cycleTimeSpan,
         });
       }
 
-      res.json({ success: true, spaceName, cards: results });
+      res.json({ success: true, spaceName, kaitenSpaceId: dept.kaitenSpaceId, cards: results });
     } catch (error: any) {
       console.error("[flow-metrics]", error);
       res.status(500).json({ success: false, error: error.message || "Failed to compute flow metrics" });

@@ -59,25 +59,20 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const editInputRef = useRef<HTMLInputElement>(null);
   const [flowMetricsOpen, setFlowMetricsOpen] = useState(false);
   const [flowMetricsFetching, setFlowMetricsFetching] = useState(false);
+  type MetricSpan = { ms: number; startMs: number; endMs: number };
   const [flowMetricsData, setFlowMetricsData] = useState<{
     spaceName: string;
+    kaitenSpaceId: number | null;
     cards: {
       cardId: number;
       title: string;
-      type: string | null;
-      state: number;
-      condition: number;
-      columnId: number;
-      created: string | null;
-      dueDate: string | null;
-      completedAt: string | null;
-      lastMovedToDoneAt: string | null;
-      size: number;
       archived: boolean;
-      history: { column_id: number; columnName: string; changed: string }[];
-      ttm: number | null;   // milliseconds
-      leadTime: number | null;   // milliseconds
-      cycleTime: number | null;  // milliseconds
+      lastMovedToDoneAt: string | null;
+      totalStartMs: number | null;
+      totalEndMs: number | null;
+      ttm: MetricSpan | null;
+      leadTime: MetricSpan | null;
+      cycleTime: MetricSpan | null;
     }[];
   } | null>(null);
 
@@ -1151,18 +1146,27 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     </div>
 
     <Dialog open={flowMetricsOpen} onOpenChange={(open) => { setFlowMetricsOpen(open); if (!open) setFlowMetricsData(null); }}>
-      <DialogContent className="max-w-5xl w-full max-h-[85vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
+      <DialogContent className="max-w-4xl w-full max-h-[85vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
         <DialogHeader className="shrink-0 pb-3 border-b border-border">
           <DialogTitle className="text-lg font-semibold">
-            {flowMetricsFetching
-              ? "Загрузка..."
-              : flowMetricsData
-                ? flowMetricsData.spaceName
-                : "Flow-метрики"}
+            {flowMetricsFetching ? "Загрузка..." : flowMetricsData ? flowMetricsData.spaceName : "Flow-метрики"}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Все карточки с доски — Time To Market, Lead Time, Cycle Time
-          </p>
+          {!flowMetricsFetching && flowMetricsData && (
+            <div className="flex items-center gap-4 mt-1">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: '#8b1a2a' }} />
+                TTM
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: '#cd253d' }} />
+                Lead Time
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: '#e8738a' }} />
+                Cycle Time
+              </div>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
@@ -1174,49 +1178,86 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           ) : flowMetricsData ? (
             flowMetricsData.cards.length === 0 ? (
               <div className="flex items-center justify-center py-16">
-                <p className="text-sm text-muted-foreground">Карточек не найдено</p>
+                <p className="text-sm text-muted-foreground">Нет завершённых Epic-карточек за последние 12 месяцев</p>
               </div>
             ) : (
-              <div className="p-4 space-y-3">
-                <p className="text-xs text-muted-foreground">Всего карточек: {flowMetricsData.cards.length}</p>
-                {flowMetricsData.cards.map((card) => (
-                  <div key={card.cardId} className="border border-border rounded-md p-3 space-y-2 text-xs" data-testid={`row-flow-${card.cardId}`}>
-                    <div className="font-semibold text-sm">{card.title} <span className="text-muted-foreground font-normal">#{card.cardId}</span></div>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-                      <div className="flex gap-2"><span className="text-muted-foreground">Тип:</span><span>{card.type ?? '—'}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">state:</span><span>{card.state}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">condition:</span><span>{card.condition}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">column_id:</span><span>{card.columnId}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">size (SP):</span><span>{card.size}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">archived:</span><span>{String(card.archived)}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">created:</span><span>{card.created ? new Date(card.created).toLocaleString('ru-RU') : '—'}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">due_date:</span><span>{card.dueDate ? new Date(card.dueDate).toLocaleDateString('ru-RU') : '—'}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">completed_at:</span><span>{card.completedAt ? new Date(card.completedAt).toLocaleString('ru-RU') : '—'}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">last_moved_to_done:</span><span>{card.lastMovedToDoneAt ? new Date(card.lastMovedToDoneAt).toLocaleString('ru-RU') : '—'}</span></div>
-                    </div>
-                    <div className="flex gap-4 pt-1 border-t border-border">
-                      <div className="flex gap-2"><span className="text-muted-foreground">TTM:</span><span className="font-medium">{card.ttm !== null ? formatDuration(card.ttm) : '—'}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">Lead Time:</span><span className="font-medium">{card.leadTime !== null ? formatDuration(card.leadTime) : '—'}</span></div>
-                      <div className="flex gap-2"><span className="text-muted-foreground">Cycle Time:</span><span className="font-medium">{card.cycleTime !== null ? formatDuration(card.cycleTime) : '—'}</span></div>
-                    </div>
-                    {card.history.length > 0 && (
-                      <div className="pt-1 border-t border-border">
-                        <div className="text-muted-foreground mb-1">История перемещений ({card.history.length}):</div>
-                        <div className="space-y-0.5 font-mono">
-                          {card.history.map((h, idx) => (
-                            <div key={idx} className="flex gap-3 text-muted-foreground">
-                              <span className="text-foreground min-w-[180px]">{h.columnName}</span>
-                              <span>{new Date(h.changed).toLocaleString('ru-RU')}</span>
+              <div className="divide-y divide-border">
+                {flowMetricsData.cards.map((card) => {
+                  const totalSpan = (card.totalStartMs !== null && card.totalEndMs !== null)
+                    ? card.totalEndMs - card.totalStartMs : 0;
+
+                  const toBar = (span: { startMs: number; endMs: number } | null) => {
+                    if (!span || totalSpan === 0) return null;
+                    const left = ((span.startMs - card.totalStartMs!) / totalSpan) * 100;
+                    const width = ((span.endMs - span.startMs) / totalSpan) * 100;
+                    return { left: Math.max(0, left), width: Math.max(0.5, width) };
+                  };
+
+                  const ttmBar = toBar(card.ttm);
+                  const leadBar = toBar(card.leadTime);
+                  const cycleBar = toBar(card.cycleTime);
+
+                  const cardUrl = flowMetricsData.kaitenSpaceId
+                    ? getKaitenCardUrl(flowMetricsData.kaitenSpaceId, card.cardId, card.archived)
+                    : null;
+
+                  return (
+                    <div key={card.cardId} className="px-5 py-4 space-y-3" data-testid={`row-flow-${card.cardId}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          {cardUrl ? (
+                            <a
+                              href={cardUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-semibold text-foreground hover:underline"
+                            >
+                              {card.title}
+                            </a>
+                          ) : (
+                            <span className="text-sm font-semibold text-foreground">{card.title}</span>
+                          )}
+                          {card.lastMovedToDoneAt && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              Завершено: {new Date(card.lastMovedToDoneAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                             </div>
-                          ))}
+                          )}
+                        </div>
+                        <div className="shrink-0 text-right text-xs text-muted-foreground space-y-0.5">
+                          {card.ttm && <div>TTM: <span className="text-foreground font-medium">{formatDuration(card.ttm.ms)}</span></div>}
+                          {card.leadTime && <div>Lead: <span className="text-foreground font-medium">{formatDuration(card.leadTime.ms)}</span></div>}
+                          {card.cycleTime && <div>Cycle: <span className="text-foreground font-medium">{formatDuration(card.cycleTime.ms)}</span></div>}
                         </div>
                       </div>
-                    )}
-                    {card.history.length === 0 && (
-                      <div className="pt-1 border-t border-border text-muted-foreground">История перемещений: пусто</div>
-                    )}
-                  </div>
-                ))}
+
+                      {totalSpan > 0 && (
+                        <div className="relative w-full h-[7px] bg-muted rounded-full overflow-hidden">
+                          {ttmBar && (
+                            <div
+                              className="absolute inset-y-0 rounded-full"
+                              style={{ left: `${ttmBar.left}%`, width: `${ttmBar.width}%`, background: '#8b1a2a' }}
+                            />
+                          )}
+                          {leadBar && (
+                            <div
+                              className="absolute inset-y-0 rounded-full"
+                              style={{ left: `${leadBar.left}%`, width: `${leadBar.width}%`, background: '#cd253d' }}
+                            />
+                          )}
+                          {cycleBar && (
+                            <div
+                              className="absolute inset-y-0 rounded-full"
+                              style={{ left: `${cycleBar.left}%`, width: `${cycleBar.width}%`, background: '#e8738a' }}
+                            />
+                          )}
+                        </div>
+                      )}
+                      {totalSpan === 0 && (
+                        <div className="w-full h-[7px] bg-muted rounded-full" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )
           ) : null}
