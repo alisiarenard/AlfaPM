@@ -1198,16 +1198,21 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   const avgLead = avgMs(leadVals);
                   const avgCycle = avgMs(cycleVals);
                   const wfdVals = cards
-                    .filter(c => c.ttm && c.leadTime && c.statusSegments?.length && c.totalStartMs !== null && c.totalEndMs !== null)
+                    .filter(c => c.ttm && c.statusSegments?.length)
                     .map(c => {
-                      const totalSpan = c.totalEndMs! - c.totalStartMs!;
-                      if (totalSpan === 0) return null;
                       const ttmStart = c.ttm!.startMs;
-                      const ltStart = c.leadTime!.startMs;
-                      const waitMs = c.statusSegments
-                        .filter(s => s.columnType === 1 && s.startMs >= ttmStart && s.startMs < ltStart)
-                        .reduce((a, s) => a + s.durationMs, 0);
-                      return (waitMs / totalSpan) * 100;
+                      const ttmEnd   = c.ttm!.endMs;
+                      const ttmSpanLocal = ttmEnd - ttmStart;
+                      if (ttmSpanLocal === 0) return null;
+                      const queueMs = c.statusSegments
+                        .filter(s => s.columnType === 1)
+                        .reduce((acc, s) => {
+                          const segEnd = s.startMs + s.durationMs;
+                          if (segEnd <= ttmStart || s.startMs >= ttmEnd) return acc;
+                          const clipped = Math.min(segEnd, ttmEnd) - Math.max(s.startMs, ttmStart);
+                          return acc + clipped;
+                        }, 0);
+                      return (queueMs / ttmSpanLocal) * 100;
                     })
                     .filter((v): v is number => v !== null);
                   const avgWfd = wfdVals.length ? Math.round(wfdVals.reduce((a, b) => a + b, 0) / wfdVals.length) : null;
