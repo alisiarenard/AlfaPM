@@ -1341,10 +1341,14 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             {/* CT bracket below bar */}
                             {avgCtS !== null && avgCtE !== null && (
                               <div className="absolute" style={{ left: `${avgCtS}%`, right: `${100 - avgCtE}%`, top: '27px', height: '16px' }}>
-                                <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
-                                <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '7px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
-                                <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '7px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
-                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: 0, left: '50%', transform: 'translateX(-50%)' }}>CT</div>
+                                {/* left vertical */}
+                                <div className="absolute" style={{ top: 0, bottom: 0, left: 0, width: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* right vertical */}
+                                <div className="absolute" style={{ top: 0, bottom: 0, right: 0, width: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* horizontal at bottom */}
+                                <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* label centered on bottom line */}
+                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>CT</div>
                               </div>
                             )}
 
