@@ -1185,8 +1185,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   };
 
                   const STATUS_COLORS = [
-                    '#4f6bed', '#7c5cbf', '#2a9d8f', '#e76f51',
-                    '#457b9d', '#e9c46a', '#264653', '#f4a261',
+                    '#4a0000', '#7b0f0f', '#a01818', '#bf2c2c',
+                    '#d94545', '#e87070', '#f0a0a0', '#f7c8c8',
                   ];
 
                   const cardUrl = flowMetricsData.kaitenSpaceId
@@ -1223,27 +1223,40 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </div>
 
                       {totalSpan > 0 && (card.statusSegments?.length ?? 0) > 0 && (
-                        <div className="relative w-full h-[7px] bg-muted rounded-full">
-                          {card.statusSegments.map((seg, idx) => {
-                            const left = ((seg.startMs - card.totalStartMs!) / totalSpan) * 100;
-                            const width = Math.max(0.5, (seg.durationMs / totalSpan) * 100);
-                            const color = STATUS_COLORS[idx % STATUS_COLORS.length];
-                            return (
-                              <Tooltip key={idx}>
-                                <TooltipTrigger asChild>
-                                  <div
-                                    className="absolute inset-y-0 rounded-full cursor-default"
-                                    style={{ left: `${left}%`, width: `${width}%`, background: color }}
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="text-xs space-y-0.5">
-                                  <div className="font-semibold">{seg.columnName}</div>
-                                  <div className="text-muted-foreground">{formatDuration(seg.durationMs)}</div>
-                                </TooltipContent>
-                              </Tooltip>
-                            );
-                          })}
-                        </div>
+                        <>
+                          <div className="relative w-full h-[7px] bg-muted rounded-full">
+                            {card.statusSegments.map((seg, idx) => {
+                              const left = ((seg.startMs - card.totalStartMs!) / totalSpan) * 100;
+                              const width = Math.max(0.5, (seg.durationMs / totalSpan) * 100);
+                              const color = STATUS_COLORS[idx % STATUS_COLORS.length];
+                              return (
+                                <Tooltip key={idx}>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className="absolute inset-y-0 rounded-full cursor-default"
+                                      style={{ left: `${left}%`, width: `${width}%`, background: color }}
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs space-y-0.5">
+                                    <div className="font-semibold">{seg.columnName}</div>
+                                    <div className="text-muted-foreground">{formatDuration(seg.durationMs)}</div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                            {card.statusSegments.map((seg, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <span
+                                  className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
+                                  style={{ background: STATUS_COLORS[idx % STATUS_COLORS.length] }}
+                                />
+                                {seg.columnName}
+                              </div>
+                            ))}
+                          </div>
+                        </>
                       )}
                       {(totalSpan === 0 || (card.statusSegments?.length ?? 0) === 0) && (
                         <div className="w-full h-[7px] bg-muted rounded-full" />
