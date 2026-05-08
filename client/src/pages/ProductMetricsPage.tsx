@@ -1309,10 +1309,14 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             {/* LT bracket above bar */}
                             {avgLtS !== null && avgLtE !== null && (
                               <div className="absolute" style={{ left: `${avgLtS}%`, right: `${100 - avgLtE}%`, top: 0, height: '16px' }}>
-                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: 0, left: '50%', transform: 'translateX(-50%)' }}>LT</div>
-                                <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
-                                <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '7px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
-                                <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '7px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* horizontal at top */}
+                                <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* left vertical going down */}
+                                <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* right vertical going down */}
+                                <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* label centered on top line */}
+                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>LT</div>
                               </div>
                             )}
 
@@ -1341,10 +1345,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             {/* CT bracket below bar */}
                             {avgCtS !== null && avgCtE !== null && (
                               <div className="absolute" style={{ left: `${avgCtS}%`, right: `${100 - avgCtE}%`, top: '27px', height: '16px' }}>
-                                {/* left vertical */}
-                                <div className="absolute" style={{ top: 0, bottom: 0, left: 0, width: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
-                                {/* right vertical */}
-                                <div className="absolute" style={{ top: 0, bottom: 0, right: 0, width: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* left vertical going up from bottom */}
+                                <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
+                                {/* right vertical going up from bottom */}
+                                <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
                                 {/* horizontal at bottom */}
                                 <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.45)' }} />
                                 {/* label centered on bottom line */}
