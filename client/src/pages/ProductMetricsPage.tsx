@@ -41,7 +41,24 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [flowMetricsFetching, setFlowMetricsFetching] = useState(false);
   const [flowMetricsData, setFlowMetricsData] = useState<{
     spaceName: string;
-    cards: { cardId: number; title: string; dueDate: string | null; ttm: number | null; leadTime: number | null; cycleTime: number | null }[];
+    cards: {
+      cardId: number;
+      title: string;
+      type: string | null;
+      state: number;
+      condition: number;
+      columnId: number;
+      created: string | null;
+      dueDate: string | null;
+      completedAt: string | null;
+      lastMovedToDoneAt: string | null;
+      size: number;
+      archived: boolean;
+      history: { column_id: number; created: string }[];
+      ttm: number | null;
+      leadTime: number | null;
+      cycleTime: number | null;
+    }[];
   } | null>(null);
 
   const currentDepartment = useMemo(() => departments?.find(d => d.id === selectedDepartment), [departments, selectedDepartment]);
@@ -1137,71 +1154,50 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           ) : flowMetricsData ? (
             flowMetricsData.cards.length === 0 ? (
               <div className="flex items-center justify-center py-16">
-                <p className="text-sm text-muted-foreground">Нет Epic-карточек с датой дедлайна за последние 12 месяцев</p>
+                <p className="text-sm text-muted-foreground">Карточек не найдено</p>
               </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 bg-background">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">Эпик</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">Дедлайн</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">TTM (дни)</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">Lead Time (дни)</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">Cycle Time (дни)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {flowMetricsData.cards.map((card, i) => (
-                    <tr key={card.cardId} className={i % 2 === 0 ? '' : 'bg-muted/20'} data-testid={`row-flow-${card.cardId}`}>
-                      <td className="px-4 py-2.5 border-b border-border max-w-[320px]">
-                        <span className="line-clamp-2 leading-snug">{card.title}</span>
-                      </td>
-                      <td className="px-4 py-2.5 border-b border-border text-right tabular-nums text-muted-foreground whitespace-nowrap">
-                        {card.dueDate
-                          ? new Date(card.dueDate).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                          : '—'}
-                      </td>
-                      <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-ttm-${card.cardId}`}>
-                        {card.ttm !== null ? (
-                          <span className="font-medium">{card.ttm}</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-lead-time-${card.cardId}`}>
-                        {card.leadTime !== null ? (
-                          <span className="font-medium">{card.leadTime}</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-cycle-time-${card.cardId}`}>
-                        {card.cycleTime !== null ? (
-                          <span className="font-medium">{card.cycleTime}</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="sticky bottom-0 z-10 bg-muted/80" style={{ backdropFilter: 'blur(8px)' }}>
-                  <tr>
-                    <td className="px-4 py-2.5 border-t border-border font-semibold" colSpan={2}>
-                      Среднее ({flowMetricsData.cards.length} эпиков)
-                    </td>
-                    {(['ttm', 'leadTime', 'cycleTime'] as const).map(key => {
-                      const vals = flowMetricsData.cards.map(c => c[key]).filter((v): v is number => v !== null);
-                      const avg = vals.length > 0 ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
-                      return (
-                        <td key={key} className="px-4 py-2.5 border-t border-border text-right tabular-nums font-semibold">
-                          {avg !== null ? avg : '—'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tfoot>
-              </table>
+              <div className="p-4 space-y-3">
+                <p className="text-xs text-muted-foreground">Всего карточек: {flowMetricsData.cards.length}</p>
+                {flowMetricsData.cards.map((card) => (
+                  <div key={card.cardId} className="border border-border rounded-md p-3 space-y-2 text-xs" data-testid={`row-flow-${card.cardId}`}>
+                    <div className="font-semibold text-sm">{card.title} <span className="text-muted-foreground font-normal">#{card.cardId}</span></div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+                      <div className="flex gap-2"><span className="text-muted-foreground">Тип:</span><span>{card.type ?? '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">state:</span><span>{card.state}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">condition:</span><span>{card.condition}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">column_id:</span><span>{card.columnId}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">size (SP):</span><span>{card.size}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">archived:</span><span>{String(card.archived)}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">created:</span><span>{card.created ? new Date(card.created).toLocaleString('ru-RU') : '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">due_date:</span><span>{card.dueDate ? new Date(card.dueDate).toLocaleDateString('ru-RU') : '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">completed_at:</span><span>{card.completedAt ? new Date(card.completedAt).toLocaleString('ru-RU') : '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">last_moved_to_done:</span><span>{card.lastMovedToDoneAt ? new Date(card.lastMovedToDoneAt).toLocaleString('ru-RU') : '—'}</span></div>
+                    </div>
+                    <div className="flex gap-4 pt-1 border-t border-border">
+                      <div className="flex gap-2"><span className="text-muted-foreground">TTM:</span><span className="font-medium">{card.ttm !== null ? `${card.ttm} дн.` : '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">Lead Time:</span><span className="font-medium">{card.leadTime !== null ? `${card.leadTime} дн.` : '—'}</span></div>
+                      <div className="flex gap-2"><span className="text-muted-foreground">Cycle Time:</span><span className="font-medium">{card.cycleTime !== null ? `${card.cycleTime} дн.` : '—'}</span></div>
+                    </div>
+                    {card.history.length > 0 && (
+                      <div className="pt-1 border-t border-border">
+                        <div className="text-muted-foreground mb-1">История перемещений ({card.history.length}):</div>
+                        <div className="space-y-0.5 font-mono">
+                          {card.history.map((h, idx) => (
+                            <div key={idx} className="flex gap-3 text-muted-foreground">
+                              <span className="text-foreground">col {h.column_id}</span>
+                              <span>{new Date(h.created).toLocaleString('ru-RU')}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {card.history.length === 0 && (
+                      <div className="pt-1 border-t border-border text-muted-foreground">История перемещений: пусто</div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )
           ) : null}
         </div>
