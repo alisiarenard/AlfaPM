@@ -1273,9 +1273,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   style={{ background: segmentColors[idx] }}
                                 />
                                 <span>{seg.columnName}</span>
-                                {columnTypeLabel(seg.columnType) && (
-                                  <span className="opacity-60">· {columnTypeLabel(seg.columnType)}</span>
-                                )}
                               </div>
                             ))}
                           </div>
