@@ -8,6 +8,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getDepartments(): Promise<DepartmentWithTeamCount[]>;
+  getDepartmentById(id: string): Promise<Department | undefined>;
   createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }): Promise<Department>;
   updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }): Promise<Department | undefined>;
   getAllTeams(): Promise<TeamRow[]>;
@@ -118,9 +119,13 @@ export class MemStorage implements IStorage {
     return [];
   }
 
+  async getDepartmentById(id: string): Promise<Department | undefined> {
+    return undefined;
+  }
+
   async createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department> {
     const id = randomUUID();
-    return { id, department: department.department, plannedIr: department.plannedIr || null, plannedVc: department.plannedVc || null };
+    return { id, department: department.department, plannedIr: department.plannedIr || null, plannedVc: department.plannedVc || null, kaitenSpaceId: null, kaitenBoardId: null, ttmStartColumnId: null, ttmEndColumnId: null, leadTimeStartColumnId: null, leadTimeEndColumnId: null, cycleTimeStartColumnId: null, cycleTimeEndColumnId: null };
   }
 
   async updateDepartment(id: string, department: { department?: string; plannedIr?: number | null; plannedVc?: number | null }): Promise<Department | undefined> {
@@ -407,10 +412,23 @@ export class DbStorage implements IStorage {
         department: departments.department,
         plannedIr: departments.plannedIr,
         plannedVc: departments.plannedVc,
+        kaitenSpaceId: departments.kaitenSpaceId,
+        kaitenBoardId: departments.kaitenBoardId,
+        ttmStartColumnId: departments.ttmStartColumnId,
+        ttmEndColumnId: departments.ttmEndColumnId,
+        leadTimeStartColumnId: departments.leadTimeStartColumnId,
+        leadTimeEndColumnId: departments.leadTimeEndColumnId,
+        cycleTimeStartColumnId: departments.cycleTimeStartColumnId,
+        cycleTimeEndColumnId: departments.cycleTimeEndColumnId,
         teamCount: sql<number>`(SELECT COUNT(*)::int FROM ${teams} WHERE ${teams.departmentId} = ${departments.id})`,
       })
       .from(departments);
     return result;
+  }
+
+  async getDepartmentById(id: string): Promise<Department | undefined> {
+    const [dept] = await db.select().from(departments).where(eq(departments.id, id));
+    return dept;
   }
 
   async createDepartment(department: { department: string; plannedIr?: number | null; plannedVc?: number | null; kaitenSpaceId?: number | null; kaitenBoardId?: number | null; ttmStartColumnId?: number | null; ttmEndColumnId?: number | null; leadTimeStartColumnId?: number | null; leadTimeEndColumnId?: number | null; cycleTimeStartColumnId?: number | null; cycleTimeEndColumnId?: number | null }): Promise<Department> {

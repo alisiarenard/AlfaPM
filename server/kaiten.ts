@@ -290,6 +290,51 @@ export class KaitenClient {
     return [];
   }
 
+  async getCardLocationHistory(cardId: number): Promise<{ column_id: number; created: string }[]> {
+    try {
+      const response = await this.makeRequest<{ column_id: number; created: string }[]>(`/cards/${cardId}/location-history`);
+      if (Array.isArray(response)) {
+        return response.sort((a, b) => new Date(a.created).getTime() - new Date(b.created).getTime());
+      }
+      return [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  async getEpicCardsByBoard(boardId: number, dueDateAfter: string): Promise<KaitenCard[]> {
+    const allCards: KaitenCard[] = [];
+    const limit = 500;
+    let skip = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const url = `/cards?board_id=${boardId}&limit=${limit}&skip=${skip}`;
+      const response = await this.makeRequest<{ data?: KaitenCard[] } | KaitenCard[]>(url);
+      let batch: KaitenCard[] = [];
+      if (Array.isArray(response)) {
+        batch = response as KaitenCard[];
+      } else if ((response as any).data && Array.isArray((response as any).data)) {
+        batch = (response as any).data;
+      }
+      allCards.push(...batch);
+      if (batch.length < limit) {
+        hasMore = false;
+      } else {
+        skip += limit;
+      }
+    }
+
+    const cutoff = new Date(dueDateAfter).getTime();
+    return allCards.filter(card => {
+      if (!card.due_date) return false;
+      const due = new Date(card.due_date).getTime();
+      if (isNaN(due) || due < cutoff) return false;
+      const typeName = card.type?.name?.toLowerCase() || '';
+      return typeName === 'epic' || typeName === 'эпик';
+    });
+  }
+
   async getBoardCardsFromSpace(spaceId: number, boardId: number): Promise<KaitenCard[]> {
     try {
       const response = await this.makeRequest<{ cards?: KaitenCard[]; [key: string]: any }>(`/spaces/${spaceId}/boards/${boardId}`);

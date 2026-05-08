@@ -249,6 +249,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/departments/:departmentId/flow-metrics", async (req, res) => {
+    try {
+      const { departmentId } = req.params;
+      const dept = await storage.getDepartmentById(departmentId);
+      if (!dept) {
+        return res.status(404).json({ success: false, error: "Department not found" });
+      }
+      if (!dept.kaitenBoardId) {
+        return res.status(400).json({ success: false, error: "Kaiten board not configured for this department" });
+      }
+
+      const dueDateAfter = new Date();
+      dueDateAfter.setFullYear(dueDateAfter.getFullYear() - 1);
+      const dueDateAfterStr = dueDateAfter.toISOString().split('T')[0];
+
+      let spaceName = dept.department;
+      if (dept.kaitenSpaceId) {
+        const spaceInfo = await kaitenClient.getSpaceInfo(dept.kaitenSpaceId);
+        if (spaceInfo?.title) spaceName = spaceInfo.title;
+      }
+
+      const cards = await kaitenClient.getEpicCardsByBoard(dept.kaitenBoardId, dueDateAfterStr);
+
+      const calcDays = (history: { column_id: number; created: string }[], startColId: number | null, endColId: number | null): number | null => {
+        if (!startColId || !endColId) return null;
+        const startEntry = history.find(h => h.column_id === startColId);
+        if (!startEntry) return null;
+        const startTime = new Date(startEntry.created).getTime();
+        const endEntry = history.filter(h => h.column_id === endColId && new Date(h.created).getTime() >= startTime).pop();
+        if (!endEntry) return null;
+        const diff = new Date(endEntry.created).getTime() - startTime;
+        return Math.round(diff / (1000 * 60 * 60 * 24));
+      };
+
+      const RATE_DELAY = 220;
+      const results = [];
+      for (const card of cards) {
+        const history = await kaitenClient.getCardLocationHistory(card.id);
+        await new Promise(resolve => setTimeout(resolve, RATE_DELAY));
+
+        const ttm = calcDays(history, dept.ttmStartColumnId, dept.ttmEndColumnId);
+        const leadTime = calcDays(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
+        const cycleTime = calcDays(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
+
+        results.push({
+          cardId: card.id,
+          title: card.title,
+          dueDate: card.due_date ?? null,
+          ttm,
+          leadTime,
+          cycleTime,
+        });
+      }
+
+      res.json({ success: true, spaceName, cards: results });
+    } catch (error: any) {
+      console.error("[flow-metrics]", error);
+      res.status(500).json({ success: false, error: error.message || "Failed to compute flow metrics" });
+    }
+  });
+
   app.patch("/api/departments/:id", async (req, res) => {
     try {
       const { id } = req.params;

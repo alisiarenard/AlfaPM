@@ -3,8 +3,9 @@ import { useState, useEffect, useRef, useMemo, useCallback, Fragment } from "rea
 import { useLocation } from "wouter";
 import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw } from "lucide-react";
+import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
@@ -36,6 +37,32 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [editingCell, setEditingCell] = useState<{ cardId: number; field: 'plannedEffect' | 'actualEffect' } | null>(null);
   const [editingCellValue, setEditingCellValue] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
+  const [flowMetricsOpen, setFlowMetricsOpen] = useState(false);
+  const [flowMetricsFetching, setFlowMetricsFetching] = useState(false);
+  const [flowMetricsData, setFlowMetricsData] = useState<{
+    spaceName: string;
+    cards: { cardId: number; title: string; dueDate: string | null; ttm: number | null; leadTime: number | null; cycleTime: number | null }[];
+  } | null>(null);
+
+  const currentDepartment = useMemo(() => departments?.find(d => d.id === selectedDepartment), [departments, selectedDepartment]);
+
+  const handleOpenFlowMetrics = async () => {
+    if (!selectedDepartment) return;
+    setFlowMetricsOpen(true);
+    if (flowMetricsData) return;
+    setFlowMetricsFetching(true);
+    try {
+      const res = await fetch(`/api/departments/${selectedDepartment}/flow-metrics`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch flow metrics");
+      setFlowMetricsData(data);
+    } catch (err: any) {
+      toast({ title: "Ошибка загрузки метрик", description: err.message, variant: "destructive" });
+      setFlowMetricsOpen(false);
+    } finally {
+      setFlowMetricsFetching(false);
+    }
+  };
 
   const updateEffectMutation = useMutation({
     mutationFn: async ({ cardId, plannedValue, factValue }: {
@@ -658,6 +685,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   };
 
   return (
+    <>
     <div className="bg-background flex-1">
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
@@ -780,6 +808,17 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                {currentDepartment?.kaitenBoardId && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    title="Flow-метрики (TTM / Lead Time / Cycle Time)"
+                    data-testid="button-flow-metrics"
+                    onClick={handleOpenFlowMetrics}
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                )}
                 </div>
                 <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
                   {([
@@ -1069,5 +1108,101 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
         </div>
       </div>
     </div>
+
+    <Dialog open={flowMetricsOpen} onOpenChange={(open) => { setFlowMetricsOpen(open); if (!open) setFlowMetricsData(null); }}>
+      <DialogContent className="max-w-5xl w-full max-h-[85vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
+        <DialogHeader className="shrink-0 pb-3 border-b border-border">
+          <DialogTitle className="text-lg font-semibold">
+            {flowMetricsFetching
+              ? "Загрузка..."
+              : flowMetricsData
+                ? flowMetricsData.spaceName
+                : "Flow-метрики"}
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Epic-карточки за последние 12 месяцев — Time To Market, Lead Time, Cycle Time
+          </p>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+          {flowMetricsFetching ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Загрузка данных из Kaiten...</p>
+            </div>
+          ) : flowMetricsData ? (
+            flowMetricsData.cards.length === 0 ? (
+              <div className="flex items-center justify-center py-16">
+                <p className="text-sm text-muted-foreground">Нет Epic-карточек с датой дедлайна за последние 12 месяцев</p>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10 bg-background">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">Эпик</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">Дедлайн</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">TTM (дни)</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">Lead Time (дни)</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground border-b border-border">Cycle Time (дни)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flowMetricsData.cards.map((card, i) => (
+                    <tr key={card.cardId} className={i % 2 === 0 ? '' : 'bg-muted/20'} data-testid={`row-flow-${card.cardId}`}>
+                      <td className="px-4 py-2.5 border-b border-border max-w-[320px]">
+                        <span className="line-clamp-2 leading-snug">{card.title}</span>
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border text-right tabular-nums text-muted-foreground whitespace-nowrap">
+                        {card.dueDate
+                          ? new Date(card.dueDate).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-ttm-${card.cardId}`}>
+                        {card.ttm !== null ? (
+                          <span className="font-medium">{card.ttm}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-lead-time-${card.cardId}`}>
+                        {card.leadTime !== null ? (
+                          <span className="font-medium">{card.leadTime}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-cycle-time-${card.cardId}`}>
+                        {card.cycleTime !== null ? (
+                          <span className="font-medium">{card.cycleTime}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="sticky bottom-0 z-10 bg-muted/80" style={{ backdropFilter: 'blur(8px)' }}>
+                  <tr>
+                    <td className="px-4 py-2.5 border-t border-border font-semibold" colSpan={2}>
+                      Среднее ({flowMetricsData.cards.length} эпиков)
+                    </td>
+                    {(['ttm', 'leadTime', 'cycleTime'] as const).map(key => {
+                      const vals = flowMetricsData.cards.map(c => c[key]).filter((v): v is number => v !== null);
+                      const avg = vals.length > 0 ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+                      return (
+                        <td key={key} className="px-4 py-2.5 border-t border-border text-right tabular-nums font-semibold">
+                          {avg !== null ? avg : '—'}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tfoot>
+              </table>
+            )
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
