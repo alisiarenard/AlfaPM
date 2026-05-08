@@ -60,6 +60,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [flowMetricsOpen, setFlowMetricsOpen] = useState(false);
   const [flowMetricsFetching, setFlowMetricsFetching] = useState(false);
   type MetricSpan = { ms: number; startMs: number; endMs: number };
+  type StatusSegment = { columnName: string; startMs: number; durationMs: number };
   const [flowMetricsData, setFlowMetricsData] = useState<{
     spaceName: string;
     kaitenSpaceId: number | null;
@@ -70,6 +71,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       lastMovedToDoneAt: string | null;
       totalStartMs: number | null;
       totalEndMs: number | null;
+      statusSegments: StatusSegment[];
       ttm: MetricSpan | null;
       leadTime: MetricSpan | null;
       cycleTime: MetricSpan | null;
@@ -1152,20 +1154,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
             {flowMetricsFetching ? "Загрузка..." : flowMetricsData ? flowMetricsData.spaceName : "Flow-метрики"}
           </DialogTitle>
           {!flowMetricsFetching && flowMetricsData && (
-            <div className="flex items-center gap-4 mt-1">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: '#8b1a2a' }} />
-                TTM
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: '#cd253d' }} />
-                Lead Time
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: '#e8738a' }} />
-                Cycle Time
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Каждый цветной сегмент — статус карточки. Наведите на сегмент, чтобы увидеть название и длительность.
+            </p>
           )}
         </DialogHeader>
 
@@ -1193,9 +1184,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     return { left: Math.max(0, left), width: Math.max(0.5, width) };
                   };
 
-                  const ttmBar = toBar(card.ttm);
-                  const leadBar = toBar(card.leadTime);
-                  const cycleBar = toBar(card.cycleTime);
+                  const STATUS_COLORS = [
+                    '#4f6bed', '#7c5cbf', '#2a9d8f', '#e76f51',
+                    '#457b9d', '#e9c46a', '#264653', '#f4a261',
+                  ];
 
                   const cardUrl = flowMetricsData.kaitenSpaceId
                     ? getKaitenCardUrl(flowMetricsData.kaitenSpaceId, card.cardId, card.archived)
@@ -1230,53 +1222,30 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         </div>
                       </div>
 
-                      {totalSpan > 0 && (
+                      {totalSpan > 0 && card.statusSegments.length > 0 && (
                         <div className="relative w-full h-[7px] bg-muted rounded-full">
-                          {ttmBar && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className="absolute inset-y-0 rounded-full cursor-default"
-                                  style={{ left: `${ttmBar.left}%`, width: `${ttmBar.width}%`, background: '#8b1a2a' }}
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs">
-                                <div className="font-semibold">TTM</div>
-                                <div>{formatDuration(card.ttm!.ms)}</div>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          {leadBar && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className="absolute inset-y-0 rounded-full cursor-default"
-                                  style={{ left: `${leadBar.left}%`, width: `${leadBar.width}%`, background: '#cd253d' }}
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs">
-                                <div className="font-semibold">Lead Time</div>
-                                <div>{formatDuration(card.leadTime!.ms)}</div>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          {cycleBar && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className="absolute inset-y-0 rounded-full cursor-default"
-                                  style={{ left: `${cycleBar.left}%`, width: `${cycleBar.width}%`, background: '#e8738a' }}
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs">
-                                <div className="font-semibold">Cycle Time</div>
-                                <div>{formatDuration(card.cycleTime!.ms)}</div>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
+                          {card.statusSegments.map((seg, idx) => {
+                            const left = ((seg.startMs - card.totalStartMs!) / totalSpan) * 100;
+                            const width = Math.max(0.5, (seg.durationMs / totalSpan) * 100);
+                            const color = STATUS_COLORS[idx % STATUS_COLORS.length];
+                            return (
+                              <Tooltip key={idx}>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className="absolute inset-y-0 rounded-full cursor-default"
+                                    style={{ left: `${left}%`, width: `${width}%`, background: color }}
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs space-y-0.5">
+                                  <div className="font-semibold">{seg.columnName}</div>
+                                  <div className="text-muted-foreground">{formatDuration(seg.durationMs)}</div>
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          })}
                         </div>
                       )}
-                      {totalSpan === 0 && (
+                      {(totalSpan === 0 || card.statusSegments.length === 0) && (
                         <div className="w-full h-[7px] bg-muted rounded-full" />
                       )}
                     </div>

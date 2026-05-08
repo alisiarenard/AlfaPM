@@ -307,6 +307,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const leadTimeSpan = calcSpan(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
         const cycleTimeSpan = calcSpan(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
 
+        // Build per-status segments: time spent in each column
+        const statusSegments: { columnName: string; startMs: number; durationMs: number }[] = [];
+        for (let i = 0; i < history.length; i++) {
+          const startMs = new Date(history[i].changed).getTime();
+          const endMs = i + 1 < history.length ? new Date(history[i + 1].changed).getTime() : startMs;
+          const durationMs = endMs - startMs;
+          if (durationMs > 0) {
+            statusSegments.push({
+              columnName: columnMap.get(history[i].column_id) ?? `#${history[i].column_id}`,
+              startMs,
+              durationMs,
+            });
+          }
+        }
+
         results.push({
           cardId: card.id,
           title: card.title,
@@ -314,6 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastMovedToDoneAt: card.last_moved_to_done_at ?? null,
           totalStartMs,
           totalEndMs,
+          statusSegments,
           ttm: ttmSpan,
           leadTime: leadTimeSpan,
           cycleTime: cycleTimeSpan,
