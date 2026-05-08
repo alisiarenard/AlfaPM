@@ -1369,23 +1369,28 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 })()}
                 <div className="divide-y divide-border">
                 {flowMetricsData.cards.map((card) => {
-                  const totalSpan = (card.totalStartMs !== null && card.totalEndMs !== null)
-                    ? card.totalEndMs - card.totalStartMs : 0;
+                  const ttmStart = card.ttm?.startMs ?? null;
+                  const ttmEnd = card.ttm?.endMs ?? null;
+                  const ttmSpan = (ttmStart !== null && ttmEnd !== null) ? ttmEnd - ttmStart : 0;
 
-                  const toBar = (span: { startMs: number; endMs: number } | null) => {
-                    if (!span || totalSpan === 0) return null;
-                    const left = ((span.startMs - card.totalStartMs!) / totalSpan) * 100;
-                    const width = ((span.endMs - span.startMs) / totalSpan) * 100;
-                    return { left: Math.max(0, left), width: Math.max(0.5, width) };
-                  };
+                  // Filter and clip segments to TTM range
+                  type ClippedSeg = { columnName: string; columnType: number | null; clippedStartMs: number; clippedMs: number; durationMs: number };
+                  const ttmSegs: ClippedSeg[] = (card.statusSegments ?? [])
+                    .flatMap(seg => {
+                      if (ttmStart === null || ttmEnd === null) return [];
+                      const segEnd = seg.startMs + seg.durationMs;
+                      if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return [];
+                      const clippedStart = Math.max(seg.startMs, ttmStart);
+                      const clippedEndMs = Math.min(segEnd, ttmEnd);
+                      return [{ columnName: seg.columnName, columnType: seg.columnType, clippedStartMs: clippedStart, clippedMs: clippedEndMs - clippedStart, durationMs: seg.durationMs }];
+                    });
 
                   // Kaiten column types: 1=queue (grey), 2=in-progress (red), 3=done (dark)
                   const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
                   const RED_SHADES  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
 
-                  // Count occurrences of each type before the current index
                   const typeCounters: Record<number, number> = {};
-                  const segmentColors = card.statusSegments?.map((seg) => {
+                  const segmentColors = ttmSegs.map((seg) => {
                     const t = seg.columnType ?? 0;
                     const idx = typeCounters[t] ?? 0;
                     typeCounters[t] = idx + 1;
@@ -1393,7 +1398,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     if (t === 2) return RED_SHADES[idx % RED_SHADES.length];
                     if (t === 3) return '#7f1d1d';
                     return '#9ca3af';
-                  }) ?? [];
+                  });
 
                   const columnTypeLabel = (type: number | null): string => {
                     if (type === 1) return 'Очередь';
@@ -1430,12 +1435,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         </div>
                       </div>
 
-                      {totalSpan > 0 && (card.statusSegments?.length ?? 0) > 0 && (
+                      {ttmSpan > 0 && ttmSegs.length > 0 ? (
                         <>
                           <div className="relative w-full h-[7px] bg-muted rounded-full">
-                            {card.statusSegments.map((seg, idx) => {
-                              const left = ((seg.startMs - card.totalStartMs!) / totalSpan) * 100;
-                              const width = Math.max(0.5, (seg.durationMs / totalSpan) * 100);
+                            {ttmSegs.map((seg, idx) => {
+                              const left = ((seg.clippedStartMs - ttmStart!) / ttmSpan) * 100;
+                              const width = Math.max(0.5, (seg.clippedMs / ttmSpan) * 100);
                               const color = segmentColors[idx];
                               const typeLabel = columnTypeLabel(seg.columnType);
                               return (
@@ -1449,14 +1454,14 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   <TooltipContent side="top" className="text-xs space-y-0.5">
                                     <div className="font-semibold">{seg.columnName}</div>
                                     {typeLabel && <div className="text-muted-foreground">{typeLabel}</div>}
-                                    <div>{formatDuration(seg.durationMs)}</div>
+                                    <div>{formatDuration(seg.clippedMs)}</div>
                                   </TooltipContent>
                                 </Tooltip>
                               );
                             })}
                           </div>
                           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                            {card.statusSegments.map((seg, idx) => (
+                            {ttmSegs.map((seg, idx) => (
                               <div key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <span
                                   className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
@@ -1467,8 +1472,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             ))}
                           </div>
                         </>
-                      )}
-                      {(totalSpan === 0 || (card.statusSegments?.length ?? 0) === 0) && (
+                      ) : (
                         <div className="w-full h-[7px] bg-muted rounded-full" />
                       )}
                     </div>
