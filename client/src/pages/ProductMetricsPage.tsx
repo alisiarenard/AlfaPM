@@ -1197,15 +1197,16 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   const avgTtm = avgMs(ttmVals);
                   const avgLead = avgMs(leadVals);
                   const avgCycle = avgMs(cycleVals);
-                  const feVals = cards
+                  const wfdVals = cards
+                    .filter(c => c.ttm && c.leadTime && c.statusSegments?.length)
                     .map(c => {
-                      const span = c.totalStartMs !== null && c.totalEndMs !== null ? c.totalEndMs - c.totalStartMs : 0;
-                      if (span === 0 || !c.statusSegments?.length) return null;
-                      const inProgMs = c.statusSegments.filter(s => s.columnType === 2).reduce((a, s) => a + s.durationMs, 0);
-                      return (inProgMs / span) * 100;
-                    })
-                    .filter((v): v is number => v !== null);
-                  const avgFe = feVals.length ? Math.round(feVals.reduce((a, b) => a + b, 0) / feVals.length) : null;
+                      const ttmStart = c.ttm!.startMs;
+                      const ltStart = c.leadTime!.startMs;
+                      return c.statusSegments
+                        .filter(s => s.columnType === 1 && s.startMs >= ttmStart && s.startMs < ltStart)
+                        .reduce((a, s) => a + s.durationMs, 0);
+                    });
+                  const avgWfd = wfdVals.length ? Math.round(wfdVals.reduce((a, b) => a + b, 0) / wfdVals.length) : null;
 
                   // Average relative positions of LT / CT spans across all cards
                   const ltPos = cards
@@ -1285,8 +1286,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                           </div>
                           <div className="border-l border-border my-3 shrink-0" />
                           <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                            <div className="text-xs font-bold text-muted-foreground truncate">Flow Efficiency</div>
-                            <div className="text-lg font-semibold">{avgFe !== null ? `${avgFe}%` : '—'}</div>
+                            <div className="text-xs font-bold text-muted-foreground truncate">Waiting For Decision</div>
+                            <div className="text-lg font-semibold truncate">{avgWfd !== null ? formatDurationShort(avgWfd) : '—'}</div>
                             <div />
                           </div>
                         </div>
