@@ -1171,7 +1171,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     </div>
 
     <Dialog open={flowMetricsOpen} onOpenChange={(open) => { setFlowMetricsOpen(open); if (!open) setFlowMetricsData(null); }}>
-      <DialogContent className="max-w-[75vw] w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
+      <DialogContent className="max-w-[60vw] w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
         <DialogHeader className="shrink-0">
           <DialogTitle />
         </DialogHeader>
