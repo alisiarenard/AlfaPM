@@ -1209,39 +1209,44 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     .filter((v): v is number => v !== null);
                   const avgWfd = wfdVals.length ? Math.round(wfdVals.reduce((a, b) => a + b, 0) / wfdVals.length) : null;
 
-                  // Average relative positions of LT / CT spans across all cards
+                  // Average relative positions of LT / CT spans — relative to TTM span
                   const ltPos = cards
-                    .filter(c => c.leadTime && c.totalStartMs !== null && c.totalEndMs !== null)
+                    .filter(c => c.leadTime && c.ttm)
                     .map(c => {
-                      const span = c.totalEndMs! - c.totalStartMs!;
+                      const span = c.ttm!.endMs - c.ttm!.startMs;
                       if (span === 0) return null;
-                      return { s: (c.leadTime!.startMs - c.totalStartMs!) / span, e: (c.leadTime!.endMs - c.totalStartMs!) / span };
+                      return { s: (c.leadTime!.startMs - c.ttm!.startMs) / span, e: (c.leadTime!.endMs - c.ttm!.startMs) / span };
                     })
                     .filter((v): v is { s: number; e: number } => v !== null);
                   const avgLtS = ltPos.length ? ltPos.reduce((a, v) => a + v.s, 0) / ltPos.length * 100 : null;
                   const avgLtE = ltPos.length ? ltPos.reduce((a, v) => a + v.e, 0) / ltPos.length * 100 : null;
 
                   const ctPos = cards
-                    .filter(c => c.cycleTime && c.totalStartMs !== null && c.totalEndMs !== null)
+                    .filter(c => c.cycleTime && c.ttm)
                     .map(c => {
-                      const span = c.totalEndMs! - c.totalStartMs!;
+                      const span = c.ttm!.endMs - c.ttm!.startMs;
                       if (span === 0) return null;
-                      return { s: (c.cycleTime!.startMs - c.totalStartMs!) / span, e: (c.cycleTime!.endMs - c.totalStartMs!) / span };
+                      return { s: (c.cycleTime!.startMs - c.ttm!.startMs) / span, e: (c.cycleTime!.endMs - c.ttm!.startMs) / span };
                     })
                     .filter((v): v is { s: number; e: number } => v !== null);
                   const avgCtS = ctPos.length ? ctPos.reduce((a, v) => a + v.s, 0) / ctPos.length * 100 : null;
                   const avgCtE = ctPos.length ? ctPos.reduce((a, v) => a + v.e, 0) / ctPos.length * 100 : null;
 
-                  // Aggregate avg duration per status column for the bar
+                  // Aggregate avg duration per status column — only within TTM range
                   const colAgg = new Map<string, { columnType: number | null; totalMs: number; count: number; order: number }>();
                   let colOrder = 0;
-                  cards.forEach(card => {
+                  cards.filter(c => c.ttm).forEach(card => {
+                    const ttmStart = card.ttm!.startMs;
+                    const ttmEnd = card.ttm!.endMs;
                     card.statusSegments?.forEach(seg => {
+                      const segEnd = seg.startMs + seg.durationMs;
+                      if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return;
+                      const clippedMs = Math.min(segEnd, ttmEnd) - Math.max(seg.startMs, ttmStart);
                       if (!colAgg.has(seg.columnName)) {
                         colAgg.set(seg.columnName, { columnType: seg.columnType, totalMs: 0, count: 0, order: colOrder++ });
                       }
                       const a = colAgg.get(seg.columnName)!;
-                      a.totalMs += seg.durationMs;
+                      a.totalMs += clippedMs;
                       a.count += 1;
                     });
                   });
@@ -1251,7 +1256,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   const totalAvgMs = avgSegs.reduce((a, s) => a + s.avgMs, 0);
 
                   const BAR_GREY = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
-                  const BAR_RED  = ['#b91c1c', '#dc2626', '#ef4444', '#f87171', '#fca5a5'];
+                  const BAR_RED  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
                   const btc: Record<number, number> = {};
                   const avgSegColors = avgSegs.map(seg => {
                     const t = seg.columnType ?? 0;
@@ -1263,7 +1268,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   });
 
                   return (
-                    <div className="px-5 pt-4 pb-2 shrink-0">
+                    <div className="px-5 pt-4 pb-2 shrink-0 sticky top-0 z-10 bg-background">
                       <div className="w-full h-[110px] border border-border rounded-lg flex">
 
                         {/* Left 50%: 4 metrics */}
@@ -1376,7 +1381,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
                   // Kaiten column types: 1=queue (grey), 2=in-progress (red), 3=done (dark)
                   const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
-                  const RED_SHADES  = ['#b91c1c', '#dc2626', '#ef4444', '#f87171', '#fca5a5'];
+                  const RED_SHADES  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
 
                   // Count occurrences of each type before the current index
                   const typeCounters: Record<number, number> = {};
