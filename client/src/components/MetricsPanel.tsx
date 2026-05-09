@@ -157,7 +157,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
       style={{ opacity: isIRFetching || isCostStructureFetching || isValueCostFetching ? 0.5 : 1, overflow: 'visible' }}
       data-testid="metrics-panel"
     >
-      <div className="h-[110px] flex relative">
+      <div className="h-[110px] flex relative w-full">
         {showIRTooltip ? (
           <Tooltip>
             <TooltipTrigger asChild>
