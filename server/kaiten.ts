@@ -290,6 +290,9 @@ export class KaitenClient {
     for (const col of sorted) {
       const subcolumns = col.subcolumns ?? col.sub_columns ?? [];
       if (Array.isArray(subcolumns) && subcolumns.length > 0) {
+        // Always include the parent column itself so columnMap can resolve history entries
+        // where subcolumn_id is null but column_id points to this parent
+        result.push({ id: col.id, title: col.title, type: col.type, sort_order: col.sort_order ?? 0 });
         const sortedSubs = [...subcolumns].sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
         for (const sub of sortedSubs) {
           // If the parent column is done (type 3), subcolumns are also effectively done
