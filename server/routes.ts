@@ -315,9 +315,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
           if (endIdx !== -1) {
-            // Include time spent IN the end column
+            const endEntry = history[endIdx];
+            const endColInfo = columnMap.get(effectiveId(endEntry));
             const nextEntry = history[endIdx + 1];
-            const endMs = nextEntry ? new Date(nextEntry.changed).getTime() : Date.now();
+            let endMs: number;
+            if (endColInfo?.type === 3) {
+              // Done column: end = moment of transition into done, never count time sitting in done
+              endMs = new Date(endEntry.changed).getTime();
+            } else {
+              // Non-done end column: include time spent in it until next move (or now if still there)
+              endMs = nextEntry ? new Date(nextEntry.changed).getTime() : Date.now();
+            }
             return { ms: endMs - startMs, startMs, endMs };
           }
         }
