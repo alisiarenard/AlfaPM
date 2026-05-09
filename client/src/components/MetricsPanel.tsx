@@ -134,7 +134,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
   const irContent = (
     <div className="px-4 py-3 flex flex-col justify-between h-full">
       <div className="text-sm font-medium text-muted-foreground truncate">Innovation Rate</div>
-      <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
+      <div className="text-[28px] font-semibold" data-testid="metric-innovation-rate">
         {displayIR ? `${displayIR.actualIR}%` : '-'}
       </div>
       <div className="text-[0.8rem] text-muted-foreground truncate">
@@ -184,13 +184,13 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
           <div className="text-sm font-medium text-muted-foreground truncate">Value/Cost</div>
           <div className="flex justify-between items-end w-full">
             <div className="flex flex-col items-center gap-1">
-              <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">
+              <div className="text-[28px] font-semibold" data-testid="metric-value-cost-plan">
                 {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '-'}
               </div>
               <div className="text-[0.8rem] text-muted-foreground">плановый</div>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">
+              <div className="text-[28px] font-semibold" data-testid="metric-value-cost-actual">
                 {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '-'}
               </div>
               <div className="text-[0.8rem] text-muted-foreground">фактический</div>
