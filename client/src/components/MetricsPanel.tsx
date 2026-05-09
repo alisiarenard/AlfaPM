@@ -133,9 +133,9 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
 
   const irContent = (
     <div className="px-4 py-3 flex flex-col justify-between h-full">
-      <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Innovation Rate</span></div>
-      <div className="text-[28px] font-semibold" data-testid="metric-innovation-rate">
-        {displayIR ? `${displayIR.actualIR}%` : '-'}
+      <div className="flex items-center gap-1 text-sm text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Innovation Rate</span></div>
+      <div className="text-2xl font-semibold" data-testid="metric-innovation-rate">
+        {displayIR ? `${displayIR.actualIR}%` : '—'}
       </div>
       <div className="text-[0.8rem] text-muted-foreground truncate">
         {displayIR && (
@@ -181,17 +181,17 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         )}
         <div className="border-l border-border my-3"></div>
         <div className="w-[300px] shrink-0 px-4 py-3 flex flex-col justify-between">
-          <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Value/Cost</span></div>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Value/Cost</span></div>
           <div className="flex justify-between items-end w-full">
             <div className="flex flex-col items-center gap-1">
-              <div className="text-[28px] font-semibold" data-testid="metric-value-cost-plan">
-                {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '-'}
+              <div className="text-2xl font-semibold" data-testid="metric-value-cost-plan">
+                {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '—'}
               </div>
               <div className="text-[0.8rem] text-muted-foreground">плановый</div>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <div className="text-[28px] font-semibold" data-testid="metric-value-cost-actual">
-                {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '-'}
+              <div className="text-2xl font-semibold" data-testid="metric-value-cost-actual">
+                {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '—'}
               </div>
               <div className="text-[0.8rem] text-muted-foreground">фактический</div>
             </div>
@@ -200,7 +200,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         </div>
         <div className="border-l border-border my-3"></div>
         <div className="flex-1 pl-4 py-3 flex flex-col justify-between min-w-0">
-          <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Структура затрат</span></div>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Структура затрат</span></div>
           <div className="flex gap-2 items-end flex-1">
             {costTypes.map((type) => (
               <Tooltip key={type.key}>
