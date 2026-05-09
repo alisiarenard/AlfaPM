@@ -753,6 +753,101 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     }
   };
 
+  const flowSummary = useMemo(() => {
+    if (!flowMetricsData || flowMetricsData.cards.length === 0) return null;
+    const cards = flowMetricsData.cards;
+    const avgMs = (vals: number[]) => vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+    const avgTtm   = avgMs(cards.filter(c => c.ttm).map(c => c.ttm!.ms));
+    const avgLead  = avgMs(cards.filter(c => c.leadTime).map(c => c.leadTime!.ms));
+    const avgCycle = avgMs(cards.filter(c => c.cycleTime).map(c => c.cycleTime!.ms));
+
+    const wfdVals = cards
+      .filter(c => c.ttm && c.statusSegments?.length)
+      .map(c => {
+        const ttmStart = c.ttm!.startMs, ttmEnd = c.ttm!.endMs, span = ttmEnd - ttmStart;
+        if (span === 0) return null;
+        const queueMs = c.statusSegments.filter(s => s.columnType === 1).reduce((acc, s) => {
+          const se = s.startMs + s.durationMs;
+          if (se <= ttmStart || s.startMs >= ttmEnd) return acc;
+          return acc + Math.min(se, ttmEnd) - Math.max(s.startMs, ttmStart);
+        }, 0);
+        return (queueMs / span) * 100;
+      })
+      .filter((v): v is number => v !== null);
+    const avgWfd = wfdVals.length ? Math.round(wfdVals.reduce((a, b) => a + b, 0) / wfdVals.length) : null;
+
+    const order = flowMetricsData.columnOrder;
+    const ttmSI = flowMetricsData.ttmStartColumnName ? order.indexOf(flowMetricsData.ttmStartColumnName) : -1;
+    const ttmEI = flowMetricsData.ttmEndColumnName   ? order.indexOf(flowMetricsData.ttmEndColumnName)   : -1;
+    const ttmSet = (ttmSI !== -1 && ttmEI !== -1 && ttmSI <= ttmEI) ? new Set(order.slice(ttmSI, ttmEI + 1)) : null;
+
+    const cardFrac = (card: typeof cards[0], cutMs: number): number | null => {
+      const s0 = card.ttm!.startMs, e0 = card.ttm!.endMs;
+      const segs = (card.statusSegments ?? []).flatMap(seg => {
+        if (ttmSet && !ttmSet.has(seg.columnName)) return [];
+        const se = seg.startMs + seg.durationMs;
+        if (se <= s0 || seg.startMs >= e0) return [];
+        return [{ s: Math.max(seg.startMs, s0), e: Math.min(se, e0) }];
+      });
+      const total = segs.reduce((a, x) => a + (x.e - x.s), 0);
+      if (total === 0) return null;
+      const before = segs.reduce((a, x) => {
+        if (x.e <= cutMs) return a + (x.e - x.s);
+        if (x.s < cutMs) return a + (cutMs - x.s);
+        return a;
+      }, 0);
+      return before / total;
+    };
+
+    const ltFracs = cards.filter(c => c.leadTime && c.ttm).map(c => cardFrac(c, c.leadTime!.startMs)).filter((v): v is number => v !== null);
+    const avgLtS  = ltFracs.length  ? ltFracs.reduce((a, v) => a + v, 0)  / ltFracs.length  * 100 : null;
+    const ctFracs = cards.filter(c => c.cycleTime && c.ttm).map(c => cardFrac(c, c.cycleTime!.startMs)).filter((v): v is number => v !== null);
+    const avgCtS  = ctFracs.length  ? ctFracs.reduce((a, v) => a + v, 0)  / ctFracs.length  * 100 : null;
+
+    const colOrderIdx = (n: string) => { const i = order.indexOf(n); return i === -1 ? 9999 : i; };
+    const eligible = cards.filter(c => c.ttm && c.ttm.ms > 0);
+    const nCards = eligible.length;
+    const fracSum = new Map<string, { type: number | null; fracSum: number }>();
+    eligible.forEach(card => {
+      const s0 = card.ttm!.startMs, e0 = card.ttm!.endMs, tms = card.ttm!.ms;
+      const colMs = new Map<string, { ms: number; type: number | null }>();
+      card.statusSegments?.forEach(seg => {
+        if (ttmSet && !ttmSet.has(seg.columnName)) return;
+        const se = seg.startMs + seg.durationMs;
+        if (se <= s0 || seg.startMs >= e0) return;
+        const cl = Math.min(se, e0) - Math.max(seg.startMs, s0);
+        const ex = colMs.get(seg.columnName);
+        if (ex) ex.ms += cl; else colMs.set(seg.columnName, { ms: cl, type: seg.columnType });
+      });
+      colMs.forEach(({ ms, type }, col) => {
+        const ex = fracSum.get(col);
+        if (ex) ex.fracSum += ms / tms; else fracSum.set(col, { type, fracSum: ms / tms });
+      });
+    });
+    const avgSegs = nCards > 0
+      ? Array.from(fracSum.entries())
+          .sort((a, b) => colOrderIdx(a[0]) - colOrderIdx(b[0]))
+          .map(([name, v]) => ({ columnName: name, columnType: v.type, avgMs: (v.fracSum / nCards) * (avgTtm ?? 0) }))
+      : [];
+    const totalAvgMs = avgTtm ?? 0;
+
+    const BAR_GREY = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
+    const BAR_RED  = ['#cd253d', '#e05570', '#ef8a9a', '#f7bfc8', '#fde8ec'];
+    const colTypeMap = new Map<string, number | null>();
+    cards.forEach(c => (c.statusSegments ?? []).forEach(s => { if (!colTypeMap.has(s.columnName)) colTypeMap.set(s.columnName, s.columnType); }));
+    const t1Cols = order.filter(c => colTypeMap.get(c) === 1);
+    const t2Cols = order.filter(c => colTypeMap.get(c) === 2);
+    const getColor = (col: string, type: number | null) => {
+      if (type === 1) return BAR_GREY[Math.max(0, t1Cols.indexOf(col)) % BAR_GREY.length];
+      if (type === 2) return BAR_RED[Math.max(0, t2Cols.indexOf(col)) % BAR_RED.length];
+      if (type === 3) return '#7f1d1d';
+      return '#9ca3af';
+    };
+    const shortName = (col: string) => col.includes(' / ') ? col.split(' / ').slice(1).join(' / ') : col;
+
+    return { avgTtm, avgLead, avgCycle, avgWfd, avgLtS, avgCtS, avgSegs, totalAvgMs, getColor, shortName, spaceName: flowMetricsData.spaceName, cardCount: cards.length };
+  }, [flowMetricsData]);
+
   return (
     <>
     <div className="bg-background flex-1">
@@ -816,6 +911,81 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
             <p className="text-muted-foreground text-center py-12">Нет команд в выбранном департаменте</p>
           ) : (
             <p className="text-muted-foreground text-center py-12">Выберите департамент для просмотра метрик</p>
+          )}
+
+          {flowSummary && (
+            <div className="mt-6 border border-border rounded-lg" data-testid="flow-summary-block">
+              <div className="w-full h-[110px] flex">
+                <div className="w-[50%] flex min-w-0">
+                  <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
+                    <div className="text-xs font-bold text-muted-foreground truncate">Time To Market</div>
+                    <div className="text-lg font-semibold truncate">{flowSummary.avgTtm !== null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
+                    <div />
+                  </div>
+                  <div className="border-l border-border my-3 shrink-0" />
+                  <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
+                    <div className="text-xs font-bold text-muted-foreground truncate">Lead Time</div>
+                    <div className="text-lg font-semibold truncate">{flowSummary.avgLead !== null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
+                    <div />
+                  </div>
+                  <div className="border-l border-border my-3 shrink-0" />
+                  <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
+                    <div className="text-xs font-bold text-muted-foreground truncate">Cycle Time</div>
+                    <div className="text-lg font-semibold truncate">{flowSummary.avgCycle !== null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
+                    <div />
+                  </div>
+                  <div className="border-l border-border my-3 shrink-0" />
+                  <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
+                    <div className="text-xs font-bold text-muted-foreground truncate">Waiting Time</div>
+                    <div className="text-lg font-semibold truncate">{flowSummary.avgWfd !== null ? `${flowSummary.avgWfd}%` : '—'}</div>
+                    <div />
+                  </div>
+                </div>
+                <div className="border-l border-border my-3 shrink-0" />
+                <div className="w-[50%] px-4 py-3 flex flex-col justify-between min-w-0">
+                  <div />
+                  <div className="relative w-full" style={{ height: '43px' }}>
+                    {flowSummary.avgLtS !== null && (
+                      <div className="absolute" style={{ left: `${flowSummary.avgLtS}%`, right: '0%', top: 0, height: '16px' }}>
+                        <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Lead Time</div>
+                      </div>
+                    )}
+                    <div className="absolute w-full h-[7px] bg-muted rounded-full overflow-visible" style={{ top: '18px' }}>
+                      {flowSummary.totalAvgMs > 0 && flowSummary.avgSegs.map((seg, idx) => {
+                        const leftPct = flowSummary.avgSegs.slice(0, idx).reduce((a, s) => a + s.avgMs, 0) / flowSummary.totalAvgMs * 100;
+                        const widthPct = Math.max(0.5, seg.avgMs / flowSummary.totalAvgMs * 100);
+                        const isFirst = idx === 0, isLast = idx === flowSummary.avgSegs.length - 1;
+                        const br = isFirst && isLast ? '9999px' : isFirst ? '9999px 0 0 9999px' : isLast ? '0 9999px 9999px 0' : '0';
+                        return (
+                          <Tooltip key={idx}>
+                            <TooltipTrigger asChild>
+                              <div className="absolute inset-y-0 cursor-default transition-all duration-200 hover:brightness-75 hover:scale-y-[1.2]"
+                                style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: flowSummary.getColor(seg.columnName, seg.columnType), borderRadius: br }} />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs space-y-0.5">
+                              <div className="font-semibold">{flowSummary.shortName(seg.columnName)}</div>
+                              <div>{formatDurationShort(Math.round(seg.avgMs))}</div>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                    </div>
+                    {flowSummary.avgCtS !== null && (
+                      <div className="absolute" style={{ left: `${flowSummary.avgCtS}%`, right: '0%', top: '27px', height: '16px' }}>
+                        <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Cycle Time</div>
+                      </div>
+                    )}
+                  </div>
+                  <div />
+                </div>
+              </div>
+            </div>
           )}
 
           {selectedDepartment && teamIdsArray.length > 0 && (
@@ -1178,10 +1348,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       </div>
     </div>
 
-    <Dialog open={flowMetricsOpen} onOpenChange={(open) => { setFlowMetricsOpen(open); if (!open) setFlowMetricsData(null); }}>
+    <Dialog open={flowMetricsOpen} onOpenChange={setFlowMetricsOpen}>
       <DialogContent className="max-w-[60vw] w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
         <DialogHeader className="shrink-0">
-          <DialogTitle />
+          <DialogTitle className="text-sm font-semibold">{flowMetricsData?.spaceName ?? ''} — карточки ({flowMetricsData?.cards.length ?? 0})</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
@@ -1196,242 +1366,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               </div>
             ) : (
               <>
-                {(() => {
-                  const cards = flowMetricsData.cards;
-                  const ttmVals = cards.filter(c => c.ttm).map(c => c.ttm!.ms);
-                  const leadVals = cards.filter(c => c.leadTime).map(c => c.leadTime!.ms);
-                  const cycleVals = cards.filter(c => c.cycleTime).map(c => c.cycleTime!.ms);
-                  const avgMs = (vals: number[]) => vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
-                  const avgTtm = avgMs(ttmVals);
-                  const avgLead = avgMs(leadVals);
-                  const avgCycle = avgMs(cycleVals);
-                  const wfdVals = cards
-                    .filter(c => c.ttm && c.statusSegments?.length)
-                    .map(c => {
-                      const ttmStart = c.ttm!.startMs;
-                      const ttmEnd   = c.ttm!.endMs;
-                      const ttmSpanLocal = ttmEnd - ttmStart;
-                      if (ttmSpanLocal === 0) return null;
-                      const queueMs = c.statusSegments
-                        .filter(s => s.columnType === 1)
-                        .reduce((acc, s) => {
-                          const segEnd = s.startMs + s.durationMs;
-                          if (segEnd <= ttmStart || s.startMs >= ttmEnd) return acc;
-                          const clipped = Math.min(segEnd, ttmEnd) - Math.max(s.startMs, ttmStart);
-                          return acc + clipped;
-                        }, 0);
-                      return (queueMs / ttmSpanLocal) * 100;
-                    })
-                    .filter((v): v is number => v !== null);
-                  const avgWfd = wfdVals.length ? Math.round(wfdVals.reduce((a, b) => a + b, 0) / wfdVals.length) : null;
-
-                  // Average relative positions of LT / CT spans in cumulative bar space.
-                  // Right edge = 100% for both (they end at ttm.endMs = bar end).
-                  // Left edge = fraction of counted TTM segments that fall BEFORE the span start.
-                  const order0 = flowMetricsData.columnOrder;
-                  const ttmStartIdx0 = flowMetricsData.ttmStartColumnName ? order0.indexOf(flowMetricsData.ttmStartColumnName) : -1;
-                  const ttmEndIdx0   = flowMetricsData.ttmEndColumnName   ? order0.indexOf(flowMetricsData.ttmEndColumnName)   : -1;
-                  const ttmColSet0 = (ttmStartIdx0 !== -1 && ttmEndIdx0 !== -1 && ttmStartIdx0 <= ttmEndIdx0)
-                    ? new Set(order0.slice(ttmStartIdx0, ttmEndIdx0 + 1))
-                    : null;
-
-                  const cardBarFraction = (
-                    card: typeof cards[0],
-                    cutMs: number,
-                  ): number | null => {
-                    const ttmStart = card.ttm!.startMs;
-                    const ttmEnd   = card.ttm!.endMs;
-                    const segs = (card.statusSegments ?? []).flatMap(seg => {
-                      if (ttmColSet0 && !ttmColSet0.has(seg.columnName)) return [];
-                      const segEnd = seg.startMs + seg.durationMs;
-                      if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return [];
-                      const cs = Math.max(seg.startMs, ttmStart);
-                      const ce = Math.min(segEnd, ttmEnd);
-                      return [{ startMs: cs, endMs: ce }];
-                    });
-                    const totalMs = segs.reduce((a, s) => a + (s.endMs - s.startMs), 0);
-                    if (totalMs === 0) return null;
-                    const beforeMs = segs.reduce((a, s) => {
-                      if (s.endMs <= cutMs) return a + (s.endMs - s.startMs);
-                      if (s.startMs < cutMs) return a + (cutMs - s.startMs);
-                      return a;
-                    }, 0);
-                    return beforeMs / totalMs;
-                  };
-
-                  const ltFracs = cards
-                    .filter(c => c.leadTime && c.ttm)
-                    .map(c => cardBarFraction(c, c.leadTime!.startMs))
-                    .filter((v): v is number => v !== null);
-                  const avgLtS = ltFracs.length ? ltFracs.reduce((a, v) => a + v, 0) / ltFracs.length * 100 : null;
-
-                  const ctFracs = cards
-                    .filter(c => c.cycleTime && c.ttm)
-                    .map(c => cardBarFraction(c, c.cycleTime!.startMs))
-                    .filter((v): v is number => v !== null);
-                  const avgCtS = ctFracs.length ? ctFracs.reduce((a, v) => a + v, 0) / ctFracs.length * 100 : null;
-
-                  // Build bar segments via fraction-based averaging so totalAvgMs === avgTtm.
-                  // For each card: compute each column's share of card.ttm.ms (fraction 0-1).
-                  // Average fractions across ALL cards (cards without a column contribute 0).
-                  // Multiply by avgTtm to get absolute ms — guarantees sum == avgTtm.
-                  const colOrderIdx = (name: string) => { const i = flowMetricsData.columnOrder.indexOf(name); return i === -1 ? 9999 : i; };
-                  const eligibleCards = cards.filter(c => c.ttm && c.ttm.ms > 0);
-                  const nCards = eligibleCards.length;
-                  const colFracSum = new Map<string, { type: number | null; fracSum: number }>();
-                  eligibleCards.forEach(card => {
-                    const ttmStart = card.ttm!.startMs;
-                    const ttmEnd   = card.ttm!.endMs;
-                    const ttmMs    = card.ttm!.ms;
-                    const cardColMs = new Map<string, { ms: number; type: number | null }>();
-                    card.statusSegments?.forEach(seg => {
-                      if (ttmColSet0 && !ttmColSet0.has(seg.columnName)) return;
-                      const segEnd = seg.startMs + seg.durationMs;
-                      if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return;
-                      const clipped = Math.min(segEnd, ttmEnd) - Math.max(seg.startMs, ttmStart);
-                      const e = cardColMs.get(seg.columnName);
-                      if (e) e.ms += clipped;
-                      else cardColMs.set(seg.columnName, { ms: clipped, type: seg.columnType });
-                    });
-                    cardColMs.forEach(({ ms, type }, colName) => {
-                      const frac = ms / ttmMs;
-                      const e = colFracSum.get(colName);
-                      if (e) e.fracSum += frac;
-                      else colFracSum.set(colName, { type, fracSum: frac });
-                    });
-                  });
-                  const avgSegs = nCards > 0
-                    ? Array.from(colFracSum.entries())
-                        .sort((a, b) => colOrderIdx(a[0]) - colOrderIdx(b[0]))
-                        .map(([name, v]) => ({
-                          columnName: name,
-                          columnType: v.type,
-                          avgMs: (v.fracSum / nCards) * (avgTtm ?? 0),
-                        }))
-                    : [];
-                  const totalAvgMs = avgTtm ?? 0;
-
-                  const BAR_GREY = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
-                  const BAR_RED  = ['#cd253d', '#e05570', '#ef8a9a', '#f7bfc8', '#fde8ec'];
-                  const avgColTypeMap = new Map<string, number | null>();
-                  cards.forEach(c => {
-                    (c.statusSegments ?? []).forEach(s => {
-                      if (!avgColTypeMap.has(s.columnName)) avgColTypeMap.set(s.columnName, s.columnType);
-                    });
-                  });
-                  const avgType1Cols = flowMetricsData.columnOrder.filter(c => avgColTypeMap.get(c) === 1);
-                  const avgType2Cols = flowMetricsData.columnOrder.filter(c => avgColTypeMap.get(c) === 2);
-                  const getAvgSegColor = (colName: string, colType: number | null): string => {
-                    if (colType === 1) { const i = avgType1Cols.indexOf(colName); return BAR_GREY[Math.max(0, i) % BAR_GREY.length]; }
-                    if (colType === 2) { const i = avgType2Cols.indexOf(colName); return BAR_RED[Math.max(0, i) % BAR_RED.length]; }
-                    if (colType === 3) return '#7f1d1d';
-                    return '#9ca3af';
-                  };
-                  const avgShortName = (col: string) => col.includes(' / ') ? col.split(' / ').slice(1).join(' / ') : col;
-
-                  return (
-                    <div className="px-5 pt-4 pb-2 shrink-0 sticky top-0 z-10 bg-background">
-                      <div className="w-full h-[110px] border border-border rounded-lg flex">
-
-                        {/* Left 50%: 4 metrics */}
-                        <div className="w-[50%] flex min-w-0">
-                          <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                            <div className="text-xs font-bold text-muted-foreground truncate">Time To Market</div>
-                            <div className="text-lg font-semibold truncate">{avgTtm !== null ? formatDurationTop1(avgTtm) : '—'}</div>
-                            <div />
-                          </div>
-                          <div className="border-l border-border my-3 shrink-0" />
-                          <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                            <div className="text-xs font-bold text-muted-foreground truncate">Lead Time</div>
-                            <div className="text-lg font-semibold truncate">{avgLead !== null ? formatDurationTop1(avgLead) : '—'}</div>
-                            <div />
-                          </div>
-                          <div className="border-l border-border my-3 shrink-0" />
-                          <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                            <div className="text-xs font-bold text-muted-foreground truncate">Cycle Time</div>
-                            <div className="text-lg font-semibold truncate">{avgCycle !== null ? formatDurationTop1(avgCycle) : '—'}</div>
-                            <div />
-                          </div>
-                          <div className="border-l border-border my-3 shrink-0" />
-                          <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                            <div className="text-xs font-bold text-muted-foreground truncate">Waiting Time</div>
-                            <div className="text-lg font-semibold truncate">{avgWfd !== null ? `${avgWfd}%` : '—'}</div>
-                            <div />
-                          </div>
-                        </div>
-
-                        {/* Center divider */}
-                        <div className="border-l border-border my-3 shrink-0" />
-
-                        {/* Right 50%: avg status bar */}
-                        <div className="w-[50%] px-4 py-3 flex flex-col justify-between min-w-0">
-                          <div />
-
-                          {/* Bar + brackets wrapper */}
-                          <div className="relative w-full" style={{ height: '43px' }}>
-
-                            {/* LT bracket above bar */}
-                            {avgLtS !== null && (
-                              <div className="absolute" style={{ left: `${avgLtS}%`, right: '0%', top: 0, height: '16px' }}>
-                                {/* horizontal at top */}
-                                <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                                {/* left vertical going down */}
-                                <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                                {/* right vertical going down */}
-                                <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                                {/* label centered on top line */}
-                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Lead Time</div>
-                              </div>
-                            )}
-
-                            {/* Bar */}
-                            <div className="absolute w-full h-[7px] bg-muted rounded-full overflow-visible" style={{ top: '18px' }}>
-                              {totalAvgMs > 0 && avgSegs.map((seg, idx) => {
-                                const leftPct = avgSegs.slice(0, idx).reduce((a, s) => a + s.avgMs, 0) / totalAvgMs * 100;
-                                const widthPct = Math.max(0.5, seg.avgMs / totalAvgMs * 100);
-                                const isFirst = idx === 0;
-                                const isLast = idx === avgSegs.length - 1;
-                                const borderRadius = isFirst && isLast ? '9999px' : isFirst ? '9999px 0 0 9999px' : isLast ? '0 9999px 9999px 0' : '0';
-                                return (
-                                  <Tooltip key={idx}>
-                                    <TooltipTrigger asChild>
-                                      <div
-                                        className="absolute inset-y-0 cursor-default transition-all duration-200 hover:brightness-75 hover:scale-y-[1.2]"
-                                        style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: getAvgSegColor(seg.columnName, seg.columnType), borderRadius }}
-                                      />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="text-xs space-y-0.5">
-                                      <div className="font-semibold">{avgShortName(seg.columnName)}</div>
-                                      <div>{formatDurationShort(Math.round(seg.avgMs))}</div>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                );
-                              })}
-                            </div>
-
-                            {/* CT bracket below bar */}
-                            {avgCtS !== null && (
-                              <div className="absolute" style={{ left: `${avgCtS}%`, right: '0%', top: '27px', height: '16px' }}>
-                                {/* left vertical going up from bottom */}
-                                <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                                {/* right vertical going up from bottom */}
-                                <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                                {/* horizontal at bottom */}
-                                <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                                {/* label centered on bottom line */}
-                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Cycle Time</div>
-                              </div>
-                            )}
-
-                          </div>
-
-                          <div />
-                        </div>
-
-                      </div>
-                    </div>
-                  );
-                })()}
                 {(() => {
                   // Build global color map keyed by column name — same colors in bars and legend
                   const GREY_SHADES = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
