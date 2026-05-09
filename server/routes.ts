@@ -299,11 +299,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
           }
         }
-        if (endIdx === -1) return null;
-        // Include time spent IN the end column: extend to next entry or Date.now()
-        const nextEntry = history[endIdx + 1];
-        const endMs = nextEntry ? new Date(nextEntry.changed).getTime() : Date.now();
-        return { ms: endMs - startMs, startMs, endMs };
+        if (endIdx !== -1) {
+          // Normal case: include time spent IN the end column
+          const nextEntry = history[endIdx + 1];
+          const endMs = nextEntry ? new Date(nextEntry.changed).getTime() : Date.now();
+          return { ms: endMs - startMs, startMs, endMs };
+        }
+        // Fallback: if the last history entry is a done-type column (type 3),
+        // treat the moment of that transition as the metric end (don't include time in done column)
+        if (history.length > 0) {
+          const lastEntry = history[history.length - 1];
+          const lastColInfo = columnMap.get(effectiveId(lastEntry));
+          if (lastColInfo?.type === 3) {
+            const endMs = new Date(lastEntry.changed).getTime();
+            if (endMs > startMs) {
+              return { ms: endMs - startMs, startMs, endMs };
+            }
+          }
+        }
+        return null;
       };
 
       const RATE_DELAY = 220;
