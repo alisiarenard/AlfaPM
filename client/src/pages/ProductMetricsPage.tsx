@@ -1295,17 +1295,23 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     .map(([name, a]) => ({ columnName: name, columnType: a.columnType, avgMs: a.totalMs / a.count }));
                   const totalAvgMs = avgSegs.reduce((a, s) => a + s.avgMs, 0);
 
-                  const BAR_GREY = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
-                  const BAR_RED  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
-                  const btc: Record<number, number> = {};
-                  const avgSegColors = avgSegs.map(seg => {
-                    const t = seg.columnType ?? 0;
-                    const i = btc[t] ?? 0; btc[t] = i + 1;
-                    if (t === 1) return BAR_GREY[i % BAR_GREY.length];
-                    if (t === 2) return BAR_RED[i % BAR_RED.length];
-                    if (t === 3) return '#7f1d1d';
-                    return '#9ca3af';
+                  const BAR_GREY = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
+                  const BAR_RED  = ['#cd253d', '#e05570', '#ef8a9a', '#f7bfc8', '#fde8ec'];
+                  const avgColTypeMap = new Map<string, number | null>();
+                  cards.forEach(c => {
+                    (c.statusSegments ?? []).forEach(s => {
+                      if (!avgColTypeMap.has(s.columnName)) avgColTypeMap.set(s.columnName, s.columnType);
+                    });
                   });
+                  const avgType1Cols = flowMetricsData.columnOrder.filter(c => avgColTypeMap.get(c) === 1);
+                  const avgType2Cols = flowMetricsData.columnOrder.filter(c => avgColTypeMap.get(c) === 2);
+                  const getAvgSegColor = (colName: string, colType: number | null): string => {
+                    if (colType === 1) { const i = avgType1Cols.indexOf(colName); return BAR_GREY[Math.max(0, i) % BAR_GREY.length]; }
+                    if (colType === 2) { const i = avgType2Cols.indexOf(colName); return BAR_RED[Math.max(0, i) % BAR_RED.length]; }
+                    if (colType === 3) return '#7f1d1d';
+                    return '#9ca3af';
+                  };
+                  const avgShortName = (col: string) => col.includes(' / ') ? col.split(' / ').slice(1).join(' / ') : col;
 
                   return (
                     <div className="px-5 pt-4 pb-2 shrink-0 sticky top-0 z-10 bg-background">
@@ -1372,11 +1378,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                     <TooltipTrigger asChild>
                                       <div
                                         className="absolute inset-y-0 rounded-full cursor-default"
-                                        style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: avgSegColors[idx] }}
+                                        style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: getAvgSegColor(seg.columnName, seg.columnType) }}
                                       />
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="text-xs space-y-0.5">
-                                      <div className="font-semibold">{seg.columnName}</div>
+                                      <div className="font-semibold">{avgShortName(seg.columnName)}</div>
                                       <div>{formatDurationShort(Math.round(seg.avgMs))}</div>
                                     </TooltipContent>
                                   </Tooltip>
@@ -1409,8 +1415,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 })()}
                 {(() => {
                   // Build global color map keyed by column name — same colors in bars and legend
-                  const GREY_SHADES = ['#f1f5f9', '#e2e8f0', '#cbd5e1', '#9ca3af', '#6b7280'];
-                  const RED_SHADES  = ['#fee2e2', '#fecaca', '#fca5a5', '#f87171', '#ef4444'];
+                  const GREY_SHADES = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
+                  const RED_SHADES  = ['#cd253d', '#e05570', '#ef8a9a', '#f7bfc8', '#fde8ec'];
                   const colTypeMap = new Map<string, number | null>();
                   flowMetricsData.cards.forEach(c => {
                     (c.statusSegments ?? []).forEach(s => {
@@ -1522,8 +1528,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
         {/* Fixed legend panel — only columns present in TTM range of at least one card */}
         {flowMetricsData && flowMetricsData.cards.length > 0 && (() => {
-          const GREY_SHADES = ['#f1f5f9', '#e2e8f0', '#cbd5e1', '#9ca3af', '#6b7280'];
-          const RED_SHADES  = ['#fee2e2', '#fecaca', '#fca5a5', '#f87171', '#ef4444'];
+          const GREY_SHADES = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
+          const RED_SHADES  = ['#cd253d', '#e05570', '#ef8a9a', '#f7bfc8', '#fde8ec'];
 
           // Build same global color map as bars use
           const colTypeMap = new Map<string, number | null>();
