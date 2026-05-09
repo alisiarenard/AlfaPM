@@ -1376,16 +1376,19 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             )}
 
                             {/* Bar */}
-                            <div className="absolute w-full h-[7px] bg-muted rounded-full" style={{ top: '18px' }}>
+                            <div className="absolute w-full h-[7px] bg-muted rounded-full overflow-visible" style={{ top: '18px' }}>
                               {totalAvgMs > 0 && avgSegs.map((seg, idx) => {
                                 const leftPct = avgSegs.slice(0, idx).reduce((a, s) => a + s.avgMs, 0) / totalAvgMs * 100;
                                 const widthPct = Math.max(0.5, seg.avgMs / totalAvgMs * 100);
+                                const isFirst = idx === 0;
+                                const isLast = idx === avgSegs.length - 1;
+                                const borderRadius = isFirst && isLast ? '9999px' : isFirst ? '9999px 0 0 9999px' : isLast ? '0 9999px 9999px 0' : '0';
                                 return (
                                   <Tooltip key={idx}>
                                     <TooltipTrigger asChild>
                                       <div
-                                        className="absolute inset-y-0 rounded-full cursor-default"
-                                        style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: getAvgSegColor(seg.columnName, seg.columnType) }}
+                                        className="absolute inset-y-0 cursor-default transition-all duration-200 hover:brightness-75 hover:scale-y-[1.2]"
+                                        style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: getAvgSegColor(seg.columnName, seg.columnType), borderRadius }}
                                       />
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="text-xs space-y-0.5">
@@ -1512,17 +1515,23 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             if (totalSegMs === 0) return <div className="w-full h-[7px] bg-muted rounded-full" />;
                             let cumulative = 0;
                             return (
-                              <div className="relative w-full h-[7px] bg-muted rounded-full">
+                              <div className="relative w-full h-[7px] bg-muted rounded-full overflow-visible">
                                 {ttmSegs.map((seg, idx) => {
                                   const left = (cumulative / totalSegMs) * 100;
                                   const width = Math.max(0.5, (seg.clippedMs / totalSegMs) * 100);
                                   cumulative += seg.clippedMs;
+                                  const isFirst = idx === 0;
+                                  const isLast = idx === ttmSegs.length - 1;
+                                  const borderRadius = isFirst && isLast ? '9999px' : isFirst ? '9999px 0 0 9999px' : isLast ? '0 9999px 9999px 0' : '0';
                                   const color = getSegColor(seg.columnName, seg.columnType);
                                   const typeLabel = columnTypeLabel(seg.columnType);
                                   return (
                                     <Tooltip key={idx}>
                                       <TooltipTrigger asChild>
-                                        <div className="absolute inset-y-0 rounded-full cursor-default" style={{ left: `${left}%`, width: `${width}%`, background: color }} />
+                                        <div
+                                          className="absolute inset-y-0 cursor-default transition-all duration-200 hover:brightness-75 hover:scale-y-[1.2]"
+                                          style={{ left: `${left}%`, width: `${width}%`, background: color, borderRadius }}
+                                        />
                                       </TooltipTrigger>
                                       <TooltipContent side="top" className="text-xs space-y-0.5">
                                         <div className="font-semibold">{shortName(seg.columnName)}</div>
