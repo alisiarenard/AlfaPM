@@ -864,25 +864,25 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={flowSummary ? handleOpenFlowMetrics : undefined} style={{ opacity: flowMetricsFetching ? 0.5 : 1, transition: 'opacity 0.3s', cursor: flowSummary ? 'pointer' : 'default' }}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Time To Market</span></div>
-                  <div className="text-[28px] font-semibold truncate">{flowSummary?.avgTtm != null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
+                  <div className="text-2xl font-semibold truncate">{flowSummary?.avgTtm != null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Lead Time</span></div>
-                  <div className="text-[28px] font-semibold truncate">{flowSummary?.avgLead != null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
+                  <div className="text-2xl font-semibold truncate">{flowSummary?.avgLead != null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Cycle Time</span></div>
-                  <div className="text-[28px] font-semibold truncate">{flowSummary?.avgCycle != null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
+                  <div className="text-2xl font-semibold truncate">{flowSummary?.avgCycle != null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Waiting Time</span></div>
-                  <div className="text-[28px] font-semibold truncate">{flowSummary?.avgWfd != null ? `${flowSummary.avgWfd}%` : '—'}</div>
+                  <div className="text-2xl font-semibold truncate">{flowSummary?.avgWfd != null ? `${flowSummary.avgWfd}%` : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
