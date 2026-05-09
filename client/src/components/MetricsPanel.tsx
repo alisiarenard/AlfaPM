@@ -1,7 +1,7 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { useRef, type ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, Info } from "lucide-react";
 
 interface SpaceGroup {
   spaceId: string;
@@ -133,7 +133,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
 
   const irContent = (
     <div className="px-4 py-3 flex flex-col justify-between h-full">
-      <div className="text-sm font-medium text-muted-foreground truncate">Innovation Rate</div>
+      <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Innovation Rate</span></div>
       <div className="text-[28px] font-semibold" data-testid="metric-innovation-rate">
         {displayIR ? `${displayIR.actualIR}%` : '-'}
       </div>
@@ -181,7 +181,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         )}
         <div className="border-l border-border my-3"></div>
         <div className="w-[300px] shrink-0 px-4 py-3 flex flex-col justify-between">
-          <div className="text-sm font-medium text-muted-foreground truncate">Value/Cost</div>
+          <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Value/Cost</span></div>
           <div className="flex justify-between items-end w-full">
             <div className="flex flex-col items-center gap-1">
               <div className="text-[28px] font-semibold" data-testid="metric-value-cost-plan">
@@ -200,7 +200,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         </div>
         <div className="border-l border-border my-3"></div>
         <div className="flex-1 pl-4 py-3 flex flex-col justify-between min-w-0">
-          <div className="text-sm font-medium text-muted-foreground truncate">Структура затрат</div>
+          <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Структура затрат</span></div>
           <div className="flex gap-2 items-end flex-1">
             {costTypes.map((type) => (
               <Tooltip key={type.key}>

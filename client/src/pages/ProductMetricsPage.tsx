@@ -5,7 +5,7 @@ import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw } from "lucide-react";
+import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
@@ -860,25 +860,25 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
             <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomExpanded={flowExpanded} bottomLoading={flowMetricsFetching} onToggleBottom={() => setFlowExpanded(v => !v)} bottomContent={flowSummary ? (
               <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={handleOpenFlowMetrics}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
-                  <div className="text-sm font-medium text-muted-foreground truncate">Time To Market</div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Time To Market</span></div>
                   <div className="text-[28px] font-semibold truncate">{flowSummary.avgTtm !== null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
-                  <div className="text-sm font-medium text-muted-foreground truncate">Lead Time</div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Lead Time</span></div>
                   <div className="text-[28px] font-semibold truncate">{flowSummary.avgLead !== null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
-                  <div className="text-sm font-medium text-muted-foreground truncate">Cycle Time</div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Cycle Time</span></div>
                   <div className="text-[28px] font-semibold truncate">{flowSummary.avgCycle !== null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
-                  <div className="text-sm font-medium text-muted-foreground truncate">Waiting Time</div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Waiting Time</span></div>
                   <div className="text-[28px] font-semibold truncate">{flowSummary.avgWfd !== null ? `${flowSummary.avgWfd}%` : '—'}</div>
                   <div />
                 </div>
