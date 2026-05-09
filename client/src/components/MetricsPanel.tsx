@@ -13,9 +13,10 @@ interface MetricsPanelProps {
   selectedYear: string;
   spaceGroups?: SpaceGroup[];
   children?: ReactNode;
+  bottomContent?: ReactNode;
 }
 
-export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children }: MetricsPanelProps) {
+export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children, bottomContent }: MetricsPanelProps) {
   const teamIdsParam = teamIds.sort().join(',');
 
   const { data: innovationRateData, isFetching: isIRFetching } = useQuery<{
@@ -148,77 +149,85 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
 
   return (
     <div
-      className="w-full h-[110px] border border-border rounded-lg flex relative transition-opacity duration-300"
+      className={`w-full border border-border rounded-lg relative transition-opacity duration-300 ${bottomContent ? 'flex flex-col' : 'flex h-[110px]'}`}
       style={{ opacity: isIRFetching || isCostStructureFetching || isValueCostFetching ? 0.5 : 1 }}
       data-testid="metrics-panel"
     >
-      {showIRTooltip ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="w-[17%] cursor-help">
-              {irContent}
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" className="flex flex-col gap-1 min-w-[160px]">
-            {spaceIRData.map((s) => (
-              <div key={s.spaceName} className="flex justify-between gap-4">
-                <span className="text-muted-foreground">{s.spaceName}</span>
-                <span className="font-semibold">{s.ir !== null ? `${s.ir}%` : '—'}</span>
+      <div className="h-[110px] flex relative">
+        {showIRTooltip ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-[17%] cursor-help">
+                {irContent}
               </div>
-            ))}
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <div className="w-[17%]">
-          {irContent}
-        </div>
-      )}
-      <div className="border-l border-border my-3"></div>
-      <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
-        <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
-        <div className="flex justify-between items-end w-full">
-          <div className="flex flex-col items-center gap-1">
-            <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">
-              {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '-'}
-            </div>
-            <div className="text-[0.8rem] text-muted-foreground">плановый</div>
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">
-              {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '-'}
-            </div>
-            <div className="text-[0.8rem] text-muted-foreground">фактический</div>
-          </div>
-        </div>
-        <div></div>
-      </div>
-      <div className="border-l border-border my-3"></div>
-      <div className="w-[66%] pl-4 py-3 flex flex-col justify-between">
-        <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
-        <div className="flex gap-2 items-end flex-1">
-          {costTypes.map((type) => (
-            <Tooltip key={type.key}>
-              <TooltipTrigger asChild>
-                <div
-                  className="flex flex-col items-center gap-1 flex-1 cursor-help"
-                  style={type.minWidth ? { minWidth: type.minWidth } : undefined}
-                >
-                  <div
-                    className={`text-[1rem] font-semibold ${type.color ? '' : 'text-muted-foreground'}`}
-                    style={type.color ? { color: type.color } : undefined}
-                    data-testid={`cost-${type.key.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {displayCostStructure?.typePercentages?.[type.key] || 0}%
-                  </div>
-                  <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">{type.key}</div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="flex flex-col gap-1 min-w-[160px]">
+              {spaceIRData.map((s) => (
+                <div key={s.spaceName} className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">{s.spaceName}</span>
+                  <span className="font-semibold">{s.ir !== null ? `${s.ir}%` : '—'}</span>
                 </div>
-              </TooltipTrigger>
-              <TooltipContent>{(displayCostStructure?.typeStats?.[type.key] || 0).toFixed(1)} SP</TooltipContent>
-            </Tooltip>
-          ))}
+              ))}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <div className="w-[17%]">
+            {irContent}
+          </div>
+        )}
+        <div className="border-l border-border my-3"></div>
+        <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
+          <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
+          <div className="flex justify-between items-end w-full">
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">
+                {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '-'}
+              </div>
+              <div className="text-[0.8rem] text-muted-foreground">плановый</div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">
+                {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '-'}
+              </div>
+              <div className="text-[0.8rem] text-muted-foreground">фактический</div>
+            </div>
+          </div>
+          <div></div>
         </div>
+        <div className="border-l border-border my-3"></div>
+        <div className="w-[66%] pl-4 py-3 flex flex-col justify-between">
+          <div className="text-sm font-bold text-muted-foreground">Структура затрат</div>
+          <div className="flex gap-2 items-end flex-1">
+            {costTypes.map((type) => (
+              <Tooltip key={type.key}>
+                <TooltipTrigger asChild>
+                  <div
+                    className="flex flex-col items-center gap-1 flex-1 cursor-help"
+                    style={type.minWidth ? { minWidth: type.minWidth } : undefined}
+                  >
+                    <div
+                      className={`text-[1rem] font-semibold ${type.color ? '' : 'text-muted-foreground'}`}
+                      style={type.color ? { color: type.color } : undefined}
+                      data-testid={`cost-${type.key.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {displayCostStructure?.typePercentages?.[type.key] || 0}%
+                    </div>
+                    <div className="text-[0.8rem] text-muted-foreground truncate w-full text-center">{type.key}</div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{(displayCostStructure?.typeStats?.[type.key] || 0).toFixed(1)} SP</TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        </div>
+        {children}
       </div>
-      {children}
+      {bottomContent && (
+        <>
+          <div className="border-t border-border" />
+          {bottomContent}
+        </>
+      )}
     </div>
   );
 }

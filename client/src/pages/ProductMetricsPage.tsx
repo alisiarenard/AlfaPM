@@ -854,7 +854,76 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
           {selectedDepartment && teamIdsArray.length > 0 ? (
-            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))}>
+            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomContent={flowSummary ? (
+              <div className="h-[110px] flex" data-testid="flow-summary-row">
+                <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
+                  <div className="text-sm font-bold text-muted-foreground">Time To Market</div>
+                  <div className="text-3xl font-semibold">{flowSummary.avgTtm !== null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
+                  <div />
+                </div>
+                <div className="border-l border-border my-3" />
+                <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
+                  <div className="text-sm font-bold text-muted-foreground">Lead Time</div>
+                  <div className="text-3xl font-semibold">{flowSummary.avgLead !== null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
+                  <div />
+                </div>
+                <div className="border-l border-border my-3" />
+                <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
+                  <div className="text-sm font-bold text-muted-foreground">Cycle Time</div>
+                  <div className="text-3xl font-semibold">{flowSummary.avgCycle !== null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
+                  <div />
+                </div>
+                <div className="border-l border-border my-3" />
+                <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
+                  <div className="text-sm font-bold text-muted-foreground">Waiting Time</div>
+                  <div className="text-3xl font-semibold">{flowSummary.avgWfd !== null ? `${flowSummary.avgWfd}%` : '—'}</div>
+                  <div />
+                </div>
+                <div className="border-l border-border my-3" />
+                <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
+                  <div />
+                  <div className="relative w-full" style={{ height: '43px' }}>
+                    {flowSummary.avgLtS !== null && (
+                      <div className="absolute" style={{ left: `${flowSummary.avgLtS}%`, right: '0%', top: 0, height: '16px' }}>
+                        <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Lead Time</div>
+                      </div>
+                    )}
+                    <div className="absolute w-full h-[7px] bg-muted rounded-full overflow-visible" style={{ top: '18px' }}>
+                      {flowSummary.totalAvgMs > 0 && flowSummary.avgSegs.map((seg, idx) => {
+                        const leftPct = flowSummary.avgSegs.slice(0, idx).reduce((a, s) => a + s.avgMs, 0) / flowSummary.totalAvgMs * 100;
+                        const widthPct = Math.max(0.5, seg.avgMs / flowSummary.totalAvgMs * 100);
+                        const isFirst = idx === 0, isLast = idx === flowSummary.avgSegs.length - 1;
+                        const br = isFirst && isLast ? '9999px' : isFirst ? '9999px 0 0 9999px' : isLast ? '0 9999px 9999px 0' : '0';
+                        return (
+                          <Tooltip key={idx}>
+                            <TooltipTrigger asChild>
+                              <div className="absolute inset-y-0 cursor-default transition-all duration-200 hover:brightness-75 hover:scale-y-[1.2]"
+                                style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: flowSummary.getColor(seg.columnName, seg.columnType), borderRadius: br }} />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs space-y-0.5">
+                              <div className="font-semibold">{flowSummary.shortName(seg.columnName)}</div>
+                              <div>{formatDurationShort(Math.round(seg.avgMs))}</div>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                    </div>
+                    {flowSummary.avgCtS !== null && (
+                      <div className="absolute" style={{ left: `${flowSummary.avgCtS}%`, right: '0%', top: '27px', height: '16px' }}>
+                        <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
+                        <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Cycle Time</div>
+                      </div>
+                    )}
+                  </div>
+                  <div />
+                </div>
+              </div>
+            ) : undefined}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -911,81 +980,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
             <p className="text-muted-foreground text-center py-12">Нет команд в выбранном департаменте</p>
           ) : (
             <p className="text-muted-foreground text-center py-12">Выберите департамент для просмотра метрик</p>
-          )}
-
-          {flowSummary && (
-            <div className="mt-6 border border-border rounded-lg" data-testid="flow-summary-block">
-              <div className="w-full h-[110px] flex">
-                <div className="w-[50%] flex min-w-0">
-                  <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                    <div className="text-xs font-bold text-muted-foreground truncate">Time To Market</div>
-                    <div className="text-lg font-semibold truncate">{flowSummary.avgTtm !== null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
-                    <div />
-                  </div>
-                  <div className="border-l border-border my-3 shrink-0" />
-                  <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                    <div className="text-xs font-bold text-muted-foreground truncate">Lead Time</div>
-                    <div className="text-lg font-semibold truncate">{flowSummary.avgLead !== null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
-                    <div />
-                  </div>
-                  <div className="border-l border-border my-3 shrink-0" />
-                  <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                    <div className="text-xs font-bold text-muted-foreground truncate">Cycle Time</div>
-                    <div className="text-lg font-semibold truncate">{flowSummary.avgCycle !== null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
-                    <div />
-                  </div>
-                  <div className="border-l border-border my-3 shrink-0" />
-                  <div className="flex-1 px-3 py-3 flex flex-col justify-between min-w-0">
-                    <div className="text-xs font-bold text-muted-foreground truncate">Waiting Time</div>
-                    <div className="text-lg font-semibold truncate">{flowSummary.avgWfd !== null ? `${flowSummary.avgWfd}%` : '—'}</div>
-                    <div />
-                  </div>
-                </div>
-                <div className="border-l border-border my-3 shrink-0" />
-                <div className="w-[50%] px-4 py-3 flex flex-col justify-between min-w-0">
-                  <div />
-                  <div className="relative w-full" style={{ height: '43px' }}>
-                    {flowSummary.avgLtS !== null && (
-                      <div className="absolute" style={{ left: `${flowSummary.avgLtS}%`, right: '0%', top: 0, height: '16px' }}>
-                        <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                        <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                        <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                        <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Lead Time</div>
-                      </div>
-                    )}
-                    <div className="absolute w-full h-[7px] bg-muted rounded-full overflow-visible" style={{ top: '18px' }}>
-                      {flowSummary.totalAvgMs > 0 && flowSummary.avgSegs.map((seg, idx) => {
-                        const leftPct = flowSummary.avgSegs.slice(0, idx).reduce((a, s) => a + s.avgMs, 0) / flowSummary.totalAvgMs * 100;
-                        const widthPct = Math.max(0.5, seg.avgMs / flowSummary.totalAvgMs * 100);
-                        const isFirst = idx === 0, isLast = idx === flowSummary.avgSegs.length - 1;
-                        const br = isFirst && isLast ? '9999px' : isFirst ? '9999px 0 0 9999px' : isLast ? '0 9999px 9999px 0' : '0';
-                        return (
-                          <Tooltip key={idx}>
-                            <TooltipTrigger asChild>
-                              <div className="absolute inset-y-0 cursor-default transition-all duration-200 hover:brightness-75 hover:scale-y-[1.2]"
-                                style={{ left: `${leftPct}%`, width: `${widthPct}%`, background: flowSummary.getColor(seg.columnName, seg.columnType), borderRadius: br }} />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs space-y-0.5">
-                              <div className="font-semibold">{flowSummary.shortName(seg.columnName)}</div>
-                              <div>{formatDurationShort(Math.round(seg.avgMs))}</div>
-                            </TooltipContent>
-                          </Tooltip>
-                        );
-                      })}
-                    </div>
-                    {flowSummary.avgCtS !== null && (
-                      <div className="absolute" style={{ left: `${flowSummary.avgCtS}%`, right: '0%', top: '27px', height: '16px' }}>
-                        <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                        <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                        <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                        <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Cycle Time</div>
-                      </div>
-                    )}
-                  </div>
-                  <div />
-                </div>
-              </div>
-            </div>
           )}
 
           {selectedDepartment && teamIdsArray.length > 0 && (
