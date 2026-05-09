@@ -210,7 +210,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
                     style={type.minWidth ? { minWidth: type.minWidth } : undefined}
                   >
                     <div
-                      className={`text-[1rem] font-semibold ${type.color ? '' : 'text-muted-foreground'}`}
+                      className={`text-[1rem] ${type.color ? '' : 'text-muted-foreground'}`}
                       style={type.color ? { color: type.color } : undefined}
                       data-testid={`cost-${type.key.toLowerCase().replace(/\s+/g, '-')}`}
                     >
