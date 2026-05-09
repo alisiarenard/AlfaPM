@@ -853,13 +853,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   {/* TTM + LT = ширина Innovation Rate */}
                   <div className="flex-1 flex min-w-0">
                     <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                      <div className="text-sm font-bold text-muted-foreground">Time To Market</div>
+                      <div className="text-sm font-medium text-muted-foreground">Time To Market</div>
                       <div className="text-3xl font-semibold truncate">{flowSummary.avgTtm !== null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
                       <div />
                     </div>
                     <div className="border-l border-border my-3" />
                     <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                      <div className="text-sm font-bold text-muted-foreground">Lead Time</div>
+                      <div className="text-sm font-medium text-muted-foreground">Lead Time</div>
                       <div className="text-3xl font-semibold truncate">{flowSummary.avgLead !== null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
                       <div />
                     </div>
@@ -868,13 +868,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   {/* CT + WT = ширина Value/Cost */}
                   <div className="flex-1 flex min-w-0">
                     <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                      <div className="text-sm font-bold text-muted-foreground">Cycle Time</div>
+                      <div className="text-sm font-medium text-muted-foreground">Cycle Time</div>
                       <div className="text-3xl font-semibold truncate">{flowSummary.avgCycle !== null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
                       <div />
                     </div>
                     <div className="border-l border-border my-3" />
                     <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                      <div className="text-sm font-bold text-muted-foreground">Waiting Time</div>
+                      <div className="text-sm font-medium text-muted-foreground">Waiting Time</div>
                       <div className="text-3xl font-semibold truncate">{flowSummary.avgWfd !== null ? `${flowSummary.avgWfd}%` : '—'}</div>
                       <div />
                     </div>
