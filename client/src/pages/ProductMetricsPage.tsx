@@ -1409,8 +1409,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 })()}
                 {(() => {
                   // Build global color map keyed by column name — same colors in bars and legend
-                  const GREY_SHADES = ['#374151', '#4b5563', '#6b7280', '#9ca3af', '#d1d5db'];
-                  const RED_SHADES  = ['#b91c1c', '#dc2626', '#ef4444', '#f87171', '#fca5a5'];
+                  const GREY_SHADES = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
+                  const RED_SHADES  = ['#ef4444', '#f87171', '#fca5a5', '#fecaca', '#fee2e2'];
                   const colTypeMap = new Map<string, number | null>();
                   flowMetricsData.cards.forEach(c => {
                     (c.statusSegments ?? []).forEach(s => {
@@ -1522,8 +1522,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
         {/* Fixed legend panel — only columns present in TTM range of at least one card */}
         {flowMetricsData && flowMetricsData.cards.length > 0 && (() => {
-          const GREY_SHADES = ['#374151', '#4b5563', '#6b7280', '#9ca3af', '#d1d5db'];
-          const RED_SHADES  = ['#b91c1c', '#dc2626', '#ef4444', '#f87171', '#fca5a5'];
+          const GREY_SHADES = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
+          const RED_SHADES  = ['#ef4444', '#f87171', '#fca5a5', '#fecaca', '#fee2e2'];
 
           // Build same global color map as bars use
           const colTypeMap = new Map<string, number | null>();
