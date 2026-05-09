@@ -55,20 +55,29 @@ function formatDurationShort(ms: number): string {
   return `${Math.ceil(totalDays / 365)} г.`;
 }
 
+function pluralRu(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 19) return `${n} ${many}`;
+  if (mod10 === 1) return `${n} ${one}`;
+  if (mod10 >= 2 && mod10 <= 4) return `${n} ${few}`;
+  return `${n} ${many}`;
+}
+
 function formatDurationTop1(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
   const totalMin = Math.floor(totalSec / 60);
   const totalHours = Math.floor(totalMin / 60);
   const totalDays = Math.floor(totalHours / 24);
   const years = Math.floor(totalDays / 365);
-  if (years > 0) return `${years} г.`;
+  if (years > 0) return pluralRu(years, 'год', 'года', 'лет');
   const days = totalDays % 365;
-  if (days > 0) return `${days} д.`;
+  if (days > 0) return pluralRu(days, 'день', 'дня', 'дней');
   const hours = totalHours % 24;
-  if (hours > 0) return `${hours} ч.`;
+  if (hours > 0) return pluralRu(hours, 'час', 'часа', 'часов');
   const min = totalMin % 60;
-  if (min > 0) return `${min} мин.`;
-  return `${totalSec % 60} сек.`;
+  if (min > 0) return pluralRu(min, 'минута', 'минуты', 'минут');
+  return pluralRu(totalSec % 60, 'секунда', 'секунды', 'секунд');
 }
 
 export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle }: ProductMetricsPageProps) {
