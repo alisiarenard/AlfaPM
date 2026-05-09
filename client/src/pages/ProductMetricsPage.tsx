@@ -86,10 +86,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [editingCellValue, setEditingCellValue] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
   const [flowMetricsOpen, setFlowMetricsOpen] = useState(false);
-  const [flowMetricsFetching, setFlowMetricsFetching] = useState(false);
   type MetricSpan = { ms: number; startMs: number; endMs: number };
   type StatusSegment = { columnName: string; columnType: number | null; startMs: number; durationMs: number };
-  const [flowMetricsData, setFlowMetricsData] = useState<{
+  type FlowMetricsData = {
     spaceName: string;
     kaitenSpaceId: number | null;
     columnOrder: string[];
@@ -107,30 +106,24 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       leadTime: MetricSpan | null;
       cycleTime: MetricSpan | null;
     }[];
-  } | null>(null);
+  };
 
   const currentDepartment = useMemo(() => departments?.find(d => d.id === selectedDepartment), [departments, selectedDepartment]);
 
-  useEffect(() => {
-    setFlowMetricsData(null);
-  }, [selectedDepartment]);
-
-  const handleOpenFlowMetrics = async () => {
-    if (!selectedDepartment) return;
-    setFlowMetricsOpen(true);
-    if (flowMetricsData) return;
-    setFlowMetricsFetching(true);
-    try {
+  const { data: flowMetricsData, isFetching: flowMetricsFetching } = useQuery<FlowMetricsData>({
+    queryKey: ['/api/departments/flow-metrics', selectedDepartment],
+    queryFn: async () => {
       const res = await fetch(`/api/departments/${selectedDepartment}/flow-metrics`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch flow metrics");
-      setFlowMetricsData(data);
-    } catch (err: any) {
-      toast({ title: "Ошибка загрузки метрик", description: err.message, variant: "destructive" });
-      setFlowMetricsOpen(false);
-    } finally {
-      setFlowMetricsFetching(false);
-    }
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch flow metrics');
+      return data;
+    },
+    enabled: !!selectedDepartment && !!currentDepartment?.kaitenBoardId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleOpenFlowMetrics = () => {
+    setFlowMetricsOpen(true);
   };
 
   const updateEffectMutation = useMutation({
