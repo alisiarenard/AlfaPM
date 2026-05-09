@@ -1225,28 +1225,51 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     .filter((v): v is number => v !== null);
                   const avgWfd = wfdVals.length ? Math.round(wfdVals.reduce((a, b) => a + b, 0) / wfdVals.length) : null;
 
-                  // Average relative positions of LT / CT spans — relative to TTM span
-                  const ltPos = cards
-                    .filter(c => c.leadTime && c.ttm)
-                    .map(c => {
-                      const span = c.ttm!.endMs - c.ttm!.startMs;
-                      if (span === 0) return null;
-                      return { s: (c.leadTime!.startMs - c.ttm!.startMs) / span, e: (c.leadTime!.endMs - c.ttm!.startMs) / span };
-                    })
-                    .filter((v): v is { s: number; e: number } => v !== null);
-                  const avgLtS = ltPos.length ? ltPos.reduce((a, v) => a + v.s, 0) / ltPos.length * 100 : null;
-                  const avgLtE = ltPos.length ? ltPos.reduce((a, v) => a + v.e, 0) / ltPos.length * 100 : null;
+                  // Average relative positions of LT / CT spans in cumulative bar space.
+                  // Right edge = 100% for both (they end at ttm.endMs = bar end).
+                  // Left edge = fraction of counted TTM segments that fall BEFORE the span start.
+                  const order0 = flowMetricsData.columnOrder;
+                  const ttmStartIdx0 = flowMetricsData.ttmStartColumnName ? order0.indexOf(flowMetricsData.ttmStartColumnName) : -1;
+                  const ttmEndIdx0   = flowMetricsData.ttmEndColumnName   ? order0.indexOf(flowMetricsData.ttmEndColumnName)   : -1;
+                  const ttmColSet0 = (ttmStartIdx0 !== -1 && ttmEndIdx0 !== -1 && ttmStartIdx0 <= ttmEndIdx0)
+                    ? new Set(order0.slice(ttmStartIdx0, ttmEndIdx0 + 1))
+                    : null;
 
-                  const ctPos = cards
+                  const cardBarFraction = (
+                    card: typeof cards[0],
+                    cutMs: number,
+                  ): number | null => {
+                    const ttmStart = card.ttm!.startMs;
+                    const ttmEnd   = card.ttm!.endMs;
+                    const segs = (card.statusSegments ?? []).flatMap(seg => {
+                      if (ttmColSet0 && !ttmColSet0.has(seg.columnName)) return [];
+                      const segEnd = seg.startMs + seg.durationMs;
+                      if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return [];
+                      const cs = Math.max(seg.startMs, ttmStart);
+                      const ce = Math.min(segEnd, ttmEnd);
+                      return [{ startMs: cs, endMs: ce }];
+                    });
+                    const totalMs = segs.reduce((a, s) => a + (s.endMs - s.startMs), 0);
+                    if (totalMs === 0) return null;
+                    const beforeMs = segs.reduce((a, s) => {
+                      if (s.endMs <= cutMs) return a + (s.endMs - s.startMs);
+                      if (s.startMs < cutMs) return a + (cutMs - s.startMs);
+                      return a;
+                    }, 0);
+                    return beforeMs / totalMs;
+                  };
+
+                  const ltFracs = cards
+                    .filter(c => c.leadTime && c.ttm)
+                    .map(c => cardBarFraction(c, c.leadTime!.startMs))
+                    .filter((v): v is number => v !== null);
+                  const avgLtS = ltFracs.length ? ltFracs.reduce((a, v) => a + v, 0) / ltFracs.length * 100 : null;
+
+                  const ctFracs = cards
                     .filter(c => c.cycleTime && c.ttm)
-                    .map(c => {
-                      const span = c.ttm!.endMs - c.ttm!.startMs;
-                      if (span === 0) return null;
-                      return { s: (c.cycleTime!.startMs - c.ttm!.startMs) / span, e: (c.cycleTime!.endMs - c.ttm!.startMs) / span };
-                    })
-                    .filter((v): v is { s: number; e: number } => v !== null);
-                  const avgCtS = ctPos.length ? ctPos.reduce((a, v) => a + v.s, 0) / ctPos.length * 100 : null;
-                  const avgCtE = ctPos.length ? ctPos.reduce((a, v) => a + v.e, 0) / ctPos.length * 100 : null;
+                    .map(c => cardBarFraction(c, c.cycleTime!.startMs))
+                    .filter((v): v is number => v !== null);
+                  const avgCtS = ctFracs.length ? ctFracs.reduce((a, v) => a + v, 0) / ctFracs.length * 100 : null;
 
                   // Aggregate avg duration per status column — only within TTM range, sorted by avg start position
                   const colAgg = new Map<string, { columnType: number | null; totalMs: number; count: number; totalStartRel: number }>();
@@ -1354,8 +1377,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                           <div className="relative w-full" style={{ height: '43px' }}>
 
                             {/* LT bracket above bar */}
-                            {avgLtS !== null && avgLtE !== null && (
-                              <div className="absolute" style={{ left: `${avgLtS}%`, right: `${100 - avgLtE}%`, top: 0, height: '16px' }}>
+                            {avgLtS !== null && (
+                              <div className="absolute" style={{ left: `${avgLtS}%`, right: '0%', top: 0, height: '16px' }}>
                                 {/* horizontal at top */}
                                 <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* left vertical going down */}
@@ -1393,8 +1416,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             </div>
 
                             {/* CT bracket below bar */}
-                            {avgCtS !== null && avgCtE !== null && (
-                              <div className="absolute" style={{ left: `${avgCtS}%`, right: `${100 - avgCtE}%`, top: '27px', height: '16px' }}>
+                            {avgCtS !== null && (
+                              <div className="absolute" style={{ left: `${avgCtS}%`, right: '0%', top: '27px', height: '16px' }}>
                                 {/* left vertical going up from bottom */}
                                 <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* right vertical going up from bottom */}
@@ -1502,7 +1525,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               {card.leadTime && <span>LT: <span className="text-foreground font-medium">{formatDurationShort(card.leadTime.ms)}</span></span>}
                               {card.cycleTime && <span>CT: <span className="text-foreground font-medium">{formatDurationShort(card.cycleTime.ms)}</span></span>}
                               {wfdPct !== null && (
-                                <span>WFD: <span className={`font-medium ${wfdPct > 40 ? 'text-red-500' : 'text-foreground'}`}>{wfdPct}%</span></span>
+                                <span>WT: <span className={`font-medium ${wfdPct > 40 ? 'text-red-500' : 'text-foreground'}`}>{wfdPct}%</span></span>
                               )}
                             </div>
                           </div>
