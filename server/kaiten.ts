@@ -292,7 +292,9 @@ export class KaitenClient {
       if (Array.isArray(subcolumns) && subcolumns.length > 0) {
         const sortedSubs = [...subcolumns].sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
         for (const sub of sortedSubs) {
-          result.push({ id: sub.id, title: sub.title, type: sub.type ?? col.type, sort_order: sub.sort_order ?? 0, parentTitle: col.title });
+          // If the parent column is done (type 3), subcolumns are also effectively done
+          const subType = col.type === 3 ? 3 : (sub.type ?? col.type);
+          result.push({ id: sub.id, title: sub.title, type: subType, sort_order: sub.sort_order ?? 0, parentTitle: col.title });
         }
       } else {
         result.push({ id: col.id, title: col.title, type: col.type, sort_order: col.sort_order ?? 0 });
