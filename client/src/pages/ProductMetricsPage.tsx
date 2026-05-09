@@ -44,23 +44,15 @@ function formatDuration(ms: number): string {
 }
 
 function formatDurationShort(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
-  const sec = totalSec % 60;
-  const totalMin = Math.floor(totalSec / 60);
-  const min = totalMin % 60;
-  const totalHours = Math.floor(totalMin / 60);
-  const hours = totalHours % 24;
-  const totalDays = Math.floor(totalHours / 24);
-  const days = totalDays % 365;
-  const years = Math.floor(totalDays / 365);
-
-  const parts: string[] = [];
-  if (years > 0) parts.push(`${years} г.`);
-  if (days > 0) parts.push(`${days} д.`);
-  if (hours > 0) parts.push(`${hours} ч.`);
-  if (min > 0) parts.push(`${min} мин.`);
-  if (sec > 0 || parts.length === 0) parts.push(`${sec} сек.`);
-  return parts.slice(0, 2).join(' ');
+  const totalSec = ms / 1000;
+  if (totalSec < 60) return `${Math.ceil(totalSec)} сек.`;
+  const totalMin = totalSec / 60;
+  if (totalMin < 60) return `${Math.ceil(totalMin)} мин.`;
+  const totalHours = totalMin / 60;
+  if (totalHours < 24) return `${Math.ceil(totalHours)} ч.`;
+  const totalDays = totalHours / 24;
+  if (totalDays < 365) return `${Math.ceil(totalDays)} д.`;
+  return `${Math.ceil(totalDays / 365)} г.`;
 }
 
 function formatDurationTop1(ms: number): string {
@@ -1487,6 +1479,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                           }
                           return acc;
                         }, []);
+                      const totalForWfd = ttmSegs.reduce((a, s) => a + s.clippedMs, 0);
+                      const waitingMs = ttmSegs.filter(s => s.columnType === 1).reduce((a, s) => a + s.clippedMs, 0);
+                      const wfdPct = totalForWfd > 0 ? Math.ceil((waitingMs / totalForWfd) * 100) : null;
                       const cardUrl = flowMetricsData.kaitenSpaceId
                         ? getKaitenCardUrl(flowMetricsData.kaitenSpaceId, card.cardId, card.archived)
                         : null;
@@ -1506,6 +1501,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               {card.ttm && <span>TTM: <span className="text-foreground font-medium">{formatDurationShort(card.ttm.ms)}</span></span>}
                               {card.leadTime && <span>LT: <span className="text-foreground font-medium">{formatDurationShort(card.leadTime.ms)}</span></span>}
                               {card.cycleTime && <span>CT: <span className="text-foreground font-medium">{formatDurationShort(card.cycleTime.ms)}</span></span>}
+                              {wfdPct !== null && (
+                                <span>WFD: <span className={`font-medium ${wfdPct > 40 ? 'text-red-500' : 'text-foreground'}`}>{wfdPct}%</span></span>
+                              )}
                             </div>
                           </div>
                           {ttmSegs.length > 0 ? (() => {
@@ -1598,10 +1596,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           if (legendItems.length === 0) return null;
           return (
             <div className="shrink-0 border-t border-border px-5 py-3 bg-background">
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+              <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
                 {legendItems.map(({ col, color }) => (
                   <div key={col} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: color }} />
+                    <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
                     <span>{shortName(col)}</span>
                   </div>
                 ))}
