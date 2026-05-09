@@ -1,7 +1,7 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { useRef, type ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 
 interface SpaceGroup {
   spaceId: string;
@@ -17,9 +17,10 @@ interface MetricsPanelProps {
   bottomContent?: ReactNode;
   bottomExpanded?: boolean;
   onToggleBottom?: () => void;
+  bottomLoading?: boolean;
 }
 
-export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children, bottomContent, bottomExpanded = false, onToggleBottom }: MetricsPanelProps) {
+export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children, bottomContent, bottomExpanded = false, onToggleBottom, bottomLoading = false }: MetricsPanelProps) {
   const teamIdsParam = teamIds.sort().join(',');
 
   const { data: innovationRateData, isFetching: isIRFetching } = useQuery<{
@@ -225,25 +226,37 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         </div>
         {children}
       </div>
-      {bottomContent && onToggleBottom && (
-        <button
-          onClick={onToggleBottom}
-          data-testid="button-toggle-flow"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: bottomExpanded ? '220px' : '110px',
-            transform: 'translateX(-50%) translateY(-50%)',
-            transition: 'top 0.3s ease',
-            zIndex: 20,
-          }}
-          className="w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center shadow-sm hover-elevate"
-        >
-          <ChevronDown
-            className="h-4 w-4 text-muted-foreground transition-transform duration-300"
-            style={{ transform: bottomExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-          />
-        </button>
+      {onToggleBottom && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={bottomLoading ? undefined : onToggleBottom}
+              data-testid="button-toggle-flow"
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: bottomExpanded ? '220px' : '110px',
+                transform: 'translateX(-50%) translateY(-50%)',
+                transition: 'top 0.3s ease',
+                zIndex: 20,
+                cursor: bottomLoading ? 'default' : 'pointer',
+              }}
+              className="w-10 h-10 rounded-full border border-border bg-background flex items-center justify-center shadow-sm hover-elevate"
+            >
+              {bottomLoading ? (
+                <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+              ) : (
+                <ChevronDown
+                  className="h-4 w-4 text-muted-foreground transition-transform duration-300"
+                  style={{ transform: bottomExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                />
+              )}
+            </button>
+          </TooltipTrigger>
+          {bottomLoading && (
+            <TooltipContent side="bottom">Загрузка данных из Кайтен</TooltipContent>
+          )}
+        </Tooltip>
       )}
       {bottomContent && (
         <div
