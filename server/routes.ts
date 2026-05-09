@@ -275,8 +275,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
         kaitenClient.getBoardColumns(dept.kaitenBoardId),
       ]);
-      const columnMap = new Map(columns.map(c => [c.id, { title: c.title, type: c.type }]));
-      const columnOrder: string[] = columns.map(c => c.title);
+      const columnMap = new Map(columns.map(c => [c.id, { title: c.title, type: c.type, parentTitle: c.parentTitle ?? null }]));
+      const columnOrder: string[] = columns.map(c => c.parentTitle ? `${c.parentTitle} / ${c.title}` : c.title);
 
       const filteredCards = allCards.filter(card => {
         const typeName = (card.type?.name ?? '').toLowerCase();
@@ -284,15 +284,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       type MetricSpan = { ms: number; startMs: number; endMs: number };
-      const calcSpan = (history: { column_id: number; changed: string }[], startColId: number | null, endColId: number | null): MetricSpan | null => {
+      // Use subcolumn_id when available, fall back to column_id
+      const effectiveId = (h: { column_id: number; subcolumn_id: number | null }) => h.subcolumn_id ?? h.column_id;
+      const calcSpan = (history: { column_id: number; subcolumn_id: number | null; changed: string }[], startColId: number | null, endColId: number | null): MetricSpan | null => {
         if (!startColId || !endColId) return null;
-        const startEntry = history.find(h => h.column_id === startColId);
+        const startEntry = history.find(h => effectiveId(h) === startColId);
         if (!startEntry) return null;
         const startMs = new Date(startEntry.changed).getTime();
         // Find the last entry in endColId after startMs
         let endIdx = -1;
         for (let i = history.length - 1; i >= 0; i--) {
-          if (history[i].column_id === endColId && new Date(history[i].changed).getTime() >= startMs) {
+          if (effectiveId(history[i]) === endColId && new Date(history[i].changed).getTime() >= startMs) {
             endIdx = i;
             break;
           }
@@ -322,16 +324,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const effectiveLt = leadTimeSpan ?? cycleTimeSpan;
         const effectiveCt = cycleTimeSpan;
 
-        // Build per-status segments: time spent in each column
+        // Build per-status segments: time spent in each column (prefer subcolumn_id for lookup)
         const statusSegments: { columnName: string; columnType: number | null; startMs: number; durationMs: number }[] = [];
         for (let i = 0; i < history.length; i++) {
           const startMs = new Date(history[i].changed).getTime();
           const endMs = i + 1 < history.length ? new Date(history[i + 1].changed).getTime() : Date.now();
           const durationMs = endMs - startMs;
           if (durationMs > 0) {
-            const colInfo = columnMap.get(history[i].column_id);
+            const colInfo = columnMap.get(effectiveId(history[i]));
+            const colName = colInfo
+              ? (colInfo.parentTitle ? `${colInfo.parentTitle} / ${colInfo.title}` : colInfo.title)
+              : `#${effectiveId(history[i])}`;
             statusSegments.push({
-              columnName: colInfo?.title ?? `#${history[i].column_id}`,
+              columnName: colName,
               columnType: colInfo?.type ?? null,
               startMs,
               durationMs,
@@ -353,8 +358,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const ttmStartColumnName = dept.ttmStartColumnId ? (columnMap.get(dept.ttmStartColumnId)?.title ?? null) : null;
-      const ttmEndColumnName   = dept.ttmEndColumnId   ? (columnMap.get(dept.ttmEndColumnId)?.title   ?? null) : null;
+      const buildColName = (id: number | null | undefined) => {
+        if (!id) return null;
+        const info = columnMap.get(id);
+        if (!info) return null;
+        return info.parentTitle ? `${info.parentTitle} / ${info.title}` : info.title;
+      };
+      const ttmStartColumnName = buildColName(dept.ttmStartColumnId);
+      const ttmEndColumnName   = buildColName(dept.ttmEndColumnId);
       res.json({ success: true, spaceName, kaitenSpaceId: dept.kaitenSpaceId, columnOrder, ttmStartColumnName, ttmEndColumnName, cards: results });
     } catch (error: any) {
       console.error("[flow-metrics]", error);

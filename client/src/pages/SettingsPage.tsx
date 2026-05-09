@@ -368,7 +368,7 @@ export default function SettingsPage() {
     },
   });
 
-  const { data: kaitenColumns, isLoading: columnsLoading } = useQuery<{ id: number; title: string; type: number }[]>({
+  const { data: kaitenColumns, isLoading: columnsLoading } = useQuery<{ id: number; title: string; type: number; parentTitle?: string }[]>({
     queryKey: ["/api/kaiten/boards", ttmBoardId, "columns"],
     queryFn: async () => {
       const res = await fetch(`/api/kaiten/boards/${ttmBoardId}/columns`);
@@ -739,7 +739,7 @@ export default function SettingsPage() {
                                     <SelectContent className="z-[300]">
                                       {kaitenColumns?.map((col) => (
                                         <SelectItem key={col.id} value={col.id.toString()}>
-                                          {col.title}
+                                          {col.parentTitle ? `${col.parentTitle} / ${col.title}` : col.title}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -758,7 +758,7 @@ export default function SettingsPage() {
                                     <SelectContent className="z-[300]">
                                       {kaitenColumns?.map((col) => (
                                         <SelectItem key={col.id} value={col.id.toString()}>
-                                          {col.title}
+                                          {col.parentTitle ? `${col.parentTitle} / ${col.title}` : col.title}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -783,7 +783,7 @@ export default function SettingsPage() {
                                     <SelectContent className="z-[300]">
                                       {kaitenColumns?.map((col) => (
                                         <SelectItem key={col.id} value={col.id.toString()}>
-                                          {col.title}
+                                          {col.parentTitle ? `${col.parentTitle} / ${col.title}` : col.title}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -802,7 +802,7 @@ export default function SettingsPage() {
                                     <SelectContent className="z-[300]">
                                       {kaitenColumns?.map((col) => (
                                         <SelectItem key={col.id} value={col.id.toString()}>
-                                          {col.title}
+                                          {col.parentTitle ? `${col.parentTitle} / ${col.title}` : col.title}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -827,7 +827,7 @@ export default function SettingsPage() {
                                     <SelectContent className="z-[300]">
                                       {kaitenColumns?.map((col) => (
                                         <SelectItem key={col.id} value={col.id.toString()}>
-                                          {col.title}
+                                          {col.parentTitle ? `${col.parentTitle} / ${col.title}` : col.title}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>
@@ -846,7 +846,7 @@ export default function SettingsPage() {
                                     <SelectContent className="z-[300]">
                                       {kaitenColumns?.map((col) => (
                                         <SelectItem key={col.id} value={col.id.toString()}>
-                                          {col.title}
+                                          {col.parentTitle ? `${col.parentTitle} / ${col.title}` : col.title}
                                         </SelectItem>
                                       ))}
                                     </SelectContent>

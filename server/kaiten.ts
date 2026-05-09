@@ -282,20 +282,31 @@ export class KaitenClient {
     });
   }
 
-  async getBoardColumns(boardId: number): Promise<{ id: number; title: string; type: number; sort_order: number }[]> {
-    const response = await this.makeRequest<{ id: number; title: string; type: number; sort_order: number }[]>(`/boards/${boardId}/columns`);
-    if (Array.isArray(response)) {
-      return response.sort((a, b) => a.sort_order - b.sort_order);
+  async getBoardColumns(boardId: number): Promise<{ id: number; title: string; type: number; sort_order: number; parentTitle?: string }[]> {
+    const response = await this.makeRequest<any[]>(`/boards/${boardId}/columns`);
+    if (!Array.isArray(response)) return [];
+    const result: { id: number; title: string; type: number; sort_order: number; parentTitle?: string }[] = [];
+    const sorted = [...response].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    for (const col of sorted) {
+      const subcolumns = col.subcolumns ?? col.sub_columns ?? [];
+      if (Array.isArray(subcolumns) && subcolumns.length > 0) {
+        const sortedSubs = [...subcolumns].sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        for (const sub of sortedSubs) {
+          result.push({ id: sub.id, title: sub.title, type: sub.type ?? col.type, sort_order: sub.sort_order ?? 0, parentTitle: col.title });
+        }
+      } else {
+        result.push({ id: col.id, title: col.title, type: col.type, sort_order: col.sort_order ?? 0 });
+      }
     }
-    return [];
+    return result;
   }
 
-  async getCardLocationHistory(cardId: number): Promise<{ column_id: number; changed: string }[]> {
+  async getCardLocationHistory(cardId: number): Promise<{ column_id: number; subcolumn_id: number | null; changed: string }[]> {
     try {
-      const response = await this.makeRequest<{ column_id: number; changed: string }[]>(`/cards/${cardId}/location-history`);
+      const response = await this.makeRequest<any[]>(`/cards/${cardId}/location-history`);
       if (Array.isArray(response)) {
         return (response as any[])
-          .map((h: any) => ({ column_id: h.column_id, changed: h.changed }))
+          .map((h: any) => ({ column_id: h.column_id, subcolumn_id: h.subcolumn_id ?? null, changed: h.changed }))
           .sort((a, b) => new Date(a.changed).getTime() - new Date(b.changed).getTime());
       }
       return [];
