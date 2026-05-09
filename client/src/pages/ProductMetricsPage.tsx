@@ -1356,9 +1356,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     </div>
 
     <Dialog open={flowMetricsOpen} onOpenChange={setFlowMetricsOpen}>
-      <DialogContent className="max-w-[60vw] w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
+      <DialogContent className="max-w-[900px] w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
         <DialogHeader className="shrink-0">
-          <DialogTitle className="text-sm font-semibold">{flowMetricsData?.spaceName ?? ''}</DialogTitle>
+          <DialogTitle className="text-xl font-semibold flex items-center gap-3">
+            {flowMetricsData?.spaceName ?? ''}
+            <span className="text-sm font-normal text-muted-foreground">{flowPeriod === '12m' ? '12 месяцев' : flowPeriod}</span>
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
