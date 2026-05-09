@@ -226,11 +226,12 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         {children}
       </div>
       {bottomContent && onToggleBottom && (
-        <div className="relative flex justify-center" style={{ height: '1px', backgroundColor: 'hsl(var(--border))' }}>
+        <div className="relative w-full" style={{ height: 0, overflow: 'visible', zIndex: 20 }}>
           <button
             onClick={onToggleBottom}
-            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full border border-border bg-background flex items-center justify-center shadow-sm hover-elevate"
             data-testid="button-toggle-flow"
+            style={{ position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%) translateY(-50%)' }}
+            className="w-6 h-6 rounded-full border border-border bg-background flex items-center justify-center shadow-sm hover-elevate"
           >
             <ChevronDown
               className="h-3 w-3 text-muted-foreground transition-transform duration-300"
@@ -244,6 +245,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
           className="overflow-hidden transition-all duration-300"
           style={{ maxHeight: bottomExpanded ? '120px' : '0px' }}
         >
+          <div className="border-t border-border" />
           {bottomContent}
         </div>
       )}
