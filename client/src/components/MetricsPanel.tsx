@@ -253,9 +253,11 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
               )}
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {bottomLoading ? 'Загрузка данных из Кайтен' : 'Показать все метрики'}
-          </TooltipContent>
+          {(bottomLoading || !bottomExpanded) && (
+            <TooltipContent side="bottom">
+              {bottomLoading ? 'Загрузка данных из Кайтен' : 'Показать все метрики'}
+            </TooltipContent>
+          )}
         </Tooltip>
       )}
       {bottomContent && (
