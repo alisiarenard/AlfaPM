@@ -5,6 +5,7 @@ import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -96,6 +97,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const editInputRef = useRef<HTMLInputElement>(null);
   const [flowMetricsOpen, setFlowMetricsOpen] = useState(false);
   const [flowExpanded, setFlowExpanded] = useState(false);
+  const [flowPeriod, setFlowPeriod] = useState('12m');
   type MetricSpan = { ms: number; startMs: number; endMs: number };
   type StatusSegment = { columnName: string; columnType: number | null; startMs: number; durationMs: number };
   type FlowMetricsData = {
@@ -121,9 +123,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const currentDepartment = useMemo(() => departments?.find(d => d.id === selectedDepartment), [departments, selectedDepartment]);
 
   const { data: flowMetricsData, isFetching: flowMetricsFetching } = useQuery<FlowMetricsData>({
-    queryKey: ['/api/departments/flow-metrics', selectedDepartment],
+    queryKey: ['/api/departments/flow-metrics', selectedDepartment, flowPeriod],
     queryFn: async () => {
-      const res = await fetch(`/api/departments/${selectedDepartment}/flow-metrics`);
+      const res = await fetch(`/api/departments/${selectedDepartment}/flow-metrics?period=${flowPeriod}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch flow metrics');
       return data;
@@ -884,7 +886,18 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                  <div />
+                  <div className="flex justify-end" onClick={e => e.stopPropagation()}>
+                    <Select value={flowPeriod} onValueChange={setFlowPeriod}>
+                      <SelectTrigger className="h-5 text-[11px] px-1.5 border-none shadow-none bg-transparent w-auto gap-0.5 focus:ring-0 text-muted-foreground">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent align="end">
+                        <SelectItem value="12m" className="text-xs">12 месяцев</SelectItem>
+                        <SelectItem value="2025" className="text-xs">2025</SelectItem>
+                        {currentYear >= 2026 && <SelectItem value="2026" className="text-xs">2026</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="relative w-full" style={{ height: '43px' }}>
                     {flowSummary.avgLtS !== null && (
                       <div className="absolute" style={{ left: `${flowSummary.avgLtS}%`, right: '0%', top: 0, height: '16px' }}>

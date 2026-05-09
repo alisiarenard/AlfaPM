@@ -266,7 +266,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (spaceInfo?.title) spaceName = spaceInfo.title;
       }
 
-      const cutoffDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+      const period = (req.query.period as string) || '12m';
+      let cutoffDate: string;
+      let cutoffEndMs: number | null = null;
+      if (period === '12m') {
+        cutoffDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+      } else {
+        const year = parseInt(period, 10);
+        cutoffDate = new Date(`${year}-01-01T00:00:00.000Z`).toISOString();
+        cutoffEndMs = new Date(`${year + 1}-01-01T00:00:00.000Z`).getTime();
+      }
 
       const [allCards, columns] = await Promise.all([
         kaitenClient.getCardsWithDateFilter({
@@ -280,7 +289,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const filteredCards = allCards.filter(card => {
         const typeName = (card.type?.name ?? '').toLowerCase();
-        return typeName === 'epic' || typeName === 'эпик';
+        if (typeName !== 'epic' && typeName !== 'эпик') return false;
+        if (cutoffEndMs !== null && card.last_moved_to_done_at) {
+          const doneMs = new Date(card.last_moved_to_done_at).getTime();
+          if (doneMs >= cutoffEndMs) return false;
+        }
+        return true;
       });
 
       type MetricSpan = { ms: number; startMs: number; endMs: number };
