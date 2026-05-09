@@ -864,25 +864,25 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={flowSummary ? handleOpenFlowMetrics : undefined} style={{ opacity: flowMetricsFetching ? 0.5 : 1, transition: 'opacity 0.3s', cursor: flowSummary ? 'pointer' : 'default' }}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Time To Market</span></div>
-                  <div className="text-2xl font-semibold truncate">{flowSummary?.avgTtm != null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
+                  <div className="text-2xl font-semibold text-foreground/70 truncate">{flowSummary?.avgTtm != null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Lead Time</span></div>
-                  <div className="text-2xl font-semibold truncate">{flowSummary?.avgLead != null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
+                  <div className="text-2xl font-semibold text-foreground/70 truncate">{flowSummary?.avgLead != null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Cycle Time</span></div>
-                  <div className="text-2xl font-semibold truncate">{flowSummary?.avgCycle != null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
+                  <div className="text-2xl font-semibold text-foreground/70 truncate">{flowSummary?.avgCycle != null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Waiting Time</span></div>
-                  <div className="text-2xl font-semibold truncate">{flowSummary?.avgWfd != null ? `${flowSummary.avgWfd}%` : '—'}</div>
+                  <div className="text-2xl font-semibold text-foreground/70 truncate">{flowSummary?.avgWfd != null ? `${flowSummary.avgWfd}%` : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
@@ -906,7 +906,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         <div className="absolute" style={{ top: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                         <div className="absolute" style={{ top: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                         <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                        <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Lead Time</div>
+                        <div className="absolute text-[0.72rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Lead Time</div>
                       </div>
                     )}
                     <div className="absolute w-full h-[7px] bg-muted rounded-full overflow-visible" style={{ top: '18px' }}>
@@ -934,7 +934,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         <div className="absolute" style={{ bottom: 0, left: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                         <div className="absolute" style={{ bottom: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                         <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
-                        <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Cycle Time</div>
+                        <div className="absolute text-[0.72rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Cycle Time</div>
                       </div>
                     )}
                   </div>
