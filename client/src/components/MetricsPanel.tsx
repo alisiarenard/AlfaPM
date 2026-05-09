@@ -154,45 +154,47 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
       data-testid="metrics-panel"
     >
       <div className="h-[110px] flex relative">
-        {showIRTooltip ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="w-[17%] cursor-help">
-                {irContent}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="flex flex-col gap-1 min-w-[160px]">
-              {spaceIRData.map((s) => (
-                <div key={s.spaceName} className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">{s.spaceName}</span>
-                  <span className="font-semibold">{s.ir !== null ? `${s.ir}%` : '—'}</span>
+        <div className="w-[34%] flex min-w-0">
+          {showIRTooltip ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex-1 cursor-help min-w-0">
+                  {irContent}
                 </div>
-              ))}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <div className="w-[17%]">
-            {irContent}
-          </div>
-        )}
-        <div className="border-l border-border my-3"></div>
-        <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
-          <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
-          <div className="flex justify-between items-end w-full">
-            <div className="flex flex-col items-center gap-1">
-              <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">
-                {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '-'}
-              </div>
-              <div className="text-[0.8rem] text-muted-foreground">плановый</div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="flex flex-col gap-1 min-w-[160px]">
+                {spaceIRData.map((s) => (
+                  <div key={s.spaceName} className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">{s.spaceName}</span>
+                    <span className="font-semibold">{s.ir !== null ? `${s.ir}%` : '—'}</span>
+                  </div>
+                ))}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="flex-1 min-w-0">
+              {irContent}
             </div>
-            <div className="flex flex-col items-center gap-1">
-              <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">
-                {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '-'}
+          )}
+          <div className="border-l border-border my-3"></div>
+          <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
+            <div className="text-sm font-bold text-muted-foreground">Value/Cost</div>
+            <div className="flex justify-between items-end w-full">
+              <div className="flex flex-col items-center gap-1">
+                <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">
+                  {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '-'}
+                </div>
+                <div className="text-[0.8rem] text-muted-foreground">плановый</div>
               </div>
-              <div className="text-[0.8rem] text-muted-foreground">фактический</div>
+              <div className="flex flex-col items-center gap-1">
+                <div className="text-3xl font-semibold" data-testid="metric-value-cost-actual">
+                  {displayValueCost ? displayValueCost.factValueCost.toFixed(1) : '-'}
+                </div>
+                <div className="text-[0.8rem] text-muted-foreground">фактический</div>
+              </div>
             </div>
+            <div></div>
           </div>
-          <div></div>
         </div>
         <div className="border-l border-border my-3"></div>
         <div className="w-[66%] pl-4 py-3 flex flex-col justify-between">
