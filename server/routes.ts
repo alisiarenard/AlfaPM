@@ -300,6 +300,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return new Set(columnOrder.slice(sIdx, eIdx + 1));
       };
 
+      // Sum only time spent in known, non-done columns within [rangeStart, rangeEnd].
+      // If metricColSet is provided, also require the column name to be in that set.
+      const sumKnownTime = (
+        history: { column_id: number; subcolumn_id: number | null; changed: string }[],
+        rangeStart: number,
+        rangeEnd: number,
+        metricColSet: Set<string> | null,
+      ): number => {
+        let total = 0;
+        for (let i = 0; i < history.length; i++) {
+          const entryStart = new Date(history[i].changed).getTime();
+          if (entryStart >= rangeEnd) break;
+          const nextTs = i + 1 < history.length ? new Date(history[i + 1].changed).getTime() : rangeEnd;
+          const segEnd = Math.min(nextTs, rangeEnd);
+          const clippedStart = Math.max(entryStart, rangeStart);
+          if (segEnd <= clippedStart) continue;
+          const colInfo = columnMap.get(effectiveId(history[i]));
+          if (!colInfo) continue; // unknown column — skip
+          if (colInfo.type === 3) continue; // done column — skip
+          if (metricColSet) {
+            const colName = colInfo.parentTitle ? `${colInfo.parentTitle} / ${colInfo.title}` : colInfo.title;
+            if (!metricColSet.has(colName)) continue; // outside metric range — skip
+          }
+          total += segEnd - clippedStart;
+        }
+        return total;
+      };
+
       const calcSpan = (history: { column_id: number; subcolumn_id: number | null; changed: string }[], startColId: number | null, endColId: number | null, metricColSet: Set<string> | null): MetricSpan | null => {
         if (!startColId || !endColId) return null;
         const startEntry = history.find(h => effectiveId(h) === startColId);
@@ -320,19 +348,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const nextEntry = history[endIdx + 1];
             let endMs: number;
             if (endColInfo?.type === 3) {
-              // Done column: end = moment of transition into done, never count time sitting in done
               endMs = new Date(endEntry.changed).getTime();
             } else {
-              // Non-done end column: include time spent in it until next move (or now if still there)
               endMs = nextEntry ? new Date(nextEntry.changed).getTime() : Date.now();
             }
-            return { ms: endMs - startMs, startMs, endMs };
+            const ms = sumKnownTime(history, startMs, endMs, metricColSet);
+            return { ms, startMs, endMs };
           }
         }
 
         // Fallback: last history entry is a done-type column (type 3).
-        // End = moment of transition into done (time IN done column excluded).
-        // Start = configured start (if found) OR first history entry within the metric's column range.
+        // End = moment of transition into done. Start = configured start or first entry in range.
         if (history.length > 0) {
           const lastEntry = history[history.length - 1];
           const lastColInfo = columnMap.get(effectiveId(lastEntry));
@@ -342,12 +368,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (startMs !== null) {
               effectiveStartMs = startMs;
             } else if (metricColSet) {
-              // First history entry whose column falls within this metric's range
-              const colName = (h: { column_id: number; subcolumn_id: number | null }) => {
+              const getColName = (h: { column_id: number; subcolumn_id: number | null }) => {
                 const info = columnMap.get(effectiveId(h));
                 return info ? (info.parentTitle ? `${info.parentTitle} / ${info.title}` : info.title) : null;
               };
-              const firstInRange = history.find(h => { const n = colName(h); return n !== null && metricColSet.has(n); });
+              const firstInRange = history.find(h => { const n = getColName(h); return n !== null && metricColSet.has(n); });
               effectiveStartMs = firstInRange
                 ? new Date(firstInRange.changed).getTime()
                 : new Date(history[0].changed).getTime();
@@ -355,7 +380,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               effectiveStartMs = new Date(history[0].changed).getTime();
             }
             if (endMs > effectiveStartMs) {
-              return { ms: endMs - effectiveStartMs, startMs: effectiveStartMs, endMs };
+              const ms = sumKnownTime(history, effectiveStartMs, endMs, metricColSet);
+              return { ms, startMs: effectiveStartMs, endMs };
             }
           }
         }
@@ -387,21 +413,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const statusSegments: { columnName: string; columnType: number | null; startMs: number; durationMs: number }[] = [];
         for (let i = 0; i < history.length; i++) {
           const colInfo = columnMap.get(effectiveId(history[i]));
-          // Never include done-type columns (type 3) — time in done is not counted
-          if (colInfo?.type === 3) continue;
+          // Skip unknown columns (not in columnMap) and done-type columns (type 3)
+          if (!colInfo || colInfo.type === 3) continue;
           const startMs = new Date(history[i].changed).getTime();
-          // End = next entry timestamp, or if next entry is done — its timestamp, otherwise skip to avoid Date.now() inflation
           const nextEntry = history[i + 1];
           const endMs = nextEntry ? new Date(nextEntry.changed).getTime() : null;
-          if (endMs === null) continue; // card still in this column (not yet done) — skip open-ended segment
+          if (endMs === null) continue; // card still in this column — skip open-ended segment
           const durationMs = endMs - startMs;
           if (durationMs > 0) {
-            const colName = colInfo
-              ? (colInfo.parentTitle ? `${colInfo.parentTitle} / ${colInfo.title}` : colInfo.title)
-              : `#${effectiveId(history[i])}`;
+            const colName = colInfo.parentTitle
+              ? `${colInfo.parentTitle} / ${colInfo.title}`
+              : colInfo.title;
             statusSegments.push({
               columnName: colName,
-              columnType: colInfo?.type ?? null,
+              columnType: colInfo.type,
               startMs,
               durationMs,
             });
