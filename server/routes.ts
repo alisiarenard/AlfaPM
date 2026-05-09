@@ -289,31 +289,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const calcSpan = (history: { column_id: number; subcolumn_id: number | null; changed: string }[], startColId: number | null, endColId: number | null): MetricSpan | null => {
         if (!startColId || !endColId) return null;
         const startEntry = history.find(h => effectiveId(h) === startColId);
-        if (!startEntry) return null;
-        const startMs = new Date(startEntry.changed).getTime();
-        // Find the last entry in endColId after startMs
-        let endIdx = -1;
-        for (let i = history.length - 1; i >= 0; i--) {
-          if (effectiveId(history[i]) === endColId && new Date(history[i].changed).getTime() >= startMs) {
-            endIdx = i;
-            break;
+        const startMs = startEntry ? new Date(startEntry.changed).getTime() : null;
+
+        // Normal path: configured start found — look for configured end
+        if (startMs !== null) {
+          let endIdx = -1;
+          for (let i = history.length - 1; i >= 0; i--) {
+            if (effectiveId(history[i]) === endColId && new Date(history[i].changed).getTime() >= startMs) {
+              endIdx = i;
+              break;
+            }
+          }
+          if (endIdx !== -1) {
+            // Include time spent IN the end column
+            const nextEntry = history[endIdx + 1];
+            const endMs = nextEntry ? new Date(nextEntry.changed).getTime() : Date.now();
+            return { ms: endMs - startMs, startMs, endMs };
           }
         }
-        if (endIdx !== -1) {
-          // Normal case: include time spent IN the end column
-          const nextEntry = history[endIdx + 1];
-          const endMs = nextEntry ? new Date(nextEntry.changed).getTime() : Date.now();
-          return { ms: endMs - startMs, startMs, endMs };
-        }
-        // Fallback: if the last history entry is a done-type column (type 3),
-        // treat the moment of that transition as the metric end (don't include time in done column)
+
+        // Fallback: last history entry is a done-type column (type 3).
+        // Use configured start (if found) or the very first history entry as start.
+        // End = moment of transition into done (time IN done column excluded).
         if (history.length > 0) {
           const lastEntry = history[history.length - 1];
           const lastColInfo = columnMap.get(effectiveId(lastEntry));
           if (lastColInfo?.type === 3) {
             const endMs = new Date(lastEntry.changed).getTime();
-            if (endMs > startMs) {
-              return { ms: endMs - startMs, startMs, endMs };
+            const effectiveStartMs = startMs ?? new Date(history[0].changed).getTime();
+            if (endMs > effectiveStartMs) {
+              return { ms: endMs - effectiveStartMs, startMs: effectiveStartMs, endMs };
             }
           }
         }
