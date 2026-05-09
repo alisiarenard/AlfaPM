@@ -1414,7 +1414,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         : null;
                       return (
                         <div key={card.cardId} className="px-5 py-4 space-y-3" data-testid={`row-flow-${card.cardId}`}>
-                          <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-end justify-between gap-4">
                             <div className="min-w-0">
                               {cardUrl ? (
                                 <a href={cardUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-foreground hover:underline">
