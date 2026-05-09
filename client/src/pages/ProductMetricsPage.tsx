@@ -1271,51 +1271,45 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     .filter((v): v is number => v !== null);
                   const avgCtS = ctFracs.length ? ctFracs.reduce((a, v) => a + v, 0) / ctFracs.length * 100 : null;
 
-                  // Aggregate avg duration per status column — only within TTM range, sorted by avg start position
-                  const colAgg = new Map<string, { columnType: number | null; totalMs: number; count: number; totalStartRel: number }>();
-                  cards.filter(c => c.ttm).forEach(card => {
+                  // Build bar segments via fraction-based averaging so totalAvgMs === avgTtm.
+                  // For each card: compute each column's share of card.ttm.ms (fraction 0-1).
+                  // Average fractions across ALL cards (cards without a column contribute 0).
+                  // Multiply by avgTtm to get absolute ms — guarantees sum == avgTtm.
+                  const colOrderIdx = (name: string) => { const i = flowMetricsData.columnOrder.indexOf(name); return i === -1 ? 9999 : i; };
+                  const eligibleCards = cards.filter(c => c.ttm && c.ttm.ms > 0);
+                  const nCards = eligibleCards.length;
+                  const colFracSum = new Map<string, { type: number | null; fracSum: number }>();
+                  eligibleCards.forEach(card => {
                     const ttmStart = card.ttm!.startMs;
-                    const ttmEnd = card.ttm!.endMs;
-                    const ttmSpanLocal = ttmEnd - ttmStart;
-                    if (ttmSpanLocal === 0) return;
-                    // Sum per column for this card first (merge repeated visits)
-                    const cardColSum = new Map<string, { columnType: number | null; totalMs: number; minStartRel: number }>();
+                    const ttmEnd   = card.ttm!.endMs;
+                    const ttmMs    = card.ttm!.ms;
+                    const cardColMs = new Map<string, { ms: number; type: number | null }>();
                     card.statusSegments?.forEach(seg => {
+                      if (ttmColSet0 && !ttmColSet0.has(seg.columnName)) return;
                       const segEnd = seg.startMs + seg.durationMs;
                       if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return;
-                      const clippedStart = Math.max(seg.startMs, ttmStart);
-                      const clippedMs = Math.min(segEnd, ttmEnd) - clippedStart;
-                      const startRel = (clippedStart - ttmStart) / ttmSpanLocal;
-                      if (!cardColSum.has(seg.columnName)) {
-                        cardColSum.set(seg.columnName, { columnType: seg.columnType, totalMs: 0, minStartRel: startRel });
-                      }
-                      const c = cardColSum.get(seg.columnName)!;
-                      c.totalMs += clippedMs;
-                      c.minStartRel = Math.min(c.minStartRel, startRel);
+                      const clipped = Math.min(segEnd, ttmEnd) - Math.max(seg.startMs, ttmStart);
+                      const e = cardColMs.get(seg.columnName);
+                      if (e) e.ms += clipped;
+                      else cardColMs.set(seg.columnName, { ms: clipped, type: seg.columnType });
                     });
-                    // Add per-card totals to global aggregate (count = 1 per card per column)
-                    cardColSum.forEach((val, colName) => {
-                      if (!colAgg.has(colName)) {
-                        colAgg.set(colName, { columnType: val.columnType, totalMs: 0, count: 0, totalStartRel: 0 });
-                      }
-                      const a = colAgg.get(colName)!;
-                      a.totalMs += val.totalMs;
-                      a.count += 1;
-                      a.totalStartRel += val.minStartRel;
+                    cardColMs.forEach(({ ms, type }, colName) => {
+                      const frac = ms / ttmMs;
+                      const e = colFracSum.get(colName);
+                      if (e) e.fracSum += frac;
+                      else colFracSum.set(colName, { type, fracSum: frac });
                     });
                   });
-                  const colOrderIdx = (name: string) => { const i = flowMetricsData.columnOrder.indexOf(name); return i === -1 ? 9999 : i; };
-                  const order = flowMetricsData.columnOrder;
-                  const ttmStartIdx = flowMetricsData.ttmStartColumnName ? order.indexOf(flowMetricsData.ttmStartColumnName) : -1;
-                  const ttmEndIdx   = flowMetricsData.ttmEndColumnName   ? order.indexOf(flowMetricsData.ttmEndColumnName)   : -1;
-                  const ttmColSet = (ttmStartIdx !== -1 && ttmEndIdx !== -1 && ttmStartIdx <= ttmEndIdx)
-                    ? new Set(order.slice(ttmStartIdx, ttmEndIdx + 1))
-                    : null;
-                  const avgSegs = Array.from(colAgg.entries())
-                    .filter(([name]) => !ttmColSet || ttmColSet.has(name))
-                    .sort((a, b) => colOrderIdx(a[0]) - colOrderIdx(b[0]))
-                    .map(([name, a]) => ({ columnName: name, columnType: a.columnType, avgMs: a.totalMs / a.count }));
-                  const totalAvgMs = avgSegs.reduce((a, s) => a + s.avgMs, 0);
+                  const avgSegs = nCards > 0
+                    ? Array.from(colFracSum.entries())
+                        .sort((a, b) => colOrderIdx(a[0]) - colOrderIdx(b[0]))
+                        .map(([name, v]) => ({
+                          columnName: name,
+                          columnType: v.type,
+                          avgMs: (v.fracSum / nCards) * (avgTtm ?? 0),
+                        }))
+                    : [];
+                  const totalAvgMs = avgTtm ?? 0;
 
                   const BAR_GREY = ['#6b7280', '#9ca3af', '#cbd5e1', '#e2e8f0', '#f1f5f9'];
                   const BAR_RED  = ['#cd253d', '#e05570', '#ef8a9a', '#f7bfc8', '#fde8ec'];
