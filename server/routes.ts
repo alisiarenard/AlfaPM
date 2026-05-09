@@ -346,11 +346,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Build per-status segments: time spent in each column (prefer subcolumn_id for lookup)
         const statusSegments: { columnName: string; columnType: number | null; startMs: number; durationMs: number }[] = [];
         for (let i = 0; i < history.length; i++) {
+          const colInfo = columnMap.get(effectiveId(history[i]));
+          // Never include done-type columns (type 3) — time in done is not counted
+          if (colInfo?.type === 3) continue;
           const startMs = new Date(history[i].changed).getTime();
-          const endMs = i + 1 < history.length ? new Date(history[i + 1].changed).getTime() : Date.now();
+          // End = next entry timestamp, or if next entry is done — its timestamp, otherwise skip to avoid Date.now() inflation
+          const nextEntry = history[i + 1];
+          const endMs = nextEntry ? new Date(nextEntry.changed).getTime() : null;
+          if (endMs === null) continue; // card still in this column (not yet done) — skip open-ended segment
           const durationMs = endMs - startMs;
           if (durationMs > 0) {
-            const colInfo = columnMap.get(effectiveId(history[i]));
             const colName = colInfo
               ? (colInfo.parentTitle ? `${colInfo.parentTitle} / ${colInfo.title}` : colInfo.title)
               : `#${effectiveId(history[i])}`;
