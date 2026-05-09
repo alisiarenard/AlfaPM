@@ -153,7 +153,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
   return (
     <div
       className={`w-full border border-border rounded-lg relative transition-opacity duration-300 ${bottomContent ? 'flex flex-col' : 'flex h-[110px]'}`}
-      style={{ opacity: isIRFetching || isCostStructureFetching || isValueCostFetching ? 0.5 : 1 }}
+      style={{ opacity: isIRFetching || isCostStructureFetching || isValueCostFetching ? 0.5 : 1, overflow: 'visible' }}
       data-testid="metrics-panel"
     >
       <div className="h-[110px] flex relative">
@@ -226,19 +226,24 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         {children}
       </div>
       {bottomContent && onToggleBottom && (
-        <div className="relative w-full" style={{ height: 0, overflow: 'visible', zIndex: 20 }}>
-          <button
-            onClick={onToggleBottom}
-            data-testid="button-toggle-flow"
-            style={{ position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%) translateY(-50%)' }}
-            className="w-6 h-6 rounded-full border border-border bg-background flex items-center justify-center shadow-sm hover-elevate"
-          >
-            <ChevronDown
-              className="h-3 w-3 text-muted-foreground transition-transform duration-300"
-              style={{ transform: bottomExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-            />
-          </button>
-        </div>
+        <button
+          onClick={onToggleBottom}
+          data-testid="button-toggle-flow"
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: bottomExpanded ? '220px' : '110px',
+            transform: 'translateX(-50%) translateY(-50%)',
+            transition: 'top 0.3s ease',
+            zIndex: 20,
+          }}
+          className="w-8 h-8 rounded-full border border-border bg-background flex items-center justify-center shadow-sm hover-elevate"
+        >
+          <ChevronDown
+            className="h-4 w-4 text-muted-foreground transition-transform duration-300"
+            style={{ transform: bottomExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        </button>
       )}
       {bottomContent && (
         <div
