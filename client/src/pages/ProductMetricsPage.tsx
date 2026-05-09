@@ -132,6 +132,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     },
     enabled: !!selectedDepartment && !!currentDepartment?.kaitenBoardId,
     staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const handleOpenFlowMetrics = () => {
@@ -860,7 +861,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
         <div className="p-6">
           {selectedDepartment && teamIdsArray.length > 0 ? (
             <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomExpanded={flowExpanded} bottomLoading={flowMetricsFetching} onToggleBottom={() => setFlowExpanded(v => !v)} bottomContent={flowSummary ? (
-              <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={handleOpenFlowMetrics}>
+              <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={handleOpenFlowMetrics} style={{ opacity: flowMetricsFetching ? 0.5 : 1, transition: 'opacity 0.3s' }}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Time To Market</span></div>
                   <div className="text-[28px] font-semibold truncate">{flowSummary.avgTtm !== null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
@@ -891,7 +892,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <SelectTrigger className="h-5 text-[11px] px-1.5 border-none shadow-none bg-transparent w-auto gap-0.5 focus:ring-0 text-muted-foreground">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent align="end">
+                      <SelectContent align="end" className="bg-white dark:bg-background">
                         <SelectItem value="12m" className="text-xs">12 месяцев</SelectItem>
                         <SelectItem value="2025" className="text-xs">2025</SelectItem>
                         {currentYear >= 2026 && <SelectItem value="2026" className="text-xs">2026</SelectItem>}
