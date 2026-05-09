@@ -5,7 +5,7 @@ import { MetricsPanel } from "@/components/MetricsPanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw, BarChart3 } from "lucide-react";
+import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
@@ -848,7 +848,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
         <div className="p-6">
           {selectedDepartment && teamIdsArray.length > 0 ? (
             <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomContent={flowSummary ? (
-              <div className="h-[110px] flex" data-testid="flow-summary-row">
+              <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={handleOpenFlowMetrics}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="text-sm font-medium text-muted-foreground truncate">Time To Market</div>
                   <div className="text-3xl font-semibold truncate">{flowSummary.avgTtm !== null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
@@ -1034,17 +1034,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                {currentDepartment?.kaitenBoardId && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    title="Flow-метрики (TTM / Lead Time / Cycle Time)"
-                    data-testid="button-flow-metrics"
-                    onClick={handleOpenFlowMetrics}
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                  </Button>
-                )}
                 </div>
                 <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
                   {([
@@ -1338,7 +1327,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     <Dialog open={flowMetricsOpen} onOpenChange={setFlowMetricsOpen}>
       <DialogContent className="max-w-[60vw] w-full max-h-[90vh] flex flex-col" aria-describedby={undefined} data-testid="dialog-flow-metrics">
         <DialogHeader className="shrink-0">
-          <DialogTitle className="text-sm font-semibold">{flowMetricsData?.spaceName ?? ''} — карточки ({flowMetricsData?.cards.length ?? 0})</DialogTitle>
+          <DialogTitle className="text-sm font-semibold">{flowMetricsData?.spaceName ?? ''}</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
