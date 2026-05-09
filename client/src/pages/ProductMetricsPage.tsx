@@ -1290,7 +1290,14 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     });
                   });
                   const colOrderIdx = (name: string) => { const i = flowMetricsData.columnOrder.indexOf(name); return i === -1 ? 9999 : i; };
+                  const order = flowMetricsData.columnOrder;
+                  const ttmStartIdx = flowMetricsData.ttmStartColumnName ? order.indexOf(flowMetricsData.ttmStartColumnName) : -1;
+                  const ttmEndIdx   = flowMetricsData.ttmEndColumnName   ? order.indexOf(flowMetricsData.ttmEndColumnName)   : -1;
+                  const ttmColSet = (ttmStartIdx !== -1 && ttmEndIdx !== -1 && ttmStartIdx <= ttmEndIdx)
+                    ? new Set(order.slice(ttmStartIdx, ttmEndIdx + 1))
+                    : null;
                   const avgSegs = Array.from(colAgg.entries())
+                    .filter(([name]) => !ttmColSet || ttmColSet.has(name))
                     .sort((a, b) => colOrderIdx(a[0]) - colOrderIdx(b[0]))
                     .map(([name, a]) => ({ columnName: name, columnType: a.columnType, avgMs: a.totalMs / a.count }));
                   const totalAvgMs = avgSegs.reduce((a, s) => a + s.avgMs, 0);
