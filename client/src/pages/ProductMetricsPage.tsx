@@ -86,6 +86,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
   const [editingCellValue, setEditingCellValue] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
   const [flowMetricsOpen, setFlowMetricsOpen] = useState(false);
+  const [flowExpanded, setFlowExpanded] = useState(false);
   type MetricSpan = { ms: number; startMs: number; endMs: number };
   type StatusSegment = { columnName: string; columnType: number | null; startMs: number; durationMs: number };
   type FlowMetricsData = {
@@ -847,7 +848,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
           {selectedDepartment && teamIdsArray.length > 0 ? (
-            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomContent={flowSummary ? (
+            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomExpanded={flowExpanded} onToggleBottom={flowSummary ? () => setFlowExpanded(v => !v) : undefined} bottomContent={flowSummary ? (
               <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={handleOpenFlowMetrics}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="text-sm font-medium text-muted-foreground truncate">Time To Market</div>

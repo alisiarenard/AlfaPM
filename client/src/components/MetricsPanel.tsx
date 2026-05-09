@@ -1,6 +1,7 @@
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { useRef, type ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChevronDown } from "lucide-react";
 
 interface SpaceGroup {
   spaceId: string;
@@ -14,9 +15,11 @@ interface MetricsPanelProps {
   spaceGroups?: SpaceGroup[];
   children?: ReactNode;
   bottomContent?: ReactNode;
+  bottomExpanded?: boolean;
+  onToggleBottom?: () => void;
 }
 
-export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children, bottomContent }: MetricsPanelProps) {
+export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children, bottomContent, bottomExpanded = false, onToggleBottom }: MetricsPanelProps) {
   const teamIdsParam = teamIds.sort().join(',');
 
   const { data: innovationRateData, isFetching: isIRFetching } = useQuery<{
@@ -221,12 +224,27 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
           </div>
         </div>
         {children}
+        {bottomContent && onToggleBottom && (
+          <button
+            onClick={onToggleBottom}
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10 w-6 h-6 rounded-full border border-border bg-background flex items-center justify-center hover-elevate"
+            data-testid="button-toggle-flow"
+          >
+            <ChevronDown
+              className="h-3 w-3 text-muted-foreground transition-transform duration-300"
+              style={{ transform: bottomExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </button>
+        )}
       </div>
       {bottomContent && (
-        <>
+        <div
+          className="overflow-hidden transition-all duration-300"
+          style={{ maxHeight: bottomExpanded ? '120px' : '0px' }}
+        >
           <div className="border-t border-border" />
           {bottomContent}
-        </>
+        </div>
       )}
     </div>
   );
