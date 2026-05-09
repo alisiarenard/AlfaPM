@@ -860,29 +860,29 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
           {selectedDepartment && teamIdsArray.length > 0 ? (
-            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomExpanded={flowExpanded} bottomLoading={flowMetricsFetching} onToggleBottom={() => setFlowExpanded(v => !v)} bottomContent={flowSummary ? (
-              <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={handleOpenFlowMetrics} style={{ opacity: flowMetricsFetching ? 0.5 : 1, transition: 'opacity 0.3s' }}>
+            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomExpanded={flowExpanded} bottomLoading={flowMetricsFetching} onToggleBottom={() => setFlowExpanded(v => !v)} bottomContent={(flowSummary || flowMetricsData) ? (
+              <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={flowSummary ? handleOpenFlowMetrics : undefined} style={{ opacity: flowMetricsFetching ? 0.5 : 1, transition: 'opacity 0.3s', cursor: flowSummary ? 'pointer' : 'default' }}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Time To Market</span></div>
-                  <div className="text-[28px] font-semibold truncate">{flowSummary.avgTtm !== null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
+                  <div className="text-[28px] font-semibold truncate">{flowSummary?.avgTtm != null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Lead Time</span></div>
-                  <div className="text-[28px] font-semibold truncate">{flowSummary.avgLead !== null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
+                  <div className="text-[28px] font-semibold truncate">{flowSummary?.avgLead != null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Cycle Time</span></div>
-                  <div className="text-[28px] font-semibold truncate">{flowSummary.avgCycle !== null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
+                  <div className="text-[28px] font-semibold truncate">{flowSummary?.avgCycle != null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Waiting Time</span></div>
-                  <div className="text-[28px] font-semibold truncate">{flowSummary.avgWfd !== null ? `${flowSummary.avgWfd}%` : '—'}</div>
+                  <div className="text-[28px] font-semibold truncate">{flowSummary?.avgWfd != null ? `${flowSummary.avgWfd}%` : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
@@ -899,6 +899,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </SelectContent>
                     </Select>
                   </div>
+                  {flowSummary ? (
                   <div className="relative w-full" style={{ height: '43px' }}>
                     {flowSummary.avgLtS !== null && (
                       <div className="absolute" style={{ left: `${flowSummary.avgLtS}%`, right: '0%', top: 0, height: '16px' }}>
@@ -937,6 +938,11 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       </div>
                     )}
                   </div>
+                  ) : (
+                  <div className="flex items-center justify-center" style={{ height: '43px' }}>
+                    <span className="text-xs text-muted-foreground">Отсутствуют данные за выбранный период</span>
+                  </div>
+                  )}
                   <div />
                 </div>
               </div>
