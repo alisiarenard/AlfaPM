@@ -1088,7 +1088,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   ))}
                 </div>
               </div>
-              <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(70vh - 48px)' }}>
+              <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: flowExpanded ? 'calc(70vh - 48px - 110px)' : 'calc(70vh - 48px)', transition: 'max-height 0.3s ease' }}>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
