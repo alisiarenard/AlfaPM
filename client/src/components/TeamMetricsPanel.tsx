@@ -95,7 +95,7 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
     >
       <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
         <div className="text-sm text-muted-foreground">Innovation Rate</div>
-        <div className="text-2xl font-semibold text-foreground/70" data-testid="team-metric-innovation-rate">
+        <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-innovation-rate">
           {displayIR ? `${displayIR.actualIR}%` : '—'}
         </div>
         <div className="text-[0.8rem] text-muted-foreground truncate">
@@ -113,7 +113,7 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
       <div className="border-l border-border my-3"></div>
       <div className="w-[10%] px-4 py-3 flex flex-col justify-between">
         <div className="text-sm text-muted-foreground">Velocity</div>
-        <div className="text-2xl font-semibold text-foreground/70" data-testid="team-metric-velocity">
+        <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-velocity">
           {displaySprintStats?.avgVelocity !== null && displaySprintStats?.avgVelocity !== undefined ? displaySprintStats.avgVelocity : '—'}
         </div>
         <div className="text-[0.8rem] text-muted-foreground truncate">
@@ -123,7 +123,7 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
       <div className="border-l border-border my-3"></div>
       <div className="w-[10%] px-4 py-3 flex flex-col justify-between">
         <div className="text-sm text-muted-foreground whitespace-nowrap">СПД</div>
-        <div className="text-2xl font-semibold text-foreground/70" data-testid="team-metric-spd">
+        <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-spd">
           {displaySprintStats?.avgSPD !== null && displaySprintStats?.avgSPD !== undefined ? `${displaySprintStats.avgSPD}%` : '—'}
         </div>
         <div className="text-[0.8rem] text-muted-foreground truncate">
