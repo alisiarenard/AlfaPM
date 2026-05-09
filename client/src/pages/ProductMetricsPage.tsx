@@ -1505,28 +1505,36 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               {card.cycleTime && <span>CT: <span className="text-foreground font-medium">{formatDurationShort(card.cycleTime.ms)}</span></span>}
                             </div>
                           </div>
-                          {ttmSpan > 0 && ttmSegs.length > 0 ? (
-                            <div className="relative w-full h-[7px] bg-muted rounded-full">
-                              {ttmSegs.map((seg, idx) => {
-                                const left = ((seg.clippedStartMs - ttmStart!) / ttmSpan) * 100;
-                                const width = Math.max(0.5, (seg.clippedMs / ttmSpan) * 100);
-                                const color = getSegColor(seg.columnName, seg.columnType);
-                                const typeLabel = columnTypeLabel(seg.columnType);
-                                return (
-                                  <Tooltip key={idx}>
-                                    <TooltipTrigger asChild>
-                                      <div className="absolute inset-y-0 rounded-full cursor-default" style={{ left: `${left}%`, width: `${width}%`, background: color }} />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="text-xs space-y-0.5">
-                                      <div className="font-semibold">{shortName(seg.columnName)}</div>
-                                      {typeLabel && <div className="text-muted-foreground">{typeLabel}</div>}
-                                      <div>{formatDurationShort(seg.clippedMs)}</div>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                );
-                              })}
-                            </div>
-                          ) : (
+                          {ttmSegs.length > 0 ? (() => {
+                            // Use cumulative positioning: bar width = sum of actual counted segments only.
+                            // This eliminates visual gaps from unknown/out-of-range/done column time.
+                            const totalSegMs = ttmSegs.reduce((a, s) => a + s.clippedMs, 0);
+                            if (totalSegMs === 0) return <div className="w-full h-[7px] bg-muted rounded-full" />;
+                            let cumulative = 0;
+                            return (
+                              <div className="relative w-full h-[7px] bg-muted rounded-full">
+                                {ttmSegs.map((seg, idx) => {
+                                  const left = (cumulative / totalSegMs) * 100;
+                                  const width = Math.max(0.5, (seg.clippedMs / totalSegMs) * 100);
+                                  cumulative += seg.clippedMs;
+                                  const color = getSegColor(seg.columnName, seg.columnType);
+                                  const typeLabel = columnTypeLabel(seg.columnType);
+                                  return (
+                                    <Tooltip key={idx}>
+                                      <TooltipTrigger asChild>
+                                        <div className="absolute inset-y-0 rounded-full cursor-default" style={{ left: `${left}%`, width: `${width}%`, background: color }} />
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="text-xs space-y-0.5">
+                                        <div className="font-semibold">{shortName(seg.columnName)}</div>
+                                        {typeLabel && <div className="text-muted-foreground">{typeLabel}</div>}
+                                        <div>{formatDurationShort(seg.clippedMs)}</div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })() : (
                             <div className="w-full h-[7px] bg-muted rounded-full" />
                           )}
                         </div>
