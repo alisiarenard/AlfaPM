@@ -286,7 +286,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       type MetricSpan = { ms: number; startMs: number; endMs: number };
       // Use subcolumn_id when available, fall back to column_id
       const effectiveId = (h: { column_id: number; subcolumn_id: number | null }) => h.subcolumn_id ?? h.column_id;
-      const calcSpan = (history: { column_id: number; subcolumn_id: number | null; changed: string }[], startColId: number | null, endColId: number | null): MetricSpan | null => {
+      // Build a column-name set for a given start/end column ID range
+      const buildMetricColSet = (startColId: number | null, endColId: number | null): Set<string> | null => {
+        if (!startColId || !endColId) return null;
+        const si = columnMap.get(startColId);
+        const ei = columnMap.get(endColId);
+        if (!si || !ei) return null;
+        const sName = si.parentTitle ? `${si.parentTitle} / ${si.title}` : si.title;
+        const eName = ei.parentTitle ? `${ei.parentTitle} / ${ei.title}` : ei.title;
+        const sIdx = columnOrder.indexOf(sName);
+        const eIdx = columnOrder.indexOf(eName);
+        if (sIdx === -1 || eIdx === -1 || sIdx > eIdx) return null;
+        return new Set(columnOrder.slice(sIdx, eIdx + 1));
+      };
+
+      const calcSpan = (history: { column_id: number; subcolumn_id: number | null; changed: string }[], startColId: number | null, endColId: number | null, metricColSet: Set<string> | null): MetricSpan | null => {
         if (!startColId || !endColId) return null;
         const startEntry = history.find(h => effectiveId(h) === startColId);
         const startMs = startEntry ? new Date(startEntry.changed).getTime() : null;
@@ -309,14 +323,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Fallback: last history entry is a done-type column (type 3).
-        // Use configured start (if found) or the very first history entry as start.
         // End = moment of transition into done (time IN done column excluded).
+        // Start = configured start (if found) OR first history entry within the metric's column range.
         if (history.length > 0) {
           const lastEntry = history[history.length - 1];
           const lastColInfo = columnMap.get(effectiveId(lastEntry));
           if (lastColInfo?.type === 3) {
             const endMs = new Date(lastEntry.changed).getTime();
-            const effectiveStartMs = startMs ?? new Date(history[0].changed).getTime();
+            let effectiveStartMs: number;
+            if (startMs !== null) {
+              effectiveStartMs = startMs;
+            } else if (metricColSet) {
+              // First history entry whose column falls within this metric's range
+              const colName = (h: { column_id: number; subcolumn_id: number | null }) => {
+                const info = columnMap.get(effectiveId(h));
+                return info ? (info.parentTitle ? `${info.parentTitle} / ${info.title}` : info.title) : null;
+              };
+              const firstInRange = history.find(h => { const n = colName(h); return n !== null && metricColSet.has(n); });
+              effectiveStartMs = firstInRange
+                ? new Date(firstInRange.changed).getTime()
+                : new Date(history[0].changed).getTime();
+            } else {
+              effectiveStartMs = new Date(history[0].changed).getTime();
+            }
             if (endMs > effectiveStartMs) {
               return { ms: endMs - effectiveStartMs, startMs: effectiveStartMs, endMs };
             }
@@ -334,9 +363,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const totalStartMs = history.length > 0 ? new Date(history[0].changed).getTime() : null;
         const totalEndMs = history.length > 0 ? new Date(history[history.length - 1].changed).getTime() : null;
 
-        const ttmSpan = calcSpan(history, dept.ttmStartColumnId, dept.ttmEndColumnId);
-        const leadTimeSpan = calcSpan(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
-        const cycleTimeSpan = calcSpan(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
+        const ttmColSet   = buildMetricColSet(dept.ttmStartColumnId, dept.ttmEndColumnId);
+        const ltColSet    = buildMetricColSet(dept.leadTimeStartColumnId, dept.leadTimeEndColumnId);
+        const ctColSet    = buildMetricColSet(dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId);
+        const ttmSpan = calcSpan(history, dept.ttmStartColumnId, dept.ttmEndColumnId, ttmColSet);
+        const leadTimeSpan = calcSpan(history, dept.leadTimeStartColumnId, dept.leadTimeEndColumnId, ltColSet);
+        const cycleTimeSpan = calcSpan(history, dept.cycleTimeStartColumnId, dept.cycleTimeEndColumnId, ctColSet);
 
         // Fallback: if card history starts from LT or CT, inherit parent metrics
         const effectiveTtm = ttmSpan ?? leadTimeSpan ?? cycleTimeSpan;

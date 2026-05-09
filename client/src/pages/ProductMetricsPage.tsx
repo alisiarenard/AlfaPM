@@ -1446,6 +1446,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     return '';
                   };
                   type ClippedSeg = { columnName: string; columnType: number | null; clippedStartMs: number; clippedMs: number; durationMs: number };
+                  const order = flowMetricsData.columnOrder;
+                  const ttmStartIdx = flowMetricsData.ttmStartColumnName ? order.indexOf(flowMetricsData.ttmStartColumnName) : -1;
+                  const ttmEndIdx   = flowMetricsData.ttmEndColumnName   ? order.indexOf(flowMetricsData.ttmEndColumnName)   : -1;
+                  const ttmColSet = (ttmStartIdx !== -1 && ttmEndIdx !== -1 && ttmStartIdx <= ttmEndIdx)
+                    ? new Set(order.slice(ttmStartIdx, ttmEndIdx + 1))
+                    : null;
                   return (
                     <div>
                     {flowMetricsData.cards.map((card) => {
@@ -1455,6 +1461,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       const ttmSegs: ClippedSeg[] = (card.statusSegments ?? [])
                         .flatMap(seg => {
                           if (ttmStart === null || ttmEnd === null) return [];
+                          // Filter out columns that are outside the configured TTM column range
+                          if (ttmColSet && !ttmColSet.has(seg.columnName)) return [];
                           const segEnd = seg.startMs + seg.durationMs;
                           if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return [];
                           const clippedStart = Math.max(seg.startMs, ttmStart);
