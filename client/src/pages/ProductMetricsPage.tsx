@@ -887,7 +887,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-                  <div className="flex justify-end" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                    <span className="text-sm text-muted-foreground truncate">Структура распределения TTM</span>
                     <Select value={flowPeriod} onValueChange={setFlowPeriod}>
                       <SelectTrigger className="h-5 text-[11px] px-1.5 border-none shadow-none bg-transparent w-auto gap-0.5 focus:ring-0 text-muted-foreground">
                         <SelectValue />
