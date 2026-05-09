@@ -1386,7 +1386,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 {/* right vertical going down */}
                                 <div className="absolute" style={{ top: 0, right: 0, width: '1px', height: '9px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* label centered on top line */}
-                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>LT</div>
+                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ top: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Lead Time</div>
                               </div>
                             )}
 
@@ -1425,7 +1425,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 {/* horizontal at bottom */}
                                 <div className="absolute" style={{ bottom: 0, left: 0, right: 0, height: '1px', background: 'hsl(var(--muted-foreground) / 0.25)' }} />
                                 {/* label centered on bottom line */}
-                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>CT</div>
+                                <div className="absolute text-[0.6rem] font-semibold leading-none text-muted-foreground" style={{ bottom: '-4px', left: '50%', transform: 'translateX(-50%)', background: 'hsl(var(--background))', padding: '0 2px' }}>Cycle Time</div>
                               </div>
                             )}
 
