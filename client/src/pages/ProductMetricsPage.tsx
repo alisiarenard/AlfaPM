@@ -1407,122 +1407,114 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     </div>
                   );
                 })()}
-                <div>
-                {flowMetricsData.cards.map((card) => {
-                  const ttmStart = card.ttm?.startMs ?? null;
-                  const ttmEnd = card.ttm?.endMs ?? null;
-                  const ttmSpan = (ttmStart !== null && ttmEnd !== null) ? ttmEnd - ttmStart : 0;
-
-                  // Filter and clip segments to TTM range, sorted by board column order
-                  type ClippedSeg = { columnName: string; columnType: number | null; clippedStartMs: number; clippedMs: number; durationMs: number };
-                  const ttmSegs: ClippedSeg[] = (card.statusSegments ?? [])
-                    .flatMap(seg => {
-                      if (ttmStart === null || ttmEnd === null) return [];
-                      const segEnd = seg.startMs + seg.durationMs;
-                      if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return [];
-                      const clippedStart = Math.max(seg.startMs, ttmStart);
-                      const clippedEndMs = Math.min(segEnd, ttmEnd);
-                      return [{ columnName: seg.columnName, columnType: seg.columnType, clippedStartMs: clippedStart, clippedMs: clippedEndMs - clippedStart, durationMs: seg.durationMs }];
-                    })
-                    .sort((a, b) => {
-                      const ai = flowMetricsData.columnOrder.indexOf(a.columnName);
-                      const bi = flowMetricsData.columnOrder.indexOf(b.columnName);
-                      return (ai === -1 ? 9999 : ai) - (bi === -1 ? 9999 : bi);
-                    })
-                    .reduce<ClippedSeg[]>((acc, seg) => {
-                      const existing = acc.find(s => s.columnName === seg.columnName);
-                      if (existing) {
-                        existing.clippedMs += seg.clippedMs;
-                        existing.clippedStartMs = Math.min(existing.clippedStartMs, seg.clippedStartMs);
-                      } else {
-                        acc.push({ ...seg });
-                      }
-                      return acc;
-                    }, []);
-
-                  // Kaiten column types: 1=queue (grey), 2=in-progress (red), 3=done (dark)
+                {(() => {
+                  // Build global color map keyed by column name — same colors in bars and legend
                   const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
                   const RED_SHADES  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
-
-                  const typeCounters: Record<number, number> = {};
-                  const segmentColors = ttmSegs.map((seg) => {
-                    const t = seg.columnType ?? 0;
-                    const idx = typeCounters[t] ?? 0;
-                    typeCounters[t] = idx + 1;
-                    if (t === 1) return GREY_SHADES[idx % GREY_SHADES.length];
-                    if (t === 2) return RED_SHADES[idx % RED_SHADES.length];
-                    if (t === 3) return '#7f1d1d';
-                    return '#9ca3af';
+                  const colTypeMap = new Map<string, number | null>();
+                  flowMetricsData.cards.forEach(c => {
+                    (c.statusSegments ?? []).forEach(s => {
+                      if (!colTypeMap.has(s.columnName)) colTypeMap.set(s.columnName, s.columnType);
+                    });
                   });
-
+                  const type1Cols = flowMetricsData.columnOrder.filter(c => colTypeMap.get(c) === 1);
+                  const type2Cols = flowMetricsData.columnOrder.filter(c => colTypeMap.get(c) === 2);
+                  const getSegColor = (colName: string, colType: number | null): string => {
+                    if (colType === 1) { const i = type1Cols.indexOf(colName); return GREY_SHADES[Math.max(0, i) % GREY_SHADES.length]; }
+                    if (colType === 2) { const i = type2Cols.indexOf(colName); return RED_SHADES[Math.max(0, i) % RED_SHADES.length]; }
+                    if (colType === 3) return '#7f1d1d';
+                    return '#9ca3af';
+                  };
+                  const shortName = (col: string) => col.includes(' / ') ? col.split(' / ').slice(1).join(' / ') : col;
                   const columnTypeLabel = (type: number | null): string => {
                     if (type === 1) return 'Очередь';
                     if (type === 2) return 'В работе';
                     if (type === 3) return 'Готово';
                     return '';
                   };
-
-                  const cardUrl = flowMetricsData.kaitenSpaceId
-                    ? getKaitenCardUrl(flowMetricsData.kaitenSpaceId, card.cardId, card.archived)
-                    : null;
-
+                  type ClippedSeg = { columnName: string; columnType: number | null; clippedStartMs: number; clippedMs: number; durationMs: number };
                   return (
-                    <div key={card.cardId} className="px-5 py-4 space-y-3" data-testid={`row-flow-${card.cardId}`}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          {cardUrl ? (
-                            <a
-                              href={cardUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm font-semibold text-foreground hover:underline"
-                            >
-                              {card.title}
-                            </a>
+                    <div>
+                    {flowMetricsData.cards.map((card) => {
+                      const ttmStart = card.ttm?.startMs ?? null;
+                      const ttmEnd = card.ttm?.endMs ?? null;
+                      const ttmSpan = (ttmStart !== null && ttmEnd !== null) ? ttmEnd - ttmStart : 0;
+                      const ttmSegs: ClippedSeg[] = (card.statusSegments ?? [])
+                        .flatMap(seg => {
+                          if (ttmStart === null || ttmEnd === null) return [];
+                          const segEnd = seg.startMs + seg.durationMs;
+                          if (segEnd <= ttmStart || seg.startMs >= ttmEnd) return [];
+                          const clippedStart = Math.max(seg.startMs, ttmStart);
+                          const clippedEndMs = Math.min(segEnd, ttmEnd);
+                          return [{ columnName: seg.columnName, columnType: seg.columnType, clippedStartMs: clippedStart, clippedMs: clippedEndMs - clippedStart, durationMs: seg.durationMs }];
+                        })
+                        .sort((a, b) => {
+                          const ai = flowMetricsData.columnOrder.indexOf(a.columnName);
+                          const bi = flowMetricsData.columnOrder.indexOf(b.columnName);
+                          return (ai === -1 ? 9999 : ai) - (bi === -1 ? 9999 : bi);
+                        })
+                        .reduce<ClippedSeg[]>((acc, seg) => {
+                          const existing = acc.find(s => s.columnName === seg.columnName);
+                          if (existing) {
+                            existing.clippedMs += seg.clippedMs;
+                            existing.clippedStartMs = Math.min(existing.clippedStartMs, seg.clippedStartMs);
+                          } else {
+                            acc.push({ ...seg });
+                          }
+                          return acc;
+                        }, []);
+                      const cardUrl = flowMetricsData.kaitenSpaceId
+                        ? getKaitenCardUrl(flowMetricsData.kaitenSpaceId, card.cardId, card.archived)
+                        : null;
+                      return (
+                        <div key={card.cardId} className="px-5 py-4 space-y-3" data-testid={`row-flow-${card.cardId}`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              {cardUrl ? (
+                                <a href={cardUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-foreground hover:underline">
+                                  {card.title}
+                                </a>
+                              ) : (
+                                <span className="text-sm font-semibold text-foreground">{card.title}</span>
+                              )}
+                            </div>
+                            <div className="shrink-0 text-right text-xs text-muted-foreground flex items-center gap-2">
+                              {card.ttm && <span>TTM: <span className="text-foreground font-medium">{formatDurationShort(card.ttm.ms)}</span></span>}
+                              {card.leadTime && <span>LT: <span className="text-foreground font-medium">{formatDurationShort(card.leadTime.ms)}</span></span>}
+                              {card.cycleTime && <span>CT: <span className="text-foreground font-medium">{formatDurationShort(card.cycleTime.ms)}</span></span>}
+                            </div>
+                          </div>
+                          {ttmSpan > 0 && ttmSegs.length > 0 ? (
+                            <div className="relative w-full h-[7px] bg-muted rounded-full">
+                              {ttmSegs.map((seg, idx) => {
+                                const left = ((seg.clippedStartMs - ttmStart!) / ttmSpan) * 100;
+                                const width = Math.max(0.5, (seg.clippedMs / ttmSpan) * 100);
+                                const color = getSegColor(seg.columnName, seg.columnType);
+                                const typeLabel = columnTypeLabel(seg.columnType);
+                                return (
+                                  <Tooltip key={idx}>
+                                    <TooltipTrigger asChild>
+                                      <div className="absolute inset-y-0 rounded-full cursor-default" style={{ left: `${left}%`, width: `${width}%`, background: color }} />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="text-xs space-y-0.5">
+                                      <div className="font-semibold">{shortName(seg.columnName)}</div>
+                                      {typeLabel && <div className="text-muted-foreground">{typeLabel}</div>}
+                                      <div>{formatDurationShort(seg.clippedMs)}</div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                );
+                              })}
+                            </div>
                           ) : (
-                            <span className="text-sm font-semibold text-foreground">{card.title}</span>
+                            <div className="w-full h-[7px] bg-muted rounded-full" />
                           )}
                         </div>
-                        <div className="shrink-0 text-right text-xs text-muted-foreground flex items-center gap-2">
-                          {card.ttm && <span>TTM: <span className="text-foreground font-medium">{formatDurationShort(card.ttm.ms)}</span></span>}
-                          {card.leadTime && <span>LT: <span className="text-foreground font-medium">{formatDurationShort(card.leadTime.ms)}</span></span>}
-                          {card.cycleTime && <span>CT: <span className="text-foreground font-medium">{formatDurationShort(card.cycleTime.ms)}</span></span>}
-                        </div>
-                      </div>
-
-                      {ttmSpan > 0 && ttmSegs.length > 0 ? (
-                        <>
-                          <div className="relative w-full h-[7px] bg-muted rounded-full">
-                            {ttmSegs.map((seg, idx) => {
-                              const left = ((seg.clippedStartMs - ttmStart!) / ttmSpan) * 100;
-                              const width = Math.max(0.5, (seg.clippedMs / ttmSpan) * 100);
-                              const color = segmentColors[idx];
-                              const typeLabel = columnTypeLabel(seg.columnType);
-                              return (
-                                <Tooltip key={idx}>
-                                  <TooltipTrigger asChild>
-                                    <div
-                                      className="absolute inset-y-0 rounded-full cursor-default"
-                                      style={{ left: `${left}%`, width: `${width}%`, background: color }}
-                                    />
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="text-xs space-y-0.5">
-                                    <div className="font-semibold">{seg.columnName}</div>
-                                    {typeLabel && <div className="text-muted-foreground">{typeLabel}</div>}
-                                    <div>{formatDurationShort(seg.clippedMs)}</div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              );
-                            })}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="w-full h-[7px] bg-muted rounded-full" />
-                      )}
+                      );
+                    })}
                     </div>
                   );
-                })}
-              </div>
+                })()}
+
               </>
             )
           ) : null}
@@ -1533,7 +1525,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           const GREY_SHADES = ['#6b7280', '#8d949e', '#adb5bd', '#c9cdd4', '#e0e3e7'];
           const RED_SHADES  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
 
-          // Slice columnOrder from TTM start to TTM end column (inclusive)
+          // Build same global color map as bars use
           const colTypeMap = new Map<string, number | null>();
           flowMetricsData.cards.forEach(c => {
             (c.statusSegments ?? []).forEach(s => {
@@ -1542,24 +1534,27 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
           });
 
           const order = flowMetricsData.columnOrder;
+          const type1Cols = order.filter(c => colTypeMap.get(c) === 1);
+          const type2Cols = order.filter(c => colTypeMap.get(c) === 2);
+          const getLegendColor = (col: string, type: number | null): string => {
+            if (type === 1) { const i = type1Cols.indexOf(col); return GREY_SHADES[Math.max(0, i) % GREY_SHADES.length]; }
+            if (type === 2) { const i = type2Cols.indexOf(col); return RED_SHADES[Math.max(0, i) % RED_SHADES.length]; }
+            if (type === 3) return '#7f1d1d';
+            return '#9ca3af';
+          };
+          const shortName = (col: string) => col.includes(' / ') ? col.split(' / ').slice(1).join(' / ') : col;
+
           const startIdx = flowMetricsData.ttmStartColumnName ? order.indexOf(flowMetricsData.ttmStartColumnName) : -1;
           const endIdx   = flowMetricsData.ttmEndColumnName   ? order.indexOf(flowMetricsData.ttmEndColumnName)   : -1;
           const ttmColumns = (startIdx !== -1 && endIdx !== -1 && startIdx <= endIdx)
             ? order.slice(startIdx, endIdx + 1)
             : order;
 
-          const typeCounters: Record<number, number> = {};
           const legendItems = ttmColumns
             .filter(col => colTypeMap.has(col))
             .map(col => {
               const type = colTypeMap.get(col) ?? 0;
-              const idx = typeCounters[type] ?? 0;
-              typeCounters[type] = idx + 1;
-              let color = '#9ca3af';
-              if (type === 1) color = GREY_SHADES[idx % GREY_SHADES.length];
-              else if (type === 2) color = RED_SHADES[idx % RED_SHADES.length];
-              else if (type === 3) color = '#7f1d1d';
-              return { col, color };
+              return { col, color: getLegendColor(col, type) };
             });
 
           if (legendItems.length === 0) return null;
@@ -1569,7 +1564,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 {legendItems.map(({ col, color }) => (
                   <div key={col} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: color }} />
-                    <span>{col}</span>
+                    <span>{shortName(col)}</span>
                   </div>
                 ))}
               </div>
