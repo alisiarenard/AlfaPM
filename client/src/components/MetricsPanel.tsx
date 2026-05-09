@@ -129,7 +129,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
 
   const irContent = (
     <div className="px-4 py-3 flex flex-col justify-between h-full">
-      <div className="text-sm font-medium text-muted-foreground">Innovation Rate</div>
+      <div className="text-sm font-medium text-muted-foreground truncate">Innovation Rate</div>
       <div className="text-3xl font-semibold" data-testid="metric-innovation-rate">
         {displayIR ? `${displayIR.actualIR}%` : '-'}
       </div>
@@ -178,7 +178,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
           )}
           <div className="border-l border-border my-3"></div>
           <div className="flex-1 px-4 py-3 flex flex-col justify-between min-w-0">
-            <div className="text-sm font-medium text-muted-foreground">Value/Cost</div>
+            <div className="text-sm font-medium text-muted-foreground truncate">Value/Cost</div>
             <div className="flex justify-between items-end w-full">
               <div className="flex flex-col items-center gap-1">
                 <div className="text-3xl font-semibold" data-testid="metric-value-cost-plan">
@@ -198,7 +198,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         </div>
         <div className="border-l border-border my-3"></div>
         <div className="w-[66%] pl-4 py-3 flex flex-col justify-between">
-          <div className="text-sm font-medium text-muted-foreground">Структура затрат</div>
+          <div className="text-sm font-medium text-muted-foreground truncate">Структура затрат</div>
           <div className="flex gap-2 items-end flex-1">
             {costTypes.map((type) => (
               <Tooltip key={type.key}>
