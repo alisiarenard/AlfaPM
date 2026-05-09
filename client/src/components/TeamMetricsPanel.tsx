@@ -94,9 +94,9 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
       data-testid="team-metrics-panel"
     >
       <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
-        <div className="text-sm font-bold text-muted-foreground">Innovation Rate</div>
-        <div className="text-3xl font-semibold" data-testid="team-metric-innovation-rate">
-          {displayIR ? `${displayIR.actualIR}%` : '-'}
+        <div className="text-sm text-muted-foreground">Innovation Rate</div>
+        <div className="text-2xl font-semibold" data-testid="team-metric-innovation-rate">
+          {displayIR ? `${displayIR.actualIR}%` : '—'}
         </div>
         <div className="text-[0.8rem] text-muted-foreground truncate">
           {displayIR && (
@@ -112,9 +112,9 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
       </div>
       <div className="border-l border-border my-3"></div>
       <div className="w-[10%] px-4 py-3 flex flex-col justify-between">
-        <div className="text-sm font-bold text-muted-foreground">Velocity</div>
-        <div className="text-3xl font-semibold" data-testid="team-metric-velocity">
-          {displaySprintStats?.avgVelocity !== null && displaySprintStats?.avgVelocity !== undefined ? displaySprintStats.avgVelocity : '-'}
+        <div className="text-sm text-muted-foreground">Velocity</div>
+        <div className="text-2xl font-semibold" data-testid="team-metric-velocity">
+          {displaySprintStats?.avgVelocity !== null && displaySprintStats?.avgVelocity !== undefined ? displaySprintStats.avgVelocity : '—'}
         </div>
         <div className="text-[0.8rem] text-muted-foreground truncate">
           {displaySprintStats?.avgVelocity !== null ? 'среднее за год' : 'нет данных'}
@@ -122,9 +122,9 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
       </div>
       <div className="border-l border-border my-3"></div>
       <div className="w-[10%] px-4 py-3 flex flex-col justify-between">
-        <div className="text-sm font-bold text-muted-foreground whitespace-nowrap">СПД</div>
-        <div className="text-3xl font-semibold" data-testid="team-metric-spd">
-          {displaySprintStats?.avgSPD !== null && displaySprintStats?.avgSPD !== undefined ? `${displaySprintStats.avgSPD}%` : '-'}
+        <div className="text-sm text-muted-foreground whitespace-nowrap">СПД</div>
+        <div className="text-2xl font-semibold" data-testid="team-metric-spd">
+          {displaySprintStats?.avgSPD !== null && displaySprintStats?.avgSPD !== undefined ? `${displaySprintStats.avgSPD}%` : '—'}
         </div>
         <div className="text-[0.8rem] text-muted-foreground truncate">
           {displaySprintStats?.avgSPD !== null ? 'среднее за год' : 'нет данных'}
