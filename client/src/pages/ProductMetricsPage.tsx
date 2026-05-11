@@ -863,25 +863,65 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
             <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomExpanded={flowExpanded} bottomLoading={flowMetricsFetching} onToggleBottom={() => setFlowExpanded(v => !v)} bottomContent={(flowSummary || flowMetricsData) ? (
               <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={flowSummary ? handleOpenFlowMetrics : undefined} style={{ opacity: flowMetricsFetching ? 0.5 : 1, transition: 'opacity 0.3s', cursor: flowSummary ? 'pointer' : 'default' }}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
-                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Time To Market</span></div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 shrink-0 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-relaxed">
+                        Среднее время, включающее Discovery и валидацию гипотезы, продуктовый и UX-ресёрч, дизайн и прототипирование, согласования с бизнесом и бюджетирование, а также все последующие этапы до вывода в production
+                      </TooltipContent>
+                    </Tooltip>
+                    <span className="truncate">Time To Market</span>
+                  </div>
                   <div className="text-2xl font-semibold text-foreground/85 truncate">{flowSummary?.avgTtm != null ? formatDurationTop1(flowSummary.avgTtm) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
-                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Lead Time</span></div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 shrink-0 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-relaxed">
+                        Среднее время с момента принятия решения о взятии в работу, включает время ожидания реализации в бэклоге команды до вывода в production
+                      </TooltipContent>
+                    </Tooltip>
+                    <span className="truncate">Lead Time</span>
+                  </div>
                   <div className="text-2xl font-semibold text-foreground/85 truncate">{flowSummary?.avgLead != null ? formatDurationTop1(flowSummary.avgLead) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
-                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Cycle Time</span></div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 shrink-0 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-relaxed">
+                        Среднее время с момента взятия в работу командой разработки до вывода в production
+                      </TooltipContent>
+                    </Tooltip>
+                    <span className="truncate">Cycle Time</span>
+                  </div>
                   <div className="text-2xl font-semibold text-foreground/85 truncate">{flowSummary?.avgCycle != null ? formatDurationTop1(flowSummary.avgCycle) : '—'}</div>
                   <div />
                 </div>
                 <div className="border-l border-border my-3" />
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
-                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Waiting Time</span></div>
+                  <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 shrink-0 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-relaxed">
+                        Средний процент времени ожидания в статусах типа «Очередь» от общего времени Time To Market
+                      </TooltipContent>
+                    </Tooltip>
+                    <span className="truncate">Waiting Time</span>
+                  </div>
                   <div className="text-2xl font-semibold text-foreground/85 truncate">{flowSummary?.avgWfd != null ? `${flowSummary.avgWfd}%` : '—'}</div>
                   <div />
                 </div>
