@@ -1789,7 +1789,7 @@ export default function SettingsPage() {
                     onClick={() => { setNewMemberUsername(""); setNewMemberFullName(""); setUserSearchQuery(""); }}
                     className="ml-1 px-0.5 py-0 rounded opacity-50 hover:opacity-100 transition-opacity leading-none"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5" />
                   </button>
                 </div>
               ) : (
