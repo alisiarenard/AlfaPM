@@ -6,11 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, X, Users, Trash2, ChevronRight, ChevronDown } from "lucide-react";
 import { MdAccountTree } from "react-icons/md";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { DepartmentWithTeamCount, TeamRow, Department, TeamYearlyDataRow } from "@shared/schema";
+import type { DepartmentWithTeamCount, TeamRow, Department, TeamYearlyDataRow, TeamMemberRow } from "@shared/schema";
+
+const MEMBER_ROLES = ["Разработчик", "Тестировщик", "Аналитик", "Дизайнер"] as const;
 
 function DepartmentTreeItem({ 
   department, 
@@ -119,6 +122,9 @@ export default function SettingsPage() {
   const [devColumnId, setDevColumnId] = useState("");
   const [testColumnId, setTestColumnId] = useState("");
   const [extraBoards, setExtraBoards] = useState<{spaceId: string; boardId: string}[]>([]);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [newMemberUsername, setNewMemberUsername] = useState("");
+  const [newMemberRole, setNewMemberRole] = useState("");
   const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
   const [sprintIds, setSprintIds] = useState("");
   const [ttmSpaceId, setTtmSpaceId] = useState("");
@@ -410,6 +416,48 @@ export default function SettingsPage() {
     staleTime: 60000,
   });
 
+  const { data: teamMembersList, isLoading: membersLoading } = useQuery<TeamMemberRow[]>({
+    queryKey: ["/api/teams", editingTeam?.teamId, "members"],
+    queryFn: async () => {
+      const res = await fetch(`/api/teams/${editingTeam!.teamId}/members`);
+      if (!res.ok) throw new Error("Failed to fetch members");
+      return await res.json();
+    },
+    enabled: !!editingTeam && rightPanelMode === "editTeam",
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: async (data: { username: string; role: string }) => {
+      const res = await apiRequest("POST", `/api/teams/${editingTeam!.teamId}/members`, {
+        ...data,
+        departmentId: editingTeam!.departmentId,
+      });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", editingTeam?.teamId, "members"] });
+      setShowAddMemberModal(false);
+      setNewMemberUsername("");
+      setNewMemberRole("");
+      toast({ title: "Участник добавлен" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMemberMutation = useMutation({
+    mutationFn: async (memberId: string) => {
+      await apiRequest("DELETE", `/api/team-members/${memberId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", editingTeam?.teamId, "members"] });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+    },
+  });
+
   const { data: kaitenColumns, isLoading: columnsLoading } = useQuery<{ id: number; title: string; type: number; parentTitle?: string }[]>({
     queryKey: ["/api/kaiten/boards", ttmBoardId, "columns"],
     queryFn: async () => {
@@ -621,6 +669,7 @@ export default function SettingsPage() {
 
 
   return (
+    <>
     <div className="bg-background flex-1" data-testid="page-settings">
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto">
         <div className="px-6 pb-6">
@@ -1224,6 +1273,51 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     </div>
+
+                    {editingTeam && (
+                      <div className="p-4 pt-2 border-t">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-semibold text-muted-foreground">Участники</h3>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            type="button"
+                            data-testid="button-add-member"
+                            onClick={() => setShowAddMemberModal(true)}
+                          >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Добавить
+                          </Button>
+                        </div>
+                        {membersLoading ? (
+                          <p className="text-xs text-muted-foreground">Загрузка...</p>
+                        ) : !teamMembersList || teamMembersList.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Участников нет</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {teamMembersList.map((member) => (
+                              <div key={member.id} className="flex items-center justify-between rounded-md px-2 py-1.5 bg-muted/40">
+                                <div className="min-w-0">
+                                  <span className="text-sm font-medium truncate block">{member.fullName || member.username}</span>
+                                  <span className="text-xs text-muted-foreground">{member.username} · {member.role}</span>
+                                </div>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  type="button"
+                                  data-testid={`button-delete-member-${member.id}`}
+                                  onClick={() => deleteMemberMutation.mutate(member.id)}
+                                  disabled={deleteMemberMutation.isPending}
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {editingTeam && hasFormChanged() && (
                       <div className="p-4 flex justify-end">
                         <Button
@@ -1623,5 +1717,60 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+
+    <Dialog open={showAddMemberModal} onOpenChange={(open) => {
+      setShowAddMemberModal(open);
+      if (!open) { setNewMemberUsername(""); setNewMemberRole(""); }
+    }}>
+      <DialogContent data-testid="dialog-add-member">
+        <DialogHeader>
+          <DialogTitle>Добавить участника</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="member-username">Имя пользователя (Kaiten)</Label>
+            <Input
+              id="member-username"
+              data-testid="input-member-username"
+              placeholder="username"
+              value={newMemberUsername}
+              onChange={(e) => setNewMemberUsername(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="member-role">Роль</Label>
+            <Select value={newMemberRole} onValueChange={setNewMemberRole}>
+              <SelectTrigger id="member-role" data-testid="select-member-role">
+                <SelectValue placeholder="Выберите роль" />
+              </SelectTrigger>
+              <SelectContent>
+                {MEMBER_ROLES.map((role) => (
+                  <SelectItem key={role} value={role} data-testid={`option-role-${role}`}>{role}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            type="button"
+            data-testid="button-cancel-member"
+            onClick={() => setShowAddMemberModal(false)}
+          >
+            Отмена
+          </Button>
+          <Button
+            type="button"
+            data-testid="button-confirm-add-member"
+            disabled={!newMemberUsername.trim() || !newMemberRole || addMemberMutation.isPending}
+            onClick={() => addMemberMutation.mutate({ username: newMemberUsername.trim(), role: newMemberRole })}
+          >
+            {addMemberMutation.isPending ? "Добавление..." : "Добавить"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

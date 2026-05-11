@@ -374,6 +374,18 @@ export class KaitenClient {
       throw error;
     }
   }
+  async getUserByUsername(username: string): Promise<{ username: string; full_name: string } | null> {
+    try {
+      const response = await this.makeRequest<any[]>(`/users?username=${encodeURIComponent(username)}`);
+      if (Array.isArray(response) && response.length > 0) {
+        const user = response.find((u: any) => u.username === username) || response[0];
+        return { username: user.username, full_name: user.full_name || user.fullName || null };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const kaitenClient = new KaitenClient();

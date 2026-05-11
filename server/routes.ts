@@ -919,6 +919,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/teams/:teamId/members", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const members = await storage.getMembersByTeam(teamId);
+      res.json(members);
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || "Failed to fetch members" });
+    }
+  });
+
+  app.post("/api/teams/:teamId/members", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const { username, role, departmentId } = req.body;
+      if (!username || !role || !departmentId) {
+        return res.status(400).json({ success: false, error: "username, role and departmentId are required" });
+      }
+      const kaitenUser = await kaitenClient.getUserByUsername(username);
+      const fullName = kaitenUser?.full_name || null;
+      const member = await storage.createTeamMember({ teamId, departmentId, role, username, fullName });
+      res.json(member);
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || "Failed to create member" });
+    }
+  });
+
+  app.delete("/api/team-members/:memberId", async (req, res) => {
+    try {
+      const { memberId } = req.params;
+      await storage.deleteTeamMember(memberId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || "Failed to delete member" });
+    }
+  });
+
   app.delete("/api/teams/:teamId", async (req, res) => {
     try {
       const { teamId } = req.params;

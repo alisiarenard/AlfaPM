@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, users, departments, teams, initiatives, tasks, sprints, teamYearlyData } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, type TeamMemberRow, users, departments, teams, initiatives, tasks, sprints, teamYearlyData, teamMembers } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, sql, asc, desc, and, gte, lt } from "drizzle-orm";
@@ -89,6 +89,9 @@ export interface IStorage {
   getAllTeamYearlyData(): Promise<TeamYearlyDataRow[]>;
   upsertTeamYearlyData(data: InsertTeamYearlyData): Promise<TeamYearlyDataRow>;
   deleteTeamYearlyData(teamId: string): Promise<void>;
+  getMembersByTeam(teamId: string): Promise<TeamMemberRow[]>;
+  createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null }): Promise<TeamMemberRow>;
+  deleteTeamMember(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -381,6 +384,18 @@ export class MemStorage implements IStorage {
   }
 
   async deleteTeamYearlyData(teamId: string): Promise<void> {
+    return;
+  }
+
+  async getMembersByTeam(teamId: string): Promise<TeamMemberRow[]> {
+    return [];
+  }
+
+  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null }): Promise<TeamMemberRow> {
+    return {} as TeamMemberRow;
+  }
+
+  async deleteTeamMember(id: string): Promise<void> {
     return;
   }
 }
@@ -969,6 +984,19 @@ export class DbStorage implements IStorage {
 
   async deleteTeamYearlyData(teamId: string): Promise<void> {
     await db.delete(teamYearlyData).where(eq(teamYearlyData.teamId, teamId));
+  }
+
+  async getMembersByTeam(teamId: string): Promise<TeamMemberRow[]> {
+    return await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
+  }
+
+  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null }): Promise<TeamMemberRow> {
+    const [created] = await db.insert(teamMembers).values(member).returning();
+    return created;
+  }
+
+  async deleteTeamMember(id: string): Promise<void> {
+    await db.delete(teamMembers).where(eq(teamMembers.id, id));
   }
 }
 

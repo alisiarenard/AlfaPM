@@ -119,6 +119,19 @@ export const teams = pgTable("teams", {
   extraBoards: jsonb("extra_boards").$type<{spaceId: number; boardId: number}[]>(),
 });
 
+export const teamMembers = pgTable("team_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull(),
+  departmentId: varchar("department_id").notNull(),
+  role: varchar("role").notNull(),
+  username: varchar("username").notNull(),
+  fullName: varchar("full_name"),
+});
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({ id: true });
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type TeamMemberRow = typeof teamMembers.$inferSelect;
+
 export const insertTeamSchema = createInsertSchema(teams)
   .omit({ teamId: true, sprintBoardId: true })
   .extend({
