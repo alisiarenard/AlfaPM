@@ -1784,14 +1784,13 @@ export default function SettingsPage() {
                     <span className="text-sm font-medium">{newMemberFullName || newMemberUsername}</span>
                     <span className="ml-2 text-xs text-muted-foreground">{newMemberUsername}</span>
                   </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
+                  <button
                     type="button"
                     onClick={() => { setNewMemberUsername(""); setNewMemberFullName(""); setUserSearchQuery(""); }}
+                    className="ml-1 p-0.5 rounded opacity-50 hover:opacity-100 transition-opacity"
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               ) : (
                 <>
