@@ -1272,51 +1272,51 @@ export default function SettingsPage() {
                           )}
                         </div>
                       </div>
-                    </div>
 
-                    {editingTeam && (
-                      <div className="p-4 pt-2 border-t">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-semibold text-muted-foreground">Участники</h3>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            type="button"
-                            data-testid="button-add-member"
-                            onClick={() => setShowAddMemberModal(true)}
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Добавить
-                          </Button>
-                        </div>
-                        {membersLoading ? (
-                          <p className="text-xs text-muted-foreground">Загрузка...</p>
-                        ) : !teamMembersList || teamMembersList.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">Участников нет</p>
-                        ) : (
-                          <div className="space-y-1">
-                            {teamMembersList.map((member) => (
-                              <div key={member.id} className="flex items-center justify-between rounded-md px-2 py-1.5 bg-muted/40">
-                                <div className="min-w-0">
-                                  <span className="text-sm font-medium truncate block">{member.fullName || member.username}</span>
-                                  <span className="text-xs text-muted-foreground">{member.username} · {member.role}</span>
-                                </div>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  type="button"
-                                  data-testid={`button-delete-member-${member.id}`}
-                                  onClick={() => deleteMemberMutation.mutate(member.id)}
-                                  disabled={deleteMemberMutation.isPending}
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            ))}
+                      {editingTeam && (
+                        <div className="pt-2 border-t">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-semibold text-muted-foreground">Участники</h3>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              type="button"
+                              data-testid="button-add-member"
+                              onClick={() => setShowAddMemberModal(true)}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Добавить
+                            </Button>
                           </div>
-                        )}
-                      </div>
-                    )}
+                          {membersLoading ? (
+                            <p className="text-xs text-muted-foreground">Загрузка...</p>
+                          ) : !teamMembersList || teamMembersList.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">Участников нет</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {teamMembersList.map((member) => (
+                                <div key={member.id} className="flex items-center justify-between rounded-md px-2 py-1.5 bg-muted/40">
+                                  <div className="min-w-0">
+                                    <span className="text-sm font-medium truncate block">{member.fullName || member.username}</span>
+                                    <span className="text-xs text-muted-foreground">{member.username} · {member.role}</span>
+                                  </div>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    type="button"
+                                    data-testid={`button-delete-member-${member.id}`}
+                                    onClick={() => deleteMemberMutation.mutate(member.id)}
+                                    disabled={deleteMemberMutation.isPending}
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {editingTeam && hasFormChanged() && (
                       <div className="p-4 flex justify-end">
