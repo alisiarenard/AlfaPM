@@ -947,6 +947,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!username || !role || !departmentId) {
         return res.status(400).json({ success: false, error: "username, role and departmentId are required" });
       }
+      const existing = await storage.getMembersByTeam(teamId);
+      if (existing.some((m) => m.username === username)) {
+        return res.status(409).json({ success: false, error: "Пользователь уже добавлен в эту команду" });
+      }
       const { fullName, avatarUrl } = req.body;
       const member = await storage.createTeamMember({ teamId, departmentId, role, username, fullName: fullName || null, avatarUrl: avatarUrl || null });
       res.json(member);

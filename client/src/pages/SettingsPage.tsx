@@ -469,7 +469,12 @@ export default function SettingsPage() {
       toast({ title: "Участник добавлен" });
     },
     onError: (err: Error) => {
-      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+      const match = err.message.match(/^\d+: (.+)$/s);
+      let description = err.message;
+      if (match) {
+        try { description = JSON.parse(match[1]).error ?? match[1]; } catch { description = match[1]; }
+      }
+      toast({ title: "Ошибка", description, variant: "destructive" });
     },
   });
 
