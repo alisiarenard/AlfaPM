@@ -236,6 +236,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/kaiten/users/search", async (req, res) => {
+    try {
+      const q = (req.query.q as string) || "";
+      if (!q.trim()) return res.json([]);
+      const users = await kaitenClient.searchUsers(q.trim());
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || "Failed to search users" });
+    }
+  });
+
   app.get("/api/kaiten/spaces/:spaceId/boards", async (req, res) => {
     try {
       const spaceId = parseInt(req.params.spaceId);

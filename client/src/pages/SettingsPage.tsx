@@ -124,7 +124,10 @@ export default function SettingsPage() {
   const [extraBoards, setExtraBoards] = useState<{spaceId: string; boardId: string}[]>([]);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemberUsername, setNewMemberUsername] = useState("");
+  const [newMemberFullName, setNewMemberFullName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
   const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
   const [sprintIds, setSprintIds] = useState("");
   const [ttmSpaceId, setTtmSpaceId] = useState("");
@@ -416,6 +419,24 @@ export default function SettingsPage() {
     staleTime: 60000,
   });
 
+  const [debouncedUserSearch, setDebouncedUserSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedUserSearch(userSearchQuery), 350);
+    return () => clearTimeout(t);
+  }, [userSearchQuery]);
+
+  const { data: userSearchResults, isFetching: userSearchLoading } = useQuery<{ username: string; full_name: string }[]>({
+    queryKey: ["/api/kaiten/users/search", debouncedUserSearch],
+    queryFn: async () => {
+      if (!debouncedUserSearch.trim()) return [];
+      const res = await fetch(`/api/kaiten/users/search?q=${encodeURIComponent(debouncedUserSearch)}`);
+      if (!res.ok) throw new Error("Failed to search users");
+      return await res.json();
+    },
+    enabled: debouncedUserSearch.trim().length >= 2,
+    staleTime: 30000,
+  });
+
   const { data: teamMembersList, isLoading: membersLoading } = useQuery<TeamMemberRow[]>({
     queryKey: ["/api/teams", editingTeam?.teamId, "members"],
     queryFn: async () => {
@@ -438,7 +459,11 @@ export default function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/teams", editingTeam?.teamId, "members"] });
       setShowAddMemberModal(false);
       setNewMemberUsername("");
+      setNewMemberFullName("");
       setNewMemberRole("");
+      setUserSearchQuery("");
+      setDebouncedUserSearch("");
+      setUserSearchOpen(false);
       toast({ title: "Участник добавлен" });
     },
     onError: (err: Error) => {
@@ -1720,7 +1745,14 @@ export default function SettingsPage() {
 
     <Dialog open={showAddMemberModal} onOpenChange={(open) => {
       setShowAddMemberModal(open);
-      if (!open) { setNewMemberUsername(""); setNewMemberRole(""); }
+      if (!open) {
+        setNewMemberUsername("");
+        setNewMemberFullName("");
+        setNewMemberRole("");
+        setUserSearchQuery("");
+        setDebouncedUserSearch("");
+        setUserSearchOpen(false);
+      }
     }}>
       <DialogContent data-testid="dialog-add-member">
         <DialogHeader>
@@ -1728,14 +1760,64 @@ export default function SettingsPage() {
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="member-username">Имя пользователя (Kaiten) <span className="text-destructive">*</span></Label>
-            <Input
-              id="member-username"
-              data-testid="input-member-username"
-              placeholder="username"
-              value={newMemberUsername}
-              onChange={(e) => setNewMemberUsername(e.target.value)}
-            />
+            <Label htmlFor="member-username">Пользователь <span className="text-destructive">*</span></Label>
+            <div className="relative">
+              {newMemberUsername ? (
+                <div className="flex items-center justify-between rounded-md border border-input bg-muted/40 px-3 py-2">
+                  <div>
+                    <span className="text-sm font-medium">{newMemberFullName || newMemberUsername}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{newMemberUsername}</span>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    type="button"
+                    onClick={() => { setNewMemberUsername(""); setNewMemberFullName(""); setUserSearchQuery(""); }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    id="member-username"
+                    data-testid="input-member-username"
+                    placeholder="Начните вводить имя или логин..."
+                    value={userSearchQuery}
+                    autoComplete="off"
+                    onChange={(e) => { setUserSearchQuery(e.target.value); setUserSearchOpen(true); }}
+                    onFocus={() => setUserSearchOpen(true)}
+                    onBlur={() => setTimeout(() => setUserSearchOpen(false), 150)}
+                  />
+                  {userSearchOpen && userSearchQuery.trim().length >= 2 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 z-[230] rounded-md border bg-popover shadow-md overflow-hidden">
+                      {userSearchLoading ? (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">Поиск...</div>
+                      ) : !userSearchResults || userSearchResults.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">Пользователи не найдены</div>
+                      ) : (
+                        userSearchResults.map((u) => (
+                          <button
+                            key={u.username}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover-elevate flex flex-col"
+                            onMouseDown={() => {
+                              setNewMemberUsername(u.username);
+                              setNewMemberFullName(u.full_name);
+                              setUserSearchQuery("");
+                              setUserSearchOpen(false);
+                            }}
+                          >
+                            <span className="font-medium">{u.full_name}</span>
+                            <span className="text-xs text-muted-foreground">{u.username}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="member-role">Роль <span className="text-destructive">*</span></Label>
