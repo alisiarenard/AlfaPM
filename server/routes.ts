@@ -4579,8 +4579,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const spPriceMap = await buildSpPriceMap(allTeamsForPrice);
 
       // Получаем инициативы для каждой команды с фильтрацией по спринтам команды (как в Excel)
-      const initiativesWithSprints = await Promise.all(
-        validTeams.map(async (team) => {
+      const initiativesWithSprints: any[][] = [];
+      for (const team of validTeams) {
           // Получаем инициативы для этой команды
           const initiatives = await storage.getInitiativesByBoardId(team.initBoardId);
           
@@ -4608,9 +4608,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           // Для каждой инициативы получаем задачи, отфильтрованные по спринтам команды или по doneDate
-          return Promise.all(
-            initiatives.map(async (initiative) => {
-              const allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+          const teamResults: any[] = [];
+          for (const initiative of initiatives) {
+              let allTasks: TaskRow[] = [];
+              try {
+                allTasks = await storage.getTasksByInitCardId(initiative.cardId);
+              } catch (err) {
+                console.error(`[Value/Cost] Failed to load tasks for initiative ${initiative.cardId}:`, err);
+              }
               
               // Фильтруем задачи в зависимости от типа команды (только done-задачи)
               let tasks: TaskRow[];
@@ -4662,7 +4667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               // Создаем новый объект с полями teamId, spPrice, teamName и sprints
               const yearlySpPrice = getSpPriceForYear(spPriceMap, team.teamId, year, team.spPrice);
-              return {
+              teamResults.push({
                 id: initiative.id,
                 cardId: initiative.cardId,
                 title: initiative.title,
@@ -4682,11 +4687,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 spPrice: yearlySpPrice,
                 teamName: team.teamName,
                 sprints: sprints
-              };
-            })
-          );
-        })
-      );
+              });
+          }
+          initiativesWithSprints.push(teamResults);
+      }
       
       const allInitiatives = initiativesWithSprints.flat();
       
