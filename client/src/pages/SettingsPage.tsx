@@ -965,8 +965,6 @@ export default function SettingsPage() {
                                 </SelectContent>
                               </Select>
                             </div>
-                          </div>
-                          <div className="flex gap-2 items-end">
                             <div className="space-y-2 w-24 shrink-0">
                               <Label htmlFor="init-space-id">ID пр. инициатив <span className="text-destructive">*</span></Label>
                               <Input
@@ -1285,8 +1283,6 @@ export default function SettingsPage() {
                                 </SelectContent>
                               </Select>
                             </div>
-                          </div>
-                          <div className="flex gap-2 items-end">
                             <div className="space-y-2 w-24 shrink-0">
                               <Label htmlFor="new-init-space-id">ID пр. инициатив <span className="text-destructive">*</span></Label>
                               <Input
