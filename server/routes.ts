@@ -947,9 +947,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!username || !role || !departmentId) {
         return res.status(400).json({ success: false, error: "username, role and departmentId are required" });
       }
-      const kaitenUser = await kaitenClient.getUserByUsername(username);
-      const fullName = kaitenUser?.full_name || null;
-      const member = await storage.createTeamMember({ teamId, departmentId, role, username, fullName });
+      const { fullName, avatarUrl } = req.body;
+      const member = await storage.createTeamMember({ teamId, departmentId, role, username, fullName: fullName || null, avatarUrl: avatarUrl || null });
       res.json(member);
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message || "Failed to create member" });

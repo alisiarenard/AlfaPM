@@ -374,11 +374,15 @@ export class KaitenClient {
       throw error;
     }
   }
-  async searchUsers(query: string): Promise<{ username: string; full_name: string }[]> {
+  async searchUsers(query: string): Promise<{ username: string; full_name: string; avatar_url: string | null }[]> {
     try {
       const response = await this.makeRequest<any[]>(`/users?username=${encodeURIComponent(query)}`);
       if (Array.isArray(response)) {
-        return response.map((u: any) => ({ username: u.username, full_name: u.full_name || u.fullName || u.username }));
+        return response.map((u: any) => ({
+          username: u.username,
+          full_name: u.full_name || u.fullName || u.username,
+          avatar_url: u.avatar?.url || u.avatar_url || null,
+        }));
       }
       return [];
     } catch {

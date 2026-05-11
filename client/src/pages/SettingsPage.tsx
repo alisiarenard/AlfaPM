@@ -125,6 +125,7 @@ export default function SettingsPage() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemberUsername, setNewMemberUsername] = useState("");
   const [newMemberFullName, setNewMemberFullName] = useState("");
+  const [newMemberAvatarUrl, setNewMemberAvatarUrl] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchOpen, setUserSearchOpen] = useState(false);
@@ -448,7 +449,7 @@ export default function SettingsPage() {
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: async (data: { username: string; role: string }) => {
+    mutationFn: async (data: { username: string; role: string; fullName: string; avatarUrl: string }) => {
       const res = await apiRequest("POST", `/api/teams/${editingTeam!.teamId}/members`, {
         ...data,
         departmentId: editingTeam!.departmentId,
@@ -460,6 +461,7 @@ export default function SettingsPage() {
       setShowAddMemberModal(false);
       setNewMemberUsername("");
       setNewMemberFullName("");
+      setNewMemberAvatarUrl("");
       setNewMemberRole("");
       setUserSearchQuery("");
       setDebouncedUserSearch("");
@@ -1320,8 +1322,15 @@ export default function SettingsPage() {
                           ) : (
                             <div className="space-y-1">
                               {teamMembersList.map((member) => (
-                                <div key={member.id} className="flex items-center justify-between rounded-md px-2 py-1.5 bg-muted/40">
-                                  <div className="min-w-0">
+                                <div key={member.id} className="group flex items-center gap-2 rounded-md px-2 py-1.5 bg-muted/40">
+                                  {member.avatarUrl ? (
+                                    <img src={member.avatarUrl} alt={member.fullName || member.username} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                                  ) : (
+                                    <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-xs font-semibold text-muted-foreground">
+                                      {(member.fullName || member.username).charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <div className="min-w-0 flex-1">
                                     <span className="text-sm font-medium truncate block">{member.fullName || member.username}</span>
                                     <span className="text-xs text-muted-foreground">{member.username} · {member.role}</span>
                                   </div>
@@ -1332,8 +1341,9 @@ export default function SettingsPage() {
                                     data-testid={`button-delete-member-${member.id}`}
                                     onClick={() => deleteMemberMutation.mutate(member.id)}
                                     disabled={deleteMemberMutation.isPending}
+                                    className="invisible group-hover:visible"
                                   >
-                                    <X className="h-3.5 w-3.5" />
+                                    <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
                               ))}
@@ -1748,6 +1758,7 @@ export default function SettingsPage() {
       if (!open) {
         setNewMemberUsername("");
         setNewMemberFullName("");
+        setNewMemberAvatarUrl("");
         setNewMemberRole("");
         setUserSearchQuery("");
         setDebouncedUserSearch("");
@@ -1804,6 +1815,7 @@ export default function SettingsPage() {
                             onMouseDown={() => {
                               setNewMemberUsername(u.username);
                               setNewMemberFullName(u.full_name);
+                              setNewMemberAvatarUrl(u.avatar_url || "");
                               setUserSearchQuery("");
                               setUserSearchOpen(false);
                             }}
@@ -1848,7 +1860,7 @@ export default function SettingsPage() {
             disabled={!newMemberUsername.trim() || !newMemberRole || addMemberMutation.isPending}
             style={{ backgroundColor: '#cd253d' }}
             className="hover:opacity-90 border-0"
-            onClick={() => addMemberMutation.mutate({ username: newMemberUsername.trim(), role: newMemberRole })}
+            onClick={() => addMemberMutation.mutate({ username: newMemberUsername.trim(), role: newMemberRole, fullName: newMemberFullName, avatarUrl: newMemberAvatarUrl })}
           >
             {addMemberMutation.isPending ? "Добавление..." : "Добавить"}
           </Button>

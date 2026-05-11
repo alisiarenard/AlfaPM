@@ -90,7 +90,7 @@ export interface IStorage {
   upsertTeamYearlyData(data: InsertTeamYearlyData): Promise<TeamYearlyDataRow>;
   deleteTeamYearlyData(teamId: string): Promise<void>;
   getMembersByTeam(teamId: string): Promise<TeamMemberRow[]>;
-  createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null }): Promise<TeamMemberRow>;
+  createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null }): Promise<TeamMemberRow>;
   deleteTeamMember(id: string): Promise<void>;
 }
 
@@ -391,7 +391,7 @@ export class MemStorage implements IStorage {
     return [];
   }
 
-  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null }): Promise<TeamMemberRow> {
+  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null }): Promise<TeamMemberRow> {
     return {} as TeamMemberRow;
   }
 
@@ -990,7 +990,7 @@ export class DbStorage implements IStorage {
     return await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
   }
 
-  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null }): Promise<TeamMemberRow> {
+  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null }): Promise<TeamMemberRow> {
     const [created] = await db.insert(teamMembers).values(member).returning();
     return created;
   }
