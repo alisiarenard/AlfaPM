@@ -1787,7 +1787,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => { setNewMemberUsername(""); setNewMemberFullName(""); setUserSearchQuery(""); }}
-                    className="ml-1 p-0.5 rounded opacity-50 hover:opacity-100 transition-opacity"
+                    className="ml-1 px-0.5 py-0 rounded opacity-50 hover:opacity-100 transition-opacity leading-none"
                   >
                     <X className="h-3 w-3" />
                   </button>
