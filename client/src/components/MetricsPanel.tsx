@@ -201,7 +201,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
         <div className="border-l border-border my-3"></div>
         <div className="flex-1 pl-4 py-3 flex flex-col justify-between min-w-0">
           <div className="flex items-center gap-1 text-sm text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Структура затрат</span></div>
-          <div className="flex gap-2 items-end flex-1">
+          <div className="flex gap-2 items-end">
             {costTypes.map((type) => (
               <Tooltip key={type.key}>
                 <TooltipTrigger asChild>
@@ -210,7 +210,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
                     style={type.minWidth ? { minWidth: type.minWidth } : undefined}
                   >
                     <div
-                      className={`text-[1rem] ${type.color ? '' : 'text-muted-foreground'}`}
+                      className={`text-[1rem] font-semibold ${type.color ? '' : 'text-muted-foreground'}`}
                       style={type.color ? { color: type.color } : undefined}
                       data-testid={`cost-${type.key.toLowerCase().replace(/\s+/g, '-')}`}
                     >
@@ -223,6 +223,7 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
               </Tooltip>
             ))}
           </div>
+          <div></div>
         </div>
         {children}
       </div>

@@ -133,7 +133,7 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
       <div className="border-l border-border my-3"></div>
       <div className="flex-1 pl-4 py-3 flex flex-col justify-between">
         <div className="text-sm text-muted-foreground">Структура затрат</div>
-        <div className="flex gap-2 items-end flex-1">
+        <div className="flex gap-2 items-end">
           {costTypes.map((type) => (
             <Tooltip key={type.key}>
               <TooltipTrigger asChild>
@@ -142,7 +142,7 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
                   style={type.minWidth ? { minWidth: type.minWidth } : undefined}
                 >
                   <div
-                    className={`text-[1rem] ${type.color ? '' : 'text-muted-foreground'}`}
+                    className={`text-[1rem] font-semibold ${type.color ? '' : 'text-muted-foreground'}`}
                     style={type.color ? { color: type.color } : undefined}
                     data-testid={`team-cost-${type.key.toLowerCase().replace(/\s+/g, '-')}`}
                   >
@@ -155,6 +155,7 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
             </Tooltip>
           ))}
         </div>
+        <div></div>
       </div>
     </div>
   );
