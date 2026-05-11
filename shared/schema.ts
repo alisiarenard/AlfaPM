@@ -114,6 +114,8 @@ export const teams = pgTable("teams", {
   spPrice: integer("sp_price").notNull(),
   hasSprints: boolean("has_sprints").notNull().default(true),
   omniBoardId: integer("omni_board_id"),
+  devColumnId: integer("dev_column_id"),
+  testColumnId: integer("test_column_id"),
   extraBoards: jsonb("extra_boards").$type<{spaceId: number; boardId: number}[]>(),
 });
 

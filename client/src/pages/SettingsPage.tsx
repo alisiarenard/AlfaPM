@@ -116,6 +116,8 @@ export default function SettingsPage() {
   const [plannedIr, setPlannedIr] = useState("");
   const [initSpaceId, setInitSpaceId] = useState("");
   const [omniBoardId, setOmniBoardId] = useState("");
+  const [devColumnId, setDevColumnId] = useState("");
+  const [testColumnId, setTestColumnId] = useState("");
   const [extraBoards, setExtraBoards] = useState<{spaceId: string; boardId: string}[]>([]);
   const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
   const [sprintIds, setSprintIds] = useState("");
@@ -246,6 +248,8 @@ export default function SettingsPage() {
       setInitBoardId("");
       setInitSpaceId("");
       setOmniBoardId("");
+      setDevColumnId("");
+      setTestColumnId("");
       setVelocity("");
       setSprintDuration("");
       setSpPrice("");
@@ -393,6 +397,19 @@ export default function SettingsPage() {
     staleTime: 60000,
   });
 
+  const validSprintBoardId = sprintBoardId && !isNaN(parseInt(sprintBoardId)) && parseInt(sprintBoardId) > 0;
+
+  const { data: sprintBoardColumns, isFetching: sprintBoardColumnsFetching } = useQuery<{ id: number; title: string; type: number; parentTitle?: string }[]>({
+    queryKey: ["/api/kaiten/boards", sprintBoardId, "columns"],
+    queryFn: async () => {
+      const res = await fetch(`/api/kaiten/boards/${sprintBoardId}/columns`);
+      if (!res.ok) throw new Error("Failed to fetch columns");
+      return await res.json();
+    },
+    enabled: !!validSprintBoardId,
+    staleTime: 60000,
+  });
+
   const { data: kaitenColumns, isLoading: columnsLoading } = useQuery<{ id: number; title: string; type: number; parentTitle?: string }[]>({
     queryKey: ["/api/kaiten/boards", ttmBoardId, "columns"],
     queryFn: async () => {
@@ -465,6 +482,8 @@ export default function SettingsPage() {
       setInitBoardId("");
       setInitSpaceId("");
       setOmniBoardId("");
+      setDevColumnId("");
+      setTestColumnId("");
       setVelocity("");
       setSprintDuration("");
       setSpPrice("");
@@ -476,6 +495,8 @@ export default function SettingsPage() {
       setInitBoardId(editingTeam.initBoardId.toString());
       setInitSpaceId(editingTeam.initSpaceId?.toString() || "");
       setOmniBoardId(editingTeam.omniBoardId?.toString() || "");
+      setDevColumnId(editingTeam.devColumnId?.toString() || "");
+      setTestColumnId(editingTeam.testColumnId?.toString() || "");
       setExtraBoards((editingTeam.extraBoards || []).map(b => ({ spaceId: b.spaceId.toString(), boardId: b.boardId.toString() })));
       setHasSprints(true);
       setSprintIds("");
@@ -995,8 +1016,8 @@ export default function SettingsPage() {
                               </Select>
                             </div>
                           </div>
-                          <div className="flex gap-4">
-                            <div className="flex-1 space-y-2">
+                          <div className="flex gap-2 items-end">
+                            <div className="space-y-2 w-32 shrink-0">
                               <Label htmlFor="omni-board-id">ID omni-доски</Label>
                               <Input
                                 id="omni-board-id"
@@ -1008,7 +1029,44 @@ export default function SettingsPage() {
                                 data-testid="input-omni-board-id"
                               />
                             </div>
-                            <div className="flex-1" />
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="dev-column-id">Разработка {sprintBoardColumnsFetching && <span className="text-muted-foreground text-xs">загрузка...</span>}</Label>
+                              <Select
+                                value={devColumnId}
+                                onValueChange={setDevColumnId}
+                                disabled={!sprintBoardColumns || sprintBoardColumns.length === 0}
+                              >
+                                <SelectTrigger id="dev-column-id" data-testid="select-dev-column-id">
+                                  <SelectValue placeholder={validSprintBoardId ? (sprintBoardColumnsFetching ? "Загрузка..." : "Выберите колонку") : "Выберите доску"} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[300]">
+                                  {sprintBoardColumns?.map((c) => (
+                                    <SelectItem key={c.id} value={c.id.toString()}>
+                                      {c.parentTitle ? `${c.parentTitle} / ${c.title}` : c.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="test-column-id">Тестирование</Label>
+                              <Select
+                                value={testColumnId}
+                                onValueChange={setTestColumnId}
+                                disabled={!sprintBoardColumns || sprintBoardColumns.length === 0}
+                              >
+                                <SelectTrigger id="test-column-id" data-testid="select-test-column-id">
+                                  <SelectValue placeholder={validSprintBoardId ? (sprintBoardColumnsFetching ? "Загрузка..." : "Выберите колонку") : "Выберите доску"} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[300]">
+                                  {sprintBoardColumns?.map((c) => (
+                                    <SelectItem key={c.id} value={c.id.toString()}>
+                                      {c.parentTitle ? `${c.parentTitle} / ${c.title}` : c.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1184,6 +1242,8 @@ export default function SettingsPage() {
                                 initBoardId: initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId,
                                 initSpaceId: parseInt(initSpaceId),
                                 omniBoardId: omniBoardId ? parseInt(omniBoardId) : null,
+                                devColumnId: devColumnId ? parseInt(devColumnId) : null,
+                                testColumnId: testColumnId ? parseInt(testColumnId) : null,
                                 extraBoards: extraBoards.length > 0
                                   ? extraBoards.filter(b => b.spaceId && b.boardId).map(b => ({ spaceId: parseInt(b.spaceId), boardId: parseInt(b.boardId) }))
                                   : null,
@@ -1313,8 +1373,8 @@ export default function SettingsPage() {
                               </Select>
                             </div>
                           </div>
-                          <div className="flex gap-4">
-                            <div className="flex-1 space-y-2">
+                          <div className="flex gap-2 items-end">
+                            <div className="space-y-2 w-32 shrink-0">
                               <Label htmlFor="new-omni-board-id">ID omni-доски</Label>
                               <Input
                                 id="new-omni-board-id"
@@ -1326,7 +1386,44 @@ export default function SettingsPage() {
                                 data-testid="input-omni-board-id"
                               />
                             </div>
-                            <div className="flex-1" />
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-dev-column-id">Разработка {sprintBoardColumnsFetching && <span className="text-muted-foreground text-xs">загрузка...</span>}</Label>
+                              <Select
+                                value={devColumnId}
+                                onValueChange={setDevColumnId}
+                                disabled={!sprintBoardColumns || sprintBoardColumns.length === 0}
+                              >
+                                <SelectTrigger id="new-dev-column-id" data-testid="select-dev-column-id">
+                                  <SelectValue placeholder={validSprintBoardId ? (sprintBoardColumnsFetching ? "Загрузка..." : "Выберите колонку") : "Выберите доску"} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[300]">
+                                  {sprintBoardColumns?.map((c) => (
+                                    <SelectItem key={c.id} value={c.id.toString()}>
+                                      {c.parentTitle ? `${c.parentTitle} / ${c.title}` : c.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-test-column-id">Тестирование</Label>
+                              <Select
+                                value={testColumnId}
+                                onValueChange={setTestColumnId}
+                                disabled={!sprintBoardColumns || sprintBoardColumns.length === 0}
+                              >
+                                <SelectTrigger id="new-test-column-id" data-testid="select-test-column-id">
+                                  <SelectValue placeholder={validSprintBoardId ? (sprintBoardColumnsFetching ? "Загрузка..." : "Выберите колонку") : "Выберите доску"} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[300]">
+                                  {sprintBoardColumns?.map((c) => (
+                                    <SelectItem key={c.id} value={c.id.toString()}>
+                                      {c.parentTitle ? `${c.parentTitle} / ${c.title}` : c.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1495,6 +1592,8 @@ export default function SettingsPage() {
                             initBoardId: parseInt(initBoardId),
                             initSpaceId: parseInt(initSpaceId),
                             omniBoardId: omniBoardId ? parseInt(omniBoardId) : undefined,
+                            devColumnId: devColumnId ? parseInt(devColumnId) : undefined,
+                            testColumnId: testColumnId ? parseInt(testColumnId) : undefined,
                             extraBoards: extraBoards.length > 0
                               ? extraBoards.filter(b => b.spaceId && b.boardId).map(b => ({ spaceId: parseInt(b.spaceId), boardId: parseInt(b.boardId) }))
                               : undefined,
