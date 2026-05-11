@@ -936,7 +936,7 @@ export default function SettingsPage() {
                         <h3 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="section-kaiten-integration">Настройка интеграции с Kaiten</h3>
                         <div className="space-y-2">
                           <div className="flex gap-2 items-end">
-                            <div className="space-y-2 w-24 shrink-0">
+                            <div className="space-y-2 w-32 shrink-0">
                               <Label htmlFor="space-id">ID пространства <span className="text-destructive">*</span></Label>
                               <Input
                                 id="space-id"
@@ -965,7 +965,7 @@ export default function SettingsPage() {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="space-y-2 w-24 shrink-0">
+                            <div className="space-y-2 w-32 shrink-0">
                               <Label htmlFor="init-space-id">ID пр. инициатив <span className="text-destructive">*</span></Label>
                               <Input
                                 id="init-space-id"
@@ -1254,7 +1254,7 @@ export default function SettingsPage() {
                         <h3 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="section-new-kaiten-integration">Настройка интеграции с Kaiten</h3>
                         <div className="space-y-2">
                           <div className="flex gap-2 items-end">
-                            <div className="space-y-2 w-24 shrink-0">
+                            <div className="space-y-2 w-32 shrink-0">
                               <Label htmlFor="new-space-id">ID пространства <span className="text-destructive">*</span></Label>
                               <Input
                                 id="new-space-id"
@@ -1283,7 +1283,7 @@ export default function SettingsPage() {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="space-y-2 w-24 shrink-0">
+                            <div className="space-y-2 w-32 shrink-0">
                               <Label htmlFor="new-init-space-id">ID пр. инициатив <span className="text-destructive">*</span></Label>
                               <Input
                                 id="new-init-space-id"
