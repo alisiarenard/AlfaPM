@@ -568,6 +568,8 @@ export default function SettingsPage() {
       const initBoardIdChanged = (initBoardId ? parseInt(initBoardId) : editingTeam.initBoardId) !== editingTeam.initBoardId;
       const initSpaceIdChanged = (initSpaceId ? parseInt(initSpaceId) : (editingTeam.initSpaceId ?? 0)) !== (editingTeam.initSpaceId ?? 0);
       const omniBoardIdChanged = (omniBoardId ? parseInt(omniBoardId) : (editingTeam.omniBoardId ?? 0)) !== (editingTeam.omniBoardId ?? 0);
+      const devColumnIdChanged = (devColumnId ? parseInt(devColumnId) : (editingTeam.devColumnId ?? 0)) !== (editingTeam.devColumnId ?? 0);
+      const testColumnIdChanged = (testColumnId ? parseInt(testColumnId) : (editingTeam.testColumnId ?? 0)) !== (editingTeam.testColumnId ?? 0);
       const origVelocity = yearlyData ? yearlyData.vilocity : editingTeam.vilocity;
       const origSprintDuration = yearlyData ? yearlyData.sprintDuration : editingTeam.sprintDuration;
       const origSpPrice = yearlyData ? yearlyData.spPrice : editingTeam.spPrice;
@@ -579,7 +581,7 @@ export default function SettingsPage() {
       const hasSprintsChanged = hasSprints !== origHasSprints;
       const plannedIrChanged = (plannedIr ? parseInt(plannedIr) : null) !== origPlannedIr;
       const sprintIdsChanged = sprintIds.trim() !== "";
-      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || omniBoardIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || plannedIrChanged || sprintIdsChanged;
+      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || omniBoardIdChanged || devColumnIdChanged || testColumnIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || plannedIrChanged || sprintIdsChanged;
     }
     return false;
   };
