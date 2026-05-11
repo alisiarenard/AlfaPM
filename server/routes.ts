@@ -4036,8 +4036,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
       // Получаем команды и департамент
-      const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
-      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      const teamsRaw: (Awaited<ReturnType<typeof storage.getTeamById>>)[] = [];
+      for (const id of teamIds) {
+        try { teamsRaw.push(await storage.getTeamById(id)); } catch { teamsRaw.push(undefined); }
+      }
+      const validTeams = teamsRaw.filter((t): t is NonNullable<typeof t> => t !== undefined);
       
       if (validTeams.length === 0) {
         return res.status(404).json({ 
@@ -4122,10 +4125,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
 
       // Получаем все инициативы для выбранных команд
-      const allInitiatives = await Promise.all(
-        validTeams.map(team => storage.getInitiativesByBoardId(team.initBoardId))
-      );
-      const initiatives = allInitiatives.flat();
+      const allInitiativesParts: Awaited<ReturnType<typeof storage.getInitiativesByBoardId>>[] = [];
+      for (const team of validTeams) {
+        try { allInitiativesParts.push(await storage.getInitiativesByBoardId(team.initBoardId)); } catch { allInitiativesParts.push([]); }
+      }
+      const initiatives = allInitiativesParts.flat();
       
       // Создаем мапу инициатив по cardId для быстрого поиска
       const initiativesMap = new Map(initiatives.map(init => [init.cardId, init]));
@@ -4207,8 +4211,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
       // Получаем команды
-      const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
-      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      const teamsRaw: (Awaited<ReturnType<typeof storage.getTeamById>>)[] = [];
+      for (const id of teamIds) {
+        try { teamsRaw.push(await storage.getTeamById(id)); } catch { teamsRaw.push(undefined); }
+      }
+      const validTeams = teamsRaw.filter((t): t is NonNullable<typeof t> => t !== undefined);
       
       if (validTeams.length === 0) {
         return res.status(404).json({ 
@@ -4274,10 +4281,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
 
       // Получаем все инициативы для выбранных команд
-      const allInitiatives = await Promise.all(
-        validTeams.map(team => storage.getInitiativesByBoardId(team.initBoardId))
-      );
-      const initiatives = allInitiatives.flat();
+      const allInitiativesParts2: Awaited<ReturnType<typeof storage.getInitiativesByBoardId>>[] = [];
+      for (const team of validTeams) {
+        try { allInitiativesParts2.push(await storage.getInitiativesByBoardId(team.initBoardId)); } catch { allInitiativesParts2.push([]); }
+      }
+      const initiatives = allInitiativesParts2.flat();
       
       // Создаем мапу инициатив по cardId для быстрого поиска
       const initiativesMap = new Map(initiatives.map(init => [init.cardId, init]));
@@ -4384,8 +4392,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prevYearEnd = new Date(prevYear, 11, 31, 23, 59, 59);
 
       const teamIds = teamIdsParam.split(',').map((id: string) => id.trim()).filter(Boolean);
-      const teams = await Promise.all(teamIds.map((id: string) => storage.getTeamById(id)));
-      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      const teamsRaw4392: (Awaited<ReturnType<typeof storage.getTeamById>>)[] = [];
+      for (const id of teamIds) {
+        try { teamsRaw4392.push(await storage.getTeamById(id)); } catch { teamsRaw4392.push(undefined); }
+      }
+      const validTeams = teamsRaw4392.filter((t): t is NonNullable<typeof t> => t !== undefined);
       if (validTeams.length === 0) return res.status(404).json({ success: false, error: "No valid teams found" });
 
       const allTeams = await storage.getAllTeams();
@@ -4565,8 +4576,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Получаем команды
-      const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
-      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      const teamsRaw: (Awaited<ReturnType<typeof storage.getTeamById>>)[] = [];
+      for (const id of teamIds) {
+        try { teamsRaw.push(await storage.getTeamById(id)); } catch { teamsRaw.push(undefined); }
+      }
+      const validTeams = teamsRaw.filter((t): t is NonNullable<typeof t> => t !== undefined);
       
       if (validTeams.length === 0) {
         return res.status(404).json({ 
@@ -4829,8 +4843,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ success: false, error: "At least one team ID is required" });
       }
 
-      const teams = await Promise.all(teamIds.map(id => storage.getTeamById(id)));
-      const validTeams = teams.filter((t): t is NonNullable<typeof t> => t !== undefined);
+      const teamsRaw4837: (Awaited<ReturnType<typeof storage.getTeamById>>)[] = [];
+      for (const id of teamIds) {
+        try { teamsRaw4837.push(await storage.getTeamById(id)); } catch { teamsRaw4837.push(undefined); }
+      }
+      const validTeams = teamsRaw4837.filter((t): t is NonNullable<typeof t> => t !== undefined);
 
       if (validTeams.length === 0) {
         return res.status(404).json({ success: false, error: "No valid teams found" });
