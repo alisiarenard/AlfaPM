@@ -1728,7 +1728,7 @@ export default function SettingsPage() {
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="member-username">Имя пользователя (Kaiten)</Label>
+            <Label htmlFor="member-username">Имя пользователя (Kaiten) <span className="text-destructive">*</span></Label>
             <Input
               id="member-username"
               data-testid="input-member-username"
@@ -1738,7 +1738,7 @@ export default function SettingsPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="member-role">Роль</Label>
+            <Label htmlFor="member-role">Роль <span className="text-destructive">*</span></Label>
             <Select value={newMemberRole} onValueChange={setNewMemberRole}>
               <SelectTrigger id="member-role" data-testid="select-member-role">
                 <SelectValue placeholder="Выберите роль" />
@@ -1764,6 +1764,8 @@ export default function SettingsPage() {
             type="button"
             data-testid="button-confirm-add-member"
             disabled={!newMemberUsername.trim() || !newMemberRole || addMemberMutation.isPending}
+            style={{ backgroundColor: '#cd253d' }}
+            className="hover:opacity-90 border-0"
             onClick={() => addMemberMutation.mutate({ username: newMemberUsername.trim(), role: newMemberRole })}
           >
             {addMemberMutation.isPending ? "Добавление..." : "Добавить"}
