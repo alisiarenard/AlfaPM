@@ -368,6 +368,31 @@ export default function SettingsPage() {
     },
   });
 
+  const validSpaceId = spaceId && !isNaN(parseInt(spaceId)) && parseInt(spaceId) > 0;
+  const validInitSpaceId = initSpaceId && !isNaN(parseInt(initSpaceId)) && parseInt(initSpaceId) > 0;
+
+  const { data: spaceBoards, isFetching: spaceBoardsFetching } = useQuery<{ id: number; title: string }[]>({
+    queryKey: ["/api/kaiten/spaces", spaceId, "boards"],
+    queryFn: async () => {
+      const res = await fetch(`/api/kaiten/spaces/${spaceId}/boards`);
+      if (!res.ok) throw new Error("Failed to fetch boards");
+      return await res.json();
+    },
+    enabled: !!validSpaceId,
+    staleTime: 60000,
+  });
+
+  const { data: initSpaceBoards, isFetching: initSpaceBoardsFetching } = useQuery<{ id: number; title: string }[]>({
+    queryKey: ["/api/kaiten/spaces", initSpaceId, "boards"],
+    queryFn: async () => {
+      const res = await fetch(`/api/kaiten/spaces/${initSpaceId}/boards`);
+      if (!res.ok) throw new Error("Failed to fetch boards");
+      return await res.json();
+    },
+    enabled: !!validInitSpaceId,
+    staleTime: 60000,
+  });
+
   const { data: kaitenColumns, isLoading: columnsLoading } = useQuery<{ id: number; title: string; type: number; parentTitle?: string }[]>({
     queryKey: ["/api/kaiten/boards", ttmBoardId, "columns"],
     queryFn: async () => {
@@ -910,56 +935,66 @@ export default function SettingsPage() {
                       <div className="pt-2">
                         <h3 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="section-kaiten-integration">Настройка интеграции с Kaiten</h3>
                         <div className="space-y-2">
-                          <div className="flex gap-4">
-                            <div className="flex-1 space-y-2">
+                          <div className="flex gap-2 items-end">
+                            <div className="space-y-2 w-24 shrink-0">
                               <Label htmlFor="space-id">ID пространства <span className="text-destructive">*</span></Label>
                               <Input
                                 id="space-id"
                                 type="number"
                                 placeholder="0"
                                 value={spaceId}
-                                onChange={(e) => setSpaceId(e.target.value)}
+                                onChange={(e) => { setSpaceId(e.target.value); setSprintBoardId(""); }}
                                 className="no-arrows"
                                 data-testid="input-space-id"
                               />
                             </div>
                             <div className="flex-1 space-y-2">
-                              <Label htmlFor="sprint-board-id">ID доски</Label>
-                              <Input
-                                id="sprint-board-id"
-                                type="number"
-                                placeholder="0"
+                              <Label htmlFor="sprint-board-id">Доска {spaceBoardsFetching && <span className="text-muted-foreground text-xs">загрузка...</span>}</Label>
+                              <Select
                                 value={sprintBoardId}
-                                onChange={(e) => setSprintBoardId(e.target.value)}
-                                className="no-arrows"
-                                data-testid="input-sprint-board-id"
-                              />
+                                onValueChange={setSprintBoardId}
+                                disabled={!spaceBoards || spaceBoards.length === 0}
+                              >
+                                <SelectTrigger id="sprint-board-id" data-testid="select-sprint-board-id">
+                                  <SelectValue placeholder={validSpaceId ? (spaceBoardsFetching ? "Загрузка..." : "Выберите доску") : "Введите ID пространства"} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[300]">
+                                  {spaceBoards?.map((b) => (
+                                    <SelectItem key={b.id} value={b.id.toString()}>{b.title}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
-                          <div className="flex gap-4">
-                            <div className="flex-1 space-y-2">
-                              <Label htmlFor="init-board-id">ID доски инициатив <span className="text-destructive">*</span></Label>
-                              <Input
-                                id="init-board-id"
-                                type="number"
-                                placeholder="0"
-                                value={initBoardId}
-                                onChange={(e) => setInitBoardId(e.target.value)}
-                                className="no-arrows"
-                                data-testid="input-init-board-id"
-                              />
-                            </div>
-                            <div className="flex-1 space-y-2">
-                              <Label htmlFor="init-space-id">ID пространства инициатив <span className="text-destructive">*</span></Label>
+                          <div className="flex gap-2 items-end">
+                            <div className="space-y-2 w-24 shrink-0">
+                              <Label htmlFor="init-space-id">ID пр. инициатив <span className="text-destructive">*</span></Label>
                               <Input
                                 id="init-space-id"
                                 type="number"
                                 placeholder="0"
                                 value={initSpaceId}
-                                onChange={(e) => setInitSpaceId(e.target.value)}
+                                onChange={(e) => { setInitSpaceId(e.target.value); setInitBoardId(""); }}
                                 className="no-arrows"
                                 data-testid="input-init-space-id"
                               />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="init-board-id">Доска инициатив <span className="text-destructive">*</span> {initSpaceBoardsFetching && <span className="text-muted-foreground text-xs">загрузка...</span>}</Label>
+                              <Select
+                                value={initBoardId}
+                                onValueChange={setInitBoardId}
+                                disabled={!initSpaceBoards || initSpaceBoards.length === 0}
+                              >
+                                <SelectTrigger id="init-board-id" data-testid="select-init-board-id">
+                                  <SelectValue placeholder={validInitSpaceId ? (initSpaceBoardsFetching ? "Загрузка..." : "Выберите доску") : "Введите ID пространства"} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[300]">
+                                  {initSpaceBoards?.map((b) => (
+                                    <SelectItem key={b.id} value={b.id.toString()}>{b.title}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
                           <div className="flex gap-4">
@@ -1220,56 +1255,66 @@ export default function SettingsPage() {
                       <div className="pt-2">
                         <h3 className="text-sm font-semibold text-muted-foreground mb-3" data-testid="section-new-kaiten-integration">Настройка интеграции с Kaiten</h3>
                         <div className="space-y-2">
-                          <div className="flex gap-4">
-                            <div className="flex-1 space-y-2">
+                          <div className="flex gap-2 items-end">
+                            <div className="space-y-2 w-24 shrink-0">
                               <Label htmlFor="new-space-id">ID пространства <span className="text-destructive">*</span></Label>
                               <Input
                                 id="new-space-id"
                                 type="number"
                                 placeholder="0"
                                 value={spaceId}
-                                onChange={(e) => setSpaceId(e.target.value)}
+                                onChange={(e) => { setSpaceId(e.target.value); setSprintBoardId(""); }}
                                 className="no-arrows"
                                 data-testid="input-space-id"
                               />
                             </div>
                             <div className="flex-1 space-y-2">
-                              <Label htmlFor="new-sprint-board-id">ID доски <span className="text-destructive">*</span></Label>
-                              <Input
-                                id="new-sprint-board-id"
-                                type="number"
-                                placeholder="0"
+                              <Label htmlFor="new-sprint-board-id">Доска <span className="text-destructive">*</span> {spaceBoardsFetching && <span className="text-muted-foreground text-xs">загрузка...</span>}</Label>
+                              <Select
                                 value={sprintBoardId}
-                                onChange={(e) => setSprintBoardId(e.target.value)}
-                                className="no-arrows"
-                                data-testid="input-sprint-board-id"
-                              />
+                                onValueChange={setSprintBoardId}
+                                disabled={!spaceBoards || spaceBoards.length === 0}
+                              >
+                                <SelectTrigger id="new-sprint-board-id" data-testid="select-sprint-board-id">
+                                  <SelectValue placeholder={validSpaceId ? (spaceBoardsFetching ? "Загрузка..." : "Выберите доску") : "Введите ID пространства"} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[300]">
+                                  {spaceBoards?.map((b) => (
+                                    <SelectItem key={b.id} value={b.id.toString()}>{b.title}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
-                          <div className="flex gap-4">
-                            <div className="flex-1 space-y-2">
-                              <Label htmlFor="new-init-board-id">ID доски инициатив <span className="text-destructive">*</span></Label>
-                              <Input
-                                id="new-init-board-id"
-                                type="number"
-                                placeholder="0"
-                                value={initBoardId}
-                                onChange={(e) => setInitBoardId(e.target.value)}
-                                className="no-arrows"
-                                data-testid="input-init-board-id"
-                              />
-                            </div>
-                            <div className="flex-1 space-y-2">
-                              <Label htmlFor="new-init-space-id">ID пространства инициатив <span className="text-destructive">*</span></Label>
+                          <div className="flex gap-2 items-end">
+                            <div className="space-y-2 w-24 shrink-0">
+                              <Label htmlFor="new-init-space-id">ID пр. инициатив <span className="text-destructive">*</span></Label>
                               <Input
                                 id="new-init-space-id"
                                 type="number"
                                 placeholder="0"
                                 value={initSpaceId}
-                                onChange={(e) => setInitSpaceId(e.target.value)}
+                                onChange={(e) => { setInitSpaceId(e.target.value); setInitBoardId(""); }}
                                 className="no-arrows"
                                 data-testid="input-init-space-id"
                               />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="new-init-board-id">Доска инициатив <span className="text-destructive">*</span> {initSpaceBoardsFetching && <span className="text-muted-foreground text-xs">загрузка...</span>}</Label>
+                              <Select
+                                value={initBoardId}
+                                onValueChange={setInitBoardId}
+                                disabled={!initSpaceBoards || initSpaceBoards.length === 0}
+                              >
+                                <SelectTrigger id="new-init-board-id" data-testid="select-init-board-id">
+                                  <SelectValue placeholder={validInitSpaceId ? (initSpaceBoardsFetching ? "Загрузка..." : "Выберите доску") : "Введите ID пространства"} />
+                                </SelectTrigger>
+                                <SelectContent className="z-[300]">
+                                  {initSpaceBoards?.map((b) => (
+                                    <SelectItem key={b.id} value={b.id.toString()}>{b.title}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                           </div>
                           <div className="flex gap-4">

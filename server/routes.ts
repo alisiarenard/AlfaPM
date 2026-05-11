@@ -236,6 +236,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/kaiten/spaces/:spaceId/boards", async (req, res) => {
+    try {
+      const spaceId = parseInt(req.params.spaceId);
+      if (isNaN(spaceId)) return res.status(400).json({ success: false, error: "Invalid space ID" });
+      const boards = await kaitenClient.getBoardsBySpace(spaceId);
+      res.json(boards);
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || "Failed to fetch boards" });
+    }
+  });
+
   app.get("/api/kaiten/boards/:boardId/columns", async (req, res) => {
     try {
       const boardId = parseInt(req.params.boardId);
