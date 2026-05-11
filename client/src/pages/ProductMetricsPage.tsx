@@ -122,6 +122,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
   const currentDepartment = useMemo(() => departments?.find(d => d.id === selectedDepartment), [departments, selectedDepartment]);
 
+  const hasFlowMetrics = !!currentDepartment?.kaitenBoardId;
+
+  useEffect(() => {
+    setFlowExpanded(false);
+  }, [selectedDepartment]);
+
   const { data: flowMetricsData, isFetching: flowMetricsFetching } = useQuery<FlowMetricsData>({
     queryKey: ['/api/departments/flow-metrics', selectedDepartment, flowPeriod],
     queryFn: async () => {
@@ -860,7 +866,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto" data-testid="page-product-metrics">
         <div className="p-6">
           {selectedDepartment && teamIdsArray.length > 0 ? (
-            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomExpanded={flowExpanded} bottomLoading={flowMetricsFetching} onToggleBottom={() => setFlowExpanded(v => !v)} bottomContent={(flowSummary || flowMetricsData) ? (
+            <MetricsPanel teamIds={teamIdsArray} selectedYear={selectedYear} spaceGroups={spaceGroups.filter(g => g.teamIds.every(id => selectedTeams.has(id)))} bottomExpanded={flowExpanded} bottomLoading={flowMetricsFetching} onToggleBottom={hasFlowMetrics ? () => setFlowExpanded(v => !v) : undefined} bottomContent={hasFlowMetrics && (flowSummary || flowMetricsData) ? (
               <div className="h-[110px] flex cursor-pointer" data-testid="flow-summary-row" onClick={flowSummary ? handleOpenFlowMetrics : undefined} style={{ opacity: flowMetricsFetching ? 0.5 : 1, transition: 'opacity 0.3s', cursor: flowSummary ? 'pointer' : 'default' }}>
                 <div className="w-[150px] shrink-0 px-4 py-3 flex flex-col justify-between">
                   <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
