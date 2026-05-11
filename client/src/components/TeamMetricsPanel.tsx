@@ -93,47 +93,53 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
       style={{ opacity: isFetching ? 0.5 : 1 }}
       data-testid="team-metrics-panel"
     >
-      <div className="w-[17%] px-4 py-3 flex flex-col justify-between">
+      <div className="w-[17%] px-4 py-3 flex flex-col">
         <div className="text-sm text-muted-foreground">Innovation Rate</div>
-        <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-innovation-rate">
-          {displayIR ? `${displayIR.actualIR}%` : '—'}
-        </div>
-        <div className="text-[0.8rem] text-muted-foreground truncate">
-          {displayIR && (
-            <span
-              className="font-semibold"
-              style={{ color: displayIR.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
-            >
-              {displayIR.diffFromPlanned >= 0 ? '+' : ''}{displayIR.diffFromPlanned}%
-            </span>
-          )}
-          {displayIR && ' от планового значения'}
+        <div className="mt-auto">
+          <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-innovation-rate">
+            {displayIR ? `${displayIR.actualIR}%` : '—'}
+          </div>
+          <div className="text-[0.8rem] text-muted-foreground truncate">
+            {displayIR && (
+              <span
+                className="font-semibold"
+                style={{ color: displayIR.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
+              >
+                {displayIR.diffFromPlanned >= 0 ? '+' : ''}{displayIR.diffFromPlanned}%
+              </span>
+            )}
+            {displayIR && ' от планового значения'}
+          </div>
         </div>
       </div>
       <div className="border-l border-border my-3"></div>
-      <div className="w-[10%] px-4 py-3 flex flex-col justify-between">
+      <div className="w-[10%] px-4 py-3 flex flex-col">
         <div className="text-sm text-muted-foreground">Velocity</div>
-        <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-velocity">
-          {displaySprintStats?.avgVelocity !== null && displaySprintStats?.avgVelocity !== undefined ? displaySprintStats.avgVelocity : '—'}
-        </div>
-        <div className="text-[0.8rem] text-muted-foreground truncate">
-          {displaySprintStats?.avgVelocity !== null ? 'среднее за год' : 'нет данных'}
+        <div className="mt-auto">
+          <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-velocity">
+            {displaySprintStats?.avgVelocity !== null && displaySprintStats?.avgVelocity !== undefined ? displaySprintStats.avgVelocity : '—'}
+          </div>
+          <div className="text-[0.8rem] text-muted-foreground truncate">
+            {displaySprintStats?.avgVelocity !== null ? 'среднее за год' : 'нет данных'}
+          </div>
         </div>
       </div>
       <div className="border-l border-border my-3"></div>
-      <div className="w-[10%] px-4 py-3 flex flex-col justify-between">
+      <div className="w-[10%] px-4 py-3 flex flex-col">
         <div className="text-sm text-muted-foreground whitespace-nowrap">СПД</div>
-        <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-spd">
-          {displaySprintStats?.avgSPD !== null && displaySprintStats?.avgSPD !== undefined ? `${displaySprintStats.avgSPD}%` : '—'}
-        </div>
-        <div className="text-[0.8rem] text-muted-foreground truncate">
-          {displaySprintStats?.avgSPD !== null ? 'среднее за год' : 'нет данных'}
+        <div className="mt-auto">
+          <div className="text-2xl font-semibold text-foreground/85" data-testid="team-metric-spd">
+            {displaySprintStats?.avgSPD !== null && displaySprintStats?.avgSPD !== undefined ? `${displaySprintStats.avgSPD}%` : '—'}
+          </div>
+          <div className="text-[0.8rem] text-muted-foreground truncate">
+            {displaySprintStats?.avgSPD !== null ? 'среднее за год' : 'нет данных'}
+          </div>
         </div>
       </div>
       <div className="border-l border-border my-3"></div>
-      <div className="flex-1 pl-4 py-3 flex flex-col justify-between">
+      <div className="flex-1 pl-4 py-3 flex flex-col">
         <div className="text-sm text-muted-foreground">Структура затрат</div>
-        <div className="flex gap-2 items-end">
+        <div className="mt-auto flex gap-2 items-end">
           {costTypes.map((type) => (
             <Tooltip key={type.key}>
               <TooltipTrigger asChild>
@@ -155,7 +161,6 @@ export function TeamMetricsPanel({ teamId, selectedYear }: TeamMetricsPanelProps
             </Tooltip>
           ))}
         </div>
-        <div></div>
       </div>
     </div>
   );

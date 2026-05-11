@@ -132,21 +132,23 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
   ];
 
   const irContent = (
-    <div className="px-4 py-3 flex flex-col justify-between h-full">
+    <div className="px-4 py-3 flex flex-col h-full">
       <div className="flex items-center gap-1 text-sm text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Innovation Rate</span></div>
-      <div className="text-2xl font-semibold text-foreground/85" data-testid="metric-innovation-rate">
-        {displayIR ? `${displayIR.actualIR}%` : '—'}
-      </div>
-      <div className="text-[0.8rem] text-muted-foreground truncate">
-        {displayIR && (
-          <span
-            className="font-semibold"
-            style={{ color: displayIR.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
-          >
-            {displayIR.diffFromPlanned >= 0 ? '+' : ''}{displayIR.diffFromPlanned}%
-          </span>
-        )}
-        {displayIR && ' от планового значения'}
+      <div className="mt-auto">
+        <div className="text-2xl font-semibold text-foreground/85" data-testid="metric-innovation-rate">
+          {displayIR ? `${displayIR.actualIR}%` : '—'}
+        </div>
+        <div className="text-[0.8rem] text-muted-foreground truncate">
+          {displayIR && (
+            <span
+              className="font-semibold"
+              style={{ color: displayIR.diffFromPlanned >= 0 ? '#16a34a' : '#cd253d' }}
+            >
+              {displayIR.diffFromPlanned >= 0 ? '+' : ''}{displayIR.diffFromPlanned}%
+            </span>
+          )}
+          {displayIR && ' от планового значения'}
+        </div>
       </div>
     </div>
   );
@@ -180,9 +182,9 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
           </div>
         )}
         <div className="border-l border-border my-3"></div>
-        <div className="w-[300px] shrink-0 px-4 py-3 flex flex-col justify-between">
+        <div className="w-[300px] shrink-0 px-4 py-3 flex flex-col">
           <div className="flex items-center gap-1 text-sm text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Value/Cost</span></div>
-          <div className="flex justify-between items-end w-full">
+          <div className="mt-auto flex justify-between items-end w-full">
             <div className="flex flex-col items-center gap-1">
               <div className="text-2xl font-semibold text-foreground/85" data-testid="metric-value-cost-plan">
                 {displayValueCost ? displayValueCost.plannedValueCost.toFixed(1) : '—'}
@@ -196,12 +198,11 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
               <div className="text-[0.8rem] text-muted-foreground">фактический</div>
             </div>
           </div>
-          <div></div>
         </div>
         <div className="border-l border-border my-3"></div>
-        <div className="flex-1 pl-4 py-3 flex flex-col justify-between min-w-0">
+        <div className="flex-1 pl-4 py-3 flex flex-col min-w-0">
           <div className="flex items-center gap-1 text-sm text-muted-foreground"><Info className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Структура затрат</span></div>
-          <div className="flex gap-2 items-end">
+          <div className="mt-auto flex gap-2 items-end">
             {costTypes.map((type) => (
               <Tooltip key={type.key}>
                 <TooltipTrigger asChild>
@@ -223,7 +224,6 @@ export function MetricsPanel({ teamIds, selectedYear, spaceGroups = [], children
               </Tooltip>
             ))}
           </div>
-          <div></div>
         </div>
         {children}
       </div>
