@@ -3568,7 +3568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setTimeout(300000);
     try {
       const { teamId } = req.params;
-      const { startDate } = req.query as { startDate?: string };
+      const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
 
       if (!startDate) {
         return res.status(400).json({ success: false, error: "startDate query param is required" });
@@ -3591,7 +3591,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           limit: 1000
         }))
       );
-      const cards = allCardsArrays.flat();
+      const endDateObj = endDate ? new Date(endDate) : null;
+      const cards = allCardsArrays.flat().filter(c => {
+        if (!endDateObj) return true;
+        if (!c.last_moved_to_done_at) return true;
+        return new Date(c.last_moved_to_done_at) <= endDateObj;
+      });
 
       let synced = 0;
       let errors = 0;
@@ -3945,7 +3950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[SMART-SYNC] Команда: teamId=${team.teamId}, hasSprints=${team.hasSprints}, sprintBoardId=${team.sprintBoardId}, initBoardId=${team.initBoardId}`);
       
       if (team.hasSprints && team.sprintBoardId) {
-        // РЕЖИМ: Реальные спринты — синхронизируем задачи через спринты
+        // РЕЖИМ: Реальные спринты (возможно гибридный — часть периода виртуальные)
         console.log(`[SMART-SYNC] Ветка: РЕАЛЬНЫЕ СПРИНТЫ (hasSprints=true, sprintBoardId=${team.sprintBoardId})`);
         const allSprints = await storage.getSprintsByBoardId(team.sprintBoardId);
         
@@ -3955,64 +3960,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return sprintYear === syncYear;
             })
           : allSprints;
-        
-        for (const dbSprint of sprintsToSync) {
-          try {
-            const sprintDetails = await kaitenClient.getSprint(dbSprint.sprintId);
-            
-            if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
-              for (const sprintCard of sprintDetails.cards) {
-                try {
-                  const card = await kaitenClient.getCard(sprintCard.id);
-                  
-                  if (card.condition === 3) {
-                    continue;
-                  }
-                  
-                  let initCardId: number | null = null;
-                  
-                  if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                    initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
-                  } else {
-                    initCardId = 0;
-                  }
-                  
-                  let state: "1-queued" | "2-inProgress" | "3-done";
-                  if (card.state === 3) {
-                    state = "3-done";
-                  } else if (card.state === 2) {
-                    state = "2-inProgress";
-                  } else {
-                    state = "1-queued";
-                  }
-                  
-                  const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
-                  
-                  await storage.syncTaskFromKaiten(
-                    card.id,
-                    card.board_id,
-                    card.title,
-                    card.created || new Date().toISOString(),
-                    state,
-                    card.size || 0,
-                    condition,
-                    card.archived || false,
-                    initCardId,
-                    card.type?.name,
-                    card.completed_at ?? undefined,
-                    dbSprint.sprintId,
-                    getTaskDoneDate(card),
-                    team.teamId
-                  );
-                  
-                  tasksSynced++;
-                } catch (taskError) {
-                  console.error(`[SMART-SYNC] Error syncing task ${sprintCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
+
+        if (sprintsToSync.length > 0) {
+          // Определяем дату начала первого реального спринта в этом году
+          const sortedSprints = [...sprintsToSync].sort(
+            (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+          );
+          const earliestSprintStart = new Date(sortedSprints[0].startDate);
+          const yearStart = new Date(syncYear || new Date().getFullYear(), 0, 1);
+
+          // Если между началом года и первым реальным спринтом есть пропуск —
+          // синхронизируем этот период как виртуальный
+          if (earliestSprintStart > yearStart) {
+            console.log(`[SMART-SYNC] Гибридный режим: виртуальный период с ${yearStart.toISOString()} до ${earliestSprintStart.toISOString()}`);
+            const boardIds = getNoSprintBoardIds(team);
+            const virtualCardsArrays = await Promise.all(
+              boardIds.map(boardId => kaitenClient.getCardsWithDateFilter({
+                boardId,
+                lastMovedToDoneAtAfter: yearStart.toISOString(),
+                limit: 1000
+              }))
+            );
+            const virtualCards = virtualCardsArrays.flat().filter(c => {
+              if (!c.last_moved_to_done_at) return false;
+              return new Date(c.last_moved_to_done_at) < earliestSprintStart;
+            });
+            console.log(`[SMART-SYNC] Виртуальный период: ${virtualCards.length} карточек`);
+            for (const card of virtualCards) {
+              try {
+                let initCardId = 0;
+                if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                  initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
                 }
+                let state: "1-queued" | "2-inProgress" | "3-done";
+                if (card.state === 3) state = "3-done";
+                else if (card.state === 2) state = "2-inProgress";
+                else state = "1-queued";
+                const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+                await storage.syncTaskFromKaiten(
+                  card.id, card.board_id, card.title,
+                  card.created || new Date().toISOString(),
+                  state, card.size || 0, condition, card.archived || false,
+                  initCardId, card.type?.name, card.completed_at ?? undefined,
+                  null, getTaskDoneDate(card), team.teamId
+                );
+                tasksSynced++;
+              } catch (e) {
+                console.error(`[SMART-SYNC] Virtual card error ${card.id}:`, e instanceof Error ? e.message : String(e));
               }
             }
-          } catch (sprintError) {
-            console.error(`[SMART-SYNC] Error sprint ${dbSprint.sprintId}:`, sprintError instanceof Error ? sprintError.message : String(sprintError));
+          }
+
+          // Синхронизируем реальные спринты
+          for (const dbSprint of sprintsToSync) {
+            try {
+              const sprintDetails = await kaitenClient.getSprint(dbSprint.sprintId);
+              
+              if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
+                for (const sprintCard of sprintDetails.cards) {
+                  try {
+                    const card = await kaitenClient.getCard(sprintCard.id);
+                    
+                    if (card.condition === 3) {
+                      continue;
+                    }
+                    
+                    let initCardId: number | null = null;
+                    
+                    if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                      initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+                    } else {
+                      initCardId = 0;
+                    }
+                    
+                    let state: "1-queued" | "2-inProgress" | "3-done";
+                    if (card.state === 3) {
+                      state = "3-done";
+                    } else if (card.state === 2) {
+                      state = "2-inProgress";
+                    } else {
+                      state = "1-queued";
+                    }
+                    
+                    const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+                    
+                    await storage.syncTaskFromKaiten(
+                      card.id,
+                      card.board_id,
+                      card.title,
+                      card.created || new Date().toISOString(),
+                      state,
+                      card.size || 0,
+                      condition,
+                      card.archived || false,
+                      initCardId,
+                      card.type?.name,
+                      card.completed_at ?? undefined,
+                      dbSprint.sprintId,
+                      getTaskDoneDate(card),
+                      team.teamId
+                    );
+                    
+                    tasksSynced++;
+                  } catch (taskError) {
+                    console.error(`[SMART-SYNC] Error syncing task ${sprintCard.id}:`, taskError instanceof Error ? taskError.message : String(taskError));
+                  }
+                }
+              }
+            } catch (sprintError) {
+              console.error(`[SMART-SYNC] Error sprint ${dbSprint.sprintId}:`, sprintError instanceof Error ? sprintError.message : String(sprintError));
+            }
+          }
+        } else {
+          // Реальных спринтов за этот год нет — синкаем весь год как виртуальный
+          console.log(`[SMART-SYNC] hasSprints=true но спринтов за год нет — виртуальный синк`);
+          const boardIds = getNoSprintBoardIds(team);
+          const yearStart = syncYear
+            ? new Date(syncYear, 0, 1).toISOString()
+            : new Date(new Date().getFullYear(), 0, 1).toISOString();
+          const allCardsArrays = await Promise.all(
+            boardIds.map(boardId => kaitenClient.getCardsWithDateFilter({
+              boardId,
+              lastMovedToDoneAtAfter: yearStart,
+              limit: 1000
+            }))
+          );
+          const cards = allCardsArrays.flat();
+          for (const card of cards) {
+            try {
+              let initCardId = 0;
+              if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
+                initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+              }
+              let state: "1-queued" | "2-inProgress" | "3-done";
+              if (card.state === 3) state = "3-done";
+              else if (card.state === 2) state = "2-inProgress";
+              else state = "1-queued";
+              const condition: "1-live" | "2-archived" = card.archived ? "2-archived" : "1-live";
+              await storage.syncTaskFromKaiten(
+                card.id, card.board_id, card.title,
+                card.created || new Date().toISOString(),
+                state, card.size || 0, condition, card.archived || false,
+                initCardId, card.type?.name, card.completed_at ?? undefined,
+                null, getTaskDoneDate(card), team.teamId
+              );
+              tasksSynced++;
+            } catch (e) {
+              console.error(`[SMART-SYNC] Virtual fallback card error ${card.id}:`, e instanceof Error ? e.message : String(e));
+            }
           }
         }
       } else if (team.sprintBoardId) {

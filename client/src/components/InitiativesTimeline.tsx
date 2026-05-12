@@ -2650,14 +2650,17 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   let response: Response;
                   
                   if (sprintModalData.sprintId < 0) {
-                    // Виртуальный спринт — синхронизируем по дате начала периода
+                    // Виртуальный спринт — синхронизируем точно по диапазону дат этого периода
                     const startDate = typeof sprintModalData.sprintDates === 'object'
                       ? sprintModalData.sprintDates.start
                       : new Date(new Date().getFullYear(), 0, 1).toISOString();
-                    response = await fetch(
-                      `/api/kaiten/sync-virtual-period/${sprintModalData.teamId}?startDate=${encodeURIComponent(startDate)}`,
-                      { method: 'POST', headers: { 'Content-Type': 'application/json' } }
-                    );
+                    const endDate = typeof sprintModalData.sprintDates === 'object'
+                      ? sprintModalData.sprintDates.end
+                      : null;
+                    const url = endDate
+                      ? `/api/kaiten/sync-virtual-period/${sprintModalData.teamId}?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
+                      : `/api/kaiten/sync-virtual-period/${sprintModalData.teamId}?startDate=${encodeURIComponent(startDate)}`;
+                    response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
                   } else {
                     // Реальный спринт — стандартный sync-sprint
                     response = await fetch(`/api/kaiten/sync-sprint/${sprintModalData.sprintId}`, {

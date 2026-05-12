@@ -307,6 +307,7 @@ export default function SettingsPage() {
       sprintDuration?: number; 
       spPrice?: number;
       departmentId?: string;
+      hasSprints?: boolean;
     }) => {
       const { teamId, ...updateData } = data;
       const res = await apiRequest("PATCH", `/api/teams/${teamId}`, updateData);
@@ -1401,7 +1402,8 @@ export default function SettingsPage() {
                                 vilocity: vel,
                                 sprintDuration: sd,
                                 spPrice: sp,
-                                departmentId: editingTeam.departmentId
+                                departmentId: editingTeam.departmentId,
+                                hasSprints,
                               });
                               saveYearlyDataMutation.mutate({
                                 teamId: editingTeam.teamId,
