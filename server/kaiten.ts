@@ -378,11 +378,18 @@ export class KaitenClient {
     try {
       const response = await this.makeRequest<any[]>(`/users?username=${encodeURIComponent(query)}`);
       if (Array.isArray(response)) {
-        return response.map((u: any) => ({
-          username: u.username,
-          full_name: u.full_name || u.fullName || u.username,
-          avatar_url: u.avatar?.url || u.avatar_url || null,
-        }));
+        const q = query.toLowerCase();
+        return response
+          .filter((u: any) => {
+            const username = (u.username || "").toLowerCase();
+            const fullName = (u.full_name || u.fullName || "").toLowerCase();
+            return username.includes(q) || fullName.includes(q);
+          })
+          .map((u: any) => ({
+            username: u.username,
+            full_name: u.full_name || u.fullName || u.username,
+            avatar_url: u.avatar?.url || u.avatar_url || null,
+          }));
       }
       return [];
     } catch {

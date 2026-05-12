@@ -1823,7 +1823,7 @@ export default function SettingsPage() {
                     onBlur={() => setTimeout(() => setUserSearchOpen(false), 150)}
                   />
                   {userSearchOpen && userSearchQuery.trim().length >= 2 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 z-[230] rounded-md border bg-popover shadow-md overflow-hidden">
+                    <div className="absolute left-0 right-0 top-full mt-1 z-[230] rounded-md border bg-popover shadow-md overflow-y-auto max-h-52">
                       {userSearchLoading ? (
                         <div className="px-3 py-2 text-sm text-muted-foreground">Поиск...</div>
                       ) : !userSearchResults || userSearchResults.length === 0 ? (
