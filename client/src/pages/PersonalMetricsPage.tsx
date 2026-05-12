@@ -3,6 +3,7 @@ import { useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Search } from "lucide-react";
 import type { TeamMemberRow, DepartmentWithTeamCount, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface Props {
@@ -83,6 +84,7 @@ export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
   const departmentId = params?.departmentId ?? "";
   const [activeTab, setActiveTab] = useState(ROLE_TABS[0].value);
   const [year] = useState(currentYear);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
@@ -143,13 +145,31 @@ export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
           </TabsList>
 
           {ROLE_TABS.map((tab) => {
-            const filtered = (members ?? []).filter((m) => m.role === tab.value);
+            const byRole = (members ?? []).filter((m) => m.role === tab.value);
+            const q = searchQuery.trim().toLowerCase();
+            const filtered = q
+              ? byRole.filter((m) => (m.fullName || m.username).toLowerCase().includes(q))
+              : byRole;
             return (
               <TabsContent key={tab.value} value={tab.value} className="mt-4">
-                {filtered.length === 0 ? (
+                {byRole.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Нет участников с ролью «{tab.label}»</p>
                 ) : (
-                  <div className="overflow-x-auto rounded-md border border-border">
+                  <div className="rounded-md border border-border overflow-hidden">
+                    <div className="px-4 py-2 border-b border-border bg-card flex items-center gap-2">
+                      <div className="relative flex items-center">
+                        <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder="Поиск сотрудника..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-8 pr-3 py-1.5 text-sm bg-background border border-border rounded-md outline-none focus:ring-1 focus:ring-primary w-56"
+                          data-testid="input-search-member"
+                        />
+                      </div>
+                    </div>
+                  <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse">
                       <thead className="sticky top-0 z-10">
                         <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
@@ -209,6 +229,7 @@ export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
                         })}
                       </tbody>
                     </table>
+                  </div>
                   </div>
                 )}
               </TabsContent>
