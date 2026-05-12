@@ -176,18 +176,6 @@ export const insertTeamYearlyDataSchema = createInsertSchema(teamYearlyData).omi
 export type InsertTeamYearlyData = z.infer<typeof insertTeamYearlyDataSchema>;
 export type TeamYearlyDataRow = typeof teamYearlyData.$inferSelect;
 
-export const virtualSprintOverrides = pgTable("virtual_sprint_overrides", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  teamId: varchar("team_id").notNull(),
-  year: integer("year").notNull(),
-  sprintNumber: integer("sprint_number").notNull(),
-  endDate: varchar("end_date").notNull(),
-});
-
-export const insertVirtualSprintOverrideSchema = createInsertSchema(virtualSprintOverrides).omit({ id: true });
-export type InsertVirtualSprintOverride = z.infer<typeof insertVirtualSprintOverrideSchema>;
-export type VirtualSprintOverrideRow = typeof virtualSprintOverrides.$inferSelect;
-
 export interface TaskInSprint {
   id: string;
   cardId: number;
