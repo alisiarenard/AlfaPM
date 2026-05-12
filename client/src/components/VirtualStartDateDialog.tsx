@@ -119,7 +119,7 @@ export function VirtualStartDateDialog({ open, onOpenChange, teamId, year }: Vir
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Отмена
           </Button>
-          <Button onClick={handleSave} disabled={saveMutation.isPending} data-testid="button-save-virtual-start">
+          <Button onClick={handleSave} disabled={saveMutation.isPending} data-testid="button-save-virtual-start" variant="destructive">
             {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Сохранить
           </Button>
