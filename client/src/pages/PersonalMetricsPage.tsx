@@ -151,10 +151,10 @@ export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
                 ) : (
                   <div className="overflow-x-auto rounded-md border border-border">
                     <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-muted/50">
+                      <thead className="sticky top-0 z-10">
+                        <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
                           <th
-                            className="sticky left-0 z-10 bg-muted/50 text-left px-4 py-2.5 font-semibold text-foreground border-b border-border whitespace-nowrap"
+                            className="sticky left-0 z-10 bg-white dark:bg-background text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border whitespace-nowrap"
                             style={{ minWidth: 200 }}
                           >
                             Сотрудник
@@ -162,7 +162,7 @@ export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
                           {METRIC_COLS.map((col) => (
                             <th
                               key={col.key}
-                              className="px-3 py-2.5 font-semibold text-center text-foreground border-b border-border whitespace-nowrap"
+                              className="px-4 py-3 text-xs font-normal text-center text-muted-foreground border-b border-border whitespace-nowrap"
                               style={{ minWidth: 100 }}
                             >
                               {col.label}
