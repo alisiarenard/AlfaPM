@@ -142,7 +142,7 @@ export const personalMetrics = pgTable("personal_metrics", {
   taskComplexity: integer("task_complexity"),
   productivity: integer("productivity"),
   estimationAccuracy: integer("estimation_accuracy"),
-  documentation: integer("documentation"),
+  aiUsage: integer("ai_usage"),
   communication: integer("communication"),
   discipline: integer("discipline"),
 });

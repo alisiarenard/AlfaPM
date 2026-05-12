@@ -29,7 +29,7 @@ const METRIC_COLS: { key: keyof Omit<PersonalMetricsRow, "id" | "memberId" | "ye
   { key: "taskComplexity",     label: "Сложность задач" },
   { key: "productivity",       label: "Производительность" },
   { key: "estimationAccuracy", label: "Точность оценки" },
-  { key: "documentation",      label: "Документирование" },
+  { key: "aiUsage",            label: "AI-usage" },
   { key: "communication",      label: "Коммуникации" },
   { key: "discipline",         label: "Дисциплина" },
 ];
