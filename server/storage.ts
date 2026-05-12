@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, type TeamMemberRow, type PersonalMetricsRow, users, departments, teams, initiatives, tasks, sprints, teamYearlyData, teamMembers, personalMetrics } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, type TeamMemberRow, type PersonalMetricsRow, type VirtualSprintOverrideRow, users, departments, teams, initiatives, tasks, sprints, teamYearlyData, teamMembers, personalMetrics, virtualSprintOverrides } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, sql, asc, desc, and, gte, lt } from "drizzle-orm";
@@ -95,6 +95,8 @@ export interface IStorage {
   deleteTeamMember(id: string): Promise<void>;
   getPersonalMetricsByDepartment(departmentId: string, year: number, quarter: number): Promise<PersonalMetricsRow[]>;
   upsertPersonalMetrics(memberId: string, year: number, quarter: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">>): Promise<PersonalMetricsRow>;
+  getVirtualSprintOverrides(teamId: string, year: number): Promise<VirtualSprintOverrideRow[]>;
+  upsertVirtualSprintOverride(teamId: string, year: number, sprintNumber: number, endDate: string): Promise<VirtualSprintOverrideRow>;
 }
 
 export class MemStorage implements IStorage {
@@ -412,6 +414,14 @@ export class MemStorage implements IStorage {
 
   async upsertPersonalMetrics(memberId: string, year: number, quarter: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">>): Promise<PersonalMetricsRow> {
     return {} as PersonalMetricsRow;
+  }
+
+  async getVirtualSprintOverrides(_teamId: string, _year: number): Promise<VirtualSprintOverrideRow[]> {
+    return [];
+  }
+
+  async upsertVirtualSprintOverride(_teamId: string, _year: number, _sprintNumber: number, _endDate: string): Promise<VirtualSprintOverrideRow> {
+    return {} as VirtualSprintOverrideRow;
   }
 }
 
@@ -1044,6 +1054,38 @@ export class DbStorage implements IStorage {
       return updated;
     } else {
       const [created] = await db.insert(personalMetrics).values({ memberId, year, quarter, ...data }).returning();
+      return created;
+    }
+  }
+
+  async getVirtualSprintOverrides(teamId: string, year: number): Promise<VirtualSprintOverrideRow[]> {
+    return await db.select().from(virtualSprintOverrides).where(
+      and(eq(virtualSprintOverrides.teamId, teamId), eq(virtualSprintOverrides.year, year))
+    );
+  }
+
+  async upsertVirtualSprintOverride(teamId: string, year: number, sprintNumber: number, endDate: string): Promise<VirtualSprintOverrideRow> {
+    const existing = await db.select().from(virtualSprintOverrides).where(
+      and(
+        eq(virtualSprintOverrides.teamId, teamId),
+        eq(virtualSprintOverrides.year, year),
+        eq(virtualSprintOverrides.sprintNumber, sprintNumber)
+      )
+    );
+    if (existing.length > 0) {
+      const [updated] = await db.update(virtualSprintOverrides)
+        .set({ endDate })
+        .where(
+          and(
+            eq(virtualSprintOverrides.teamId, teamId),
+            eq(virtualSprintOverrides.year, year),
+            eq(virtualSprintOverrides.sprintNumber, sprintNumber)
+          )
+        )
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(virtualSprintOverrides).values({ teamId, year, sprintNumber, endDate }).returning();
       return created;
     }
   }
