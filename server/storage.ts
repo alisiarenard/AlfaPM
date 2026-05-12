@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, type TeamMemberRow, users, departments, teams, initiatives, tasks, sprints, teamYearlyData, teamMembers } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, type TeamMemberRow, type PersonalMetricsRow, users, departments, teams, initiatives, tasks, sprints, teamYearlyData, teamMembers, personalMetrics } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, sql, asc, desc, and, gte, lt } from "drizzle-orm";
@@ -93,6 +93,8 @@ export interface IStorage {
   getMembersByDepartment(departmentId: string): Promise<TeamMemberRow[]>;
   createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null }): Promise<TeamMemberRow>;
   deleteTeamMember(id: string): Promise<void>;
+  getPersonalMetricsByDepartment(departmentId: string, year: number): Promise<PersonalMetricsRow[]>;
+  upsertPersonalMetrics(memberId: string, year: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year">>): Promise<PersonalMetricsRow>;
 }
 
 export class MemStorage implements IStorage {
@@ -402,6 +404,14 @@ export class MemStorage implements IStorage {
 
   async deleteTeamMember(id: string): Promise<void> {
     return;
+  }
+
+  async getPersonalMetricsByDepartment(departmentId: string, year: number): Promise<PersonalMetricsRow[]> {
+    return [];
+  }
+
+  async upsertPersonalMetrics(memberId: string, year: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year">>): Promise<PersonalMetricsRow> {
+    return {} as PersonalMetricsRow;
   }
 }
 
@@ -1006,6 +1016,35 @@ export class DbStorage implements IStorage {
 
   async deleteTeamMember(id: string): Promise<void> {
     await db.delete(teamMembers).where(eq(teamMembers.id, id));
+  }
+
+  async getPersonalMetricsByDepartment(departmentId: string, year: number): Promise<PersonalMetricsRow[]> {
+    const members = await db.select().from(teamMembers).where(eq(teamMembers.departmentId, departmentId));
+    if (members.length === 0) return [];
+    const memberIds = members.map((m) => m.id);
+    const rows = await db.select().from(personalMetrics).where(
+      and(
+        sql`${personalMetrics.memberId} = ANY(ARRAY[${sql.join(memberIds.map(id => sql`${id}`), sql`, `)}]::text[])`,
+        eq(personalMetrics.year, year)
+      )
+    );
+    return rows;
+  }
+
+  async upsertPersonalMetrics(memberId: string, year: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year">>): Promise<PersonalMetricsRow> {
+    const existing = await db.select().from(personalMetrics).where(
+      and(eq(personalMetrics.memberId, memberId), eq(personalMetrics.year, year))
+    );
+    if (existing.length > 0) {
+      const [updated] = await db.update(personalMetrics)
+        .set(data)
+        .where(and(eq(personalMetrics.memberId, memberId), eq(personalMetrics.year, year)))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(personalMetrics).values({ memberId, year, ...data }).returning();
+      return created;
+    }
   }
 }
 

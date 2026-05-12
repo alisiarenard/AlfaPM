@@ -930,6 +930,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/personal-metrics", async (req, res) => {
+    try {
+      const { departmentId, year } = req.query;
+      if (!departmentId || !year) return res.status(400).json({ success: false, error: "departmentId and year required" });
+      const rows = await storage.getPersonalMetricsByDepartment(String(departmentId), Number(year));
+      res.json(rows);
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.put("/api/personal-metrics/:memberId", async (req, res) => {
+    try {
+      const { memberId } = req.params;
+      const { year, ...data } = req.body;
+      if (!year) return res.status(400).json({ success: false, error: "year required" });
+      const row = await storage.upsertPersonalMetrics(memberId, Number(year), data);
+      res.json(row);
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   app.get("/api/departments/:departmentId/members", async (req, res) => {
     try {
       const { departmentId } = req.params;

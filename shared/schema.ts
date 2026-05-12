@@ -133,6 +133,23 @@ export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({ id:
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type TeamMemberRow = typeof teamMembers.$inferSelect;
 
+export const personalMetrics = pgTable("personal_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  memberId: varchar("member_id").notNull(),
+  year: integer("year").notNull(),
+  codeQuality: integer("code_quality"),
+  taskComplexity: integer("task_complexity"),
+  productivity: integer("productivity"),
+  estimationAccuracy: integer("estimation_accuracy"),
+  documentation: integer("documentation"),
+  communication: integer("communication"),
+  discipline: integer("discipline"),
+});
+
+export const insertPersonalMetricsSchema = createInsertSchema(personalMetrics).omit({ id: true });
+export type InsertPersonalMetrics = z.infer<typeof insertPersonalMetricsSchema>;
+export type PersonalMetricsRow = typeof personalMetrics.$inferSelect;
+
 export const insertTeamSchema = createInsertSchema(teams)
   .omit({ teamId: true, sprintBoardId: true })
   .extend({
