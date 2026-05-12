@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface Props {
@@ -79,13 +80,20 @@ function calcAverage(metrics: PersonalMetricsRow | undefined): number | null {
   return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
 }
 
-function AverageCell({ metrics }: { metrics: PersonalMetricsRow | undefined }) {
+function AverageCell({ metrics, queryKey }: { metrics: PersonalMetricsRow | undefined; queryKey: unknown[] }) {
   const avg = calcAverage(metrics);
 
   if (avg === null) {
     return (
-      <td className="border-b border-border px-3 py-2.5 text-center text-muted-foreground text-xs" style={{ minWidth: 80 }}>
-        —
+      <td className="border-b border-border px-2 py-2.5 text-center" style={{ minWidth: 80 }}>
+        <button
+          onClick={() => queryClient.invalidateQueries({ queryKey })}
+          className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          title="Получить данные"
+          data-testid="button-refetch-metrics"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
       </td>
     );
   }
@@ -263,7 +271,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                                     value={metrics?.[col.key] ?? null}
                                   />
                                 ))}
-                                <AverageCell metrics={metrics} />
+                                <AverageCell metrics={metrics} queryKey={["/api/personal-metrics", departmentId, year, quarter]} />
                               </tr>
                             );
                           })}
