@@ -91,7 +91,7 @@ export interface IStorage {
   deleteTeamYearlyData(teamId: string): Promise<void>;
   getMembersByTeam(teamId: string): Promise<TeamMemberRow[]>;
   getMembersByDepartment(departmentId: string): Promise<TeamMemberRow[]>;
-  createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null }): Promise<TeamMemberRow>;
+  createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null; gitlabUsername?: string | null }): Promise<TeamMemberRow>;
   deleteTeamMember(id: string): Promise<void>;
   getPersonalMetricsByDepartment(departmentId: string, year: number, quarter: number): Promise<PersonalMetricsRow[]>;
   upsertPersonalMetrics(memberId: string, year: number, quarter: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">>): Promise<PersonalMetricsRow>;
@@ -398,7 +398,7 @@ export class MemStorage implements IStorage {
     return [];
   }
 
-  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null }): Promise<TeamMemberRow> {
+  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null; gitlabUsername?: string | null }): Promise<TeamMemberRow> {
     return {} as TeamMemberRow;
   }
 
@@ -1009,7 +1009,7 @@ export class DbStorage implements IStorage {
     return await db.select().from(teamMembers).where(eq(teamMembers.departmentId, departmentId));
   }
 
-  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null }): Promise<TeamMemberRow> {
+  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null; gitlabUsername?: string | null }): Promise<TeamMemberRow> {
     const [created] = await db.insert(teamMembers).values(member).returning();
     return created;
   }

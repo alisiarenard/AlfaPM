@@ -984,8 +984,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existing.some((m) => m.username === username)) {
         return res.status(409).json({ success: false, error: "Пользователь уже добавлен в эту команду" });
       }
-      const { fullName, avatarUrl } = req.body;
-      const member = await storage.createTeamMember({ teamId, departmentId, role, username, fullName: fullName || null, avatarUrl: avatarUrl || null });
+      const { fullName, avatarUrl, gitlabUsername } = req.body;
+      const member = await storage.createTeamMember({ teamId, departmentId, role, username, fullName: fullName || null, avatarUrl: avatarUrl || null, gitlabUsername: gitlabUsername || null });
       res.json(member);
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message || "Failed to create member" });

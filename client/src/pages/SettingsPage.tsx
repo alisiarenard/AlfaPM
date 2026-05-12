@@ -129,6 +129,7 @@ export default function SettingsPage() {
   const [newMemberFullName, setNewMemberFullName] = useState("");
   const [newMemberAvatarUrl, setNewMemberAvatarUrl] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("");
+  const [newMemberGitlabUsername, setNewMemberGitlabUsername] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchOpen, setUserSearchOpen] = useState(false);
   const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
@@ -451,7 +452,7 @@ export default function SettingsPage() {
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: async (data: { username: string; role: string; fullName: string; avatarUrl: string }) => {
+    mutationFn: async (data: { username: string; role: string; fullName: string; avatarUrl: string; gitlabUsername?: string }) => {
       const res = await apiRequest("POST", `/api/teams/${editingTeam!.teamId}/members`, {
         ...data,
         departmentId: editingTeam!.departmentId,
@@ -1779,6 +1780,7 @@ export default function SettingsPage() {
         setNewMemberFullName("");
         setNewMemberAvatarUrl("");
         setNewMemberRole("");
+        setNewMemberGitlabUsername("");
         setUserSearchQuery("");
         setDebouncedUserSearch("");
         setUserSearchOpen(false);
@@ -1850,6 +1852,17 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="space-y-1.5">
+            <Label htmlFor="member-gitlab-username">Юзернейм (GitLab)</Label>
+            <Input
+              id="member-gitlab-username"
+              data-testid="input-member-gitlab-username"
+              placeholder="username"
+              value={newMemberGitlabUsername}
+              onChange={(e) => setNewMemberGitlabUsername(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="member-role">Роль <span className="text-destructive">*</span></Label>
             <Select value={newMemberRole} onValueChange={setNewMemberRole}>
               <SelectTrigger id="member-role" data-testid="select-member-role">
@@ -1878,7 +1891,7 @@ export default function SettingsPage() {
             disabled={!newMemberUsername.trim() || !newMemberRole || addMemberMutation.isPending}
             style={{ backgroundColor: '#cd253d' }}
             className="hover:opacity-90 border-0"
-            onClick={() => addMemberMutation.mutate({ username: newMemberUsername.trim(), role: newMemberRole, fullName: newMemberFullName, avatarUrl: newMemberAvatarUrl })}
+            onClick={() => addMemberMutation.mutate({ username: newMemberUsername.trim(), role: newMemberRole, fullName: newMemberFullName, avatarUrl: newMemberAvatarUrl, gitlabUsername: newMemberGitlabUsername.trim() || undefined })}
           >
             {addMemberMutation.isPending ? "Добавление..." : "Добавить"}
           </Button>
