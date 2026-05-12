@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import HomePage from "@/pages/HomePage";
 import ProductMetricsPage from "@/pages/ProductMetricsPage";
 import SettingsPage from "@/pages/SettingsPage";
+import PersonalMetricsPage from "@/pages/PersonalMetricsPage";
 import NotFound from "@/pages/not-found";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 import type { DepartmentWithTeamCount } from "@shared/schema";
@@ -165,6 +166,9 @@ function AppLayout() {
           </Route>
           <Route path="/settings">
             <SettingsPage />
+          </Route>
+          <Route path="/personal-metrics/:departmentId">
+            <PersonalMetricsPage />
           </Route>
           <Route component={NotFound} />
         </Switch>

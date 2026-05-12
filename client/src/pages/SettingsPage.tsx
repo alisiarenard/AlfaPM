@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,6 +101,7 @@ function DepartmentTreeItem({
 
 export default function SettingsPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
   const [rightPanelMode, setRightPanelMode] = useState<null | "addBlock" | "addTeam" | "editBlock" | "editTeam">(null);
   const [blockName, setBlockName] = useState("");
@@ -122,7 +124,6 @@ export default function SettingsPage() {
   const [devColumnId, setDevColumnId] = useState("");
   const [testColumnId, setTestColumnId] = useState("");
   const [extraBoards, setExtraBoards] = useState<{spaceId: string; boardId: string}[]>([]);
-  const [showDevelopersModal, setShowDevelopersModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemberUsername, setNewMemberUsername] = useState("");
   const [newMemberFullName, setNewMemberFullName] = useState("");
@@ -437,16 +438,6 @@ export default function SettingsPage() {
     },
     enabled: debouncedUserSearch.trim().length >= 2,
     staleTime: 30000,
-  });
-
-  const { data: departmentMembersList } = useQuery<TeamMemberRow[]>({
-    queryKey: ["/api/departments", editingDepartment?.id, "members"],
-    queryFn: async () => {
-      const res = await fetch(`/api/departments/${editingDepartment!.id}/members`);
-      if (!res.ok) throw new Error("Failed to fetch department members");
-      return await res.json();
-    },
-    enabled: !!editingDepartment && rightPanelMode === "editBlock" && showDevelopersModal,
   });
 
   const { data: teamMembersList, isLoading: membersLoading } = useQuery<TeamMemberRow[]>({
@@ -790,19 +781,19 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className="flex-1 p-6 space-y-4 overflow-y-auto">
-                      <div className="space-y-2">
-                        <Label htmlFor="block-name">Название блока <span className="text-destructive">*</span></Label>
-                        <Input
-                          id="block-name"
-                          placeholder="Введите название блока"
-                          value={blockName}
-                          onChange={(e) => setBlockName(e.target.value)}
-                          data-testid="input-block-name"
-                        />
-                      </div>
-                      <div className="flex gap-4">
+                      <div className="flex gap-3">
                         <div className="flex-1 space-y-2">
-                          <Label htmlFor="innovation-rate">Плановый Innovation Rate, %</Label>
+                          <Label htmlFor="block-name">Название блока <span className="text-destructive">*</span></Label>
+                          <Input
+                            id="block-name"
+                            placeholder="Введите название"
+                            value={blockName}
+                            onChange={(e) => setBlockName(e.target.value)}
+                            data-testid="input-block-name"
+                          />
+                        </div>
+                        <div className="w-28 space-y-2">
+                          <Label htmlFor="innovation-rate">Плановый ИР, %</Label>
                           <Input
                             id="innovation-rate"
                             type="number"
@@ -813,7 +804,7 @@ export default function SettingsPage() {
                             data-testid="input-innovation-rate"
                           />
                         </div>
-                        <div className="flex-1 space-y-2">
+                        <div className="w-28 space-y-2">
                           <Label htmlFor="value-cost">Value/Cost</Label>
                           <Input
                             id="value-cost"
@@ -1004,7 +995,7 @@ export default function SettingsPage() {
                           variant="outline"
                           type="button"
                           data-testid="button-department-developers"
-                          onClick={() => setShowDevelopersModal(true)}
+                          onClick={() => setLocation(`/personal-metrics/${editingDepartment.id}`)}
                         >
                           <Users className="h-4 w-4 mr-2" />
                           Разработчики
@@ -1780,41 +1771,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
-
-    <Dialog open={showDevelopersModal} onOpenChange={setShowDevelopersModal}>
-      <DialogContent data-testid="dialog-department-developers" className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Разработчики — {editingDepartment?.department}</DialogTitle>
-        </DialogHeader>
-        <div className="py-2">
-          {!departmentMembersList ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Загрузка...</p>
-          ) : departmentMembersList.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Нет участников в этом подразделении</p>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-              {departmentMembersList.map((m) => (
-                <div key={m.id} className="flex items-center gap-3 px-3 py-2 rounded-md bg-muted/40">
-                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                    {m.avatarUrl ? (
-                      <img src={m.avatarUrl} alt={m.fullName || m.username} className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        {(m.fullName || m.username).charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{m.fullName || m.username}</p>
-                    <p className="text-xs text-muted-foreground truncate">{m.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
 
     <Dialog open={showAddMemberModal} onOpenChange={(open) => {
       setShowAddMemberModal(open);
