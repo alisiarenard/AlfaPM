@@ -376,23 +376,23 @@ export class KaitenClient {
   }
   async searchUsers(query: string): Promise<{ username: string; full_name: string; avatar_url: string | null }[]> {
     try {
-      const response = await this.makeRequest<any[]>(`/users?username=${encodeURIComponent(query)}`);
-      if (Array.isArray(response)) {
-        const q = query.toLowerCase();
-        return response
-          .filter((u: any) => {
-            const username = (u.username || "").toLowerCase();
-            const fullName = (u.full_name || u.fullName || "").toLowerCase();
-            return username.includes(q) || fullName.includes(q);
-          })
-          .map((u: any) => ({
-            username: u.username,
-            full_name: u.full_name || u.fullName || u.username,
-            avatar_url: u.avatar?.url || u.avatar_url || null,
-          }));
-      }
-      return [];
-    } catch {
+      const response = await this.makeRequest<any>(`/users?username=${encodeURIComponent(query)}`);
+      console.log(`[searchUsers] query="${query}" response type=${Array.isArray(response) ? 'array' : typeof response} len=${Array.isArray(response) ? response.length : JSON.stringify(response).slice(0, 200)}`);
+      const arr: any[] = Array.isArray(response) ? response : (response?.data || response?.users || response?.items || []);
+      const q = query.toLowerCase();
+      const filtered = arr.filter((u: any) => {
+        const username = (u.username || "").toLowerCase();
+        const fullName = (u.full_name || u.fullName || "").toLowerCase();
+        return username.includes(q) || fullName.includes(q);
+      });
+      console.log(`[searchUsers] after filter: ${filtered.length} of ${arr.length}`);
+      return filtered.map((u: any) => ({
+        username: u.username,
+        full_name: u.full_name || u.fullName || u.username,
+        avatar_url: u.avatar?.url || u.avatar_url || null,
+      }));
+    } catch (e) {
+      console.error("[searchUsers] error:", e);
       return [];
     }
   }
