@@ -698,6 +698,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         isSyncing={syncAllMutation.isPending}
         viewTab={viewTab}
         onViewTabChange={setViewTab}
+        year={selectedYear ? parseInt(selectedYear) : undefined}
       />
       <div className="overflow-auto custom-scrollbar pr-6" style={{ height: '60vh' }}>
         {viewTab === "initiatives" ? (

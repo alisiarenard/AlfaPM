@@ -170,6 +170,7 @@ export const teamYearlyData = pgTable("team_yearly_data", {
   spPrice: integer("sp_price").notNull().default(0),
   hasSprints: boolean("has_sprints").notNull().default(true),
   plannedIr: integer("planned_ir"),
+  virtualStartDate: varchar("virtual_start_date"),
 });
 
 export const insertTeamYearlyDataSchema = createInsertSchema(teamYearlyData).omit({ id: true });

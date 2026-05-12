@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { Team, Initiative, TeamRow } from "@shared/schema";
 import { SprintInfoDialog } from "@/components/SprintInfoDialog";
+import { VirtualStartDateDialog } from "@/components/VirtualStartDateDialog";
 
 interface TeamHeaderProps {
   team: Team;
@@ -15,10 +16,14 @@ interface TeamHeaderProps {
   isSyncing?: boolean;
   viewTab: "initiatives" | "metrics";
   onViewTabChange: (tab: "initiatives" | "metrics") => void;
+  year?: number;
 }
 
-export function TeamHeader({ team, onSync, isSyncing, viewTab, onViewTabChange }: TeamHeaderProps) {
+export function TeamHeader({ team, onSync, isSyncing, viewTab, onViewTabChange, year }: TeamHeaderProps) {
   const [sprintInfoOpen, setSprintInfoOpen] = useState(false);
+  const [virtualStartOpen, setVirtualStartOpen] = useState(false);
+  const isVirtual = team.hasSprints === false;
+  const currentYear = year ?? new Date().getFullYear();
 
   return (
     <div className="px-4 py-2 border-b border-border bg-card">
@@ -28,8 +33,8 @@ export function TeamHeader({ team, onSync, isSyncing, viewTab, onViewTabChange }
             size="icon"
             variant="ghost"
             data-testid="button-sprint-info"
-            onClick={() => setSprintInfoOpen(true)}
-            title="Добавить спринт"
+            onClick={() => isVirtual ? setVirtualStartOpen(true) : setSprintInfoOpen(true)}
+            title={isVirtual ? "Дата начала виртуальных спринтов" : "Добавить спринт"}
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -73,6 +78,12 @@ export function TeamHeader({ team, onSync, isSyncing, viewTab, onViewTabChange }
         open={sprintInfoOpen} 
         onOpenChange={setSprintInfoOpen}
         teamId={team.teamId}
+      />
+      <VirtualStartDateDialog
+        open={virtualStartOpen}
+        onOpenChange={setVirtualStartOpen}
+        teamId={team.teamId}
+        year={currentYear}
       />
     </div>
   );

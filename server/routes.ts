@@ -1040,6 +1040,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/teams/:teamId/yearly-data", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+      const result = await storage.getTeamYearlyData(teamId, year);
+      res.json(result ?? {});
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to get yearly data" });
+    }
+  });
+
+  app.patch("/api/teams/:teamId/virtual-sprint-start", async (req, res) => {
+    try {
+      const { teamId } = req.params;
+      const { year, startDate } = req.body;
+      if (!year) return res.status(400).json({ success: false, error: "year is required" });
+      await (storage as any).updateVirtualStartDate(teamId, parseInt(year), startDate || null);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to update virtual sprint start date" });
+    }
+  });
+
   app.post("/api/team-yearly-data", async (req, res) => {
     try {
       const { teamId, year, vilocity, sprintDuration, spPrice, hasSprints, plannedIr } = req.body;
@@ -1242,6 +1265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       
       const team = await storage.getTeamById(teamId);
+      const teamYearlyDataRow = await storage.getTeamYearlyData(teamId, year ?? new Date().getFullYear());
+      const virtualStartDateISO = teamYearlyDataRow?.virtualStartDate ?? null;
       
       if (!team) {
         return res.status(404).json({ 
@@ -1347,7 +1372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const virtualSprints: any[] = [];
           const virtualSprintTasksMap = new Map<number, any[]>();
-          let currentStartDate = new Date(firstDate);
+          let currentStartDate = virtualStartDateISO ? new Date(virtualStartDateISO) : new Date(firstDate);
           let sprintNumber = 1;
 
           while (currentStartDate <= lastDate) {
@@ -1615,8 +1640,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const virtualSprints: any[] = [];
         const virtualSprintTasksMap = new Map<number, any[]>();
-        // Всегда начинаем с 1 января запрошенного года
-        let currentStartDate = new Date(yearStartDate);
+        // Начинаем с virtualStartDate если задан, иначе с 1 января запрошенного года
+        let currentStartDate = virtualStartDateISO ? new Date(virtualStartDateISO) : new Date(yearStartDate);
         let sprintNumber = 1;
 
         while (currentStartDate <= lastDate) {

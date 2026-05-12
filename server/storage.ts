@@ -988,6 +988,7 @@ export class DbStorage implements IStorage {
           spPrice: data.spPrice,
           hasSprints: data.hasSprints,
           plannedIr: data.plannedIr,
+          ...(data.virtualStartDate !== undefined ? { virtualStartDate: data.virtualStartDate } : {}),
         })
         .where(eq(teamYearlyData.id, existing.id))
         .returning();
@@ -995,6 +996,15 @@ export class DbStorage implements IStorage {
     }
     const [created] = await db.insert(teamYearlyData).values(data).returning();
     return created;
+  }
+
+  async updateVirtualStartDate(teamId: string, year: number, startDate: string | null): Promise<void> {
+    const existing = await this.getTeamYearlyData(teamId, year);
+    if (existing) {
+      await db.update(teamYearlyData)
+        .set({ virtualStartDate: startDate })
+        .where(eq(teamYearlyData.id, existing.id));
+    }
   }
 
   async deleteTeamYearlyData(teamId: string): Promise<void> {
