@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, useRoute } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -68,6 +68,7 @@ function Sidebar() {
 
 function AppLayout() {
   const [location] = useLocation();
+  const [matchPersonal, personalParams] = useRoute("/personal-metrics/:departmentId");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [pageSubtitle, setPageSubtitle] = useState<string>("");
@@ -75,6 +76,12 @@ function AppLayout() {
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
   });
+
+  useEffect(() => {
+    if (matchPersonal && personalParams?.departmentId) {
+      setSelectedDepartment(personalParams.departmentId);
+    }
+  }, [matchPersonal, personalParams?.departmentId]);
 
   const isSettingsPage = location.startsWith("/settings");
   const isPersonalMetricsPage = location.startsWith("/personal-metrics");
@@ -95,11 +102,11 @@ function AppLayout() {
             <div className="flex items-start justify-between px-6 pt-[20px] min-h-[52px]">
               <div className="flex flex-col">
                 <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
-                {pageSubtitle && (
+                {pageSubtitle && !isPersonalMetricsPage && (
                   <span className="text-sm font-bold text-destructive" data-testid="text-page-subtitle">{pageSubtitle}</span>
                 )}
               </div>
-              {!isSettingsPage && !isPersonalMetricsPage && (
+              {!isSettingsPage && (
                 <div className="flex items-center gap-3">
                   <Select
                     value={selectedDepartment}
@@ -173,7 +180,10 @@ function AppLayout() {
             <SettingsPage />
           </Route>
           <Route path="/personal-metrics/:departmentId">
-            <PersonalMetricsPage setPageSubtitle={setPageSubtitle} />
+            <PersonalMetricsPage
+              selectedDepartment={selectedDepartment}
+              selectedYear={selectedYear}
+            />
           </Route>
           <Route component={NotFound} />
         </Switch>

@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef } from "react";
-import { useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Search } from "lucide-react";
-import type { TeamMemberRow, DepartmentWithTeamCount, TeamRow, PersonalMetricsRow } from "@shared/schema";
+import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface Props {
-  setPageSubtitle?: (s: string) => void;
+  selectedDepartment: string;
+  selectedYear: string;
 }
 
 const ROLE_TABS = [
@@ -26,8 +26,6 @@ const METRIC_COLS: { key: keyof Omit<PersonalMetricsRow, "id" | "memberId" | "ye
   { key: "communication",      label: "Коммуникации" },
   { key: "discipline",         label: "Дисциплина" },
 ];
-
-const currentYear = new Date().getFullYear();
 
 function MetricCell({
   memberId, metricKey, value, year,
@@ -79,16 +77,11 @@ function MetricCell({
   );
 }
 
-export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
-  const [, params] = useRoute("/personal-metrics/:departmentId");
-  const departmentId = params?.departmentId ?? "";
+export default function PersonalMetricsPage({ selectedDepartment, selectedYear }: Props) {
+  const departmentId = selectedDepartment;
+  const year = Number(selectedYear);
   const [activeTab, setActiveTab] = useState(ROLE_TABS[0].value);
-  const [year] = useState(currentYear);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
-    queryKey: ["/api/departments"],
-  });
 
   const { data: members, isLoading } = useQuery<TeamMemberRow[]>({
     queryKey: ["/api/departments", departmentId, "members"],
@@ -120,15 +113,16 @@ export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
     enabled: !!departmentId,
   });
 
-  const department = departments?.find((d) => d.id === departmentId);
-
-  useEffect(() => {
-    if (setPageSubtitle) setPageSubtitle(department?.department ?? "");
-    return () => { if (setPageSubtitle) setPageSubtitle(""); };
-  }, [department, setPageSubtitle]);
-
   const teamMap = Object.fromEntries((teams ?? []).map((t) => [t.teamId, t.teamName]));
   const metricsMap = Object.fromEntries((metricsRows ?? []).map((r) => [r.memberId, r]));
+
+  if (!departmentId) {
+    return (
+      <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto px-6 pt-6">
+        <p className="text-sm text-muted-foreground">Выберите департамент для просмотра метрик</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto px-6 pt-3 pb-6">
@@ -151,85 +145,85 @@ export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
               ? byRole.filter((m) => (m.fullName || m.username).toLowerCase().includes(q))
               : byRole;
             return (
-              <TabsContent key={tab.value} value={tab.value} className="mt-4">
+              <TabsContent key={tab.value} value={tab.value} className="mt-0">
                 {byRole.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Нет участников с ролью «{tab.label}»</p>
+                  <p className="text-sm text-muted-foreground mt-4">Нет участников с ролью «{tab.label}»</p>
                 ) : (
                   <div className="rounded-md border border-border overflow-hidden">
                     <div className="px-4 py-2 border-b border-border bg-card flex items-center gap-2">
                       <div className="relative flex items-center">
-                        <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        <Search className="absolute left-0 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                         <input
                           type="text"
                           placeholder="Поиск сотрудника..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-8 pr-3 py-1.5 text-sm bg-background border border-border rounded-md outline-none focus:ring-1 focus:ring-primary w-56"
+                          className="pl-5 pr-3 py-1.5 text-sm bg-transparent border-0 border-b border-border outline-none focus:ring-0 w-56"
                           data-testid="input-search-member"
                         />
                       </div>
                     </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead className="sticky top-0 z-10">
-                        <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
-                          <th
-                            className="sticky left-0 z-10 bg-white dark:bg-background text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border whitespace-nowrap"
-                            style={{ minWidth: 200 }}
-                          >
-                            Сотрудник
-                          </th>
-                          {METRIC_COLS.map((col) => (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm border-collapse">
+                        <thead className="sticky top-0 z-10">
+                          <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
                             <th
-                              key={col.key}
-                              className="px-4 py-3 text-xs font-normal text-center text-muted-foreground border-b border-border whitespace-nowrap"
-                              style={{ minWidth: 100 }}
+                              className="sticky left-0 z-10 bg-white dark:bg-background text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border whitespace-nowrap"
+                              style={{ minWidth: 200 }}
                             >
-                              {col.label}
+                              Сотрудник
                             </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtered.map((m) => {
-                          const metrics = metricsMap[m.id];
-                          return (
-                            <tr key={m.id} className="hover-elevate" data-testid={`row-member-${m.id}`}>
-                              <td
-                                className="sticky left-0 z-10 bg-background border-b border-border px-4 py-2.5 whitespace-nowrap"
-                                style={{ minWidth: 200 }}
+                            {METRIC_COLS.map((col) => (
+                              <th
+                                key={col.key}
+                                className="px-4 py-3 text-xs font-normal text-center text-muted-foreground border-b border-border whitespace-nowrap"
+                                style={{ minWidth: 100 }}
                               >
-                                <div className="flex items-center gap-2.5">
-                                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                                    {m.avatarUrl ? (
-                                      <img src={m.avatarUrl} alt={m.fullName || m.username} className="h-full w-full object-cover" />
-                                    ) : (
-                                      <span className="text-xs font-semibold text-muted-foreground">
-                                        {(m.fullName || m.username).charAt(0).toUpperCase()}
-                                      </span>
-                                    )}
+                                {col.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filtered.map((m) => {
+                            const metrics = metricsMap[m.id];
+                            return (
+                              <tr key={m.id} className="hover-elevate" data-testid={`row-member-${m.id}`}>
+                                <td
+                                  className="sticky left-0 z-10 bg-background border-b border-border px-4 py-2.5 whitespace-nowrap"
+                                  style={{ minWidth: 200 }}
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                                      {m.avatarUrl ? (
+                                        <img src={m.avatarUrl} alt={m.fullName || m.username} className="h-full w-full object-cover" />
+                                      ) : (
+                                        <span className="text-xs font-semibold text-muted-foreground">
+                                          {(m.fullName || m.username).charAt(0).toUpperCase()}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-medium truncate text-foreground">{m.fullName || m.username}</p>
+                                      <p className="text-xs text-muted-foreground truncate">{teamMap[m.teamId] ?? ""}</p>
+                                    </div>
                                   </div>
-                                  <div className="min-w-0">
-                                    <p className="font-medium truncate text-foreground">{m.fullName || m.username}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{teamMap[m.teamId] ?? ""}</p>
-                                  </div>
-                                </div>
-                              </td>
-                              {METRIC_COLS.map((col) => (
-                                <MetricCell
-                                  key={col.key}
-                                  memberId={m.id}
-                                  metricKey={col.key}
-                                  value={metrics?.[col.key] ?? null}
-                                  year={year}
-                                />
-                              ))}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                </td>
+                                {METRIC_COLS.map((col) => (
+                                  <MetricCell
+                                    key={col.key}
+                                    memberId={m.id}
+                                    metricKey={col.key}
+                                    value={metrics?.[col.key] ?? null}
+                                    year={year}
+                                  />
+                                ))}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </TabsContent>
