@@ -1,12 +1,14 @@
-import { useRoute, useLocation } from "wouter";
+import { useEffect } from "react";
+import { useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import type { TeamMemberRow, DepartmentWithTeamCount, TeamRow } from "@shared/schema";
 
-export default function PersonalMetricsPage() {
+interface Props {
+  setPageSubtitle?: (s: string) => void;
+}
+
+export default function PersonalMetricsPage({ setPageSubtitle }: Props) {
   const [, params] = useRoute("/personal-metrics/:departmentId");
-  const [, setLocation] = useLocation();
   const departmentId = params?.departmentId ?? "";
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
@@ -34,6 +36,14 @@ export default function PersonalMetricsPage() {
   });
 
   const department = departments?.find((d) => d.id === departmentId);
+
+  useEffect(() => {
+    if (setPageSubtitle) {
+      setPageSubtitle(department?.department ?? "");
+    }
+    return () => { if (setPageSubtitle) setPageSubtitle(""); };
+  }, [department, setPageSubtitle]);
+
   const teamMap = Object.fromEntries((teams ?? []).map((t) => [t.teamId, t.teamName]));
 
   const grouped: Record<string, TeamMemberRow[]> = {};
@@ -44,18 +54,6 @@ export default function PersonalMetricsPage() {
 
   return (
     <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto px-6 py-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Button size="icon" variant="ghost" onClick={() => setLocation("/settings")} data-testid="button-back-to-settings">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Персональные метрики</h1>
-          {department && (
-            <p className="text-sm text-muted-foreground">{department.department}</p>
-          )}
-        </div>
-      </div>
-
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Загрузка...</p>
       ) : !members || members.length === 0 ? (

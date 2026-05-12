@@ -77,9 +77,14 @@ function AppLayout() {
   });
 
   const isSettingsPage = location.startsWith("/settings");
-  const pageTitle = isSettingsPage ? "Настройки" : navItems.find(item => 
-    item.path === "/" ? location === "/" || location.startsWith("/?") : location.startsWith(item.path)
-  )?.label || "Командные метрики";
+  const isPersonalMetricsPage = location.startsWith("/personal-metrics");
+  const pageTitle = isSettingsPage
+    ? "Настройки"
+    : isPersonalMetricsPage
+    ? "Персональные метрики"
+    : navItems.find(item =>
+        item.path === "/" ? location === "/" || location.startsWith("/?") : location.startsWith(item.path)
+      )?.label || "Командные метрики";
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -94,7 +99,7 @@ function AppLayout() {
                   <span className="text-sm font-bold text-destructive" data-testid="text-page-subtitle">{pageSubtitle}</span>
                 )}
               </div>
-              {!isSettingsPage && (
+              {!isSettingsPage && !isPersonalMetricsPage && (
                 <div className="flex items-center gap-3">
                   <Select
                     value={selectedDepartment}
@@ -168,7 +173,7 @@ function AppLayout() {
             <SettingsPage />
           </Route>
           <Route path="/personal-metrics/:departmentId">
-            <PersonalMetricsPage />
+            <PersonalMetricsPage setPageSubtitle={setPageSubtitle} />
           </Route>
           <Route component={NotFound} />
         </Switch>
