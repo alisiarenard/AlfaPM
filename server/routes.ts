@@ -932,9 +932,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/personal-metrics", async (req, res) => {
     try {
-      const { departmentId, year } = req.query;
+      const { departmentId, year, quarter } = req.query;
       if (!departmentId || !year) return res.status(400).json({ success: false, error: "departmentId and year required" });
-      const rows = await storage.getPersonalMetricsByDepartment(String(departmentId), Number(year));
+      const rows = await storage.getPersonalMetricsByDepartment(String(departmentId), Number(year), Number(quarter ?? 1));
       res.json(rows);
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -944,9 +944,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/personal-metrics/:memberId", async (req, res) => {
     try {
       const { memberId } = req.params;
-      const { year, ...data } = req.body;
+      const { year, quarter, ...data } = req.body;
       if (!year) return res.status(400).json({ success: false, error: "year required" });
-      const row = await storage.upsertPersonalMetrics(memberId, Number(year), data);
+      const row = await storage.upsertPersonalMetrics(memberId, Number(year), Number(quarter ?? 1), data);
       res.json(row);
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });

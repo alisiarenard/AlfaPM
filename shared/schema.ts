@@ -137,6 +137,7 @@ export const personalMetrics = pgTable("personal_metrics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   memberId: varchar("member_id").notNull(),
   year: integer("year").notNull(),
+  quarter: integer("quarter").notNull().default(1),
   codeQuality: integer("code_quality"),
   taskComplexity: integer("task_complexity"),
   productivity: integer("productivity"),

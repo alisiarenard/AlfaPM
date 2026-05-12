@@ -93,8 +93,8 @@ export interface IStorage {
   getMembersByDepartment(departmentId: string): Promise<TeamMemberRow[]>;
   createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null }): Promise<TeamMemberRow>;
   deleteTeamMember(id: string): Promise<void>;
-  getPersonalMetricsByDepartment(departmentId: string, year: number): Promise<PersonalMetricsRow[]>;
-  upsertPersonalMetrics(memberId: string, year: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year">>): Promise<PersonalMetricsRow>;
+  getPersonalMetricsByDepartment(departmentId: string, year: number, quarter: number): Promise<PersonalMetricsRow[]>;
+  upsertPersonalMetrics(memberId: string, year: number, quarter: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">>): Promise<PersonalMetricsRow>;
 }
 
 export class MemStorage implements IStorage {
@@ -406,11 +406,11 @@ export class MemStorage implements IStorage {
     return;
   }
 
-  async getPersonalMetricsByDepartment(departmentId: string, year: number): Promise<PersonalMetricsRow[]> {
+  async getPersonalMetricsByDepartment(departmentId: string, year: number, quarter: number): Promise<PersonalMetricsRow[]> {
     return [];
   }
 
-  async upsertPersonalMetrics(memberId: string, year: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year">>): Promise<PersonalMetricsRow> {
+  async upsertPersonalMetrics(memberId: string, year: number, quarter: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">>): Promise<PersonalMetricsRow> {
     return {} as PersonalMetricsRow;
   }
 }
@@ -1018,31 +1018,32 @@ export class DbStorage implements IStorage {
     await db.delete(teamMembers).where(eq(teamMembers.id, id));
   }
 
-  async getPersonalMetricsByDepartment(departmentId: string, year: number): Promise<PersonalMetricsRow[]> {
+  async getPersonalMetricsByDepartment(departmentId: string, year: number, quarter: number): Promise<PersonalMetricsRow[]> {
     const members = await db.select().from(teamMembers).where(eq(teamMembers.departmentId, departmentId));
     if (members.length === 0) return [];
     const memberIds = members.map((m) => m.id);
     const rows = await db.select().from(personalMetrics).where(
       and(
         sql`${personalMetrics.memberId} = ANY(ARRAY[${sql.join(memberIds.map(id => sql`${id}`), sql`, `)}]::text[])`,
-        eq(personalMetrics.year, year)
+        eq(personalMetrics.year, year),
+        eq(personalMetrics.quarter, quarter)
       )
     );
     return rows;
   }
 
-  async upsertPersonalMetrics(memberId: string, year: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year">>): Promise<PersonalMetricsRow> {
+  async upsertPersonalMetrics(memberId: string, year: number, quarter: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">>): Promise<PersonalMetricsRow> {
     const existing = await db.select().from(personalMetrics).where(
-      and(eq(personalMetrics.memberId, memberId), eq(personalMetrics.year, year))
+      and(eq(personalMetrics.memberId, memberId), eq(personalMetrics.year, year), eq(personalMetrics.quarter, quarter))
     );
     if (existing.length > 0) {
       const [updated] = await db.update(personalMetrics)
         .set(data)
-        .where(and(eq(personalMetrics.memberId, memberId), eq(personalMetrics.year, year)))
+        .where(and(eq(personalMetrics.memberId, memberId), eq(personalMetrics.year, year), eq(personalMetrics.quarter, quarter)))
         .returning();
       return updated;
     } else {
-      const [created] = await db.insert(personalMetrics).values({ memberId, year, ...data }).returning();
+      const [created] = await db.insert(personalMetrics).values({ memberId, year, quarter, ...data }).returning();
       return created;
     }
   }

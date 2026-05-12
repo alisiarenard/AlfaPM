@@ -17,7 +17,14 @@ const ROLE_TABS = [
   { value: "Дизайнер",   label: "Дизайнеры" },
 ];
 
-const METRIC_COLS: { key: keyof Omit<PersonalMetricsRow, "id" | "memberId" | "year">; label: string }[] = [
+const QUARTER_TABS = [
+  { key: 1, label: "I квартал" },
+  { key: 2, label: "II квартал" },
+  { key: 3, label: "III квартал" },
+  { key: 4, label: "IV квартал" },
+] as const;
+
+const METRIC_COLS: { key: keyof Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">; label: string }[] = [
   { key: "codeQuality",        label: "Качество кода" },
   { key: "taskComplexity",     label: "Сложность задач" },
   { key: "productivity",       label: "Производительность" },
@@ -28,12 +35,13 @@ const METRIC_COLS: { key: keyof Omit<PersonalMetricsRow, "id" | "memberId" | "ye
 ];
 
 function MetricCell({
-  memberId, metricKey, value, year,
+  memberId, metricKey, value, year, quarter,
 }: {
   memberId: string;
   metricKey: string;
   value: number | null | undefined;
   year: number;
+  quarter: number;
 }) {
   const [local, setLocal] = useState<string>(value != null ? String(value) : "");
   const prevValue = useRef(value);
@@ -47,7 +55,7 @@ function MetricCell({
 
   const mutation = useMutation({
     mutationFn: async (val: number | null) => {
-      await apiRequest("PUT", `/api/personal-metrics/${memberId}`, { year, [metricKey]: val });
+      await apiRequest("PUT", `/api/personal-metrics/${memberId}`, { year, quarter, [metricKey]: val });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/personal-metrics"] });
@@ -81,6 +89,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
   const departmentId = selectedDepartment;
   const year = Number(selectedYear);
   const [activeTab, setActiveTab] = useState(ROLE_TABS[0].value);
+  const [quarter, setQuarter] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { data: members, isLoading } = useQuery<TeamMemberRow[]>({
@@ -104,9 +113,9 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
   });
 
   const { data: metricsRows } = useQuery<PersonalMetricsRow[]>({
-    queryKey: ["/api/personal-metrics", departmentId, year],
+    queryKey: ["/api/personal-metrics", departmentId, year, quarter],
     queryFn: async () => {
-      const res = await fetch(`/api/personal-metrics?departmentId=${departmentId}&year=${year}`);
+      const res = await fetch(`/api/personal-metrics?departmentId=${departmentId}&year=${year}&quarter=${quarter}`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -150,7 +159,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                   <p className="text-sm text-muted-foreground mt-4">Нет участников с ролью «{tab.label}»</p>
                 ) : (
                   <div className="rounded-md border border-border overflow-hidden">
-                    <div className="px-4 py-2 border-b border-border bg-card flex items-center gap-2">
+                    <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-between gap-2">
                       <div className="relative flex items-center">
                         <Search className="absolute left-0 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                         <input
@@ -161,6 +170,22 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                           className="pl-5 pr-3 py-1.5 text-sm bg-transparent border-0 border-b border-border outline-none focus:ring-0 w-56"
                           data-testid="input-search-member"
                         />
+                      </div>
+                      <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
+                        {QUARTER_TABS.map(({ key, label }) => (
+                          <button
+                            key={key}
+                            onClick={() => setQuarter(key)}
+                            className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
+                              quarter === key
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                            data-testid={`filter-quarter-${key}`}
+                          >
+                            {label}
+                          </button>
+                        ))}
                       </div>
                     </div>
                     <div className="overflow-x-auto">
@@ -216,6 +241,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                                     metricKey={col.key}
                                     value={metrics?.[col.key] ?? null}
                                     year={year}
+                                    quarter={quarter}
                                   />
                                 ))}
                               </tr>
