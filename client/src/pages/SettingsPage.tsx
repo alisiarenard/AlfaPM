@@ -122,6 +122,7 @@ export default function SettingsPage() {
   const [devColumnId, setDevColumnId] = useState("");
   const [testColumnId, setTestColumnId] = useState("");
   const [extraBoards, setExtraBoards] = useState<{spaceId: string; boardId: string}[]>([]);
+  const [showDevelopersModal, setShowDevelopersModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemberUsername, setNewMemberUsername] = useState("");
   const [newMemberFullName, setNewMemberFullName] = useState("");
@@ -436,6 +437,16 @@ export default function SettingsPage() {
     },
     enabled: debouncedUserSearch.trim().length >= 2,
     staleTime: 30000,
+  });
+
+  const { data: departmentMembersList } = useQuery<TeamMemberRow[]>({
+    queryKey: ["/api/departments", editingDepartment?.id, "members"],
+    queryFn: async () => {
+      const res = await fetch(`/api/departments/${editingDepartment!.id}/members`);
+      if (!res.ok) throw new Error("Failed to fetch department members");
+      return await res.json();
+    },
+    enabled: !!editingDepartment && rightPanelMode === "editBlock" && showDevelopersModal,
   });
 
   const { data: teamMembersList, isLoading: membersLoading } = useQuery<TeamMemberRow[]>({
@@ -987,8 +998,20 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     </div>
-                    {(rightPanelMode === "addBlock" || hasFormChanged()) && (
-                      <div className="p-4 flex justify-end">
+                    <div className="p-4 flex items-center justify-between gap-2 border-t border-border">
+                      {rightPanelMode === "editBlock" && editingDepartment && (
+                        <Button
+                          variant="outline"
+                          type="button"
+                          data-testid="button-department-developers"
+                          onClick={() => setShowDevelopersModal(true)}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Разработчики
+                        </Button>
+                      )}
+                      <div className="flex-1" />
+                      {(rightPanelMode === "addBlock" || hasFormChanged()) && (
                         <Button
                           disabled={!blockName.trim() || createDepartmentMutation.isPending || updateDepartmentMutation.isPending}
                           style={{ backgroundColor: '#cd253d' }}
@@ -1002,8 +1025,8 @@ export default function SettingsPage() {
                               ? "Добавить" 
                               : "Сохранить"}
                         </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 ) : rightPanelMode === "editTeam" ? (
                   <div className="flex flex-col h-full">
@@ -1757,6 +1780,41 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+
+    <Dialog open={showDevelopersModal} onOpenChange={setShowDevelopersModal}>
+      <DialogContent data-testid="dialog-department-developers" className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Разработчики — {editingDepartment?.department}</DialogTitle>
+        </DialogHeader>
+        <div className="py-2">
+          {!departmentMembersList ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Загрузка...</p>
+          ) : departmentMembersList.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Нет участников в этом подразделении</p>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+              {departmentMembersList.map((m) => (
+                <div key={m.id} className="flex items-center gap-3 px-3 py-2 rounded-md bg-muted/40">
+                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                    {m.avatarUrl ? (
+                      <img src={m.avatarUrl} alt={m.fullName || m.username} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {(m.fullName || m.username).charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{m.fullName || m.username}</p>
+                    <p className="text-xs text-muted-foreground truncate">{m.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
 
     <Dialog open={showAddMemberModal} onOpenChange={(open) => {
       setShowAddMemberModal(open);

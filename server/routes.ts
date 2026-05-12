@@ -930,6 +930,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/departments/:departmentId/members", async (req, res) => {
+    try {
+      const { departmentId } = req.params;
+      const members = await storage.getMembersByDepartment(departmentId);
+      res.json(members);
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || "Failed to fetch department members" });
+    }
+  });
+
   app.get("/api/teams/:teamId/members", async (req, res) => {
     try {
       const { teamId } = req.params;
