@@ -24,7 +24,19 @@ const QUARTER_TABS = [
   { key: 4, label: "IV квартал" },
 ] as const;
 
-const METRIC_COLS: { key: keyof Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">; label: string }[] = [
+const METRIC_KEYS = [
+  "codeQuality",
+  "taskComplexity",
+  "productivity",
+  "estimationAccuracy",
+  "aiUsage",
+  "communication",
+  "discipline",
+] as const;
+
+type MetricKey = typeof METRIC_KEYS[number];
+
+const METRIC_COLS: { key: MetricKey; label: string }[] = [
   { key: "codeQuality",        label: "Качество кода" },
   { key: "taskComplexity",     label: "Сложность задач" },
   { key: "productivity",       label: "Производительность" },
@@ -33,6 +45,49 @@ const METRIC_COLS: { key: keyof Omit<PersonalMetricsRow, "id" | "memberId" | "ye
   { key: "communication",      label: "Коммуникации" },
   { key: "discipline",         label: "Дисциплина" },
 ];
+
+function getCircleColor(value: number | null | undefined, filledIndex: number): string {
+  if (!value || filledIndex >= value) {
+    return "bg-muted";
+  }
+  if (value <= 2) return "bg-muted-foreground/50";
+  if (value <= 4) return "bg-destructive/40";
+  return "bg-destructive";
+}
+
+function RatingCircles({
+  value,
+  onChange,
+}: {
+  value: number | null | undefined;
+  onChange: (v: number | null) => void;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const display = hovered ?? value ?? 0;
+
+  function getDisplayColor(filledIndex: number): string {
+    if (filledIndex >= display) return "bg-muted";
+    if (display <= 2) return "bg-muted-foreground/50";
+    if (display <= 4) return "bg-destructive/40";
+    return "bg-destructive";
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-1">
+      {Array.from({ length: 5 }, (_, i) => (
+        <button
+          key={i}
+          type="button"
+          className={`h-3 w-3 rounded-full transition-colors ${getDisplayColor(i)}`}
+          onMouseEnter={() => setHovered(i + 1)}
+          onMouseLeave={() => setHovered(null)}
+          onClick={() => onChange(value === i + 1 ? null : i + 1)}
+          data-testid={`circle-${i}`}
+        />
+      ))}
+    </div>
+  );
+}
 
 function MetricCell({
   memberId, metricKey, value, year, quarter,
@@ -43,16 +98,6 @@ function MetricCell({
   year: number;
   quarter: number;
 }) {
-  const [local, setLocal] = useState<string>(value != null ? String(value) : "");
-  const prevValue = useRef(value);
-
-  useEffect(() => {
-    if (prevValue.current !== value) {
-      setLocal(value != null ? String(value) : "");
-      prevValue.current = value;
-    }
-  }, [value]);
-
   const mutation = useMutation({
     mutationFn: async (val: number | null) => {
       await apiRequest("PUT", `/api/personal-metrics/${memberId}`, { year, quarter, [metricKey]: val });
@@ -62,25 +107,39 @@ function MetricCell({
     },
   });
 
-  function handleBlur() {
-    const parsed = local.trim() === "" ? null : Number(local);
-    if (parsed !== null && (isNaN(parsed) || parsed < 1 || parsed > 10)) return;
-    if (parsed !== (value ?? null)) mutation.mutate(parsed);
+  return (
+    <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 110 }}>
+      <RatingCircles value={value} onChange={(v) => mutation.mutate(v)} />
+    </td>
+  );
+}
+
+function calcAverage(metrics: PersonalMetricsRow | undefined): number | null {
+  if (!metrics) return null;
+  const vals = METRIC_KEYS.map((k) => metrics[k]).filter((v): v is number => v != null);
+  if (vals.length === 0) return null;
+  return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
+}
+
+function AverageCell({ metrics }: { metrics: PersonalMetricsRow | undefined }) {
+  const avg = calcAverage(metrics);
+
+  if (avg === null) {
+    return (
+      <td className="border-b border-border px-3 py-2.5 text-center text-muted-foreground text-xs" style={{ minWidth: 80 }}>
+        —
+      </td>
+    );
   }
 
+  const color =
+    avg <= 2 ? "text-muted-foreground" :
+    avg <= 4 ? "text-destructive/70" :
+    "text-destructive";
+
   return (
-    <td className="border-b border-border px-3 py-0 text-center" style={{ minWidth: 100 }}>
-      <input
-        type="number"
-        min={1}
-        max={10}
-        value={local}
-        onChange={(e) => setLocal(e.target.value)}
-        onBlur={handleBlur}
-        placeholder="—"
-        className="w-14 text-center bg-transparent text-sm outline-none border-0 focus:ring-1 focus:ring-primary rounded px-1 py-1 no-arrows"
-        data-testid={`input-metric-${memberId}-${metricKey}`}
-      />
+    <td className={`border-b border-border px-3 py-2.5 text-center font-semibold text-sm ${color}`} style={{ minWidth: 80 }}>
+      {avg}
     </td>
   );
 }
@@ -202,11 +261,17 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                               <th
                                 key={col.key}
                                 className="px-4 py-3 text-xs font-normal text-center text-muted-foreground border-b border-border whitespace-nowrap"
-                                style={{ minWidth: 100 }}
+                                style={{ minWidth: 110 }}
                               >
                                 {col.label}
                               </th>
                             ))}
+                            <th
+                              className="px-4 py-3 text-xs font-normal text-center text-muted-foreground border-b border-border whitespace-nowrap"
+                              style={{ minWidth: 80 }}
+                            >
+                              Итого
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -244,6 +309,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                                     quarter={quarter}
                                   />
                                 ))}
+                                <AverageCell metrics={metrics} />
                               </tr>
                             );
                           })}
