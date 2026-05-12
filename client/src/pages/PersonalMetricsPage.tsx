@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Search } from "lucide-react";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
@@ -46,70 +45,29 @@ const METRIC_COLS: { key: MetricKey; label: string }[] = [
   { key: "discipline",         label: "Дисциплина" },
 ];
 
-function getCircleColor(value: number | null | undefined, filledIndex: number): string {
-  if (!value || filledIndex >= value) {
-    return "bg-muted";
-  }
-  if (value <= 2) return "bg-muted-foreground/50";
-  if (value <= 4) return "bg-destructive/40";
-  return "bg-destructive";
-}
+function RatingCircles({ value }: { value: number | null | undefined }) {
+  const v = value ?? 0;
 
-function RatingCircles({
-  value,
-  onChange,
-}: {
-  value: number | null | undefined;
-  onChange: (v: number | null) => void;
-}) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  const display = hovered ?? value ?? 0;
-
-  function getDisplayColor(filledIndex: number): string {
-    if (filledIndex >= display) return "bg-muted";
-    if (display <= 2) return "bg-muted-foreground/50";
-    if (display <= 4) return "bg-destructive/40";
+  function getColor(i: number): string {
+    if (i >= v) return "bg-muted";
+    if (v <= 2) return "bg-muted-foreground/50";
+    if (v <= 4) return "bg-destructive/40";
     return "bg-destructive";
   }
 
   return (
-    <div className="flex items-center justify-center gap-1">
+    <div className="flex items-center justify-center gap-0.5">
       {Array.from({ length: 5 }, (_, i) => (
-        <button
-          key={i}
-          type="button"
-          className={`h-3 w-3 rounded-full transition-colors ${getDisplayColor(i)}`}
-          onMouseEnter={() => setHovered(i + 1)}
-          onMouseLeave={() => setHovered(null)}
-          onClick={() => onChange(value === i + 1 ? null : i + 1)}
-          data-testid={`circle-${i}`}
-        />
+        <span key={i} className={`h-2 w-2 rounded-full inline-block ${getColor(i)}`} />
       ))}
     </div>
   );
 }
 
-function MetricCell({
-  memberId, metricKey, value, year, quarter,
-}: {
-  memberId: string;
-  metricKey: string;
-  value: number | null | undefined;
-  year: number;
-  quarter: number;
-}) {
-  const mutation = useMutation({
-    mutationFn: async (val: number | null) => {
-      await apiRequest("PUT", `/api/personal-metrics/${memberId}`, { year, quarter, [metricKey]: val });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/personal-metrics"] });
-    },
-  });
-
+function MetricCell({ value }: { value: number | null | undefined }) {
   return (
-    <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 110 }}>
-      <RatingCircles value={value} onChange={(v) => mutation.mutate(v)} />
+    <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+      <RatingCircles value={value} />
     </td>
   );
 }
@@ -302,11 +260,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                                 {METRIC_COLS.map((col) => (
                                   <MetricCell
                                     key={col.key}
-                                    memberId={m.id}
-                                    metricKey={col.key}
                                     value={metrics?.[col.key] ?? null}
-                                    year={year}
-                                    quarter={quarter}
                                   />
                                 ))}
                                 <AverageCell metrics={metrics} />
