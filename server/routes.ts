@@ -650,8 +650,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const _effectTypeSave_a = _id236RawA != null ? String(_id236RawA) : null;
             const _id242a = Array.isArray(card.properties?.['id_242']) ? card.properties!['id_242'] : [];
             const _effectByDataSave_a = (_id242a[0] === 1201 || _id242a[0]?.id === 1201) ? true : false;
-            console.log(`[SYNC-A] card=${card.id} "${card.title}" FULL_JSON=`, JSON.stringify(card, null, 2));
-            console.log(`[SYNC-A] card=${card.id} → effectType=${JSON.stringify(_effectTypeSave_a)} effectByData=${_effectByDataSave_a} deadlineProd=${card.properties?.['id_101']?.date??null} deadlineEffect=${card.properties?.['id_235']?.date??null} contributionPercent=${card.properties?.['id_241']??null}`);
             
             await storage.syncInitiativeFromKaiten(
               card.id,
@@ -3108,8 +3106,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const _effectTypeSave_b = _id236RawB != null ? String(_id236RawB) : null;
               const _id242b = Array.isArray(fullCard.properties?.['id_242']) ? fullCard.properties!['id_242'] : [];
               const _effectByDataSave_b = (_id242b[0] === 1201 || _id242b[0]?.id === 1201) ? true : false;
-              console.log(`[SYNC-B] card=${fullCard.id} "${fullCard.title}" properties=`, JSON.stringify(fullCard.properties ?? null, null, 2));
-              console.log(`[SYNC-B] card=${fullCard.id} → effectType=${JSON.stringify(_effectTypeSave_b)} effectByData=${_effectByDataSave_b} deadlineProd=${fullCard.properties?.['id_101']?.date??null} deadlineEffect=${fullCard.properties?.['id_235']?.date??null} contributionPercent=${fullCard.properties?.['id_241']??null}`);
 
               const synced = await storage.syncInitiativeFromKaiten(
                 fullCard.id,
@@ -3225,8 +3221,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const _effectTypeSave_c = _id236RawC != null ? String(_id236RawC) : null;
         const _id242c = Array.isArray(card.properties?.['id_242']) ? card.properties!['id_242'] : [];
         const _effectByDataSave_c = (_id242c[0] === 1201 || _id242c[0]?.id === 1201) ? true : false;
-        console.log(`[SYNC-C] card=${card.id} "${card.title}" FULL_JSON=`, JSON.stringify(card, null, 2));
-        console.log(`[SYNC-C] card=${card.id} → effectType=${JSON.stringify(_effectTypeSave_c)} effectByData=${_effectByDataSave_c} deadlineProd=${card.properties?.['id_101']?.date??null} deadlineEffect=${card.properties?.['id_235']?.date??null} contributionPercent=${card.properties?.['id_241']??null}`);
 
         const synced = await storage.syncInitiativeFromKaiten(
           card.id,
@@ -4004,8 +3998,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const _effectTypeSave_d = _id236RawD != null ? String(_id236RawD) : null;
           const _id242d = Array.isArray(card.properties?.['id_242']) ? card.properties!['id_242'] : [];
           const _effectByDataSave_d = (_id242d[0] === 1201 || _id242d[0]?.id === 1201) ? true : false;
-          console.log(`[SYNC-D] card=${card.id} "${card.title}" FULL_JSON=`, JSON.stringify(card, null, 2));
-          console.log(`[SYNC-D] card=${card.id} → effectType=${JSON.stringify(_effectTypeSave_d)} effectByData=${_effectByDataSave_d} deadlineProd=${card.properties?.['id_101']?.date??null} deadlineEffect=${card.properties?.['id_235']?.date??null} contributionPercent=${card.properties?.['id_241']??null}`);
           
           await storage.syncInitiativeFromKaiten(
             card.id,

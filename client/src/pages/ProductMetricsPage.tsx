@@ -1206,13 +1206,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     </th>
                   </tr>
                   <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground">
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-plan">план</th>
+                    <th className="px-3 py-2 border-b border-r border-border border-l border-l-border text-center" data-testid="th-deadline-plan">план</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-prod">прод</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-effect">эффект</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-planned-cost">план</th>
+                    <th className="px-3 py-2 border-b border-r border-border border-l border-l-border text-center" data-testid="th-planned-cost">план</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-prev-year-actual-cost">факт прошлого</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-actual-cost">факт текущего</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-planned-effect">план</th>
+                    <th className="px-3 py-2 border-b border-r border-border border-l border-l-border text-center" data-testid="th-planned-effect">план</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-actual-effect">факт</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-contribution-percent">% вклада</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-planned-vc">план</th>
@@ -1238,10 +1238,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 <span className="text-muted-foreground font-normal text-xs">({group.items.length})</span>
                               </div>
                             </td>
+                            <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-center tabular-nums text-muted-foreground">—</td>
                             <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
                             <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
-                            <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
-                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
                               {fmtK(group.totalPlannedCost)}
                             </td>
                             <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-prev-year-actual-cost-${group.type}`}>
@@ -1252,7 +1252,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             </td>
                             <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
                             <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
-                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-effect-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-effect-${group.type}`}>
                               {fmtK(group.totalPlannedEffect)}
                             </td>
                             <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
@@ -1285,10 +1285,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   </a>
                                 </div>
                               </td>
-                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground" data-testid={`text-deadline-plan-${init.cardId}`}>{fmtTableDate(init.dueDate)}</td>
+                              <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-center tabular-nums text-muted-foreground" data-testid={`text-deadline-plan-${init.cardId}`}>{fmtTableDate(init.dueDate)}</td>
                               <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground" data-testid={`text-deadline-prod-${init.cardId}`}>{fmtTableDate(init.deadlineProd)}</td>
                               <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground" data-testid={`text-deadline-effect-${init.cardId}`}>{fmtTableDate(init.deadlineEffect)}</td>
-                              <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
+                              <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
                                 {fmtK(init.plannedCost)}
                               </td>
                               <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-prev-year-actual-cost-${init.cardId}`}>
@@ -1298,9 +1298,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 {fmtK(init.actualCost)}
                               </td>
                               <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>{init.effectType ? (EFFECT_TYPE_LABELS[init.effectType] ?? init.effectType) : '—'}</td>
-                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-by-data-${init.cardId}`}>{init.effectByData === true ? 'Да' : '—'}</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-by-data-${init.cardId}`}>{init.effectByData === true ? '+' : '—'}</td>
                               <td
-                                className={`px-3 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
+                                className={`px-3 py-2.5 border-b border-border border-l border-l-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
                                 style={{ minWidth: 0 }}
                                 data-testid={`text-planned-effect-${init.cardId}`}
                                 onClick={() => init.type === 'Epic' && !(editingCell?.cardId === init.cardId && editingCell.field === 'plannedEffect') && startCellEdit(init.cardId, 'plannedEffect', init.plannedEffect)}
