@@ -23,6 +23,8 @@ const EFFECT_TYPE_LABELS: Record<string, string> = {
 
 const currentYear = new Date().getFullYear();
 
+type SpaceGroup = { spaceId: string; spaceName: string; teamIds: string[] };
+
 interface ProductMetricsPageProps {
   selectedDepartment: string;
   setSelectedDepartment: (dept: string) => void;
@@ -30,6 +32,12 @@ interface ProductMetricsPageProps {
   setSelectedYear: (year: string) => void;
   departments?: DepartmentWithTeamCount[];
   setPageSubtitle: (subtitle: string) => void;
+  setSpaceFilter?: (state: {
+    spaceGroups: SpaceGroup[];
+    selectedSpaceIds: string[];
+    onToggleSpace: (teamIds: string[]) => void;
+    onSelectAll: () => void;
+  } | null) => void;
 }
 
 function formatDuration(ms: number): string {
@@ -89,7 +97,7 @@ function formatDurationTop1(ms: number): string {
   return pluralRu(totalSec % 60, 'секунда', 'секунды', 'секунд');
 }
 
-export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle }: ProductMetricsPageProps) {
+export default function ProductMetricsPage({ selectedDepartment, setSelectedDepartment, selectedYear, setSelectedYear, departments, setPageSubtitle, setSpaceFilter }: ProductMetricsPageProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -363,25 +371,42 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     }
   };
 
-  const handleSpaceToggle = (teamIds: string[]) => {
-    const newSelectedTeams = new Set(selectedTeams);
-    const allSelected = teamIds.every(id => newSelectedTeams.has(id));
-    if (allSelected) {
-      const remaining = new Set(Array.from(newSelectedTeams).filter(id => !teamIds.includes(id)));
-      if (remaining.size === 0) {
-        toast({
-          title: "Ошибка",
-          description: "Должно быть выбрано хотя бы одно пространство",
-          variant: "destructive",
-        });
-        return;
+  const handleSpaceToggle = useCallback((teamIds: string[]) => {
+    setSelectedTeams(prev => {
+      const newSelectedTeams = new Set(prev);
+      const allSelected = teamIds.every(id => newSelectedTeams.has(id));
+      if (allSelected) {
+        const remaining = new Set(Array.from(newSelectedTeams).filter(id => !teamIds.includes(id)));
+        if (remaining.size === 0) return prev;
+        teamIds.forEach(id => newSelectedTeams.delete(id));
+      } else {
+        teamIds.forEach(id => newSelectedTeams.add(id));
       }
-      teamIds.forEach(id => newSelectedTeams.delete(id));
-    } else {
-      teamIds.forEach(id => newSelectedTeams.add(id));
-    }
-    setSelectedTeams(newSelectedTeams);
-  };
+      return newSelectedTeams;
+    });
+  }, []);
+
+  const handleSelectAllSpaces = useCallback(() => {
+    setSelectedTeams(prev => {
+      const allIds = departmentTeams?.map(t => t.teamId) || [];
+      if (allIds.length === 0) return prev;
+      return new Set(allIds);
+    });
+  }, [departmentTeams]);
+
+  useEffect(() => {
+    if (!setSpaceFilter) return;
+    setSpaceFilter({
+      spaceGroups,
+      selectedSpaceIds,
+      onToggleSpace: handleSpaceToggle,
+      onSelectAll: handleSelectAllSpaces,
+    });
+  }, [spaceGroups, selectedSpaceIds, handleSpaceToggle, handleSelectAllSpaces, setSpaceFilter]);
+
+  useEffect(() => {
+    return () => { if (setSpaceFilter) setSpaceFilter(null); };
+  }, [setSpaceFilter]);
 
   interface InitiativeTableRow {
     title: string;
@@ -1033,46 +1058,17 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     data-testid="button-menu"
                   >
                     <MoreVertical className="h-4 w-4" />
-                    {spaceGroups.length > 0 && spaceGroups.some(g => !g.teamIds.every(id => selectedTeams.has(id))) && (
-                      <span
-                        className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: '#cd253d' }}
-                      />
-                    )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white z-[250]">
-                  {spaceGroups.length > 0 ? (
-                    <>
-                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                        Пространства
-                      </div>
-                      {spaceGroups.map((group) => (
-                        <DropdownMenuCheckboxItem
-                          key={group.spaceName}
-                          checked={group.teamIds.every(id => selectedTeams.has(id))}
-                          onCheckedChange={() => handleSpaceToggle(group.teamIds)}
-                          onSelect={(e) => e.preventDefault()}
-                          data-testid={`menu-space-${group.spaceName}`}
-                        >
-                          {group.spaceName}
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="flex items-center gap-2 cursor-pointer"
-                        onSelect={handleDownloadReport}
-                        data-testid="menu-download-report"
-                      >
-                        <Download className="h-4 w-4" />
-                        <span>Скачать отчет</span>
-                      </DropdownMenuItem>
-                    </>
-                  ) : (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      Нет пространств
-                    </div>
-                  )}
+                <DropdownMenuContent align="end" className="w-48 bg-white z-[250]">
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 cursor-pointer"
+                    onSelect={handleDownloadReport}
+                    data-testid="menu-download-report"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Скачать отчет</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </MetricsPanel>

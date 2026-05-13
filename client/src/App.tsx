@@ -7,7 +7,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ThemeProvider } from "@/lib/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, LayoutDashboard, Settings } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Users, LayoutDashboard, Settings, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import HomePage from "@/pages/HomePage";
 import ProductMetricsPage from "@/pages/ProductMetricsPage";
@@ -19,6 +20,60 @@ import type { DepartmentWithTeamCount } from "@shared/schema";
 import { setKaitenDomain } from "@shared/kaiten.config";
 
 const currentYear = new Date().getFullYear();
+
+export type SpaceGroup = { spaceId: string; spaceName: string; teamIds: string[] };
+export type SpaceFilterState = {
+  spaceGroups: SpaceGroup[];
+  selectedSpaceIds: string[];
+  onToggleSpace: (teamIds: string[]) => void;
+  onSelectAll: () => void;
+};
+
+function SpaceMultiSelect({ spaceGroups, selectedSpaceIds, onToggleSpace, onSelectAll }: SpaceFilterState) {
+  const allSelected = selectedSpaceIds.length === spaceGroups.length;
+  const triggerLabel = allSelected
+    ? "Все команды"
+    : selectedSpaceIds
+        .map(id => spaceGroups.find(g => g.spaceId === id)?.spaceName || id)
+        .join(", ");
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          className="bg-white max-w-[240px] min-w-[160px] justify-between gap-1 px-3"
+          data-testid="select-spaces"
+        >
+          <span className="truncate text-sm font-normal">{triggerLabel}</span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 bg-white z-[250]">
+        <DropdownMenuCheckboxItem
+          checked={allSelected}
+          onCheckedChange={() => { if (!allSelected) onSelectAll(); }}
+          onSelect={(e) => e.preventDefault()}
+          data-testid="space-option-all"
+        >
+          Все команды
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        {spaceGroups.map((group) => (
+          <DropdownMenuCheckboxItem
+            key={group.spaceId}
+            checked={selectedSpaceIds.includes(group.spaceId)}
+            onCheckedChange={() => onToggleSpace(group.teamIds)}
+            onSelect={(e) => e.preventDefault()}
+            data-testid={`space-option-${group.spaceId}`}
+          >
+            {group.spaceName}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 const navItems = [
   { path: "/", icon: Users, label: "Командные метрики" },
@@ -72,6 +127,9 @@ function AppLayout() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [pageSubtitle, setPageSubtitle] = useState<string>("");
+  const [spaceFilter, setSpaceFilter] = useState<SpaceFilterState | null>(null);
+
+  const isProductMetricsPage = location.startsWith("/product-metrics");
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
@@ -108,6 +166,14 @@ function AppLayout() {
               </div>
               {!isSettingsPage && (
                 <div className="flex items-center gap-3">
+                  {isProductMetricsPage && spaceFilter && spaceFilter.spaceGroups.length > 0 && (
+                    <SpaceMultiSelect
+                      spaceGroups={spaceFilter.spaceGroups}
+                      selectedSpaceIds={spaceFilter.selectedSpaceIds}
+                      onToggleSpace={spaceFilter.onToggleSpace}
+                      onSelectAll={spaceFilter.onSelectAll}
+                    />
+                  )}
                   <Select
                     value={selectedDepartment}
                     onValueChange={setSelectedDepartment}
@@ -174,6 +240,7 @@ function AppLayout() {
               setSelectedYear={setSelectedYear}
               departments={departments}
               setPageSubtitle={setPageSubtitle}
+              setSpaceFilter={setSpaceFilter}
             />
           </Route>
           <Route path="/settings">
