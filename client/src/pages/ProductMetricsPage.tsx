@@ -1247,10 +1247,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-prev-year-actual-cost-${group.type}`}>
                               {fmtK(group.totalPrevYearActualCost)}
                             </td>
-                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-cost-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border border-r text-right tabular-nums font-semibold" data-testid={`text-group-actual-cost-${group.type}`}>
                               {fmtK(group.totalActualCost)}
                             </td>
-                            <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border border-r text-center text-muted-foreground">—</td>
                             <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
                             <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-effect-${group.type}`}>
                               {fmtK(group.totalPlannedEffect)}
@@ -1258,7 +1258,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
                               {fmtK(group.totalActualEffect)}
                             </td>
-                            <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border border-r text-center text-muted-foreground">—</td>
                             <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-vc-${group.type}`}>
                               {(() => { const inclPrev = ['Enabler', 'Compliance'].includes(group.type); const denom = group.totalPlannedCost + (inclPrev ? group.totalPrevYearActualCost : 0); return group.totalPlannedEffect > 0 && denom > 0 ? (Math.round((group.totalPlannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
                             </td>
@@ -1294,10 +1294,10 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-prev-year-actual-cost-${init.cardId}`}>
                                 {fmtK(init.prevYearActualCost)}
                               </td>
-                              <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
+                              <td className="px-3 py-2.5 border-b border-border border-r text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
                                 {fmtK(init.actualCost)}
                               </td>
-                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>{init.effectType ? (EFFECT_TYPE_LABELS[init.effectType] ?? init.effectType) : '—'}</td>
+                              <td className="px-3 py-2.5 border-b border-border border-r text-center text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>{init.effectType ? (EFFECT_TYPE_LABELS[init.effectType] ?? init.effectType) : '—'}</td>
                               <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-by-data-${init.cardId}`}>{init.effectByData === true ? '+' : '—'}</td>
                               <td
                                 className={`px-3 py-2.5 border-b border-border border-l border-l-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
@@ -1351,7 +1351,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   init.actualEffect !== null && init.actualEffect > 0 ? fmtK(init.actualEffect, false) : '—'
                                 )}
                               </td>
-                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>{init.contributionPercent != null ? init.contributionPercent.toLocaleString('ru-RU') : '—'}</td>
+                              <td className="px-3 py-2.5 border-b border-border border-r text-center tabular-nums text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>{init.contributionPercent != null ? init.contributionPercent.toLocaleString('ru-RU') : '—'}</td>
                               <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
                                 {(() => {
                                   const inclPrev = ['Enabler', 'Compliance'].includes(init.type);
