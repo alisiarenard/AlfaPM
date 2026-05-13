@@ -42,7 +42,7 @@ function SpaceMultiSelect({ spaceGroups, selectedSpaceIds, onToggleSpace, onSele
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className="bg-white max-w-[240px] min-w-[160px] justify-between gap-1 px-3"
+          className="bg-white w-[250px] justify-between gap-1 px-3"
           data-testid="select-spaces"
         >
           <span className="truncate text-sm font-normal">{triggerLabel}</span>
