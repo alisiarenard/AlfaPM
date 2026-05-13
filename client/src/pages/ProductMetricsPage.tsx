@@ -1139,8 +1139,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground">
-                    <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-border align-middle" data-testid="th-initiative">
-                      инициативы
+                    <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-border align-middle font-normal" data-testid="th-initiative">
+                      Инициативы
                     </th>
                     <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center">
                       сроки
