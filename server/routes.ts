@@ -646,7 +646,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const _id236a = Array.isArray(card.properties?.['id_236']) ? card.properties!['id_236'] : [];
             const _first236a = _id236a[0] ?? null;
-            const _effectTypeSave_a = _first236a?.value ?? null;
+            const _id236RawA = _first236a?.id ?? _first236a;
+            const _effectTypeSave_a = _id236RawA != null ? String(_id236RawA) : null;
             const _id242a = Array.isArray(card.properties?.['id_242']) ? card.properties!['id_242'] : [];
             const _effectByDataSave_a = (_id242a[0] === 1201 || _id242a[0]?.id === 1201) ? true : false;
             console.log(`[SYNC-A] card=${card.id} "${card.title}" FULL_JSON=`, JSON.stringify(card, null, 2));
@@ -3103,7 +3104,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const _id236b = Array.isArray(fullCard.properties?.['id_236']) ? fullCard.properties!['id_236'] : [];
               const _first236b = _id236b[0] ?? null;
-              const _effectTypeSave_b = _first236b?.value ?? null;
+              const _id236RawB = _first236b?.id ?? _first236b;
+              const _effectTypeSave_b = _id236RawB != null ? String(_id236RawB) : null;
               const _id242b = Array.isArray(fullCard.properties?.['id_242']) ? fullCard.properties!['id_242'] : [];
               const _effectByDataSave_b = (_id242b[0] === 1201 || _id242b[0]?.id === 1201) ? true : false;
               console.log(`[SYNC-B] card=${fullCard.id} "${fullCard.title}" properties=`, JSON.stringify(fullCard.properties ?? null, null, 2));
@@ -3219,7 +3221,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const _id236c = Array.isArray(card.properties?.['id_236']) ? card.properties!['id_236'] : [];
         const _first236c = _id236c[0] ?? null;
-        const _effectTypeSave_c = _first236c?.value ?? null;
+        const _id236RawC = _first236c?.id ?? _first236c;
+        const _effectTypeSave_c = _id236RawC != null ? String(_id236RawC) : null;
         const _id242c = Array.isArray(card.properties?.['id_242']) ? card.properties!['id_242'] : [];
         const _effectByDataSave_c = (_id242c[0] === 1201 || _id242c[0]?.id === 1201) ? true : false;
         console.log(`[SYNC-C] card=${card.id} "${card.title}" FULL_JSON=`, JSON.stringify(card, null, 2));
@@ -3997,7 +4000,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const _id236d = Array.isArray(card.properties?.['id_236']) ? card.properties!['id_236'] : [];
           const _first236d = _id236d[0] ?? null;
-          const _effectTypeSave_d = _first236d?.value ?? null;
+          const _id236RawD = _first236d?.id ?? _first236d;
+          const _effectTypeSave_d = _id236RawD != null ? String(_id236RawD) : null;
           const _id242d = Array.isArray(card.properties?.['id_242']) ? card.properties!['id_242'] : [];
           const _effectByDataSave_d = (_id242d[0] === 1201 || _id242d[0]?.id === 1201) ? true : false;
           console.log(`[SYNC-D] card=${card.id} "${card.title}" FULL_JSON=`, JSON.stringify(card, null, 2));

@@ -13,6 +13,14 @@ import { Loader2 } from "lucide-react";
 import type { DepartmentWithTeamCount, TeamRow } from "@shared/schema";
 import { getKaitenCardUrl } from "@shared/kaiten.config";
 
+const EFFECT_TYPE_LABELS: Record<string, string> = {
+  '1196': 'АР1',
+  '1197': 'АР2',
+  '1198': 'Э1',
+  '1199': 'Э2',
+  '1200': 'Риск',
+};
+
 const currentYear = new Date().getFullYear();
 
 interface ProductMetricsPageProps {
@@ -1289,7 +1297,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
                                 {fmtK(init.actualCost)}
                               </td>
-                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>{init.effectType ?? '—'}</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>{init.effectType ? (EFFECT_TYPE_LABELS[init.effectType] ?? init.effectType) : '—'}</td>
                               <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-by-data-${init.cardId}`}>{init.effectByData === true ? 'Да' : '—'}</td>
                               <td
                                 className={`px-3 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
