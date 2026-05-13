@@ -1184,25 +1184,25 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                 </colgroup>
                 <thead className="sticky top-0 z-10 [&_th]:font-normal bg-white dark:bg-background" style={{boxShadow: '0 1px 0 hsl(var(--border))'}}>
                   <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground">
-                    <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-border align-middle font-normal bg-white dark:bg-background" data-testid="th-initiative">
+                    <th rowSpan={2} className="text-left px-4 py-2 border-r border-border align-middle font-normal bg-white dark:bg-background" data-testid="th-initiative">
                       Инициативы
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center bg-white dark:bg-background">
+                    <th colSpan={3} className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" style={{boxShadow: 'inset 0 -1px 0 hsl(var(--border))'}}>
                       сроки
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center bg-white dark:bg-background">
+                    <th colSpan={3} className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" style={{boxShadow: 'inset 0 -1px 0 hsl(var(--border))'}}>
                       затраты
                     </th>
-                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-border text-center align-middle bg-white dark:bg-background" data-testid="th-effect-type">
+                    <th rowSpan={2} className="px-3 py-2 border-r border-border text-center align-middle bg-white dark:bg-background" data-testid="th-effect-type">
                       тип эффекта
                     </th>
-                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-border text-center align-middle bg-white dark:bg-background" data-testid="th-effect-by-data">
+                    <th rowSpan={2} className="px-3 py-2 border-r border-border text-center align-middle bg-white dark:bg-background" data-testid="th-effect-by-data">
                       эффект по данным
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center bg-white dark:bg-background">
+                    <th colSpan={3} className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" style={{boxShadow: 'inset 0 -1px 0 hsl(var(--border))'}}>
                       эффект
                     </th>
-                    <th colSpan={2} className="px-3 py-2 border-b border-border text-center bg-white dark:bg-background">
+                    <th colSpan={2} className="px-3 py-2 text-center bg-white dark:bg-background" style={{boxShadow: 'inset 0 -1px 0 hsl(var(--border))'}}>
                       V/C
                     </th>
                   </tr>
@@ -1387,8 +1387,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   )}
                 </tbody>
                 {displayTableData?.initiatives && displayTableData.initiatives.length > 0 && (
-                  <tfoot className="sticky bottom-0 z-10">
-                    <tr className="bg-muted/80 font-semibold" style={{ backdropFilter: 'blur(8px)' }}>
+                  <tfoot className="sticky bottom-0 z-10 bg-white dark:bg-background">
+                    <tr className="bg-muted font-semibold">
                       <td className="px-4 py-2.5 border-t border-border w-[20%]" data-testid="text-total-label">
                         Итого
                       </td>
