@@ -408,7 +408,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     if (!date) return '—';
     const d = new Date(date);
     if (isNaN(d.getTime())) return '—';
-    return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+    const mon = d.toLocaleString('ru-RU', { month: 'short' }).replace('.', '');
+    return `${mon}.${d.getFullYear()}`;
   };
 
   const fmtK = (value: number | null | undefined, showDashIfZero = true): string => {
@@ -1391,19 +1392,19 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <td className="px-4 py-2.5 border-t border-border w-[20%]" data-testid="text-total-label">
                         Итого ({displayTableData.initiatives.length})
                       </td>
+                      <td className="px-3 py-2.5 border-t border-border border-l border-l-border text-center text-muted-foreground">—</td>
                       <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
                       <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
-                      <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
-                      <td className="px-3 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
+                      <td className="px-3 py-2.5 border-t border-border border-l border-l-border text-right tabular-nums" data-testid="text-total-planned-cost">
                         {fmtK(displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0), false)}
                       </td>
                       <td className="px-3 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-prev-year-actual-cost">
                         {fmtK(displayTableData.initiatives.reduce((sum, i) => sum + (i.prevYearActualCost || 0), 0), false)}
                       </td>
-                      <td className="px-3 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
+                      <td className="px-3 py-2.5 border-t border-border border-r text-right tabular-nums" data-testid="text-total-actual-cost">
                         {fmtK(displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0), false)}
                       </td>
-                      <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
+                      <td className="px-3 py-2.5 border-t border-border border-r text-center text-muted-foreground">—</td>
                       <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
                       {(() => {
                         const inits = displayTableData!.initiatives;
@@ -1415,9 +1416,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         const vcFact = totalAE > 0 && totalAC > 0 ? Math.round((totalAE / totalAC) * 10) / 10 : null;
                         return (
                           <>
-                            <td className="px-3 py-2.5 border-t border-border text-right tabular-nums">{totalPE > 0 ? fmtK(totalPE, false) : '—'}</td>
+                            <td className="px-3 py-2.5 border-t border-border border-l border-l-border text-right tabular-nums">{totalPE > 0 ? fmtK(totalPE, false) : '—'}</td>
                             <td className="px-3 py-2.5 border-t border-border text-right tabular-nums">{totalAE > 0 ? fmtK(totalAE, false) : '—'}</td>
-                            <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-t border-border border-r text-center text-muted-foreground">—</td>
                             <td className="px-3 py-2.5 border-t border-border text-right tabular-nums">{vcPlan !== null ? vcPlan.toLocaleString('ru-RU') : '—'}</td>
                             <td className="px-3 py-2.5 border-t border-border text-right tabular-nums">{vcFact !== null ? vcFact.toLocaleString('ru-RU') : '—'}</td>
                           </>
