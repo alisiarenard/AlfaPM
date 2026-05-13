@@ -49,7 +49,7 @@ function SpaceMultiSelect({ spaceGroups, selectedSpaceIds, onToggleSpace, onSele
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-white z-[250]">
+      <DropdownMenuContent align="end" className="w-[250px] bg-white z-[250]">
         <DropdownMenuCheckboxItem
           checked={allSelected}
           onCheckedChange={() => { if (!allSelected) onSelectAll(); }}
