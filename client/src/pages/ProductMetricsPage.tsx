@@ -1138,7 +1138,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: flowExpanded ? 'calc(70vh - 48px - 110px)' : 'calc(70vh - 48px)', transition: 'max-height 0.3s ease' }}>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground" style={{ backdropFilter: 'blur(8px)' }}>
+                  <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground">
                     <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-border align-middle" data-testid="th-initiative">
                       инициативы
                     </th>
@@ -1161,7 +1161,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       V/C
                     </th>
                   </tr>
-                  <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground" style={{ backdropFilter: 'blur(8px)' }}>
+                  <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground">
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-plan">план</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-prod">прод</th>
                     <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-effect">эффект</th>
