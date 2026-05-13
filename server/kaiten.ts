@@ -26,6 +26,7 @@ export interface KaitenCard {
   properties?: Record<string, any>;
   due_date?: string | null;
   last_moved_to_done_at?: string | null;
+  owner?: { username: string; full_name?: string } | null;
 }
 
 export interface KaitenCardListResponse {

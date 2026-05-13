@@ -377,11 +377,12 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
   interface InitiativeTableRow {
     title: string;
-    type: string | null;
+    type: string;
     cardId: number;
     spaceId: number;
     archived: boolean;
     plannedCost: number;
+    prevYearActualCost: number;
     actualCost: number;
     plannedEffect: number | null;
     actualEffect: number | null;
@@ -489,7 +490,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
       // === Лист 1: Сводные показатели ===
       if (summaryData?.teams?.length > 0) {
-        const yr = selectedYear;
+        const yr = Number(selectedYear);
         const prevYr = yr - 1;
         const nextYr = yr + 1;
         const summarySheetData: any[][] = [
@@ -1137,48 +1138,41 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: flowExpanded ? 'calc(70vh - 48px - 110px)' : 'calc(70vh - 48px)', transition: 'max-height 0.3s ease' }}>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-white dark:bg-background" style={{ backdropFilter: 'blur(8px)' }}>
-                    <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border w-[20%]" data-testid="th-initiative">
-                      Инициатива
+                  <tr className="bg-primary text-primary-foreground text-xs font-medium" style={{ backdropFilter: 'blur(8px)' }}>
+                    <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-primary-foreground/20 align-middle" data-testid="th-initiative">
+                      инициативы
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-cost">
-                      Затраты (план)
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center">
+                      сроки
                     </th>
-                    {(initiativeFilter === 'carryover' || initiativeFilter === 'all') && (
-                      <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-prev-year-actual-cost">
-                        Затраты пред. (факт)
-                      </th>
-                    )}
-                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-cost">
-                      Затраты (факт)
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center">
+                      затраты
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-effect">
-                      Эффект (план)
+                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center align-middle" data-testid="th-effect-type">
+                      тип эффекта
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-effect">
-                      Эффект (факт)
+                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center align-middle" data-testid="th-effect-by-data">
+                      эффект по данным
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-planned-vc">
-                      V/C (план)
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center">
+                      эффект
                     </th>
-                    <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-actual-vc">
-                      V/C (факт)
+                    <th colSpan={2} className="px-3 py-2 border-b border-primary-foreground/20 text-center">
+                      V/C
                     </th>
-                    {visibleColumns.has('effectType') && (
-                      <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-effect-type">
-                        Тип Эффекта
-                      </th>
-                    )}
-                    {visibleColumns.has('contribution') && (
-                      <th className="text-right px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-contribution-percent">
-                        % вклада
-                      </th>
-                    )}
-                    {visibleColumns.has('participants') && (
-                      <th className="text-left px-4 py-3 text-xs font-normal text-muted-foreground border-b border-border" data-testid="th-participants">
-                        Участники
-                      </th>
-                    )}
+                  </tr>
+                  <tr className="bg-primary text-primary-foreground text-xs font-medium" style={{ backdropFilter: 'blur(8px)' }}>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-deadline-plan">план</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-deadline-prod">прод</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-deadline-effect">эффект</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-planned-cost">план</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-prev-year-actual-cost">факт прошлого</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-actual-cost">факт текущего</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-planned-effect">план</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-actual-effect">факт</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-contribution-percent">% вклада</th>
+                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-planned-vc">план</th>
+                    <th className="px-3 py-2 border-b border-primary-foreground/20 text-center" data-testid="th-actual-vc">факт</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1200,32 +1194,33 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 <span className="text-muted-foreground font-normal text-xs">({group.items.length})</span>
                               </div>
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
                               {group.totalPlannedCost > 0 ? group.totalPlannedCost.toLocaleString('ru-RU') : '—'}
                             </td>
-                            {(initiativeFilter === 'carryover' || initiativeFilter === 'all') && (
-                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-prev-year-actual-cost-${group.type}`}>
-                                {group.totalPrevYearActualCost > 0 ? group.totalPrevYearActualCost.toLocaleString('ru-RU') : '—'}
-                              </td>
-                            )}
-                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-cost-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-prev-year-actual-cost-${group.type}`}>
+                              {group.totalPrevYearActualCost > 0 ? group.totalPrevYearActualCost.toLocaleString('ru-RU') : '—'}
+                            </td>
+                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-cost-${group.type}`}>
                               {group.totalActualCost > 0 ? group.totalActualCost.toLocaleString('ru-RU') : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-effect-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-effect-${group.type}`}>
                               {group.totalPlannedEffect > 0 ? group.totalPlannedEffect.toLocaleString('ru-RU') : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
                               {group.totalActualEffect > 0 ? group.totalActualEffect.toLocaleString('ru-RU') : '—'}
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-vc-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-vc-${group.type}`}>
                               {(() => { const inclPrev = ['Enabler', 'Compliance'].includes(group.type); const denom = group.totalPlannedCost + (inclPrev ? group.totalPrevYearActualCost : 0); return group.totalPlannedEffect > 0 && denom > 0 ? (Math.round((group.totalPlannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
                             </td>
-                            <td className="px-4 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-vc-${group.type}`}>
+                            <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-vc-${group.type}`}>
                               {(() => { const denom = group.totalActualCost + group.totalPrevYearActualCost; return group.totalActualEffect > 0 && denom > 0 ? (Math.round((group.totalActualEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
                             </td>
-                            {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-b border-border"></td>}
-                            {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-b border-border"></td>}
-                            {visibleColumns.has('participants') && <td className="px-4 py-2.5 border-b border-border"></td>}
                           </tr>
                           {isExpanded && group.items.map((init, index) => (
                             <tr
@@ -1246,19 +1241,22 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   </a>
                                 </div>
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
+                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
+                              <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
                                 {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
                               </td>
-                              {(initiativeFilter === 'carryover' || initiativeFilter === 'all') && (
-                                <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-prev-year-actual-cost-${init.cardId}`}>
-                                  {init.prevYearActualCost > 0 ? init.prevYearActualCost.toLocaleString('ru-RU') : '—'}
-                                </td>
-                              )}
-                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
+                              <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-prev-year-actual-cost-${init.cardId}`}>
+                                {init.prevYearActualCost > 0 ? init.prevYearActualCost.toLocaleString('ru-RU') : '—'}
+                              </td>
+                              <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
                                 {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
                               </td>
+                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>—</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-by-data-${init.cardId}`}>—</td>
                               <td
-                                className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
+                                className={`px-3 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
                                 style={{ minWidth: 0 }}
                                 data-testid={`text-planned-effect-${init.cardId}`}
                                 onClick={() => init.type === 'Epic' && !(editingCell?.cardId === init.cardId && editingCell.field === 'plannedEffect') && startCellEdit(init.cardId, 'plannedEffect', init.plannedEffect)}
@@ -1284,7 +1282,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 )}
                               </td>
                               <td
-                                className={`px-4 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
+                                className={`px-3 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
                                 style={{ minWidth: 0 }}
                                 data-testid={`text-actual-effect-${init.cardId}`}
                                 onClick={() => init.type === 'Epic' && !(editingCell?.cardId === init.cardId && editingCell.field === 'actualEffect') && startCellEdit(init.cardId, 'actualEffect', init.actualEffect)}
@@ -1309,31 +1307,21 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   init.actualEffect !== null && init.actualEffect > 0 ? init.actualEffect.toLocaleString('ru-RU') : '—'
                                 )}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
+                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>—</td>
+                              <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
                                 {(() => {
                                   const inclPrev = ['Enabler', 'Compliance'].includes(init.type);
                                   const denom = init.plannedCost + (inclPrev ? (init.prevYearActualCost || 0) : 0);
                                   return init.plannedEffect !== null && denom > 0 ? (Math.round((init.plannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
                                 })()}
                               </td>
-                              <td className="px-4 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-vc-${init.cardId}`}>
+                              <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-vc-${init.cardId}`}>
                                 {(() => {
                                   const prevCost = (init.prevYearActualCost || 0);
                                   const denom = init.actualCost + prevCost;
                                   return init.actualEffect !== null && denom > 0 ? (Math.round((init.actualEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—';
                                 })()}
                               </td>
-                              {visibleColumns.has('effectType') && (
-                                <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>—</td>
-                              )}
-                              {visibleColumns.has('contribution') && (
-                                <td className="px-4 py-2.5 border-b border-border text-right text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>—</td>
-                              )}
-                              {visibleColumns.has('participants') && (
-                                <td className="px-4 py-2.5 border-b border-border text-muted-foreground" data-testid={`text-participants-${init.cardId}`}>
-                                  {init.participants && init.participants.length > 0 ? init.participants.join(', ') : '—'}
-                                </td>
-                              )}
                             </tr>
                           ))}
                         </Fragment>
@@ -1341,13 +1329,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                     })
                   ) : !isTableFetching ? (
                     <tr>
-                      <td colSpan={visibleColCount + 1} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={14} className="px-4 py-8 text-center text-muted-foreground">
                         Нет инициатив для отображения
                       </td>
                     </tr>
                   ) : (
                     <tr>
-                      <td colSpan={visibleColCount + 1} className="px-4 py-8 text-center">
+                      <td colSpan={14} className="px-4 py-8 text-center">
                         <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
                       </td>
                     </tr>
@@ -1359,17 +1347,20 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                       <td className="px-4 py-2.5 border-t border-border w-[20%]" data-testid="text-total-label">
                         Итого ({displayTableData.initiatives.length})
                       </td>
-                      <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
+                      <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
+                      <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
+                      <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
+                      <td className="px-3 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-planned-cost">
                         {displayTableData.initiatives.reduce((sum, i) => sum + i.plannedCost, 0).toLocaleString('ru-RU')}
                       </td>
-                      {(initiativeFilter === 'carryover' || initiativeFilter === 'all') && (
-                        <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-prev-year-actual-cost">
-                          {displayTableData.initiatives.reduce((sum, i) => sum + (i.prevYearActualCost || 0), 0).toLocaleString('ru-RU')}
-                        </td>
-                      )}
-                      <td className="px-4 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
+                      <td className="px-3 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-prev-year-actual-cost">
+                        {displayTableData.initiatives.reduce((sum, i) => sum + (i.prevYearActualCost || 0), 0).toLocaleString('ru-RU')}
+                      </td>
+                      <td className="px-3 py-2.5 border-t border-border text-right tabular-nums" data-testid="text-total-actual-cost">
                         {displayTableData.initiatives.reduce((sum, i) => sum + i.actualCost, 0).toLocaleString('ru-RU')}
                       </td>
+                      <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
+                      <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
                       {(() => {
                         const inits = displayTableData!.initiatives;
                         const totalPC = inits.reduce((s, i) => s + i.plannedCost + (['Enabler', 'Compliance'].includes(i.type) ? (i.prevYearActualCost || 0) : 0), 0);
@@ -1380,16 +1371,14 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         const vcFact = totalAE > 0 && totalAC > 0 ? Math.round((totalAE / totalAC) * 10) / 10 : null;
                         return (
                           <>
-                            <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{totalPE > 0 ? totalPE.toLocaleString('ru-RU') : '—'}</td>
-                            <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{totalAE > 0 ? totalAE.toLocaleString('ru-RU') : '—'}</td>
-                            <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{vcPlan !== null ? vcPlan.toLocaleString('ru-RU') : '—'}</td>
-                            <td className="px-4 py-2.5 border-t border-border text-right tabular-nums">{vcFact !== null ? vcFact.toLocaleString('ru-RU') : '—'}</td>
+                            <td className="px-3 py-2.5 border-t border-border text-right tabular-nums">{totalPE > 0 ? totalPE.toLocaleString('ru-RU') : '—'}</td>
+                            <td className="px-3 py-2.5 border-t border-border text-right tabular-nums">{totalAE > 0 ? totalAE.toLocaleString('ru-RU') : '—'}</td>
+                            <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-t border-border text-right tabular-nums">{vcPlan !== null ? vcPlan.toLocaleString('ru-RU') : '—'}</td>
+                            <td className="px-3 py-2.5 border-t border-border text-right tabular-nums">{vcFact !== null ? vcFact.toLocaleString('ru-RU') : '—'}</td>
                           </>
                         );
                       })()}
-                      {visibleColumns.has('effectType') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
-                      {visibleColumns.has('contribution') && <td className="px-4 py-2.5 border-t border-border text-right text-muted-foreground">—</td>}
-                      {visibleColumns.has('participants') && <td className="px-4 py-2.5 border-t border-border text-muted-foreground">—</td>}
                     </tr>
                   </tfoot>
                 )}
