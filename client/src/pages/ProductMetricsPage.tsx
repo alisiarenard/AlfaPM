@@ -1239,9 +1239,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                 <span className="text-muted-foreground font-normal text-xs">({group.items.length})</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-center tabular-nums text-muted-foreground">—</td>
-                            <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
-                            <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-center tabular-nums text-muted-foreground"></td>
+                            <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground"></td>
+                            <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground"></td>
                             <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-cost-${group.type}`}>
                               {fmtK(group.totalPlannedCost)}
                             </td>
@@ -1251,15 +1251,15 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                             <td className="px-3 py-2.5 border-b border-border border-r text-right tabular-nums font-semibold" data-testid={`text-group-actual-cost-${group.type}`}>
                               {fmtK(group.totalActualCost)}
                             </td>
-                            <td className="px-3 py-2.5 border-b border-border border-r text-center text-muted-foreground">—</td>
-                            <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border border-r text-center text-muted-foreground"></td>
+                            <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground"></td>
                             <td className="px-3 py-2.5 border-b border-border border-l border-l-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-effect-${group.type}`}>
                               {fmtK(group.totalPlannedEffect)}
                             </td>
                             <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-actual-effect-${group.type}`}>
                               {fmtK(group.totalActualEffect)}
                             </td>
-                            <td className="px-3 py-2.5 border-b border-border border-r text-center text-muted-foreground">—</td>
+                            <td className="px-3 py-2.5 border-b border-border border-r text-center text-muted-foreground"></td>
                             <td className="px-3 py-2.5 border-b border-border text-right tabular-nums font-semibold" data-testid={`text-group-planned-vc-${group.type}`}>
                               {(() => { const inclPrev = ['Enabler', 'Compliance'].includes(group.type); const denom = group.totalPlannedCost + (inclPrev ? group.totalPrevYearActualCost : 0); return group.totalPlannedEffect > 0 && denom > 0 ? (Math.round((group.totalPlannedEffect / denom) * 10) / 10).toLocaleString('ru-RU') : '—'; })()}
                             </td>
