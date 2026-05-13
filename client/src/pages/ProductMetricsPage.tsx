@@ -1182,42 +1182,42 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   <col style={{ width: '5vw' }} />
                   <col style={{ width: '5vw' }} />
                 </colgroup>
-                <thead className="sticky top-0 z-10 [&_th]:font-normal">
+                <thead className="sticky top-0 z-10 [&_th]:font-normal bg-white dark:bg-background" style={{boxShadow: '0 1px 0 hsl(var(--border))'}}>
                   <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground">
-                    <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-border align-middle font-normal" data-testid="th-initiative">
+                    <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-border align-middle font-normal bg-white dark:bg-background" data-testid="th-initiative">
                       Инициативы
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center">
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center bg-white dark:bg-background">
                       сроки
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center">
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center bg-white dark:bg-background">
                       затраты
                     </th>
-                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-border text-center align-middle" data-testid="th-effect-type">
+                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-border text-center align-middle bg-white dark:bg-background" data-testid="th-effect-type">
                       тип эффекта
                     </th>
-                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-border text-center align-middle" data-testid="th-effect-by-data">
+                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-border text-center align-middle bg-white dark:bg-background" data-testid="th-effect-by-data">
                       эффект по данным
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center">
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center bg-white dark:bg-background">
                       эффект
                     </th>
-                    <th colSpan={2} className="px-3 py-2 border-b border-border text-center">
+                    <th colSpan={2} className="px-3 py-2 border-b border-border text-center bg-white dark:bg-background">
                       V/C
                     </th>
                   </tr>
                   <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground">
-                    <th className="px-3 py-2 border-b border-r border-border border-l border-l-border text-center" data-testid="th-deadline-plan">план</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-prod">прод</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-effect">эффект</th>
-                    <th className="px-3 py-2 border-b border-r border-border border-l border-l-border text-center" data-testid="th-planned-cost">план</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-prev-year-actual-cost">факт прошлого</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-actual-cost">факт текущего</th>
-                    <th className="px-3 py-2 border-b border-r border-border border-l border-l-border text-center" data-testid="th-planned-effect">план</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-actual-effect">факт</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-contribution-percent">% вклада</th>
-                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-planned-vc">план</th>
-                    <th className="px-3 py-2 border-b border-border text-center" data-testid="th-actual-vc">факт</th>
+                    <th className="px-3 py-2 border-r border-border border-l border-l-border text-center bg-white dark:bg-background" data-testid="th-deadline-plan">план</th>
+                    <th className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" data-testid="th-deadline-prod">прод</th>
+                    <th className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" data-testid="th-deadline-effect">эффект</th>
+                    <th className="px-3 py-2 border-r border-border border-l border-l-border text-center bg-white dark:bg-background" data-testid="th-planned-cost">план</th>
+                    <th className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" data-testid="th-prev-year-actual-cost">факт прошлого</th>
+                    <th className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" data-testid="th-actual-cost">факт текущего</th>
+                    <th className="px-3 py-2 border-r border-border border-l border-l-border text-center bg-white dark:bg-background" data-testid="th-planned-effect">план</th>
+                    <th className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" data-testid="th-actual-effect">факт</th>
+                    <th className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" data-testid="th-contribution-percent">% вклада</th>
+                    <th className="px-3 py-2 border-r border-border text-center bg-white dark:bg-background" data-testid="th-planned-vc">план</th>
+                    <th className="px-3 py-2 text-center bg-white dark:bg-background" data-testid="th-actual-vc">факт</th>
                   </tr>
                 </thead>
                 <tbody>
