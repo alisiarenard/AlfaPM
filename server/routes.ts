@@ -3104,7 +3104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const _first236b = _id236b[0] ?? null;
               const _effectTypeSave_b = _first236b?.value ?? null;
               const _effectByDataSave_b = _first236b != null && (_first236b === 1201 || _first236b?.id === 1201) ? true : false;
-              console.log(`[SYNC-B] card=${fullCard.id} "${fullCard.title}" FULL_JSON=`, JSON.stringify(fullCard, null, 2));
+              console.log(`[SYNC-B] card=${fullCard.id} "${fullCard.title}" properties=`, JSON.stringify(fullCard.properties ?? null, null, 2));
               console.log(`[SYNC-B] card=${fullCard.id} → effectType=${JSON.stringify(_effectTypeSave_b)} effectByData=${_effectByDataSave_b} deadlineProd=${fullCard.properties?.['id_101']?.date??null} deadlineEffect=${fullCard.properties?.['id_235']?.date??null} contributionPercent=${fullCard.properties?.['id_241']??null}`);
 
               const synced = await storage.syncInitiativeFromKaiten(
