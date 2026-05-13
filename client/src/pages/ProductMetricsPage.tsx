@@ -373,10 +373,17 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
 
   const handleSpaceToggle = useCallback((teamIds: string[]) => {
     setSelectedTeams(prev => {
-      const newSelectedTeams = new Set(prev);
-      const allSelected = teamIds.every(id => newSelectedTeams.has(id));
-      if (allSelected) {
-        const remaining = new Set(Array.from(newSelectedTeams).filter(id => !teamIds.includes(id)));
+      const allIds = Array.from(prev);
+      // если сейчас режим "все выбраны" — переключаемся в режим единственного пространства
+      const allTeamIds = departmentTeams?.map(t => t.teamId) || [];
+      const allCurrentlySelected = allTeamIds.length > 0 && allTeamIds.every(id => prev.has(id));
+      if (allCurrentlySelected) {
+        return new Set(teamIds);
+      }
+      const newSelectedTeams = new Set(allIds);
+      const spaceAlreadySelected = teamIds.every(id => newSelectedTeams.has(id));
+      if (spaceAlreadySelected) {
+        const remaining = new Set(allIds.filter(id => !teamIds.includes(id)));
         if (remaining.size === 0) return prev;
         teamIds.forEach(id => newSelectedTeams.delete(id));
       } else {
@@ -384,7 +391,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
       }
       return newSelectedTeams;
     });
-  }, []);
+  }, [departmentTeams]);
 
   const handleSelectAllSpaces = useCallback(() => {
     setSelectedTeams(prev => {

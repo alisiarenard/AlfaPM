@@ -62,7 +62,7 @@ function SpaceMultiSelect({ spaceGroups, selectedSpaceIds, onToggleSpace, onSele
         {spaceGroups.map((group) => (
           <DropdownMenuCheckboxItem
             key={group.spaceId}
-            checked={selectedSpaceIds.includes(group.spaceId)}
+            checked={!allSelected && selectedSpaceIds.includes(group.spaceId)}
             onCheckedChange={() => onToggleSpace(group.teamIds)}
             onSelect={(e) => e.preventDefault()}
             data-testid={`space-option-${group.spaceId}`}
