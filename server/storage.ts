@@ -65,7 +65,8 @@ export interface IStorage {
     completedAt?: string,
     sprintId?: number | null,
     doneDate?: string | null,
-    teamId?: string | null
+    teamId?: string | null,
+    ownerUsername?: string | null
   ): Promise<TaskRow>;
   getAllSprints(): Promise<SprintRow[]>;
   getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
@@ -310,7 +311,8 @@ export class MemStorage implements IStorage {
     completedAt?: string,
     sprintId?: number | null,
     doneDate?: string | null,
-    teamId?: string | null
+    teamId?: string | null,
+    ownerUsername?: string | null
   ): Promise<TaskRow> {
     const id = randomUUID();
     return {
@@ -743,7 +745,8 @@ export class DbStorage implements IStorage {
     completedAt?: string,
     sprintId?: number | null,
     doneDate?: string | null,
-    teamId?: string | null
+    teamId?: string | null,
+    ownerUsername?: string | null
   ): Promise<TaskRow> {
     const existing = await this.getTaskByCardId(cardId);
     
@@ -763,7 +766,8 @@ export class DbStorage implements IStorage {
           type: type ?? null,
           completedAt: completedAt ?? null,
           doneDate: doneDate ?? null,
-          teamId: teamId ?? null
+          teamId: teamId ?? null,
+          owner: ownerUsername ?? null,
         })
         .where(eq(tasks.cardId, cardId))
         .returning();
@@ -785,7 +789,8 @@ export class DbStorage implements IStorage {
           type: type ?? null,
           completedAt: completedAt ?? null,
           doneDate: doneDate ?? null,
-          teamId: teamId ?? null
+          teamId: teamId ?? null,
+          owner: ownerUsername ?? null,
         })
         .returning();
       return newTask;

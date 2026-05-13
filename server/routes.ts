@@ -762,7 +762,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       card.completed_at ?? undefined,
                       sprint.id,
                       getTaskDoneDate(card),
-                      team.teamId
+                      team.teamId,
+                      card.owner?.username ?? null
                     );
                     
                     totalTasks++;
@@ -820,7 +821,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 card.completed_at ?? undefined,
                 null,
                 getTaskDoneDate(card),
-                team.teamId
+                team.teamId,
+                card.owner?.username ?? null
               );
             } catch (cardError: unknown) {
               console.error(`[CREATE-TEAM] Error syncing card ${card.id}:`, cardError instanceof Error ? cardError.message : String(cardError));
@@ -2490,7 +2492,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 card.completed_at ?? undefined,
                 sprintId,
                 getTaskDoneDate(card),
-                team.teamId
+                team.teamId,
+                card.owner?.username ?? null
               );
               
               tasksSynced++;
@@ -2765,7 +2768,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.completed_at || undefined,
               sprintId,
               getTaskDoneDate(card),
-              teamId
+              teamId,
+              card.owner?.username ?? null
             );
 
             tasksSaved++;
@@ -3317,7 +3321,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.completed_at ?? undefined,
             card.sprint_id ?? null, // sprint_id from Kaiten
             getTaskDoneDate(card),
-            team.teamId
+            team.teamId,
+            card.owner?.username ?? null
           );
           
           syncedTasks.push(synced);
@@ -3558,7 +3563,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.completed_at ?? undefined,
             sprintId,
             getTaskDoneDate(card),
-            team.teamId
+            team.teamId,
+            card.owner?.username ?? null
           );
           
           syncedTasks.push(synced);
@@ -3654,7 +3660,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             card.completed_at ?? undefined,
             null,
             getTaskDoneDate(card),
-            team.teamId
+            team.teamId,
+            card.owner?.username ?? null
           );
           synced++;
         } catch (cardError) {
@@ -3756,7 +3763,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 card.completed_at ?? undefined,
                 sprintDetails.id,
                 getTaskDoneDate(card),
-                teamId
+                teamId,
+                card.owner?.username ?? null
               );
               
               tasksSynced++;
@@ -3854,7 +3862,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             taskCard.completed_at ?? undefined,
             null,
             taskCard.last_moved_to_done_at,
-            team.teamId
+            team.teamId,
+            taskCard.owner?.username ?? null
           );
           
           syncedTasks.push(synced);
@@ -4027,7 +4036,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   card.created || new Date().toISOString(),
                   state, card.size || 0, condition, card.archived || false,
                   initCardId, card.type?.name, card.completed_at ?? undefined,
-                  null, getTaskDoneDate(card), team.teamId
+                  null, getTaskDoneDate(card), team.teamId,
+                  card.owner?.username ?? null
                 );
                 tasksSynced++;
               } catch (e) {
@@ -4083,7 +4093,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       card.completed_at ?? undefined,
                       dbSprint.sprintId,
                       getTaskDoneDate(card),
-                      team.teamId
+                      team.teamId,
+                      card.owner?.username ?? null
                     );
                     
                     tasksSynced++;
@@ -4127,7 +4138,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 card.created || new Date().toISOString(),
                 state, card.size || 0, condition, card.archived || false,
                 initCardId, card.type?.name, card.completed_at ?? undefined,
-                null, getTaskDoneDate(card), team.teamId
+                null, getTaskDoneDate(card), team.teamId,
+                card.owner?.username ?? null
               );
               tasksSynced++;
             } catch (e) {
@@ -4198,7 +4210,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               card.completed_at ?? undefined,
               null,
               getTaskDoneDate(card),
-              team.teamId
+              team.teamId,
+              card.owner?.username ?? null
             );
 
             tasksSynced++;
