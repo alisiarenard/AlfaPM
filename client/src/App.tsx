@@ -166,7 +166,7 @@ function AppLayout() {
               </div>
               {!isSettingsPage && (
                 <div className="flex items-center gap-3">
-                  {isProductMetricsPage && spaceFilter && spaceFilter.spaceGroups.length > 0 && (
+                  {isProductMetricsPage && spaceFilter && spaceFilter.spaceGroups.length > 1 && (
                     <SpaceMultiSelect
                       spaceGroups={spaceFilter.spaceGroups}
                       selectedSpaceIds={spaceFilter.selectedSpaceIds}
