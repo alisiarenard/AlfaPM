@@ -1149,8 +1149,24 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   ))}
                 </div>
               </div>
-              <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: flowExpanded ? 'calc(70vh - 48px - 110px)' : 'calc(70vh - 48px)', transition: 'max-height 0.3s ease' }}>
-              <table className="w-full text-sm">
+              <div className="overflow-auto custom-scrollbar" style={{ maxHeight: flowExpanded ? 'calc(70vh - 48px - 110px)' : 'calc(70vh - 48px)', transition: 'max-height 0.3s ease' }}>
+              <table className="text-sm" style={{ minWidth: '100%', tableLayout: 'fixed', width: 'max-content' }}>
+                <colgroup>
+                  <col style={{ width: '20vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '7vw' }} />
+                  <col style={{ width: '6vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
+                </colgroup>
                 <thead className="sticky top-0 z-10 [&_th]:font-normal">
                   <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground">
                     <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-border align-middle font-normal" data-testid="th-initiative">
