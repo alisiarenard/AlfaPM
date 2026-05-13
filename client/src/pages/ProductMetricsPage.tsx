@@ -1390,7 +1390,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   <tfoot className="sticky bottom-0 z-10">
                     <tr className="bg-muted/80 font-semibold" style={{ backdropFilter: 'blur(8px)' }}>
                       <td className="px-4 py-2.5 border-t border-border w-[20%]" data-testid="text-total-label">
-                        Итого ({displayTableData.initiatives.length})
+                        Итого
                       </td>
                       <td className="px-3 py-2.5 border-t border-border border-l border-l-border text-center text-muted-foreground">—</td>
                       <td className="px-3 py-2.5 border-t border-border text-center text-muted-foreground">—</td>
