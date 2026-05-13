@@ -1165,8 +1165,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                   <col style={{ width: '5vw' }} />
                   <col style={{ width: '5vw' }} />
                   <col style={{ width: '5vw' }} />
-                  <col style={{ width: '6vw' }} />
-                  <col style={{ width: '6vw' }} />
+                  <col style={{ width: '5vw' }} />
+                  <col style={{ width: '5vw' }} />
                   <col style={{ width: '5vw' }} />
                   <col style={{ width: '5vw' }} />
                   <col style={{ width: '5vw' }} />
