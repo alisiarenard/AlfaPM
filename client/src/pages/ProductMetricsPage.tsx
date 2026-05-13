@@ -1138,41 +1138,41 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
               <div className="overflow-y-auto custom-scrollbar" style={{ maxHeight: flowExpanded ? 'calc(70vh - 48px - 110px)' : 'calc(70vh - 48px)', transition: 'max-height 0.3s ease' }}>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-primary text-primary-foreground text-xs font-medium" style={{ backdropFilter: 'blur(8px)' }}>
-                    <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-primary-foreground/20 align-middle" data-testid="th-initiative">
+                  <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground" style={{ backdropFilter: 'blur(8px)' }}>
+                    <th rowSpan={2} className="text-left px-4 py-2 border-b border-r border-border align-middle" data-testid="th-initiative">
                       инициативы
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center">
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center">
                       сроки
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center">
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center">
                       затраты
                     </th>
-                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center align-middle" data-testid="th-effect-type">
+                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-border text-center align-middle" data-testid="th-effect-type">
                       тип эффекта
                     </th>
-                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center align-middle" data-testid="th-effect-by-data">
+                    <th rowSpan={2} className="px-3 py-2 border-b border-r border-border text-center align-middle" data-testid="th-effect-by-data">
                       эффект по данным
                     </th>
-                    <th colSpan={3} className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center">
+                    <th colSpan={3} className="px-3 py-2 border-b border-r border-border text-center">
                       эффект
                     </th>
-                    <th colSpan={2} className="px-3 py-2 border-b border-primary-foreground/20 text-center">
+                    <th colSpan={2} className="px-3 py-2 border-b border-border text-center">
                       V/C
                     </th>
                   </tr>
-                  <tr className="bg-primary text-primary-foreground text-xs font-medium" style={{ backdropFilter: 'blur(8px)' }}>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-deadline-plan">план</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-deadline-prod">прод</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-deadline-effect">эффект</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-planned-cost">план</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-prev-year-actual-cost">факт прошлого</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-actual-cost">факт текущего</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-planned-effect">план</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-actual-effect">факт</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-contribution-percent">% вклада</th>
-                    <th className="px-3 py-2 border-b border-r border-primary-foreground/20 text-center" data-testid="th-planned-vc">план</th>
-                    <th className="px-3 py-2 border-b border-primary-foreground/20 text-center" data-testid="th-actual-vc">факт</th>
+                  <tr className="bg-white dark:bg-background text-xs font-normal text-muted-foreground" style={{ backdropFilter: 'blur(8px)' }}>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-plan">план</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-prod">прод</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-deadline-effect">эффект</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-planned-cost">план</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-prev-year-actual-cost">факт прошлого</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-actual-cost">факт текущего</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-planned-effect">план</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-actual-effect">факт</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-contribution-percent">% вклада</th>
+                    <th className="px-3 py-2 border-b border-r border-border text-center" data-testid="th-planned-vc">план</th>
+                    <th className="px-3 py-2 border-b border-border text-center" data-testid="th-actual-vc">факт</th>
                   </tr>
                 </thead>
                 <tbody>
