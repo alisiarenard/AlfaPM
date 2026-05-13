@@ -39,7 +39,13 @@ export interface IStorage {
     factValueId?: string | null,
     factValue?: string | null,
     dueDate?: string | null,
-    doneDate?: string | null
+    doneDate?: string | null,
+    archived?: boolean,
+    deadlineProd?: string | null,
+    deadlineEffect?: string | null,
+    contributionPercent?: number | null,
+    effectType?: string | null,
+    effectByData?: boolean | null
   ): Promise<InitiativeRow>;
   archiveInitiativesNotInList(boardId: number, activeCardIds: number[]): Promise<void>;
   getAllTasks(): Promise<TaskRow[]>;
@@ -199,7 +205,12 @@ export class MemStorage implements IStorage {
       factValueId: initiative.factValueId ?? null,
       factValue: initiative.factValue ?? null,
       dueDate: initiative.dueDate ?? null,
-      doneDate: initiative.doneDate ?? null
+      doneDate: initiative.doneDate ?? null,
+      deadlineProd: initiative.deadlineProd ?? null,
+      deadlineEffect: initiative.deadlineEffect ?? null,
+      contributionPercent: initiative.contributionPercent ?? null,
+      effectType: initiative.effectType ?? null,
+      effectByData: initiative.effectByData ?? null,
     };
   }
 
@@ -224,7 +235,13 @@ export class MemStorage implements IStorage {
     factValueId?: string | null,
     factValue?: string | null,
     dueDate?: string | null,
-    doneDate?: string | null
+    doneDate?: string | null,
+    archived?: boolean,
+    deadlineProd?: string | null,
+    deadlineEffect?: string | null,
+    contributionPercent?: number | null,
+    effectType?: string | null,
+    effectByData?: boolean | null
   ): Promise<InitiativeRow> {
     const id = randomUUID();
     return { 
@@ -242,7 +259,12 @@ export class MemStorage implements IStorage {
       factValueId: factValueId ?? null,
       factValue: factValue ?? null,
       dueDate: dueDate ?? null,
-      doneDate: doneDate ?? null
+      doneDate: doneDate ?? null,
+      deadlineProd: deadlineProd ?? null,
+      deadlineEffect: deadlineEffect ?? null,
+      contributionPercent: contributionPercent ?? null,
+      effectType: effectType ?? null,
+      effectByData: effectByData ?? null,
     };
   }
 
@@ -605,7 +627,13 @@ export class DbStorage implements IStorage {
     factValueId?: string | null,
     factValue?: string | null,
     dueDate?: string | null,
-    doneDate?: string | null
+    doneDate?: string | null,
+    archived?: boolean,
+    deadlineProd?: string | null,
+    deadlineEffect?: string | null,
+    contributionPercent?: number | null,
+    effectType?: string | null,
+    effectByData?: boolean | null
   ): Promise<InitiativeRow> {
     const existing = await this.getInitiativeByCardId(cardId);
     
@@ -618,7 +646,12 @@ export class DbStorage implements IStorage {
         initBoardId: boardId, 
         type: type || null,
         dueDate: dueDate || null,
-        doneDate: doneDate || null
+        doneDate: doneDate || null,
+        deadlineProd: deadlineProd ?? null,
+        deadlineEffect: deadlineEffect ?? null,
+        contributionPercent: contributionPercent ?? null,
+        effectType: effectType ?? null,
+        effectByData: effectByData ?? null,
       };
       if (plannedValueId !== undefined && plannedValueId !== null) {
         updateData.plannedValueId = plannedValueId;
@@ -654,7 +687,12 @@ export class DbStorage implements IStorage {
           factValueId: factValueId ?? null,
           factValue: factValue ?? null,
           dueDate: dueDate || null,
-          doneDate: doneDate || null
+          doneDate: doneDate || null,
+          deadlineProd: deadlineProd ?? null,
+          deadlineEffect: deadlineEffect ?? null,
+          contributionPercent: contributionPercent ?? null,
+          effectType: effectType ?? null,
+          effectByData: effectByData ?? null,
         })
         .returning();
       return created;

@@ -22,6 +22,11 @@ export const initiatives = pgTable("initiatives", {
   factValue: varchar("fact_value"),
   dueDate: varchar("due_date"),
   doneDate: varchar("done_date"),
+  deadlineProd: varchar("deadline_prod"),
+  deadlineEffect: varchar("deadline_effect"),
+  contributionPercent: real("contribution_percent"),
+  effectType: varchar("effect_type"),
+  effectByData: boolean("effect_by_data"),
 });
 
 export const insertInitiativeSchema = createInsertSchema(initiatives).omit({ id: true });

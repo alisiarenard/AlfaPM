@@ -643,6 +643,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             const rawFact = card.properties?.[factValueId];
             const factValue = rawFact == null ? undefined : String(rawFact);
+
+            const _id236a = Array.isArray(card.properties?.['id_236']) ? card.properties!['id_236'] : [];
+            const _first236a = _id236a[0] ?? null;
             
             await storage.syncInitiativeFromKaiten(
               card.id,
@@ -657,7 +660,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               factValueId,
               factValue,
               card.due_date || null,
-              card.last_moved_to_done_at || null
+              card.last_moved_to_done_at || null,
+              card.archived || false,
+              card.properties?.['id_101']?.date ?? null,
+              card.properties?.['id_235']?.date ?? null,
+              card.properties?.['id_241'] != null ? Number(card.properties['id_241']) : null,
+              _first236a?.value ?? null,
+              _first236a != null && (_first236a === 1201 || _first236a?.id === 1201) ? true : false
             );
             syncedCardIds.push(card.id);
           }
@@ -3087,6 +3096,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const rawFact = fullCard.properties?.[factValueId];
               const factValue = rawFact == null ? undefined : String(rawFact);
 
+              const _id236b = Array.isArray(fullCard.properties?.['id_236']) ? fullCard.properties!['id_236'] : [];
+              const _first236b = _id236b[0] ?? null;
+
               const synced = await storage.syncInitiativeFromKaiten(
                 fullCard.id,
                 boardId,
@@ -3101,7 +3113,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 factValue,
                 fullCard.due_date || null,
                 fullCard.last_moved_to_done_at || null,
-                fullCard.archived || false
+                fullCard.archived || false,
+                fullCard.properties?.['id_101']?.date ?? null,
+                fullCard.properties?.['id_235']?.date ?? null,
+                fullCard.properties?.['id_241'] != null ? Number(fullCard.properties['id_241']) : null,
+                _first236b?.value ?? null,
+                _first236b != null && (_first236b === 1201 || _first236b?.id === 1201) ? true : false
               );
               allSyncedInitiatives.push(synced);
               syncedCardIds.push(card.id);
@@ -3190,6 +3207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Логируем даты для отладки
 
+        const _id236c = Array.isArray(card.properties?.['id_236']) ? card.properties!['id_236'] : [];
+        const _first236c = _id236c[0] ?? null;
+
         const synced = await storage.syncInitiativeFromKaiten(
           card.id,
           boardId,
@@ -3203,7 +3223,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           factValueId,
           factValue,
           card.due_date || null,
-          card.last_moved_to_done_at || null
+          card.last_moved_to_done_at || null,
+          card.archived || false,
+          card.properties?.['id_101']?.date ?? null,
+          card.properties?.['id_235']?.date ?? null,
+          card.properties?.['id_241'] != null ? Number(card.properties['id_241']) : null,
+          _first236c?.value ?? null,
+          _first236c != null && (_first236c === 1201 || _first236c?.id === 1201) ? true : false
         );
         
         syncedInitiatives.push(synced);
@@ -3953,6 +3979,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Логируем дату для отладки
           if (card.last_moved_to_done_at) {
           }
+
+          const _id236d = Array.isArray(card.properties?.['id_236']) ? card.properties!['id_236'] : [];
+          const _first236d = _id236d[0] ?? null;
           
           await storage.syncInitiativeFromKaiten(
             card.id,
@@ -3967,7 +3996,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             factValueId,
             factValue !== null ? String(factValue) : null,
             card.due_date || null,
-            card.last_moved_to_done_at || null
+            card.last_moved_to_done_at || null,
+            card.archived || false,
+            card.properties?.['id_101']?.date ?? null,
+            card.properties?.['id_235']?.date ?? null,
+            card.properties?.['id_241'] != null ? Number(card.properties['id_241']) : null,
+            _first236d?.value ?? null,
+            _first236d != null && (_first236d === 1201 || _first236d?.id === 1201) ? true : false
           );
           
           syncedCardIds.push(card.id);
@@ -5099,6 +5134,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         archived: boolean;
         plannedValue: string | null;
         factValue: string | null;
+        dueDate: string | null;
+        doneDate: string | null;
+        deadlineProd: string | null;
+        deadlineEffect: string | null;
+        contributionPercent: number | null;
+        effectType: string | null;
+        effectByData: boolean | null;
         totalPlannedCost: number;
         totalActualCost: number;
         totalPrevYearActualCost: number;
@@ -5264,6 +5306,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               factValue: initiative.factValue,
               dueDate: initiative.dueDate || null,
               doneDate: initiative.doneDate || null,
+              deadlineProd: initiative.deadlineProd || null,
+              deadlineEffect: initiative.deadlineEffect || null,
+              contributionPercent: initiative.contributionPercent ?? null,
+              effectType: initiative.effectType || null,
+              effectByData: initiative.effectByData ?? null,
               totalPlannedCost: 0,
               totalActualCost: actualSP * yearlySpPrice,
               totalPrevYearActualCost: prevYearActualSP * prevYearlySpPrice,
@@ -5286,6 +5333,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         archived: boolean;
         dueDate: string | null;
         doneDate: string | null;
+        deadlineProd: string | null;
+        deadlineEffect: string | null;
+        contributionPercent: number | null;
+        effectType: string | null;
+        effectByData: boolean | null;
         plannedCost: number;
         prevYearActualCost: number;
         actualCost: number;
@@ -5342,6 +5394,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           archived: init.archived,
           dueDate: init.dueDate || null,
           doneDate: init.doneDate || null,
+          deadlineProd: init.deadlineProd || null,
+          deadlineEffect: init.deadlineEffect || null,
+          contributionPercent: init.contributionPercent ?? null,
+          effectType: init.effectType || null,
+          effectByData: init.effectByData ?? null,
           plannedCost: Math.round(plannedCost),
           prevYearActualCost: Math.round(init.totalPrevYearActualCost),
           actualCost: Math.round(actualCost),

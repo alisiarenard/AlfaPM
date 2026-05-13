@@ -381,6 +381,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     cardId: number;
     spaceId: number;
     archived: boolean;
+    dueDate: string | null;
+    doneDate: string | null;
+    deadlineProd: string | null;
+    deadlineEffect: string | null;
+    contributionPercent: number | null;
+    effectType: string | null;
+    effectByData: boolean | null;
     plannedCost: number;
     prevYearActualCost: number;
     actualCost: number;
@@ -388,6 +395,13 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
     actualEffect: number | null;
     participants: string[];
   }
+
+  const fmtTableDate = (date: string | null | undefined): string => {
+    if (!date) return '—';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+  };
 
   const filterTeamIdsArray = Array.from(filterTeamIds);
   const filterTeamIdsParam = filterTeamIdsArray.sort().join(',');
@@ -1241,9 +1255,9 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   </a>
                                 </div>
                               </td>
-                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
-                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
-                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground">—</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground" data-testid={`text-deadline-plan-${init.cardId}`}>{fmtTableDate(init.dueDate)}</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground" data-testid={`text-deadline-prod-${init.cardId}`}>{fmtTableDate(init.deadlineProd)}</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground" data-testid={`text-deadline-effect-${init.cardId}`}>{fmtTableDate(init.deadlineEffect)}</td>
                               <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-cost-${init.cardId}`}>
                                 {init.plannedCost > 0 ? init.plannedCost.toLocaleString('ru-RU') : '—'}
                               </td>
@@ -1253,8 +1267,8 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                               <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-actual-cost-${init.cardId}`}>
                                 {init.actualCost > 0 ? init.actualCost.toLocaleString('ru-RU') : '—'}
                               </td>
-                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>—</td>
-                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-by-data-${init.cardId}`}>—</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-type-${init.cardId}`}>{init.effectType ?? '—'}</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-effect-by-data-${init.cardId}`}>{init.effectByData === true ? 'Да' : '—'}</td>
                               <td
                                 className={`px-3 py-2.5 border-b border-border text-right tabular-nums ${init.type === 'Epic' ? 'cursor-pointer' : ''}`}
                                 style={{ minWidth: 0 }}
@@ -1307,7 +1321,7 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                                   init.actualEffect !== null && init.actualEffect > 0 ? init.actualEffect.toLocaleString('ru-RU') : '—'
                                 )}
                               </td>
-                              <td className="px-3 py-2.5 border-b border-border text-center text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>—</td>
+                              <td className="px-3 py-2.5 border-b border-border text-center tabular-nums text-muted-foreground" data-testid={`text-contribution-percent-${init.cardId}`}>{init.contributionPercent != null ? init.contributionPercent.toLocaleString('ru-RU') : '—'}</td>
                               <td className="px-3 py-2.5 border-b border-border text-right tabular-nums" data-testid={`text-planned-vc-${init.cardId}`}>
                                 {(() => {
                                   const inclPrev = ['Enabler', 'Compliance'].includes(init.type);
