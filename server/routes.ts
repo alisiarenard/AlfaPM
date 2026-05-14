@@ -253,19 +253,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!q.trim()) return res.json([]);
       const token = process.env.GITLAB_TOKEN;
       const baseUrl = (process.env.GITLAB_URL || "https://gitlab.com").replace(/\/$/, "");
-      if (!token) return res.json([]);
+      console.log(`[GitLab] GITLAB_TOKEN set: ${!!token}, GITLAB_URL: "${baseUrl}"`);
+      if (!token) {
+        console.log("[GitLab] No token, returning empty");
+        return res.json([]);
+      }
       const url = `${baseUrl}/api/v4/users?search=${encodeURIComponent(q.trim())}&per_page=10`;
+      console.log(`[GitLab] Requesting: ${url}`);
       const response = await fetch(url, {
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
       });
-      if (!response.ok) return res.json([]);
+      console.log(`[GitLab] Response status: ${response.status}`);
+      if (!response.ok) {
+        const body = await response.text();
+        console.log(`[GitLab] Error body: ${body}`);
+        return res.json([]);
+      }
       const users = await response.json() as any[];
+      console.log(`[GitLab] Found ${users.length} users:`, JSON.stringify(users.map((u: any) => u.username)));
       res.json(users.map((u: any) => ({
         username: u.username,
         full_name: u.name || u.username,
         avatar_url: u.avatar_url || null,
       })));
     } catch (error: any) {
+      console.log(`[GitLab] Exception: ${error.message}`);
       res.status(500).json({ success: false, error: error.message || "Failed to search GitLab users" });
     }
   });
