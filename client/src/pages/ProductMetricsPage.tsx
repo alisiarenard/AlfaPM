@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoreVertical, Download, ChevronDown, ChevronRight, Columns, Users, RefreshCw, Info } from "lucide-react";
+import { MoreVertical, Download, ChevronDown, ChevronRight, Users, RefreshCw, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Loader2 } from "lucide-react";
@@ -1132,24 +1132,6 @@ export default function ProductMetricsPage({ selectedDepartment, setSelectedDepa
                         {team.teamName}
                       </DropdownMenuCheckboxItem>
                     ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" data-testid="button-column-visibility" title="Настроить колонки">
-                      <Columns className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-white dark:bg-card">
-                    <DropdownMenuCheckboxItem checked={visibleColumns.has('effectType')} onCheckedChange={() => toggleColumn('effectType')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-effect-type">
-                      Тип Эффекта
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked={visibleColumns.has('contribution')} onCheckedChange={() => toggleColumn('contribution')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-contribution">
-                      % вклада
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked={visibleColumns.has('participants')} onCheckedChange={() => toggleColumn('participants')} onSelect={(e) => e.preventDefault()} data-testid="toggle-col-participants">
-                      Участники
-                    </DropdownMenuCheckboxItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 </div>
