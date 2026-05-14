@@ -132,6 +132,9 @@ export default function SettingsPage() {
   const [newMemberGitlabUsername, setNewMemberGitlabUsername] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchOpen, setUserSearchOpen] = useState(false);
+  const [gitlabSearchQuery, setGitlabSearchQuery] = useState("");
+  const [gitlabSearchOpen, setGitlabSearchOpen] = useState(false);
+  const [debouncedGitlabSearch, setDebouncedGitlabSearch] = useState("");
   const [metricsYear, setMetricsYear] = useState(new Date().getFullYear().toString());
   const [sprintIds, setSprintIds] = useState("");
   const [ttmSpaceId, setTtmSpaceId] = useState("");
@@ -430,6 +433,23 @@ export default function SettingsPage() {
     return () => clearTimeout(t);
   }, [userSearchQuery]);
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedGitlabSearch(gitlabSearchQuery), 350);
+    return () => clearTimeout(t);
+  }, [gitlabSearchQuery]);
+
+  const { data: gitlabSearchResults, isFetching: gitlabSearchLoading } = useQuery<{ username: string; full_name: string; avatar_url: string | null }[]>({
+    queryKey: ["/api/gitlab/users/search", debouncedGitlabSearch],
+    queryFn: async () => {
+      if (!debouncedGitlabSearch.trim()) return [];
+      const res = await fetch(`/api/gitlab/users/search?q=${encodeURIComponent(debouncedGitlabSearch)}`);
+      if (!res.ok) throw new Error("Failed to search GitLab users");
+      return await res.json();
+    },
+    enabled: debouncedGitlabSearch.trim().length >= 2,
+    staleTime: 30000,
+  });
+
   const { data: userSearchResults, isFetching: userSearchLoading } = useQuery<{ username: string; full_name: string }[]>({
     queryKey: ["/api/kaiten/users/search", debouncedUserSearch],
     queryFn: async () => {
@@ -467,9 +487,13 @@ export default function SettingsPage() {
       setNewMemberFullName("");
       setNewMemberAvatarUrl("");
       setNewMemberRole("");
+      setNewMemberGitlabUsername("");
       setUserSearchQuery("");
       setDebouncedUserSearch("");
       setUserSearchOpen(false);
+      setGitlabSearchQuery("");
+      setDebouncedGitlabSearch("");
+      setGitlabSearchOpen(false);
       toast({ title: "Участник добавлен" });
     },
     onError: (err: Error) => {
@@ -1786,6 +1810,9 @@ export default function SettingsPage() {
         setUserSearchQuery("");
         setDebouncedUserSearch("");
         setUserSearchOpen(false);
+        setGitlabSearchQuery("");
+        setDebouncedGitlabSearch("");
+        setGitlabSearchOpen(false);
       }
     }}>
       <DialogContent data-testid="dialog-add-member">
@@ -1855,14 +1882,58 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="member-gitlab-username">Юзернейм (GitLab)</Label>
-            <Input
-              id="member-gitlab-username"
-              data-testid="input-member-gitlab-username"
-              placeholder="username"
-              value={newMemberGitlabUsername}
-              onChange={(e) => setNewMemberGitlabUsername(e.target.value)}
-              autoComplete="off"
-            />
+            <div className="relative">
+              {newMemberGitlabUsername ? (
+                <div className="flex items-center justify-between rounded-md border border-input bg-muted/40 px-3 py-2">
+                  <span className="text-sm font-medium">{newMemberGitlabUsername}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setNewMemberGitlabUsername(""); setGitlabSearchQuery(""); }}
+                    className="ml-1 px-0.5 py-0 rounded opacity-50 hover:opacity-100 transition-opacity leading-none"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    id="member-gitlab-username"
+                    data-testid="input-member-gitlab-username"
+                    placeholder="Начните вводить логин GitLab..."
+                    value={gitlabSearchQuery}
+                    autoComplete="off"
+                    onChange={(e) => { setGitlabSearchQuery(e.target.value); setGitlabSearchOpen(true); }}
+                    onFocus={() => setGitlabSearchOpen(true)}
+                    onBlur={() => setTimeout(() => setGitlabSearchOpen(false), 150)}
+                  />
+                  {gitlabSearchOpen && gitlabSearchQuery.trim().length >= 2 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 z-[230] rounded-md border bg-popover shadow-md overflow-y-auto max-h-52">
+                      {gitlabSearchLoading ? (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">Поиск...</div>
+                      ) : !gitlabSearchResults || gitlabSearchResults.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">Пользователи не найдены</div>
+                      ) : (
+                        gitlabSearchResults.map((u) => (
+                          <button
+                            key={u.username}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover-elevate flex flex-col"
+                            onMouseDown={() => {
+                              setNewMemberGitlabUsername(u.username);
+                              setGitlabSearchQuery("");
+                              setGitlabSearchOpen(false);
+                            }}
+                          >
+                            <span className="font-medium">{u.full_name}</span>
+                            <span className="text-xs text-muted-foreground">{u.username}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="member-role">Роль <span className="text-destructive">*</span></Label>

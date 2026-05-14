@@ -247,6 +247,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/gitlab/users/search", async (req, res) => {
+    try {
+      const q = (req.query.q as string) || "";
+      if (!q.trim()) return res.json([]);
+      const token = process.env.GITLAB_TOKEN;
+      const baseUrl = (process.env.GITLAB_URL || "https://gitlab.com").replace(/\/$/, "");
+      if (!token) return res.json([]);
+      const url = `${baseUrl}/api/v4/users?search=${encodeURIComponent(q.trim())}&per_page=10`;
+      const response = await fetch(url, {
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      if (!response.ok) return res.json([]);
+      const users = await response.json() as any[];
+      res.json(users.map((u: any) => ({
+        username: u.username,
+        full_name: u.name || u.username,
+        avatar_url: u.avatar_url || null,
+      })));
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || "Failed to search GitLab users" });
+    }
+  });
+
   app.get("/api/kaiten/spaces/:spaceId/boards", async (req, res) => {
     try {
       const spaceId = parseInt(req.params.spaceId);
