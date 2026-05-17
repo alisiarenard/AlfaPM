@@ -1004,21 +1004,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseUrl = process.env.EVALUATIONS_BASE_URL;
       if (baseUrl && members.length > 0) {
         const developerIds = members.map((m) => m.username);
+        const batchUrl = `${baseUrl.replace(/\/$/, "")}/api/evaluations/batch-status`;
+        const payload = { developerIds, periodStart, periodEnd };
+        console.log(`[Evaluations] batch-status URL: ${batchUrl}`);
+        console.log(`[Evaluations] batch-status request:`, JSON.stringify(payload, null, 2));
         try {
-          const evalRes = await fetch(`${baseUrl.replace(/\/$/, "")}/api/evaluations/batch-status`, {
+          const evalRes = await fetch(batchUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ developerIds, periodStart, periodEnd }),
+            body: JSON.stringify(payload),
           });
+          console.log(`[Evaluations] batch-status response status: ${evalRes.status}`);
           if (evalRes.ok) {
             evaluations = await evalRes.json();
-            console.log(`[Evaluations] batch-status: ${evaluations.length} results`);
+            console.log(`[Evaluations] batch-status response:`, JSON.stringify(evaluations, null, 2));
           } else {
-            console.log(`[Evaluations] batch-status failed: ${evalRes.status}`);
+            const errBody = await evalRes.text();
+            console.log(`[Evaluations] batch-status error body: ${errBody}`);
           }
         } catch (e: any) {
-          console.log(`[Evaluations] batch-status error: ${e.message}`);
+          console.log(`[Evaluations] batch-status exception: ${e.message}`);
         }
+      } else {
+        console.log(`[Evaluations] batch-status skipped: EVALUATIONS_BASE_URL=${baseUrl ?? "not set"}, members=${members.length}`);
       }
 
       res.json({ metrics: rows, evaluations });
