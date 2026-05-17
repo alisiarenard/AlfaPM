@@ -551,12 +551,6 @@ export default function SettingsPage() {
     },
   });
 
-  useEffect(() => {
-    if (departments && departments.length > 0) {
-      const allDepartmentIds = new Set(departments.map(dept => dept.id));
-      setExpandedDepartments(allDepartmentIds);
-    }
-  }, [departments]);
 
   useEffect(() => {
     if (rightPanelMode === "editBlock" && editingDepartment) {

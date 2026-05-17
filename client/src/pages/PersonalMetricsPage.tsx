@@ -39,7 +39,7 @@ type MetricKey = typeof METRIC_KEYS[number];
 
 const METRIC_COLS: { key: MetricKey; label: string }[] = [
   { key: "codeQuality",        label: "Качество кода" },
-  { key: "taskComplexity",     label: "Сложность задач" },
+  { key: "taskComplexity",     label: "Вклад" },
   { key: "productivity",       label: "Производительность" },
   { key: "estimationAccuracy", label: "Точность оценки" },
   { key: "aiUsage",            label: "AI-usage" },
