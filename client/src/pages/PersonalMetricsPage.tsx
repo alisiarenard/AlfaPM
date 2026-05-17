@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search, RefreshCw, Send, Loader2 } from "lucide-react";
+import { Search, RefreshCw, Loader2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
@@ -81,19 +81,20 @@ function calcAverage(metrics: PersonalMetricsRow | undefined): number | null {
   return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
 }
 
-function AverageCell({ metrics, queryKey }: { metrics: PersonalMetricsRow | undefined; queryKey: unknown[] }) {
+function AverageCell({ metrics, queryKey, onSync, syncing }: { metrics: PersonalMetricsRow | undefined; queryKey: unknown[]; onSync: () => void; syncing: boolean }) {
   const avg = calcAverage(metrics);
 
   if (avg === null) {
     return (
       <td className="border-b border-border px-2 py-2.5 text-center" style={{ minWidth: 80 }}>
         <button
-          onClick={() => queryClient.invalidateQueries({ queryKey })}
-          className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          onClick={onSync}
+          disabled={syncing}
+          className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
           title="Получить данные"
           data-testid="button-refetch-metrics"
         >
-          <RefreshCw className="h-3.5 w-3.5" />
+          {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </button>
       </td>
     );
@@ -281,10 +282,6 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                             >
                               Итого
                             </th>
-                            <th
-                              className="px-4 py-3 text-xs font-normal text-center text-muted-foreground border-b border-border whitespace-nowrap"
-                              style={{ minWidth: 56 }}
-                            />
                           </tr>
                         </thead>
                         <tbody>
@@ -318,22 +315,12 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                                     value={metrics?.[col.key] ?? null}
                                   />
                                 ))}
-                                <AverageCell metrics={metrics} queryKey={["/api/personal-metrics", departmentId, year, quarter]} />
-                                <td className="border-b border-border px-2 py-2.5 text-center" style={{ minWidth: 56 }}>
-                                  <button
-                                    type="button"
-                                    data-testid={`button-sync-${m.id}`}
-                                    disabled={syncingMemberId === m.id}
-                                    onClick={() => syncMember(m, members ?? [])}
-                                    className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-                                    title="Отправить на оценку"
-                                  >
-                                    {syncingMemberId === m.id
-                                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                      : <Send className="h-3.5 w-3.5" />
-                                    }
-                                  </button>
-                                </td>
+                                <AverageCell
+                                  metrics={metrics}
+                                  queryKey={["/api/personal-metrics", departmentId, year, quarter]}
+                                  onSync={() => syncMember(m, members ?? [])}
+                                  syncing={syncingMemberId === m.id}
+                                />
                               </tr>
                             );
                           })}
