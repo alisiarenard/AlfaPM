@@ -1003,6 +1003,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/evaluations/sync", async (req, res) => {
+    try {
+      const { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd } = req.body;
+      if (!developerId || !teamId) return res.status(400).json({ success: false, error: "developerId and teamId required" });
+      const serviceUrl = process.env.EVALUATIONS_SERVICE_URL;
+      if (!serviceUrl) {
+        console.log("[Evaluations] EVALUATIONS_SERVICE_URL not set");
+        return res.status(503).json({ success: false, error: "Evaluations service URL not configured" });
+      }
+      const payload = { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd };
+      console.log(`[Evaluations] POST ${serviceUrl}`, JSON.stringify(payload));
+      const response = await fetch(serviceUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      console.log(`[Evaluations] Response status: ${response.status}`);
+      if (!response.ok) {
+        const body = await response.text();
+        console.log(`[Evaluations] Error body: ${body}`);
+        return res.status(response.status).json({ success: false, error: body });
+      }
+      const data = await response.json().catch(() => ({}));
+      res.json({ success: true, data });
+    } catch (error: any) {
+      console.log(`[Evaluations] Exception: ${error.message}`);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   app.get("/api/departments/:departmentId/members", async (req, res) => {
     try {
       const { departmentId } = req.params;

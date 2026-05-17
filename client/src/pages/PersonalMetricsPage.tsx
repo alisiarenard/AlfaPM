@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw, Send, Loader2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface Props {
@@ -110,12 +111,25 @@ function AverageCell({ metrics, queryKey }: { metrics: PersonalMetricsRow | unde
   );
 }
 
+function getPeriod(year: number, quarter: number): { periodStart: string; periodEnd: string } {
+  const ranges: Record<number, [string, string]> = {
+    1: [`${year}-01-01`, `${year}-03-31`],
+    2: [`${year}-04-01`, `${year}-06-30`],
+    3: [`${year}-07-01`, `${year}-09-30`],
+    4: [`${year}-10-01`, `${year}-12-31`],
+  };
+  const [periodStart, periodEnd] = ranges[quarter] ?? ranges[1];
+  return { periodStart, periodEnd };
+}
+
 export default function PersonalMetricsPage({ selectedDepartment, selectedYear }: Props) {
   const departmentId = selectedDepartment;
   const year = Number(selectedYear);
   const [activeTab, setActiveTab] = useState(ROLE_TABS[0].value);
   const [quarter, setQuarter] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [syncingMemberId, setSyncingMemberId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const { data: members, isLoading } = useQuery<TeamMemberRow[]>({
     queryKey: ["/api/departments", departmentId, "members"],
@@ -149,6 +163,35 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
 
   const teamMap = Object.fromEntries((teams ?? []).map((t) => [t.teamId, t.teamName]));
   const metricsMap = Object.fromEntries((metricsRows ?? []).map((r) => [r.memberId, r]));
+
+  async function syncMember(m: TeamMemberRow, allMembers: TeamMemberRow[]) {
+    const sameTeamRole = allMembers.filter((x) => x.teamId === m.teamId && x.role === m.role);
+    const gitlabUsernames = sameTeamRole.map((x) => x.gitlabUsername).filter((u): u is string => !!u);
+    const { periodStart, periodEnd } = getPeriod(year, quarter);
+    const payload = {
+      developerId: m.username,
+      teamId: m.teamId,
+      totalTeamSize: sameTeamRole.length,
+      gitlabUsernames,
+      periodStart,
+      periodEnd,
+    };
+    setSyncingMemberId(m.id);
+    try {
+      const res = await fetch("/api/evaluations/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Ошибка синхронизации");
+      toast({ title: "Синхронизировано", description: `${m.fullName || m.username}` });
+    } catch (e: any) {
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
+    } finally {
+      setSyncingMemberId(null);
+    }
+  }
 
   if (!departmentId) {
     return (
@@ -238,6 +281,10 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                             >
                               Итого
                             </th>
+                            <th
+                              className="px-4 py-3 text-xs font-normal text-center text-muted-foreground border-b border-border whitespace-nowrap"
+                              style={{ minWidth: 56 }}
+                            />
                           </tr>
                         </thead>
                         <tbody>
@@ -272,6 +319,21 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                                   />
                                 ))}
                                 <AverageCell metrics={metrics} queryKey={["/api/personal-metrics", departmentId, year, quarter]} />
+                                <td className="border-b border-border px-2 py-2.5 text-center" style={{ minWidth: 56 }}>
+                                  <button
+                                    type="button"
+                                    data-testid={`button-sync-${m.id}`}
+                                    disabled={syncingMemberId === m.id}
+                                    onClick={() => syncMember(m, members ?? [])}
+                                    className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                                    title="Отправить на оценку"
+                                  >
+                                    {syncingMemberId === m.id
+                                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      : <Send className="h-3.5 w-3.5" />
+                                    }
+                                  </button>
+                                </td>
                               </tr>
                             );
                           })}
