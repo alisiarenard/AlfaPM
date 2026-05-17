@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +10,31 @@ import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema"
 interface Props {
   selectedDepartment: string;
   selectedYear: string;
+}
+
+interface MetricsSnapshot {
+  mrs_with_ai_review: number;
+  avg_issues_per_mr: number;
+  avg_critical_per_mr: number;
+  avg_high_per_mr: number;
+  clean_mr_rate: number;
+  problem_mr_rate: number;
+  critical_accept_rate: number;
+  weekly_trend: string;
+}
+
+interface EvaluationStatus {
+  developerId: string;
+  status: "completed" | "in_progress" | "not_found";
+  score: number | null;
+  grade: string | null;
+  metricsSnapshot: MetricsSnapshot | null;
+  evaluatedAt: string | null;
+}
+
+interface PersonalMetricsResponse {
+  metrics: PersonalMetricsRow[];
+  evaluations: EvaluationStatus[];
 }
 
 const ROLE_TABS = [
@@ -70,6 +96,55 @@ function MetricCell({ value }: { value: number | null | undefined }) {
   return (
     <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
       <RatingCircles value={value} />
+    </td>
+  );
+}
+
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+
+const SNAPSHOT_LABELS: { key: keyof MetricsSnapshot; label: string; format?: (v: any) => string }[] = [
+  { key: "mrs_with_ai_review",    label: "MR с AI ревью" },
+  { key: "avg_issues_per_mr",     label: "Замечаний / MR" },
+  { key: "avg_critical_per_mr",   label: "Критических / MR" },
+  { key: "avg_high_per_mr",       label: "Высоких / MR" },
+  { key: "clean_mr_rate",         label: "Чистые MR",        format: pct },
+  { key: "problem_mr_rate",       label: "Проблемные MR",    format: pct },
+  { key: "critical_accept_rate",  label: "Принятие крит.",   format: pct },
+  { key: "weekly_trend",          label: "Тренд" },
+];
+
+function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
+  const hasScore = evaluation?.status === "completed" && evaluation.score !== null;
+  const snap = hasScore ? evaluation!.metricsSnapshot : null;
+
+  const circles = <RatingCircles value={hasScore ? evaluation!.score : null} />;
+
+  if (!snap) {
+    return (
+      <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+        {circles}
+      </td>
+    );
+  }
+
+  return (
+    <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="inline-flex cursor-default">{circles}</div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="p-3 text-xs space-y-1.5 min-w-48">
+          <p className="font-semibold text-foreground mb-2">Метрики GitLab</p>
+          {SNAPSHOT_LABELS.map(({ key, label, format }) => (
+            <div key={key} className="flex justify-between gap-6">
+              <span className="text-muted-foreground">{label}</span>
+              <span className="font-medium tabular-nums">
+                {format ? format(snap[key] as number) : String(snap[key])}
+              </span>
+            </div>
+          ))}
+        </TooltipContent>
+      </Tooltip>
     </td>
   );
 }
@@ -152,7 +227,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
     enabled: !!departmentId,
   });
 
-  const { data: metricsRows } = useQuery<PersonalMetricsRow[]>({
+  const { data: metricsData } = useQuery<PersonalMetricsResponse>({
     queryKey: ["/api/personal-metrics", departmentId, year, quarter],
     queryFn: async () => {
       const res = await fetch(`/api/personal-metrics?departmentId=${departmentId}&year=${year}&quarter=${quarter}`);
@@ -162,8 +237,12 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
     enabled: !!departmentId,
   });
 
+  const metricsRows = metricsData?.metrics ?? [];
+  const evaluations = metricsData?.evaluations ?? [];
+
   const teamMap = Object.fromEntries((teams ?? []).map((t) => [t.teamId, t.teamName]));
-  const metricsMap = Object.fromEntries((metricsRows ?? []).map((r) => [r.memberId, r]));
+  const metricsMap = Object.fromEntries(metricsRows.map((r) => [r.memberId, r]));
+  const evaluationsMap = Object.fromEntries(evaluations.map((e) => [e.developerId, e]));
 
   async function syncMember(m: TeamMemberRow, allMembers: TeamMemberRow[]) {
     const sameTeamRole = allMembers.filter((x) => x.teamId === m.teamId && x.role === m.role);
@@ -287,6 +366,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                         <tbody>
                           {filtered.map((m) => {
                             const metrics = metricsMap[m.id];
+                            const evaluation = evaluationsMap[m.username];
                             return (
                               <tr key={m.id} className="hover-elevate" data-testid={`row-member-${m.id}`}>
                                 <td
@@ -309,12 +389,13 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                                     </div>
                                   </div>
                                 </td>
-                                {METRIC_COLS.map((col) => (
-                                  <MetricCell
-                                    key={col.key}
-                                    value={metrics?.[col.key] ?? null}
-                                  />
-                                ))}
+                                {METRIC_COLS.map((col) =>
+                                  col.key === "codeQuality" ? (
+                                    <CodeQualityCell key={col.key} evaluation={evaluation} />
+                                  ) : (
+                                    <MetricCell key={col.key} value={metrics?.[col.key] ?? null} />
+                                  )
+                                )}
                                 <AverageCell
                                   metrics={metrics}
                                   queryKey={["/api/personal-metrics", departmentId, year, quarter]}

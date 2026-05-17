@@ -984,8 +984,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { departmentId, year, quarter } = req.query;
       if (!departmentId || !year) return res.status(400).json({ success: false, error: "departmentId and year required" });
-      const rows = await storage.getPersonalMetricsByDepartment(String(departmentId), Number(year), Number(quarter ?? 1));
-      res.json(rows);
+      const q = Number(quarter ?? 1);
+      const y = Number(year);
+
+      const [rows, members] = await Promise.all([
+        storage.getPersonalMetricsByDepartment(String(departmentId), y, q),
+        storage.getMembersByDepartment(String(departmentId)),
+      ]);
+
+      const periodRanges: Record<number, [string, string]> = {
+        1: [`${y}-01-01`, `${y}-03-31`],
+        2: [`${y}-04-01`, `${y}-06-30`],
+        3: [`${y}-07-01`, `${y}-09-30`],
+        4: [`${y}-10-01`, `${y}-12-31`],
+      };
+      const [periodStart, periodEnd] = periodRanges[q] ?? periodRanges[1];
+
+      let evaluations: any[] = [];
+      const baseUrl = process.env.EVALUATIONS_BASE_URL;
+      if (baseUrl && members.length > 0) {
+        const developerIds = members.map((m) => m.username);
+        try {
+          const evalRes = await fetch(`${baseUrl.replace(/\/$/, "")}/api/evaluations/batch-status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ developerIds, periodStart, periodEnd }),
+          });
+          if (evalRes.ok) {
+            evaluations = await evalRes.json();
+            console.log(`[Evaluations] batch-status: ${evaluations.length} results`);
+          } else {
+            console.log(`[Evaluations] batch-status failed: ${evalRes.status}`);
+          }
+        } catch (e: any) {
+          console.log(`[Evaluations] batch-status error: ${e.message}`);
+        }
+      }
+
+      res.json({ metrics: rows, evaluations });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
