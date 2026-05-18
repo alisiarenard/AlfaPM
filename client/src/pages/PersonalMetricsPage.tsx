@@ -150,15 +150,6 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
           {(() => {
             const rows: { label: string; value: string; red?: boolean }[] = [];
 
-            if (snap.category_distribution && Object.keys(snap.category_distribution).length > 0) {
-              const top3 = Object.entries(snap.category_distribution)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .map(([k]) => k)
-                .join(", ");
-              rows.push({ label: "Лидирующие категории MRs", value: top3 });
-            }
-
             if (snap.verdict_distribution) {
               const total = Object.values(snap.verdict_distribution).reduce((s, v) => s + v, 0);
               const blocked = snap.verdict_distribution["blocked"] ?? 0;
@@ -171,6 +162,15 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
               const critical = snap.severity_distribution["critical"] ?? 0;
               const pctCritical = total > 0 ? Math.round((critical / total) * 100) : 0;
               rows.push({ label: "MR с критичными изменениями", value: `${pctCritical}%` });
+            }
+
+            if (snap.category_distribution && Object.keys(snap.category_distribution).length > 0) {
+              const top3 = Object.entries(snap.category_distribution)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([k]) => k)
+                .join(", ");
+              rows.push({ label: "Лидирующие категории MRs", value: top3 });
             }
 
             if (rows.length === 0) return null;
