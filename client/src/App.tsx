@@ -170,8 +170,8 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      <div className="flex-1 min-w-0">
-        <div className="bg-card sticky top-0 z-[50]">
+      <div className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
+        <div className="bg-card shrink-0">
           <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto">
             <div className="flex items-start justify-between px-6 pt-[20px] min-h-[52px]">
 
@@ -294,6 +294,7 @@ function AppLayout() {
           </div>
         </div>
 
+        <div className="flex-1 overflow-y-auto">
         <Switch>
           <Route path="/">
             <HomePage
@@ -338,6 +339,7 @@ function AppLayout() {
           </Route>
           <Route component={NotFound} />
         </Switch>
+        </div>
       </div>
     </div>
   );
