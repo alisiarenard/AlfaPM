@@ -1053,11 +1053,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!developerId) return res.status(400).json({ success: false, error: "developerId required" });
       const baseUrl = process.env.EVALUATIONS_BASE_URL;
       if (!baseUrl) {
-        console.log("[Evaluations] EVALUATIONS_BASE_URL not set");
-        return res.status(503).json({ success: false, error: "Evaluations service URL not configured" });
+        console.log("[Evaluations] ❌ EVALUATIONS_BASE_URL not set — set it to the external evaluations service URL, e.g. https://eval.yourcompany.com");
+        return res.status(503).json({ success: false, error: "EVALUATIONS_BASE_URL not configured" });
       }
-      const url = `${baseUrl.replace(/\/$/, "")}/api/evaluations/detail?developerId=${developerId}&periodStart=${periodStart ?? ""}&periodEnd=${periodEnd ?? ""}`;
-      console.log(`[Evaluations] GET detail: ${url}`);
+      const normalizedBase = baseUrl.replace(/\/$/, "");
+      const selfPatterns = ["localhost:5000", "127.0.0.1:5000", "0.0.0.0:5000"];
+      if (selfPatterns.some((p) => normalizedBase.includes(p))) {
+        console.log(`[Evaluations] ❌ EVALUATIONS_BASE_URL points to the app itself (${normalizedBase}) — set it to the external evaluations service URL`);
+        return res.status(503).json({ success: false, error: "EVALUATIONS_BASE_URL must point to the external evaluations service, not to this app" });
+      }
+      const url = `${normalizedBase}/api/evaluations/detail?developerId=${developerId}&periodStart=${periodStart ?? ""}&periodEnd=${periodEnd ?? ""}`;
+      console.log(`[Evaluations] GET detail → ${url}`);
       const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
       console.log(`[Evaluations] detail response status: ${response.status}`);
       if (!response.ok) {
