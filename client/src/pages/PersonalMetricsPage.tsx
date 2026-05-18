@@ -22,6 +22,9 @@ interface MetricsSnapshot {
   problem_mr_rate: number;
   critical_accept_rate: number;
   weekly_trend: string;
+  category_distribution?: Record<string, number>;
+  verdict_distribution?: Record<string, number>;
+  severity_distribution?: Record<string, number>;
 }
 
 interface EvaluationStatus {
@@ -131,7 +134,7 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
         <TooltipTrigger asChild>
           <div className="inline-flex cursor-default">{circles}</div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="p-3 text-xs space-y-1.5 min-w-48">
+        <TooltipContent side="top" className="p-3 text-xs space-y-1.5 min-w-52">
           {SNAPSHOT_LABELS.map(({ key, label, format }) => {
             const raw = snap[key];
             const displayed = format ? format(raw as number) : String(raw);
@@ -145,6 +148,45 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
               </div>
             );
           })}
+          {(() => {
+            const rows: { label: string; value: string; red?: boolean }[] = [];
+
+            if (snap.category_distribution && Object.keys(snap.category_distribution).length > 0) {
+              const top3 = Object.entries(snap.category_distribution)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([k]) => k)
+                .join(", ");
+              rows.push({ label: "Лидирующие категории MRs", value: top3 });
+            }
+
+            if (snap.verdict_distribution) {
+              const total = Object.values(snap.verdict_distribution).reduce((s, v) => s + v, 0);
+              const blocked = snap.verdict_distribution["blocked"] ?? 0;
+              const pctBlocked = total > 0 ? Math.round((blocked / total) * 100) : 0;
+              rows.push({ label: "Блокирующие MRs", value: `${pctBlocked}%`, red: pctBlocked > 20 });
+            }
+
+            if (snap.severity_distribution) {
+              const total = Object.values(snap.severity_distribution).reduce((s, v) => s + v, 0);
+              const critical = snap.severity_distribution["critical"] ?? 0;
+              const pctCritical = total > 0 ? Math.round((critical / total) * 100) : 0;
+              rows.push({ label: "MR с критичными изменениями", value: `${pctCritical}%`, red: pctCritical > 15 });
+            }
+
+            if (rows.length === 0) return null;
+            return (
+              <>
+                <div className="border-t border-border my-1" />
+                {rows.map(({ label, value, red }) => (
+                  <div key={label} className="flex justify-between gap-6">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className={`font-medium tabular-nums ${red ? "text-destructive" : ""}`}>{value}</span>
+                  </div>
+                ))}
+              </>
+            );
+          })()}
         </TooltipContent>
       </Tooltip>
     </td>
