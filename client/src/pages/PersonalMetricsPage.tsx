@@ -103,14 +103,11 @@ function MetricCell({ value }: { value: number | null | undefined }) {
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 const SNAPSHOT_LABELS: { key: keyof MetricsSnapshot; label: string; format?: (v: any) => string }[] = [
-  { key: "mrs_with_ai_review",    label: "MR с AI ревью" },
-  { key: "avg_issues_per_mr",     label: "Замечаний / MR" },
-  { key: "avg_critical_per_mr",   label: "Критических / MR" },
-  { key: "avg_high_per_mr",       label: "Высоких / MR" },
-  { key: "clean_mr_rate",         label: "Чистые MR",        format: pct },
-  { key: "problem_mr_rate",       label: "Проблемные MR",    format: pct },
-  { key: "critical_accept_rate",  label: "Принятие крит.",   format: pct },
-  { key: "weekly_trend",          label: "Тренд" },
+  { key: "mrs_with_ai_review",  label: "MR с AI ревью" },
+  { key: "avg_critical_per_mr", label: "Критические замечания на MR" },
+  { key: "clean_mr_rate",       label: "Чистые MR",       format: pct },
+  { key: "problem_mr_rate",     label: "Проблемные MR",   format: pct },
+  { key: "weekly_trend",        label: "Тренд" },
 ];
 
 function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
@@ -134,15 +131,19 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
           <div className="inline-flex cursor-default">{circles}</div>
         </TooltipTrigger>
         <TooltipContent side="top" className="p-3 text-xs space-y-1.5 min-w-48">
-          <p className="font-semibold text-foreground mb-2">Метрики GitLab</p>
-          {SNAPSHOT_LABELS.map(({ key, label, format }) => (
-            <div key={key} className="flex justify-between gap-6">
-              <span className="text-muted-foreground">{label}</span>
-              <span className="font-medium tabular-nums">
-                {format ? format(snap[key] as number) : String(snap[key])}
-              </span>
-            </div>
-          ))}
+          {SNAPSHOT_LABELS.map(({ key, label, format }) => {
+            const raw = snap[key];
+            const displayed = format ? format(raw as number) : String(raw);
+            const isRed = key === "problem_mr_rate" && (raw as number) > 0.3;
+            return (
+              <div key={key} className="flex justify-between gap-6">
+                <span className="text-muted-foreground">{label}</span>
+                <span className={`font-medium tabular-nums ${isRed ? "text-destructive" : ""}`}>
+                  {displayed}
+                </span>
+              </div>
+            );
+          })}
         </TooltipContent>
       </Tooltip>
     </td>
