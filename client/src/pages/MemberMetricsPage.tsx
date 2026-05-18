@@ -261,14 +261,14 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
   if (!member) {
     return (
-      <div className="max-w-[1200px] mx-auto px-6 pt-8">
+      <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto px-6 pt-8">
         <p className="text-sm text-muted-foreground">Загрузка...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 pt-6 pb-12 space-y-8">
+    <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto px-6 pt-6 pb-12 space-y-8">
 
       {/* ── Метрики: одна строка ── */}
       <div>
