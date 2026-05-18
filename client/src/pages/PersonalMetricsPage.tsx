@@ -111,7 +111,6 @@ const SNAPSHOT_LABELS: { key: keyof MetricsSnapshot; label: string; format?: (v:
   { key: "avg_critical_per_mr", label: "Критические замечания на MR" },
   { key: "clean_mr_rate",       label: "Чистые MR",       format: pct },
   { key: "problem_mr_rate",     label: "Проблемные MR",   format: pct },
-  { key: "weekly_trend",        label: "Тренд" },
 ];
 
 function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
@@ -171,21 +170,16 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
               const total = Object.values(snap.severity_distribution).reduce((s, v) => s + v, 0);
               const critical = snap.severity_distribution["critical"] ?? 0;
               const pctCritical = total > 0 ? Math.round((critical / total) * 100) : 0;
-              rows.push({ label: "MR с критичными изменениями", value: `${pctCritical}%`, red: pctCritical > 15 });
+              rows.push({ label: "MR с критичными изменениями", value: `${pctCritical}%` });
             }
 
             if (rows.length === 0) return null;
-            return (
-              <>
-                <div className="border-t border-border my-1" />
-                {rows.map(({ label, value, red }) => (
-                  <div key={label} className="flex justify-between gap-6">
-                    <span className="text-muted-foreground">{label}</span>
-                    <span className={`font-medium tabular-nums ${red ? "text-destructive" : ""}`}>{value}</span>
-                  </div>
-                ))}
-              </>
-            );
+            return rows.map(({ label, value, red }) => (
+              <div key={label} className="flex justify-between gap-6">
+                <span className="text-muted-foreground">{label}</span>
+                <span className={`font-medium tabular-nums ${red ? "text-destructive" : ""}`}>{value}</span>
+              </div>
+            ));
           })()}
         </TooltipContent>
       </Tooltip>
