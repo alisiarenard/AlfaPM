@@ -137,6 +137,26 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
   const evaluations = metricsData?.evaluations ?? [];
   const evaluation = member ? evaluations.find((e) => e.developerId === member.username) : undefined;
 
+  const periodRanges: Record<number, [string, string]> = {
+    1: [`${year}-01-01`, `${year}-03-31`],
+    2: [`${year}-04-01`, `${year}-06-30`],
+    3: [`${year}-07-01`, `${year}-09-30`],
+    4: [`${year}-10-01`, `${year}-12-31`],
+  };
+  const [periodStart, periodEnd] = periodRanges[quarter] ?? periodRanges[1];
+
+  useQuery<unknown>({
+    queryKey: ["/api/evaluations/detail", member?.username, periodStart, periodEnd],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/evaluations/detail?developerId=${encodeURIComponent(member!.username)}&periodStart=${periodStart}&periodEnd=${periodEnd}`
+      );
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: !!member?.username,
+  });
+
   useEffect(() => {
     if (member) {
       setMemberInfo({
