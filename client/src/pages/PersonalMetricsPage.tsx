@@ -164,15 +164,6 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
               rows.push({ label: "MR с критичными изменениями", value: `${pctCritical}%` });
             }
 
-            if (snap.category_distribution && Object.keys(snap.category_distribution).length > 0) {
-              const top3 = Object.entries(snap.category_distribution)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .map(([k]) => k)
-                .join(", ");
-              rows.push({ label: "Лидирующие категории MRs", value: top3 });
-            }
-
             if (rows.length === 0) return null;
             return rows.map(({ label, value, red }) => (
               <div key={label} className="flex justify-between gap-6">
