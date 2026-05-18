@@ -402,7 +402,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
             {/* Evidence refs */}
             {evidenceRefs.length > 0 && (
-              <div className="rounded-md border border-border bg-card p-4">
+              <div className="rounded-md bg-card p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Примеры MR</p>
                 <div className="grid grid-cols-2 gap-2">
                   {evidenceRefs.map((ref, i) => (
