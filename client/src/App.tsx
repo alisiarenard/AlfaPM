@@ -171,7 +171,7 @@ function AppLayout() {
     <div className="min-h-screen bg-background flex">
       <Sidebar />
       <div className="flex-1 min-w-0">
-        <div className="bg-card">
+        <div className="bg-card sticky top-0 z-[50]">
           <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto">
             <div className="flex items-start justify-between px-6 pt-[20px] min-h-[52px]">
 
