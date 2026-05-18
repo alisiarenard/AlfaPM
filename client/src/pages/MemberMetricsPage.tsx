@@ -163,30 +163,18 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
   return (
     <div className="max-w-[900px] mx-auto px-6 pt-6 pb-10">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
-          {member.avatarUrl ? (
-            <img src={member.avatarUrl} alt={member.fullName || member.username} className="h-full w-full object-cover" />
-          ) : (
-            <span className="text-xl font-semibold text-muted-foreground">
-              {(member.fullName || member.username).charAt(0).toUpperCase()}
-            </span>
-          )}
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">{teamName}</p>
+      {avg !== null && (
+        <div className="flex items-center justify-between mb-8">
           {member.gitlabUsername && (
-            <p className="text-xs text-muted-foreground/60 mt-0.5">@{member.gitlabUsername}</p>
+            <p className="text-sm text-muted-foreground">@{member.gitlabUsername}</p>
           )}
-        </div>
-        {avg !== null && (
           <div className="ml-auto text-right">
             <p className="text-3xl font-bold text-foreground">{avg}</p>
             <p className={`text-sm font-medium ${scoreColor(avg)}`}>{scoreLabel(avg)}</p>
             <p className="text-xs text-muted-foreground">средний балл</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {METRIC_COLS.map((col) => {

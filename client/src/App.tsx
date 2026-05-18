@@ -201,7 +201,7 @@ function AppLayout() {
                     </div>
                     <button
                       onClick={() => setLocation(`/personal-metrics/${memberParams?.departmentId}`)}
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-1.5 transition-colors w-fit"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-4 transition-colors w-fit"
                       data-testid="button-back-to-list"
                     >
                       <ArrowLeft className="h-3 w-3" />
