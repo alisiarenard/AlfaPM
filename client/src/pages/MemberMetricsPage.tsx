@@ -315,7 +315,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                   <TooltipTrigger asChild>
                     <div className="cursor-default">{card}</div>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="p-3 text-xs space-y-1.5 min-w-48">
+                  <TooltipContent side="bottom" className="p-3 text-xs space-y-1.5 min-w-52">
                     {SNAPSHOT_LABELS.map(({ key, label, format }) => {
                       const raw = snap[key as keyof MetricsSnapshot];
                       const displayed = format ? format(raw as number) : String(raw);
@@ -329,6 +329,28 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                         </div>
                       );
                     })}
+                    {(() => {
+                      const rows: { label: string; value: string; red?: boolean }[] = [];
+                      if (snap.verdict_distribution) {
+                        const total = Object.values(snap.verdict_distribution).reduce((s, v) => s + v, 0);
+                        const blocked = snap.verdict_distribution["blocked"] ?? 0;
+                        const pctBlocked = total > 0 ? Math.round((blocked / total) * 100) : 0;
+                        rows.push({ label: "Блокирующие MRs", value: `${pctBlocked}%`, red: pctBlocked > 20 });
+                      }
+                      if (snap.severity_distribution) {
+                        const total = Object.values(snap.severity_distribution).reduce((s, v) => s + v, 0);
+                        const critical = snap.severity_distribution["critical"] ?? 0;
+                        const pctCritical = total > 0 ? Math.round((critical / total) * 100) : 0;
+                        rows.push({ label: "MR с критичными изменениями", value: `${pctCritical}%` });
+                      }
+                      if (rows.length === 0) return null;
+                      return rows.map(({ label, value, red }) => (
+                        <div key={label} className="flex justify-between gap-6">
+                          <span className="text-muted-foreground">{label}</span>
+                          <span className={`font-medium tabular-nums ${red ? "text-destructive" : ""}`}>{value}</span>
+                        </div>
+                      ));
+                    })()}
                   </TooltipContent>
                 </Tooltip>
               );
