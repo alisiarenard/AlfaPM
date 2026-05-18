@@ -177,39 +177,26 @@ function AppLayout() {
 
               {isMemberPage && memberInfo ? (
                 <div className="flex flex-col pb-1">
+                  <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">
+                    {memberInfo.fullName}
+                  </h2>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-sm text-muted-foreground">{memberInfo.role}</span>
+                    {memberInfo.teamName && (
+                      <>
+                        <span className="h-1 w-1 rounded-full bg-muted-foreground/40 inline-block" />
+                        <span className="text-sm text-muted-foreground">{memberInfo.teamName}</span>
+                      </>
+                    )}
+                  </div>
                   <button
                     onClick={() => setLocation(`/personal-metrics/${memberParams?.departmentId}`)}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2 transition-colors w-fit"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-3 transition-colors w-fit"
                     data-testid="button-back-to-list"
                   >
                     <ArrowLeft className="h-3 w-3" />
                     Назад к списку
                   </button>
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
-                      {memberInfo.avatarUrl ? (
-                        <img src={memberInfo.avatarUrl} alt={memberInfo.fullName} className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="text-sm font-semibold text-muted-foreground">
-                          {memberInfo.fullName.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">
-                        {memberInfo.fullName}
-                      </h2>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-sm text-muted-foreground">{memberInfo.role}</span>
-                        {memberInfo.teamName && (
-                          <>
-                            <span className="h-1 w-1 rounded-full bg-muted-foreground/40 inline-block" />
-                            <span className="text-sm text-muted-foreground">{memberInfo.teamName}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col">
