@@ -33,7 +33,7 @@ interface Props {
   memberId: string;
   quarter: number;
   year: string;
-  setMemberInfo: (info: { fullName: string; role: string } | null) => void;
+  setMemberInfo: (info: { fullName: string; role: string; teamName: string; avatarUrl?: string | null } | null) => void;
 }
 
 const METRIC_COLS: { key: keyof PersonalMetricsRow; label: string }[] = [
@@ -139,10 +139,15 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
   useEffect(() => {
     if (member) {
-      setMemberInfo({ fullName: member.fullName || member.username, role: member.role });
+      setMemberInfo({
+        fullName: member.fullName || member.username,
+        role: member.role,
+        teamName: teamName,
+        avatarUrl: member.avatarUrl,
+      });
     }
     return () => setMemberInfo(null);
-  }, [member?.id]);
+  }, [member?.id, teamName]);
 
   const avg = calcAverage(metrics);
   const hasEval = evaluation?.status === "completed" && evaluation.score !== null;
