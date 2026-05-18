@@ -364,7 +364,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
       {/* ── Секция для разработчика ── */}
       {devSummary && (
         <div>
-          <SectionTitle>Для разработчика</SectionTitle>
+          <SectionTitle>Качество кода</SectionTitle>
           <div className="grid grid-cols-3 gap-3">
             <ListCard
               title="Сильные стороны"
