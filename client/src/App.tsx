@@ -8,18 +8,26 @@ import { ThemeProvider } from "@/lib/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Users, LayoutDashboard, Settings, ChevronDown } from "lucide-react";
+import { Users, LayoutDashboard, Settings, ChevronDown, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import HomePage from "@/pages/HomePage";
 import ProductMetricsPage from "@/pages/ProductMetricsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import PersonalMetricsPage from "@/pages/PersonalMetricsPage";
+import MemberMetricsPage from "@/pages/MemberMetricsPage";
 import NotFound from "@/pages/not-found";
 import logoImage from "@assets/b65ec2efbce39c024d959704d8bc5dfa_1760955834035.jpg";
 import type { DepartmentWithTeamCount } from "@shared/schema";
 import { setKaitenDomain } from "@shared/kaiten.config";
 
 const currentYear = new Date().getFullYear();
+
+const QUARTER_OPTIONS = [
+  { value: 1, label: "I квартал" },
+  { value: 2, label: "II квартал" },
+  { value: 3, label: "III квартал" },
+  { value: 4, label: "IV квартал" },
+];
 
 export type SpaceGroup = { spaceId: string; spaceName: string; teamIds: string[] };
 export type SpaceFilterState = {
@@ -122,27 +130,35 @@ function Sidebar() {
 }
 
 function AppLayout() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [matchPersonal, personalParams] = useRoute("/personal-metrics/:departmentId");
+  const [matchMember, memberParams] = useRoute("/personal-metrics/:departmentId/member/:memberId");
+
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
   const [pageSubtitle, setPageSubtitle] = useState<string>("");
   const [spaceFilter, setSpaceFilter] = useState<SpaceFilterState | null>(null);
+  const [memberInfo, setMemberInfo] = useState<{ fullName: string; role: string } | null>(null);
+  const [memberQuarter, setMemberQuarter] = useState<number>(1);
 
+  const isMemberPage = !!matchMember;
   const isProductMetricsPage = location.startsWith("/product-metrics");
+  const isSettingsPage = location.startsWith("/settings");
+  const isPersonalMetricsPage = location.startsWith("/personal-metrics");
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
   });
 
   useEffect(() => {
-    if (matchPersonal && personalParams?.departmentId) {
-      setSelectedDepartment(personalParams.departmentId);
-    }
-  }, [matchPersonal, personalParams?.departmentId]);
+    const deptId = memberParams?.departmentId ?? personalParams?.departmentId;
+    if (deptId) setSelectedDepartment(deptId);
+  }, [matchPersonal, matchMember, personalParams?.departmentId, memberParams?.departmentId]);
 
-  const isSettingsPage = location.startsWith("/settings");
-  const isPersonalMetricsPage = location.startsWith("/personal-metrics");
+  useEffect(() => {
+    if (!isMemberPage) setMemberInfo(null);
+  }, [isMemberPage]);
+
   const pageTitle = isSettingsPage
     ? "Настройки"
     : isPersonalMetricsPage
@@ -158,13 +174,51 @@ function AppLayout() {
         <div className="bg-card">
           <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto">
             <div className="flex items-start justify-between px-6 pt-[20px] min-h-[52px]">
-              <div className="flex flex-col">
-                <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
-                {pageSubtitle && !isPersonalMetricsPage && (
-                  <span className="text-sm font-bold text-destructive" data-testid="text-page-subtitle">{pageSubtitle}</span>
-                )}
-              </div>
-              {!isSettingsPage && (
+
+              {isMemberPage && memberInfo ? (
+                <div className="flex flex-col pb-1">
+                  <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">
+                    {memberInfo.fullName}
+                  </h2>
+                  <span className="text-sm text-muted-foreground mt-0.5">{memberInfo.role}</span>
+                  <button
+                    onClick={() => setLocation(`/personal-metrics/${memberParams?.departmentId}`)}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-1.5 transition-colors w-fit"
+                    data-testid="button-back-to-list"
+                  >
+                    <ArrowLeft className="h-3 w-3" />
+                    Назад к списку
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  <h2 className="text-2xl font-bold text-foreground" data-testid="text-page-title">{pageTitle}</h2>
+                  {pageSubtitle && !isPersonalMetricsPage && (
+                    <span className="text-sm font-bold text-destructive" data-testid="text-page-subtitle">{pageSubtitle}</span>
+                  )}
+                </div>
+              )}
+
+              {isMemberPage ? (
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={String(memberQuarter)}
+                    onValueChange={(v) => setMemberQuarter(Number(v))}
+                    data-testid="select-quarter"
+                  >
+                    <SelectTrigger className="w-[160px] bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      {QUARTER_OPTIONS.map((q) => (
+                        <SelectItem key={q.value} value={String(q.value)} data-testid={`option-quarter-${q.value}`}>
+                          {q.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : !isSettingsPage ? (
                 <div className="flex items-center gap-3">
                   {isProductMetricsPage && spaceFilter && spaceFilter.spaceGroups.length > 1 && (
                     <SpaceMultiSelect
@@ -216,7 +270,7 @@ function AppLayout() {
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -245,6 +299,17 @@ function AppLayout() {
           </Route>
           <Route path="/settings">
             <SettingsPage />
+          </Route>
+          <Route path="/personal-metrics/:departmentId/member/:memberId">
+            {(params) => (
+              <MemberMetricsPage
+                departmentId={params.departmentId}
+                memberId={params.memberId}
+                quarter={memberQuarter}
+                year={selectedYear}
+                setMemberInfo={setMemberInfo}
+              />
+            )}
           </Route>
           <Route path="/personal-metrics/:departmentId">
             <PersonalMetricsPage

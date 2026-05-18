@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation, useRoute } from "wouter";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
@@ -207,6 +208,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingMemberId, setSyncingMemberId] = useState<string | null>(null);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const { data: members, isLoading } = useQuery<TeamMemberRow[]>({
     queryKey: ["/api/departments", departmentId, "members"],
@@ -369,7 +371,16 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                             const metrics = metricsMap[m.id];
                             const evaluation = evaluationsMap[m.username];
                             return (
-                              <tr key={m.id} className="hover-elevate" data-testid={`row-member-${m.id}`}>
+                              <tr
+                                key={m.id}
+                                className="hover-elevate cursor-pointer"
+                                data-testid={`row-member-${m.id}`}
+                                onClick={(e) => {
+                                  const target = e.target as HTMLElement;
+                                  if (target.closest("button")) return;
+                                  setLocation(`/personal-metrics/${departmentId}/member/${m.id}`);
+                                }}
+                              >
                                 <td
                                   className="sticky left-0 z-10 bg-background border-b border-border px-4 py-2.5 whitespace-nowrap"
                                   style={{ minWidth: 200 }}
