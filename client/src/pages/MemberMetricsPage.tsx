@@ -99,7 +99,6 @@ const SNAPSHOT_LABELS: { key: keyof MetricsSnapshot; label: string; format?: (v:
   { key: "mrs_with_ai_review",  label: "MR с AI ревью" },
   { key: "avg_critical_per_mr", label: "Критические замечания на MR" },
   { key: "clean_mr_rate",       label: "Чистые MR",     format: (v) => `${Math.round(v * 100)}%` },
-  { key: "problem_mr_rate",     label: "Проблемные MR", format: (v) => `${Math.round(v * 100)}%` },
   { key: "weekly_trend",        label: "Тренд" },
 ];
 
