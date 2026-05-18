@@ -294,7 +294,7 @@ function AppLayout() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
         <Switch>
           <Route path="/">
             <HomePage
