@@ -151,7 +151,7 @@ function RatingCircles({ value }: { value: number | null | undefined; size?: "sm
       {Array.from({ length: 5 }, (_, i) => (
         <span
           key={i}
-          style={{ width: 5, height: 15, borderRadius: 2, display: 'inline-block', flexShrink: 0 }}
+          style={{ width: 8, height: 15, borderRadius: 1, display: 'inline-block', flexShrink: 0 }}
           className={i < v ? filled : "bg-muted"}
         />
       ))}
