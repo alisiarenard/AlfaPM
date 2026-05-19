@@ -1089,7 +1089,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("[Evaluations] EVALUATIONS_SERVICE_URL not set");
         return res.status(503).json({ success: false, error: "Evaluations service URL not configured" });
       }
-      const payload = { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd };
+
+      let contributionContext: { teamTotalStoryPoints: number; teamTotalTasks: number; complexityScale: number[] } | undefined;
+      if (periodStart && periodEnd) {
+        try {
+          const teamTasks = await storage.getTasksByTeamAndDoneDateRange(
+            teamId,
+            new Date(periodStart),
+            new Date(periodEnd)
+          );
+          const teamTotalStoryPoints = teamTasks.reduce((sum, t) => sum + (t.size ?? 0), 0);
+          const teamTotalTasks = teamTasks.length;
+          const complexityScale = [...new Set(teamTasks.map((t) => t.size).filter((s): s is number => s != null && s > 0))].sort((a, b) => a - b);
+          contributionContext = { teamTotalStoryPoints, teamTotalTasks, complexityScale };
+          console.log(`[Evaluations] contributionContext for team ${teamId}:`, JSON.stringify(contributionContext));
+        } catch (ctxErr: any) {
+          console.log(`[Evaluations] Failed to build contributionContext: ${ctxErr.message}`);
+        }
+      }
+
+      const payload = { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd, ...(contributionContext ? { contributionContext } : {}) };
       console.log(`[Evaluations] POST ${serviceUrl}`, JSON.stringify(payload));
       const response = await fetch(serviceUrl, {
         method: "POST",
