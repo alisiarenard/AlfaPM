@@ -192,7 +192,8 @@ export class KaitenClient {
 
   async getSprint(sprintId: number): Promise<KaitenSprintResponse> {
     const response = await this.makeRequest<KaitenSprintResponse>(`/sprints/${sprintId}`);
-    console.log(`[Kaiten] getSprint(${sprintId}) →`, JSON.stringify(response));
+    const { cards: _cards, ...rest } = response;
+    console.log(`[Kaiten] getSprint(${sprintId}) →`, JSON.stringify(rest));
     return response;
   }
 
@@ -200,7 +201,8 @@ export class KaitenClient {
     const response = await this.makeRequest<KaitenBoardResponse>(`/boards/${boardId}`);
     
     if (response.sprints && Array.isArray(response.sprints)) {
-      console.log(`[Kaiten] getSprintsFromBoard(${boardId}) → ${response.sprints.length} спринтов:`, JSON.stringify(response.sprints));
+      const sprintsWithoutCards = response.sprints.map(({ cards: _c, ...s }) => s);
+      console.log(`[Kaiten] getSprintsFromBoard(${boardId}) → ${response.sprints.length} спринтов:`, JSON.stringify(sprintsWithoutCards));
       return response.sprints;
     }
     
@@ -223,7 +225,8 @@ export class KaitenClient {
     const response = await this.makeRequest<KaitenSprintListItem[]>(url);
     
     if (Array.isArray(response)) {
-      console.log(`[Kaiten] getAllSprints() → ${response.length} спринтов:`, JSON.stringify(response));
+      const sprintsWithoutCards = response.map(({ cards: _c, ...s }) => s);
+      console.log(`[Kaiten] getAllSprints() → ${response.length} спринтов:`, JSON.stringify(sprintsWithoutCards));
       return response;
     }
     
