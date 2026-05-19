@@ -191,13 +191,16 @@ export class KaitenClient {
   }
 
   async getSprint(sprintId: number): Promise<KaitenSprintResponse> {
-    return this.makeRequest<KaitenSprintResponse>(`/sprints/${sprintId}`);
+    const response = await this.makeRequest<KaitenSprintResponse>(`/sprints/${sprintId}`);
+    console.log(`[Kaiten] getSprint(${sprintId}) →`, JSON.stringify(response));
+    return response;
   }
 
   async getSprintsFromBoard(boardId: number): Promise<KaitenSprintResponse[]> {
     const response = await this.makeRequest<KaitenBoardResponse>(`/boards/${boardId}`);
     
     if (response.sprints && Array.isArray(response.sprints)) {
+      console.log(`[Kaiten] getSprintsFromBoard(${boardId}) → ${response.sprints.length} спринтов:`, JSON.stringify(response.sprints));
       return response.sprints;
     }
     
@@ -205,7 +208,6 @@ export class KaitenClient {
   }
 
   async getAllSprints(params?: { active?: boolean; limit?: number; offset?: number }): Promise<KaitenSprintListItem[]> {
-    
     const queryParams = new URLSearchParams();
     if (params?.active !== undefined) {
       queryParams.append('active', String(params.active));
@@ -220,12 +222,8 @@ export class KaitenClient {
     const url = `/sprints${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     const response = await this.makeRequest<KaitenSprintListItem[]>(url);
     
-    // Выводим полный ответ от Kaiten в лог
-    
     if (Array.isArray(response)) {
-      // Выводим каждый спринт с его данными
-      response.forEach((sprint, index) => {
-      });
+      console.log(`[Kaiten] getAllSprints() → ${response.length} спринтов:`, JSON.stringify(response));
       return response;
     }
     
