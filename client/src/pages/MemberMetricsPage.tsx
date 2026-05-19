@@ -130,10 +130,7 @@ const SNAPSHOT_LABELS: { key: keyof MetricsSnapshot; label: string; format?: (v:
 ];
 
 const CONTRIBUTION_LABELS: { key: keyof ContributionSnapshot; label: string; format?: (v: any) => string }[] = [
-  { key: "developer_story_points",   label: "SP разработчика" },
-  { key: "team_total_story_points",  label: "SP команды" },
   { key: "contribution_sp_share",    label: "Доля SP",           format: pct },
-  { key: "developer_tasks_count",    label: "Задачи разработчика" },
   { key: "contribution_tasks_share", label: "Доля задач",        format: pct },
   { key: "high_complexity_rate",     label: "Высокая сложность", format: pct },
   { key: "medium_complexity_rate",   label: "Средняя сложность", format: pct },
