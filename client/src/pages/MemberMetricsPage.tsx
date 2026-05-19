@@ -147,11 +147,11 @@ function RatingCircles({ value }: { value: number | null | undefined; size?: "sm
   const v = value ?? 0;
   const filled = v > 2 ? "bg-destructive" : "bg-muted-foreground/50";
   return (
-    <div className="flex items-center" style={{ gap: 3 }}>
+    <div className="flex items-center" style={{ gap: 2 }}>
       {Array.from({ length: 5 }, (_, i) => (
         <span
           key={i}
-          style={{ width: 5, height: 10, borderRadius: 2, display: 'inline-block', flexShrink: 0 }}
+          style={{ width: 5, height: 15, borderRadius: 2, display: 'inline-block', flexShrink: 0 }}
           className={i < v ? filled : "bg-muted"}
         />
       ))}
