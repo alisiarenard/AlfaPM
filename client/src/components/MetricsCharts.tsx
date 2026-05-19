@@ -148,11 +148,15 @@ function MemberVelocityTooltip({ active, payload }: any) {
         </p>
       )}
       <div style={{ borderTop: '1px solid hsl(var(--border))', marginTop: '4px', paddingTop: '4px' }}>
-        {payload.filter((p: any) => p.value != null).map((p: any) => (
-          <p key={p.dataKey} style={{ color: p.color, margin: 0, fontSize: '12px', marginBottom: '2px' }}>
-            {p.name}: <strong>{p.value?.toFixed(1)} SP</strong>
-          </p>
-        ))}
+        {payload
+          .filter((p: any) => p.value != null)
+          .slice()
+          .sort((a: any, b: any) => b.value - a.value)
+          .map((p: any) => (
+            <p key={p.dataKey} style={{ color: p.color, margin: 0, fontSize: '12px', marginBottom: '2px' }}>
+              {p.name}: <strong>{p.value?.toFixed(1)} SP</strong>
+            </p>
+          ))}
       </div>
     </div>
   );
