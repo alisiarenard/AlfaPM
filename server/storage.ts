@@ -1024,6 +1024,7 @@ export class DbStorage implements IStorage {
     velocityDetails: { by_members: Array<{ user_id: number; velocity: number }> } | null | undefined,
     teamId?: string | null
   ): Promise<void> {
+    console.log(`[VelocitySync] sprint ${sprintId} (team ${teamId ?? 'unknown'}): сырые данные от Kaiten → ${JSON.stringify(velocityDetails)}`);
     await db.delete(sprintMemberVelocity).where(eq(sprintMemberVelocity.sprintId, sprintId));
     if (!velocityDetails?.by_members?.length) {
       console.log(`[VelocitySync] sprint ${sprintId} (team ${teamId ?? 'unknown'}): velocity_details пустые или отсутствуют — ничего не записано`);
