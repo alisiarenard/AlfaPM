@@ -76,6 +76,7 @@ export const sprintMemberVelocity = pgTable("sprint_member_velocity", {
   sprintId: integer("sprint_id").notNull(),
   userId: integer("user_id").notNull(),
   velocity: real("velocity").notNull(),
+  teamId: varchar("team_id"),
 });
 
 export const insertSprintMemberVelocitySchema = createInsertSchema(sprintMemberVelocity).omit({ id: true });

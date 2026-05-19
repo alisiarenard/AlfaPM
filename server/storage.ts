@@ -77,7 +77,7 @@ export interface IStorage {
   getAllSprints(): Promise<SprintRow[]>;
   getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
   getSprint(sprintId: number): Promise<SprintRow | undefined>;
-  syncSprintMemberVelocity(sprintId: number, velocityDetails: { by_members: Array<{ user_id: number; velocity: number }> } | null | undefined): Promise<void>;
+  syncSprintMemberVelocity(sprintId: number, velocityDetails: { by_members: Array<{ user_id: number; velocity: number }> } | null | undefined, teamId?: string | null): Promise<void>;
   getSprintMemberVelocity(sprintId: number): Promise<SprintMemberVelocityRow[]>;
   getLatestSprintByBoardId(boardId: number): Promise<SprintRow | undefined>;
   getTasksBySprint(sprintId: number): Promise<TaskRow[]>;
@@ -1021,7 +1021,8 @@ export class DbStorage implements IStorage {
 
   async syncSprintMemberVelocity(
     sprintId: number,
-    velocityDetails: { by_members: Array<{ user_id: number; velocity: number }> } | null | undefined
+    velocityDetails: { by_members: Array<{ user_id: number; velocity: number }> } | null | undefined,
+    teamId?: string | null
   ): Promise<void> {
     await db.delete(sprintMemberVelocity).where(eq(sprintMemberVelocity.sprintId, sprintId));
     if (!velocityDetails?.by_members?.length) return;
@@ -1030,6 +1031,7 @@ export class DbStorage implements IStorage {
         sprintId,
         userId: m.user_id,
         velocity: m.velocity,
+        teamId: teamId ?? null,
       }))
     );
   }
@@ -1108,11 +1110,13 @@ export class DbStorage implements IStorage {
     members: TeamMemberRow[],
     periodStart: string,
     periodEnd: string
-  ): Promise<Record<string, { developerVelocity: number; totalVelocity: number; velocityShare: number }>> {
+  ): Promise<Record<string, { developerVelocity: number; totalVelocity: number; velocityShare: number; teamMembersCount: number }>> {
     const membersWithKaitenId = members.filter(m => m.kaitenUserId != null);
     if (membersWithKaitenId.length === 0) return {};
 
-    // Находим спринты, чьи startDate попадают в квартал
+    // Находим спринты команды, чьи startDate попадают в период
+    // Фильтруем по teamId (берём teamId из первого члена, у всех одна команда при вызове)
+    const teamId = membersWithKaitenId[0].teamId;
     const sprintsInPeriod = await db
       .select({ sprintId: sprints.sprintId })
       .from(sprints)
@@ -1126,31 +1130,40 @@ export class DbStorage implements IStorage {
 
     const sprintIds = sprintsInPeriod.map(s => s.sprintId);
 
-    // Суммируем velocity за все эти спринты по всем участникам
+    // Суммируем velocity за все эти спринты, фильтруя по teamId если он есть
     const velocityRows = await db
       .select({ userId: sprintMemberVelocity.userId, velocity: sprintMemberVelocity.velocity })
       .from(sprintMemberVelocity)
       .where(
-        sql`${sprintMemberVelocity.sprintId} = ANY(ARRAY[${sql.join(sprintIds.map(id => sql`${id}`), sql`, `)}]::int[])`
+        and(
+          sql`${sprintMemberVelocity.sprintId} = ANY(ARRAY[${sql.join(sprintIds.map(id => sql`${id}`), sql`, `)}]::int[])`,
+          teamId ? eq(sprintMemberVelocity.teamId, teamId) : sql`1=1`
+        )
       );
 
     // Агрегируем по userId
     const velocityByUserId = new Map<number, number>();
     let totalVelocity = 0;
+    const uniqueUserIds = new Set<number>();
     for (const row of velocityRows) {
       const prev = velocityByUserId.get(row.userId) ?? 0;
       velocityByUserId.set(row.userId, prev + (row.velocity ?? 0));
       totalVelocity += row.velocity ?? 0;
+      uniqueUserIds.add(row.userId);
     }
 
+    // teamMembersCount — реальное количество уникальных участников в Kaiten за период
+    const teamMembersCount = uniqueUserIds.size;
+
     // Строим результат: username → данные
-    const result: Record<string, { developerVelocity: number; totalVelocity: number; velocityShare: number }> = {};
+    const result: Record<string, { developerVelocity: number; totalVelocity: number; velocityShare: number; teamMembersCount: number }> = {};
     for (const member of membersWithKaitenId) {
       const devVelocity = velocityByUserId.get(member.kaitenUserId!) ?? 0;
       result[member.username] = {
         developerVelocity: devVelocity,
         totalVelocity,
         velocityShare: totalVelocity > 0 ? devVelocity / totalVelocity : 0,
+        teamMembersCount,
       };
     }
     return result;
