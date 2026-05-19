@@ -1016,8 +1016,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           console.log(`[Evaluations] batch-status response status: ${evalRes.status}`);
           if (evalRes.ok) {
-            evaluations = await evalRes.json();
-            console.log(`[Evaluations] batch-status response:`, JSON.stringify(evaluations, null, 2));
+            const raw: any[] = await evalRes.json();
+            console.log(`[Evaluations] batch-status response:`, JSON.stringify(raw, null, 2));
+            evaluations = raw.map((item: any) => {
+              const cq = item.criteria?.code_quality;
+              const contrib = item.criteria?.contribution;
+              return {
+                developerId: item.developerId,
+                status: cq?.status ?? "not_found",
+                score: cq?.score ?? null,
+                grade: cq?.grade ?? null,
+                metricsSnapshot: cq?.metricsSnapshot ?? null,
+                evaluatedAt: cq?.evaluatedAt ?? null,
+                contribution: contrib ?? null,
+              };
+            });
           } else {
             const errBody = await evalRes.text();
             console.log(`[Evaluations] batch-status error body: ${errBody}`);
