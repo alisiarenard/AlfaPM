@@ -13,33 +13,53 @@ import { calculateInitiativesInvolvement } from "./utils/involvement";
  * @param originalTaskId - ID исходной задачи (для логирования)
  * @returns ID инициативы или 0, если не найдена
  */
-async function findInitiativeInParentChain(parentCardId: number, depth = 0, originalTaskId?: number): Promise<number> {
+async function findInitiativeInParentChain(
+  parentCardId: number,
+  depth = 0,
+  originalTaskId?: number,
+  preferBoardId?: number
+): Promise<number> {
   if (depth > 10) return 0;
 
   // Проверяем, является ли текущая карточка инициативой
   const initiative = await storage.getInitiativeByCardId(parentCardId);
-  if (initiative) return parentCardId;
+  if (initiative) {
+    // Если есть предпочтительная доска и инициатива НА ней — сразу возвращаем
+    if (!preferBoardId || initiative.initBoardId === preferBoardId) {
+      return parentCardId;
+    }
+    // Инициатива найдена, но на другой доске (cross-board нестинг).
+    // Продолжаем поиск ВВЕРХ по цепочке — вдруг найдём инициативу на нужной доске.
+    // Если выше ничего нет — вернём эту как fallback (ниже).
+  }
 
   let card;
   try {
     card = await kaitenClient.getCard(parentCardId);
   } catch {
+    // Нет доступа к карточке — возвращаем fallback (если нашли инициативу выше)
+    if (initiative) return parentCardId;
     return 0;
   }
 
   if (!card.parents_ids || !Array.isArray(card.parents_ids) || card.parents_ids.length === 0) {
+    // Цепочка закончилась — возвращаем fallback
+    if (initiative) return parentCardId;
     return 0;
   }
 
   // Ищем инициативу через первого родителя
-  const firstResult = await findInitiativeInParentChain(card.parents_ids[0], depth + 1);
+  const firstResult = await findInitiativeInParentChain(card.parents_ids[0], depth + 1, originalTaskId, preferBoardId);
   if (firstResult !== 0) return firstResult;
 
   // Если не нашли — ищем через второго родителя (если есть)
   if (card.parents_ids.length > 1) {
-    return await findInitiativeInParentChain(card.parents_ids[1], depth + 1);
+    const secondResult = await findInitiativeInParentChain(card.parents_ids[1], depth + 1, originalTaskId, preferBoardId);
+    if (secondResult !== 0) return secondResult;
   }
 
+  // Нигде выше не нашли инициативу на нужной доске — возвращаем текущую как fallback
+  if (initiative) return parentCardId;
   return 0;
 }
 
@@ -779,10 +799,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       continue;
                     }
                     
-                    // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
+                    // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности).
+                    // Передаём initBoardId чтобы предпочитать инициативы с доски текущей команды
+                    // (при cross-board вложенности — продолжаем поиск выше чужих инициатив).
                     let initCardId = 0;
                     if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                      initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+                      initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, teamData.initBoardId ?? undefined);
                     }
                     
                     let state: "1-queued" | "2-inProgress" | "3-done";
@@ -842,10 +864,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           for (const card of cards) {
             try {
-              // Ищем инициативу в родительской цепочке
+              // Ищем инициативу в родительской цепочке.
+              // Передаём initBoardId чтобы предпочитать инициативы с доски текущей команды.
               let initCardId = 0;
               if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                initCardId = await findInitiativeInParentChain(card.parents_ids[0]);
+                initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, teamData.initBoardId ?? undefined);
               }
               
               let state: "1-queued" | "2-inProgress" | "3-done";
