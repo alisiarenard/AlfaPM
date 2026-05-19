@@ -5989,6 +5989,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/metrics/member-velocity", async (req, res) => {
+    try {
+      const teamId = req.query.teamId as string;
+      const yearParam = req.query.year as string;
+      if (!teamId) return res.status(400).json({ success: false, error: "teamId required" });
+
+      const year = yearParam ? parseInt(yearParam) : new Date().getFullYear();
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31, 23, 59, 59);
+      const now = new Date();
+
+      const team = await storage.getTeamById(teamId);
+      if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+
+      const members = await storage.getMembersByTeam(teamId);
+      const membersByKaitenId = new Map(
+        members.filter(m => m.kaitenUserId != null).map(m => [m.kaitenUserId!, m])
+      );
+
+      const allSprints = team.sprintBoardId ? await storage.getSprintsByBoardId(team.sprintBoardId) : [];
+      const yearSprints = allSprints
+        .filter(s => {
+          const start = new Date(s.startDate);
+          return start >= yearStart && start <= yearEnd && new Date(s.finishDate) < now;
+        })
+        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+      const sprintDataList: Array<{
+        sprintId: number;
+        sprintTitle: string;
+        startDate: string;
+        finishDate: string;
+        members: Record<string, number>;
+      }> = [];
+
+      const memberNameSet = new Set<string>();
+
+      for (const sprint of yearSprints) {
+        const velocityRows = await storage.getSprintMemberVelocity(sprint.sprintId);
+        const membersVelocity: Record<string, number> = {};
+        for (const row of velocityRows) {
+          const member = membersByKaitenId.get(row.userId);
+          if (member) {
+            const label = member.fullName || member.username;
+            membersVelocity[label] = (membersVelocity[label] ?? 0) + row.velocity;
+            memberNameSet.add(label);
+          }
+        }
+        sprintDataList.push({
+          sprintId: sprint.sprintId,
+          sprintTitle: sprint.title,
+          startDate: sprint.startDate,
+          finishDate: sprint.finishDate,
+          members: membersVelocity,
+        });
+      }
+
+      res.json({
+        success: true,
+        sprints: sprintDataList,
+        memberNames: Array.from(memberNameSet),
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed" });
+    }
+  });
+
   app.get("/api/kaiten/sprint-raw/:sprintId", async (req, res) => {
     try {
       const sprintId = parseInt(req.params.sprintId);

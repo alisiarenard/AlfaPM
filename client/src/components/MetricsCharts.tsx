@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from "recharts";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import type { TeamRow } from "@shared/schema";
@@ -31,6 +31,25 @@ interface MetricsDynamicsResponse {
 const CHART_COLOR = "#cd253d";
 const PLANNED_COLOR = "#888888";
 const AVG_LINE_COLOR = "#888888";
+
+const MEMBER_COLORS = [
+  "#4f86c6", "#5cb85c", "#f0ad4e", "#9b59b6", "#1abc9c",
+  "#e67e22", "#3498db", "#2ecc71", "#e74c3c", "#16a085",
+];
+
+interface MemberVelocitySprintData {
+  sprintId: number;
+  sprintTitle: string;
+  startDate: string;
+  finishDate: string;
+  members: Record<string, number>;
+}
+
+interface MemberVelocityResponse {
+  success: boolean;
+  sprints: MemberVelocitySprintData[];
+  memberNames: string[];
+}
 
 function formatDateRange(startDate: string, finishDate: string): string {
   const start = new Date(startDate);
@@ -97,7 +116,44 @@ function CustomTooltip({ active, payload, formatter, metricName }: CustomTooltip
   );
 }
 
+function MemberVelocityTooltip({ active, payload, label }: any) {
+  if (!active || !payload || payload.length === 0) return null;
+  const sprintData = payload[0]?.payload;
+  const dateRange = sprintData?.startDate && sprintData?.finishDate
+    ? formatDateRange(sprintData.startDate, sprintData.finishDate)
+    : label;
+  return (
+    <div style={{
+      backgroundColor: 'hsl(var(--card))',
+      border: '1px solid hsl(var(--border))',
+      borderRadius: '6px',
+      padding: '8px 12px',
+      maxWidth: 220,
+    }}>
+      <p style={{ color: 'hsl(var(--muted-foreground))', margin: 0, marginBottom: '6px', fontSize: '12px' }}>
+        {dateRange}
+      </p>
+      {payload.map((p: any) => (
+        <p key={p.dataKey} style={{ color: p.color, margin: 0, fontSize: '12px', marginBottom: '2px' }}>
+          {p.name}: <strong>{p.value?.toFixed(1)} SP</strong>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
+  const { data: memberVelocityData } = useQuery<MemberVelocityResponse>({
+    queryKey: ["/api/metrics/member-velocity", team.teamId, selectedYear],
+    queryFn: async () => {
+      const response = await fetch(`/api/metrics/member-velocity?teamId=${team.teamId}&year=${selectedYear}`);
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'Failed');
+      return data;
+    },
+    enabled: !!team.teamId,
+  });
+
   const { data: metricsData, isLoading, error } = useQuery<MetricsDynamicsResponse>({
     queryKey: ["/api/metrics/dynamics", team.teamId, selectedYear],
     queryFn: async () => {
@@ -194,6 +250,15 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const avgVelocityForChart = dataWithVel.length > 0
     ? Math.round(dataWithVel.reduce((sum, d) => sum + (d.velocity ?? 0), 0) / dataWithVel.length)
     : 0;
+
+  const memberVelocityChartData = (memberVelocityData?.sprints ?? []).map(s => ({
+    sprintTitle: s.sprintTitle,
+    startDate: s.startDate,
+    finishDate: s.finishDate,
+    ...s.members,
+  }));
+  const memberNames = memberVelocityData?.memberNames ?? [];
+  const hasMemberVelocityData = memberVelocityChartData.length > 0 && memberNames.length > 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 px-8 py-4">
@@ -348,6 +413,55 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
           Соблюдение плана доставки (СПД)
         </div>
       </div>
+
+      {hasMemberVelocityData && (
+        <div className="col-span-1 lg:col-span-3 flex flex-col">
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={memberVelocityChartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="sprintTitle"
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tickLine={{ stroke: 'hsl(var(--border))' }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  interval={0}
+                  angle={-30}
+                  textAnchor="end"
+                  height={48}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tickLine={{ stroke: 'hsl(var(--border))' }}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  tickFormatter={(v) => `${v} SP`}
+                />
+                <Tooltip content={<MemberVelocityTooltip />} />
+                <Legend
+                  iconType="plainline"
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                />
+                {memberNames.map((name, i) => (
+                  <Line
+                    key={name}
+                    type="monotone"
+                    dataKey={name}
+                    name={name}
+                    stroke={MEMBER_COLORS[i % MEMBER_COLORS.length]}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: MEMBER_COLORS[i % MEMBER_COLORS.length], strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls={false}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="text-center text-sm font-medium text-muted-foreground mt-1">
+            Velocity по участникам (SP)
+          </div>
+        </div>
+      )}
     </div>
   );
 }
