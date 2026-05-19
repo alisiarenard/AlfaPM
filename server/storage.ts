@@ -1025,15 +1025,22 @@ export class DbStorage implements IStorage {
     teamId?: string | null
   ): Promise<void> {
     await db.delete(sprintMemberVelocity).where(eq(sprintMemberVelocity.sprintId, sprintId));
-    if (!velocityDetails?.by_members?.length) return;
-    await db.insert(sprintMemberVelocity).values(
-      velocityDetails.by_members.map(m => ({
-        sprintId,
-        userId: m.user_id,
-        velocity: m.velocity,
-        teamId: teamId ?? null,
-      }))
-    );
+    if (!velocityDetails?.by_members?.length) {
+      console.log(`[VelocitySync] sprint ${sprintId} (team ${teamId ?? 'unknown'}): velocity_details пустые или отсутствуют — ничего не записано`);
+      return;
+    }
+    const rows = velocityDetails.by_members.map(m => ({
+      sprintId,
+      userId: m.user_id,
+      velocity: m.velocity,
+      teamId: teamId ?? null,
+    }));
+    console.log(`[VelocitySync] sprint ${sprintId} (team ${teamId ?? 'unknown'}): получено ${rows.length} записей от Kaiten → записываю в БД:`);
+    for (const r of rows) {
+      console.log(`  user_id=${r.userId} velocity=${r.velocity}`);
+    }
+    await db.insert(sprintMemberVelocity).values(rows);
+    console.log(`[VelocitySync] sprint ${sprintId}: сохранено ${rows.length} записей`);
   }
 
   async getSprintMemberVelocity(sprintId: number): Promise<SprintMemberVelocityRow[]> {
