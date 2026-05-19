@@ -63,6 +63,30 @@ interface EvaluationDetail {
   errorMessage: string | null;
 }
 
+interface ContributionSnapshot {
+  tech_debt_rate: number;
+  total_team_size: number;
+  team_total_tasks: number;
+  tasks_without_size: number;
+  low_complexity_rate: number;
+  high_complexity_rate: number;
+  contribution_sp_share: number;
+  developer_tasks_count: number;
+  developer_story_points: number;
+  medium_complexity_rate: number;
+  team_total_story_points: number;
+  contribution_tasks_share: number;
+}
+
+interface ContributionStatus {
+  status: "completed" | "in_progress" | "not_found";
+  score: number | null;
+  grade: string | null;
+  metricsSnapshot: ContributionSnapshot | null;
+  evaluatedAt: string | null;
+  errorMessage: string | null;
+}
+
 interface EvaluationStatus {
   developerId: string;
   status: "completed" | "in_progress" | "not_found";
@@ -70,6 +94,7 @@ interface EvaluationStatus {
   grade: string | null;
   metricsSnapshot: MetricsSnapshot | null;
   evaluatedAt: string | null;
+  contribution?: ContributionStatus;
 }
 
 interface PersonalMetricsResponse {
@@ -95,11 +120,23 @@ const METRIC_COLS: { key: keyof PersonalMetricsRow; label: string }[] = [
   { key: "discipline",         label: "Дисциплина" },
 ];
 
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+
 const SNAPSHOT_LABELS: { key: keyof MetricsSnapshot; label: string; format?: (v: any) => string }[] = [
   { key: "mrs_with_ai_review",  label: "MR с AI ревью" },
   { key: "avg_critical_per_mr", label: "Критические замечания на MR" },
-  { key: "clean_mr_rate",       label: "Чистые MR",     format: (v) => `${Math.round(v * 100)}%` },
+  { key: "clean_mr_rate",       label: "Чистые MR",     format: pct },
   { key: "weekly_trend",        label: "Тренд" },
+];
+
+const CONTRIBUTION_LABELS: { key: keyof ContributionSnapshot; label: string; format?: (v: any) => string }[] = [
+  { key: "developer_story_points",   label: "SP разработчика" },
+  { key: "team_total_story_points",  label: "SP команды" },
+  { key: "contribution_sp_share",    label: "Доля SP",           format: pct },
+  { key: "developer_tasks_count",    label: "Задачи разработчика" },
+  { key: "contribution_tasks_share", label: "Доля задач",        format: pct },
+  { key: "high_complexity_rate",     label: "Высокая сложность", format: pct },
+  { key: "medium_complexity_rate",   label: "Средняя сложность", format: pct },
 ];
 
 const VERDICT_COLOR: Record<string, string> = {
@@ -254,6 +291,10 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
   const hasEval = evaluation?.status === "completed" && evaluation.score !== null;
   const snap = hasEval ? evaluation!.metricsSnapshot : null;
 
+  const contrib = evaluation?.contribution;
+  const hasContrib = contrib?.status === "completed" && contrib.score !== null;
+  const contribSnap = hasContrib ? contrib!.metricsSnapshot : null;
+
   const devSummary = detail?.developerSummary;
   const mgrSummary = detail?.managerSummary;
   const evidenceRefs = detail?.evidenceRefs ?? [];
@@ -287,8 +328,12 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
         <div className="grid grid-cols-7 gap-2">
           {METRIC_COLS.map((col) => {
             const isCodeQuality = col.key === "codeQuality";
+            const isContribution = col.key === "taskComplexity";
             const rawValue = metrics?.[col.key] as number | null | undefined;
-            const displayValue = isCodeQuality && hasEval ? evaluation!.score : rawValue ?? null;
+            const displayValue =
+              isCodeQuality && hasEval ? evaluation!.score :
+              isContribution && hasContrib ? contrib!.score :
+              rawValue ?? null;
 
             const card = (
               <div
@@ -350,6 +395,28 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                         </div>
                       ));
                     })()}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            if (isContribution && contribSnap) {
+              return (
+                <Tooltip key={col.key}>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-default">{card}</div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="p-3 text-xs space-y-1.5 min-w-52">
+                    {CONTRIBUTION_LABELS.map(({ key, label, format }) => {
+                      const raw = contribSnap[key];
+                      const displayed = format ? format(raw as number) : String(raw);
+                      return (
+                        <div key={key} className="flex justify-between gap-6">
+                          <span className="text-muted-foreground">{label}</span>
+                          <span className="font-medium tabular-nums">{displayed}</span>
+                        </div>
+                      );
+                    })}
                   </TooltipContent>
                 </Tooltip>
               );

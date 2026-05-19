@@ -27,6 +27,30 @@ interface MetricsSnapshot {
   severity_distribution?: Record<string, number>;
 }
 
+interface ContributionSnapshot {
+  tech_debt_rate: number;
+  total_team_size: number;
+  team_total_tasks: number;
+  tasks_without_size: number;
+  low_complexity_rate: number;
+  high_complexity_rate: number;
+  contribution_sp_share: number;
+  developer_tasks_count: number;
+  developer_story_points: number;
+  medium_complexity_rate: number;
+  team_total_story_points: number;
+  contribution_tasks_share: number;
+}
+
+interface ContributionStatus {
+  status: "completed" | "in_progress" | "not_found";
+  score: number | null;
+  grade: string | null;
+  metricsSnapshot: ContributionSnapshot | null;
+  evaluatedAt: string | null;
+  errorMessage: string | null;
+}
+
 interface EvaluationStatus {
   developerId: string;
   status: "completed" | "in_progress" | "not_found";
@@ -34,6 +58,7 @@ interface EvaluationStatus {
   grade: string | null;
   metricsSnapshot: MetricsSnapshot | null;
   evaluatedAt: string | null;
+  contribution?: ContributionStatus;
 }
 
 interface PersonalMetricsResponse {
@@ -171,6 +196,54 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
               </div>
             ));
           })()}
+        </TooltipContent>
+      </Tooltip>
+    </td>
+  );
+}
+
+const CONTRIBUTION_LABELS: { key: keyof ContributionSnapshot; label: string; format?: (v: any) => string }[] = [
+  { key: "developer_story_points",  label: "SP разработчика" },
+  { key: "team_total_story_points", label: "SP команды" },
+  { key: "contribution_sp_share",   label: "Доля SP",    format: pct },
+  { key: "developer_tasks_count",   label: "Задачи разработчика" },
+  { key: "contribution_tasks_share",label: "Доля задач", format: pct },
+  { key: "high_complexity_rate",    label: "Высокая сложность", format: pct },
+  { key: "medium_complexity_rate",  label: "Средняя сложность", format: pct },
+];
+
+function ContributionCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
+  const contrib = evaluation?.contribution;
+  const hasScore = contrib?.status === "completed" && contrib.score !== null;
+  const snap = hasScore ? contrib!.metricsSnapshot : null;
+
+  const circles = <RatingCircles value={hasScore ? contrib!.score : null} />;
+
+  if (!snap) {
+    return (
+      <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+        {circles}
+      </td>
+    );
+  }
+
+  return (
+    <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="inline-flex cursor-default">{circles}</div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="p-3 text-xs space-y-1.5 min-w-52">
+          {CONTRIBUTION_LABELS.map(({ key, label, format }) => {
+            const raw = snap[key];
+            const displayed = format ? format(raw as number) : String(raw);
+            return (
+              <div key={key} className="flex justify-between gap-6">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-medium tabular-nums">{displayed}</span>
+              </div>
+            );
+          })}
         </TooltipContent>
       </Tooltip>
     </td>
@@ -431,6 +504,8 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                                 {METRIC_COLS.map((col) =>
                                   col.key === "codeQuality" ? (
                                     <CodeQualityCell key={col.key} evaluation={evaluation} />
+                                  ) : col.key === "taskComplexity" ? (
+                                    <ContributionCell key={col.key} evaluation={evaluation} />
                                   ) : (
                                     <MetricCell key={col.key} value={metrics?.[col.key] ?? null} />
                                   )
