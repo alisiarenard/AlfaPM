@@ -104,18 +104,15 @@ const METRIC_COLS: { key: MetricKey; label: string }[] = [
 
 function RatingCircles({ value }: { value: number | null | undefined }) {
   const v = value ?? 0;
-
-  function getColor(i: number): string {
-    if (i >= v) return "bg-muted";
-    if (v <= 2) return "bg-muted-foreground/50";
-    if (v <= 4) return "bg-destructive/40";
-    return "bg-destructive";
-  }
-
+  const filled = v > 2 ? "bg-destructive" : "bg-muted-foreground/50";
   return (
-    <div className="flex items-center justify-center gap-0.5">
+    <div className="flex items-center justify-center" style={{ gap: 3 }}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={`h-2 w-2 rounded-full inline-block ${getColor(i)}`} />
+        <span
+          key={i}
+          style={{ width: 5, height: 10, borderRadius: 2, display: 'inline-block', flexShrink: 0 }}
+          className={i < v ? filled : "bg-muted"}
+        />
       ))}
     </div>
   );

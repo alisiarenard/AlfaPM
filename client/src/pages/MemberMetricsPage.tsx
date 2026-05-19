@@ -143,23 +143,17 @@ const VERDICT_COLOR: Record<string, string> = {
   READY_WITH_IMPROVEMENTS: "text-blue-400",
 };
 
-function RatingCircles({ value, size = "md" }: { value: number | null | undefined; size?: "sm" | "md" | "lg" }) {
+function RatingCircles({ value }: { value: number | null | undefined; size?: "sm" | "md" | "lg" }) {
   const v = value ?? 0;
-  const dim = size === "lg" ? "h-2.5 w-2.5" : size === "sm" ? "h-1.5 w-1.5" : "h-2 w-2";
-
-  function getColor(i: number): string {
-    if (i >= v) return "bg-muted";
-    if (v >= 5) return "bg-emerald-500";
-    if (v >= 4) return "bg-emerald-400";
-    if (v >= 3) return "bg-yellow-400";
-    if (v >= 2) return "bg-orange-400";
-    return "bg-destructive/60";
-  }
-
+  const filled = v > 2 ? "bg-destructive" : "bg-muted-foreground/50";
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center" style={{ gap: 3 }}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={`${dim} rounded-full inline-block ${getColor(i)}`} />
+        <span
+          key={i}
+          style={{ width: 5, height: 10, borderRadius: 2, display: 'inline-block', flexShrink: 0 }}
+          className={i < v ? filled : "bg-muted"}
+        />
       ))}
     </div>
   );
