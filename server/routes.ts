@@ -3858,7 +3858,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         synced: syncedTasks.length,
         errors: errorCount,
         sprintId,
-        tasks: syncedTasks
+        tasks: syncedTasks,
+        velocityDetails: sprint.velocity_details ?? null,
       });
     } catch (error) {
       console.error(`[SYNC-SPRINT] Error:`, error instanceof Error ? error.message : String(error));
