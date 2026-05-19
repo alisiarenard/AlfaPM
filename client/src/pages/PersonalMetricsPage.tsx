@@ -284,6 +284,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
       gitlabUsernames,
       periodStart,
       periodEnd,
+      forceRecompute: true,
     };
     setSyncingMemberId(m.id);
     try {
