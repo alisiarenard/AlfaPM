@@ -1134,11 +1134,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(503).json({ success: false, error: "Evaluations service URL not configured" });
       }
 
-      // Resolve Kaiten spaceId (integer) from our internal teamId UUID
-      const teamRow = await storage.getTeamById(teamId);
-      const externalTeamId = teamRow?.spaceId ?? teamId;
-      console.log(`[Evaluations] teamId ${teamId} → externalTeamId ${externalTeamId} (spaceId)`);
-
       let contributionContext: { teamTotalStoryPoints: number; teamTotalTasks: number; complexityScale: number[] } | undefined;
       if (periodStart && periodEnd) {
         try {
@@ -1178,7 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const payload = {
-        developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd,
+        developerId, totalTeamSize, gitlabUsernames, periodStart, periodEnd,
         ...restBody,
         ...(contributionContext ? { contributionContext } : {}),
         ...(velocityData ? { velocityData } : {}),
