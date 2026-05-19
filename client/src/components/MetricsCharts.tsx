@@ -270,14 +270,19 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const memberNames = memberVelocityData?.memberNames ?? [];
   const rawMemberSprints = memberVelocityData?.sprints ?? [];
 
+  const mvYearStart = new Date(selectedYear, 0, 1);
+  const mvYearDays = (selectedYear % 4 === 0 && (selectedYear % 100 !== 0 || selectedYear % 400 === 0)) ? 366 : 365;
+  const mvDayOfYear = (date: Date) =>
+    Math.floor((date.getTime() - mvYearStart.getTime()) / (1000 * 60 * 60 * 24));
+  const mvMonthTicks = Array.from({ length: 12 }, (_, i) => mvDayOfYear(new Date(selectedYear, i, 1)));
+
   const memberVelocityChartData = rawMemberSprints
     .slice()
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
     .map(s => {
-      const d = new Date(s.startDate);
-      const label = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '');
+      const xPos = mvDayOfYear(new Date(s.startDate));
       const point: Record<string, any> = {
-        month: label,
+        xPos,
         _sprints: [{ title: s.sprintTitle, startDate: s.startDate, finishDate: s.finishDate }],
       };
       for (const name of memberNames) {
@@ -461,7 +466,14 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
               <LineChart data={memberVelocityChartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
-                  dataKey="month"
+                  dataKey="xPos"
+                  type="number"
+                  domain={[0, mvYearDays - 1]}
+                  ticks={mvMonthTicks}
+                  tickFormatter={(v) => {
+                    const d = new Date(mvYearStart.getTime() + v * 86400000);
+                    return d.toLocaleString('ru-RU', { month: 'short' }).replace('.', '');
+                  }}
                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
