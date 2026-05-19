@@ -6027,7 +6027,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const kaitenUsers = await kaitenClient.getUsers(allUserIds);
         for (const u of kaitenUsers) {
-          kaitenUserMap.set(u.id, u.full_name || u.username || `user_${u.id}`);
+          const fullLabel = u.full_name || u.username || `user_${u.id}`;
+          const shortName = fullLabel.trim().split(/\s+/).slice(0, 2).join(' ');
+          kaitenUserMap.set(u.id, shortName);
         }
       } catch {
         // Kaiten unavailable — fall back to ID labels
