@@ -1146,16 +1146,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let velocityData: { developerVelocity: number; totalVelocity: number; velocityShare: number; teamMembersCount: number } | undefined;
       if (periodStart && periodEnd) {
         try {
-          const teamMembersList = await storage.getMembersByTeam(teamId);
-          const member = teamMembersList.find(m => m.username === developerId);
-          if (member) {
-            const velocityMap = await storage.getVelocityShareByPeriod([member], periodStart, periodEnd);
-            velocityData = velocityMap[developerId];
-          }
-          if (velocityData) {
-            console.log(`[Evaluations] velocityData for ${developerId}:`, JSON.stringify(velocityData));
+          const teamObj = await storage.getTeamById(teamId);
+          const allTeamSprints = teamObj?.sprintBoardId
+            ? await storage.getSprintsByBoardId(teamObj.sprintBoardId)
+            : [];
+          const sprintsInPeriod = allTeamSprints.filter(
+            s => s.startDate >= periodStart && s.startDate <= periodEnd
+          );
+          if (sprintsInPeriod.length > 0) {
+            // Собираем все velocity строки по спринтам команды за период
+            const allVelocityRows: { userId: number; velocity: number }[] = [];
+            for (const sprint of sprintsInPeriod) {
+              const rows = await storage.getSprintMemberVelocity(sprint.sprintId);
+              allVelocityRows.push(...rows.map(r => ({ userId: r.userId, velocity: r.velocity ?? 0 })));
+            }
+            const uniqueUserIds = [...new Set(allVelocityRows.map(r => r.userId))];
+
+            // Получаем имена из Kaiten чтобы найти developerId
+            const kaitenUsers = await kaitenClient.getUsers(uniqueUserIds);
+            const devUser = kaitenUsers.find(
+              u => u.username?.toLowerCase() === developerId.toLowerCase()
+            );
+
+            if (devUser) {
+              const devVelocity = allVelocityRows
+                .filter(r => r.userId === devUser.id)
+                .reduce((sum, r) => sum + r.velocity, 0);
+              const totalVelocity = allVelocityRows.reduce((sum, r) => sum + r.velocity, 0);
+              velocityData = {
+                developerVelocity: devVelocity,
+                totalVelocity,
+                velocityShare: totalVelocity > 0 ? devVelocity / totalVelocity : 0,
+                teamMembersCount: uniqueUserIds.length,
+              };
+              console.log(`[Evaluations] velocityData for ${developerId}:`, JSON.stringify(velocityData));
+            } else {
+              console.log(`[Evaluations] velocityData not available for ${developerId} — user not found in Kaiten among sprint participants: [${kaitenUsers.map(u => u.username).join(', ')}]`);
+            }
           } else {
-            console.log(`[Evaluations] velocityData not available for ${developerId} (kaitenUserId not set or no sprint data)`);
+            console.log(`[Evaluations] velocityData not available for ${developerId} — no sprints in period ${periodStart}..${periodEnd}`);
           }
         } catch (velErr: any) {
           console.log(`[Evaluations] Failed to build velocityData: ${velErr.message}`);
