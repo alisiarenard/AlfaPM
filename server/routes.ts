@@ -1126,7 +1126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/evaluations/sync", async (req, res) => {
     try {
-      const { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd } = req.body;
+      const { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd, ...restBody } = req.body;
       if (!developerId || !teamId) return res.status(400).json({ success: false, error: "developerId and teamId required" });
       const serviceUrl = process.env.EVALUATIONS_SERVICE_URL;
       if (!serviceUrl) {
@@ -1174,6 +1174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const payload = {
         developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd,
+        ...restBody,
         ...(contributionContext ? { contributionContext } : {}),
         ...(velocityData ? { velocityData } : {}),
       };
