@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, type TeamMemberRow, type PersonalMetricsRow, users, departments, teams, initiatives, tasks, sprints, teamYearlyData, teamMembers, personalMetrics } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, sql, asc, desc, and, gte, lt } from "drizzle-orm";
+import { eq, sql, asc, desc, and, gte, lt, ne } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -550,6 +550,17 @@ export class DbStorage implements IStorage {
 
       if (team.sprintBoardId) {
         await tx.delete(sprints).where(eq(sprints.boardId, team.sprintBoardId));
+      }
+
+      // Удаляем инициативы этой команды (кроме "Поддержки бизнеса" cardId=0).
+      // При пересоздании команды с тем же initBoardId синхронизация создаст их заново чистыми.
+      if (team.initBoardId) {
+        await tx.delete(initiatives).where(
+          and(
+            eq(initiatives.initBoardId, team.initBoardId),
+            ne(initiatives.cardId, 0)
+          )
+        );
       }
 
       await tx.delete(teamYearlyData).where(eq(teamYearlyData.teamId, teamId));

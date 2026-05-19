@@ -673,6 +673,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const syncedCardIds: number[] = [];
           
           for (const card of cards) {
+            // Пропускаем карточки с других досок (могут попасть в ответ API при вложенности).
+            // Сохраняем только карточки, которые физически находятся на доске initBoardId.
+            if (card.board_id && card.board_id !== teamData.initBoardId) {
+              continue;
+            }
+
             let state: "1-queued" | "2-inProgress" | "3-done";
             
             if (card.state === 3) {
@@ -3276,6 +3282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 continue;
               }
 
+              // Пропускаем карточки с других досок — только карточки физически на boardId
+              if (fullCard.board_id && fullCard.board_id !== boardId) {
+                continue;
+              }
+
               let state: "1-queued" | "2-inProgress" | "3-done";
               if (fullCard.state === 3) {
                 state = "3-done";
@@ -3372,6 +3383,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const factValueId = "id_238";
       
       for (const card of cards) {
+        // Пропускаем карточки с других досок — только карточки физически на boardId
+        if (card.board_id && card.board_id !== boardId) {
+          continue;
+        }
+
         let state: "1-queued" | "2-inProgress" | "3-done";
         
         // Basic Kaiten state mapping (can be extended for more states)
@@ -4146,8 +4162,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let syncedCount = 0;
       for (const card of cardsToSync) {
         try {
-          // Детальное логирование для отладки
-          
+          // Пропускаем карточки с других досок — только карточки физически на initBoardId
+          if (card.board_id && card.board_id !== team.initBoardId) {
+            continue;
+          }
+
           let state: "1-queued" | "2-inProgress" | "3-done";
           if (card.state === 3) {
             state = "3-done";
