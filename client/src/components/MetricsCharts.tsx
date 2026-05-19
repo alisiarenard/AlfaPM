@@ -124,28 +124,36 @@ function CustomTooltip({ active, payload, formatter, metricName }: CustomTooltip
   );
 }
 
-function MemberVelocityTooltip({ active, payload, label }: any) {
+function MemberVelocityTooltip({ active, payload }: any) {
   if (!active || !payload || payload.length === 0) return null;
-  const sprintData = payload[0]?.payload;
-  const dateRange = sprintData?.startDate && sprintData?.finishDate
-    ? formatDateRange(sprintData.startDate, sprintData.finishDate)
-    : label;
+  const point = payload[0]?.payload;
+  const sprints: { title: string; startDate: string; finishDate: string }[] = point?._sprints ?? [];
   return (
     <div style={{
       backgroundColor: 'hsl(var(--card))',
       border: '1px solid hsl(var(--border))',
       borderRadius: '6px',
       padding: '8px 12px',
-      maxWidth: 220,
+      maxWidth: 240,
     }}>
-      <p style={{ color: 'hsl(var(--muted-foreground))', margin: 0, marginBottom: '6px', fontSize: '12px' }}>
-        {dateRange}
-      </p>
-      {payload.map((p: any) => (
-        <p key={p.dataKey} style={{ color: p.color, margin: 0, fontSize: '12px', marginBottom: '2px' }}>
-          {p.name}: <strong>{p.value?.toFixed(1)} SP</strong>
+      {sprints.length > 0 ? (
+        sprints.map((s, i) => (
+          <p key={i} style={{ color: 'hsl(var(--muted-foreground))', margin: 0, marginBottom: '4px', fontSize: '12px' }}>
+            {s.title}: {formatDateRange(s.startDate, s.finishDate)}
+          </p>
+        ))
+      ) : (
+        <p style={{ color: 'hsl(var(--muted-foreground))', margin: 0, marginBottom: '4px', fontSize: '12px' }}>
+          {point?.month}
         </p>
-      ))}
+      )}
+      <div style={{ borderTop: '1px solid hsl(var(--border))', marginTop: '4px', paddingTop: '4px' }}>
+        {payload.filter((p: any) => p.value != null).map((p: any) => (
+          <p key={p.dataKey} style={{ color: p.color, margin: 0, fontSize: '12px', marginBottom: '2px' }}>
+            {p.name}: <strong>{p.value?.toFixed(1)} SP</strong>
+          </p>
+        ))}
+      </div>
     </div>
   );
 }
@@ -269,6 +277,11 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     const point: Record<string, any> = {
       month: m.monthLabel,
       monthIndex: m.monthIndex,
+      _sprints: sprintsInMonth.map(s => ({
+        title: s.sprintTitle,
+        startDate: s.startDate,
+        finishDate: s.finishDate,
+      })),
     };
     for (const name of memberNames) {
       const total = sprintsInMonth.reduce((sum, s) => sum + (s.members[name] ?? 0), 0);
