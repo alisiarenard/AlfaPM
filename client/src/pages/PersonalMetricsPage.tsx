@@ -467,7 +467,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                             return (
                               <tr
                                 key={m.id}
-                                className="cursor-pointer transition-colors duration-150 hover:bg-muted/50"
+                                className="cursor-pointer"
                                 data-testid={`row-member-${m.id}`}
                                 onClick={(e) => {
                                   const target = e.target as HTMLElement;
