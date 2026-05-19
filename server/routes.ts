@@ -25,8 +25,8 @@ async function findInitiativeInParentChain(
   const initiative = await storage.getInitiativeByCardId(parentCardId);
   if (initiative) {
     // Если preferBoardId задан — принимаем инициативу только если она на нужной доске.
-    // Инициативы с других досок (cross-board нестинг) игнорируем и идём выше по цепочке.
-    if (!preferBoardId || initiative.initBoardId === preferBoardId) {
+    // Используем Number() для сравнения — initBoardId может прийти как строка из req.body.
+    if (!preferBoardId || Number(initiative.initBoardId) === Number(preferBoardId)) {
       return parentCardId;
     }
     // Инициатива есть, но с чужой доски — не используем её, продолжаем поиск выше.
