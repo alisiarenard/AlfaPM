@@ -3859,7 +3859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errors: errorCount,
         sprintId,
         tasks: syncedTasks,
-        velocityDetails: sprint.velocity_details ?? null,
+        kaitenSprint: sprintMeta,
       });
     } catch (error) {
       console.error(`[SYNC-SPRINT] Error:`, error instanceof Error ? error.message : String(error));
