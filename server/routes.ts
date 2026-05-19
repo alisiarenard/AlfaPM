@@ -1153,14 +1153,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Вычисляем долю velocity конкретного разработчика за период
-      let velocityData: { developerVelocity: number; totalVelocity: number; velocityShare: number } | undefined;
+      let velocityData: { developerVelocity: number; totalVelocity: number; velocityShare: number; teamMembersCount: number } | undefined;
       if (periodStart && periodEnd) {
         try {
           const teamMembersList = await storage.getMembersByTeam(teamId);
+          const uniqueMembersCount = new Set(teamMembersList.map(m => m.username)).size;
           const member = teamMembersList.find(m => m.username === developerId);
           if (member) {
             const velocityMap = await storage.getVelocityShareByPeriod([member], periodStart, periodEnd);
-            velocityData = velocityMap[developerId];
+            const share = velocityMap[developerId];
+            if (share) {
+              velocityData = { ...share, teamMembersCount: uniqueMembersCount };
+            }
           }
           if (velocityData) {
             console.log(`[Evaluations] velocityData for ${developerId}:`, JSON.stringify(velocityData));
