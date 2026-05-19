@@ -1152,7 +1152,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const payload = { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd, ...(contributionContext ? { contributionContext } : {}) };
+      // Вычисляем долю velocity конкретного разработчика за период
+      let velocityData: { developerVelocity: number; totalVelocity: number; velocityShare: number } | undefined;
+      if (periodStart && periodEnd) {
+        try {
+          const teamMembersList = await storage.getMembersByTeam(teamId);
+          const member = teamMembersList.find(m => m.username === developerId);
+          if (member) {
+            const velocityMap = await storage.getVelocityShareByPeriod([member], periodStart, periodEnd);
+            velocityData = velocityMap[developerId];
+          }
+          if (velocityData) {
+            console.log(`[Evaluations] velocityData for ${developerId}:`, JSON.stringify(velocityData));
+          } else {
+            console.log(`[Evaluations] velocityData not available for ${developerId} (kaitenUserId not set or no sprint data)`);
+          }
+        } catch (velErr: any) {
+          console.log(`[Evaluations] Failed to build velocityData: ${velErr.message}`);
+        }
+      }
+
+      const payload = {
+        developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd,
+        ...(contributionContext ? { contributionContext } : {}),
+        ...(velocityData ? { velocityData } : {}),
+      };
       console.log(`[Evaluations] POST sync → ${serviceUrl}\n${JSON.stringify(payload, null, 2)}`);
       const response = await fetch(serviceUrl, {
         method: "POST",
