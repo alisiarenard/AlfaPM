@@ -20,37 +20,27 @@ async function findInitiativeInParentChain(
   preferBoardId?: number
 ): Promise<number> {
   if (depth > 10) {
-    log(`[CHAIN] taskId=${originalTaskId} depth>10, прекращаем поиск`);
     return 0;
   }
-
-  const prefix = `[CHAIN] taskId=${originalTaskId} depth=${depth} card=${parentCardId}`;
 
   // Проверяем, является ли текущая карточка инициативой в БД
   const initiative = await storage.getInitiativeByCardId(parentCardId);
   if (initiative) {
     const boardMatch = !preferBoardId || Number(initiative.initBoardId) === Number(preferBoardId);
-    log(`${prefix} → в БД: initBoardId=${initiative.initBoardId}, preferBoardId=${preferBoardId}, совпадение=${boardMatch}, тип=${initiative.type}, title="${initiative.title}"`);
     if (boardMatch) {
       return parentCardId;
     }
     // Инициатива есть, но с чужой доски — пропускаем, продолжаем выше.
-  } else {
-    log(`${prefix} → не в БД`);
   }
 
   let card;
   try {
     card = await kaitenClient.getCard(parentCardId);
   } catch (e) {
-    log(`${prefix} → ошибка getCard: ${e instanceof Error ? e.message : String(e)}`);
     return 0;
   }
 
-  log(`${prefix} → Kaiten: board_id=${card.board_id}, parents_ids=${JSON.stringify(card.parents_ids)}`);
-
   if (!card.parents_ids || !Array.isArray(card.parents_ids) || card.parents_ids.length === 0) {
-    log(`${prefix} → нет родителей, возвращаем 0`);
     return 0;
   }
 
@@ -3801,7 +3791,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const syncedTasks = [];
       let errorCount = 0;
 
-      log(`[SYNC-SPRINT] Спринт ${sprintId}, команда: ${team.teamId} (${team.teamName}), initBoardId: ${team.initBoardId}, карточек: ${sprint.cards.length}`);
       
       // Создаем записи в tasks для каждой карточки из спринта
       for (let i = 0; i < sprint.cards.length; i++) {
@@ -3811,8 +3800,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Получаем детальную информацию по карточке чтобы получить parents_ids
           const card = await kaitenClient.getCard(sprintCard.id);
           
-          log(`[SYNC-SPRINT] Карточка #${card.id} "${card.title}" | board_id: ${card.board_id} | parents_ids: ${JSON.stringify(card.parents_ids)}`);
-
           // Ищем инициативу в родительской цепочке.
           // Передаём team.initBoardId чтобы предпочитать инициативы с доски этой команды
           // (при cross-board вложенности — пропускаем чужие инициативы и ищем выше).
@@ -3823,7 +3810,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             initCardId = await findInitiativeInParentChain(parentCardId, 0, card.id, team.initBoardId ?? undefined);
           }
 
-          log(`[SYNC-SPRINT] Карточка #${card.id} → initCardId: ${initCardId}`);
           
           let state: "1-queued" | "2-inProgress" | "3-done";
           
