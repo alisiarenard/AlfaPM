@@ -502,8 +502,8 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                     name={name}
                     stroke={MEMBER_COLORS[i % MEMBER_COLORS.length]}
                     strokeWidth={2}
-                    dot={{ r: 3, fill: MEMBER_COLORS[i % MEMBER_COLORS.length], strokeWidth: 0 }}
-                    activeDot={{ r: 5 }}
+                    dot={{ r: 2, fill: MEMBER_COLORS[i % MEMBER_COLORS.length], strokeWidth: 0 }}
+                    activeDot={{ r: 4 }}
                     connectNulls={false}
                   />
                 ))}
