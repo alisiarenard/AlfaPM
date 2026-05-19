@@ -1496,9 +1496,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Загружаем все задачи один раз (избегаем N+1)
       const allInitiativeCardIds = new Set(allInitiatives.map(i => i.cardId));
+
+      // Загружаем ВСЕ инициативы из БД (со всех досок) для корректного определения типов.
+      // Это нужно для случаев cross-board вложенности: задача может ссылаться на инициативу,
+      // чей initBoardId не совпадает с текущим (из-за особенностей синхронизации),
+      // но инициатива реально существует и имеет корректный тип Epic/Compliance/Enabler.
+      const allInitiativesGlobal = await storage.getAllInitiatives();
+      const globalInitiativeMap = new Map(allInitiativesGlobal.map(init => [init.cardId, init]));
+
       const allTasks = await storage.getAllTasks();
-      // Фильтруем задачи по teamId (без фильтра по allInitiativeCardIds — 
-      // задачи из инициатив с других досок должны попадать в "Поддержку бизнеса")
       // Берём ВСЕ задачи команды, включая с initCardId=null (они станут "Поддержкой бизнеса")
       // Исключаем карточки, чей cardId совпадает с cardId инициатив —
       // это сами инициативные карточки, которые могли быть синхронизированы как задачи
@@ -1506,8 +1512,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(task => task.teamId === teamId && !allInitiativeCardIds.has(task.cardId))
         .map(task => task.initCardId === null ? { ...task, initCardId: 0 } : task);
       
-      // Создаем Map для быстрого поиска типа инициативы по cardId
+      // Создаем Map для быстрого поиска типа инициативы по cardId (только текущая доска)
       const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
+
+      // Собираем инициативы из других досок, на которые ссылаются задачи команды.
+      // Это происходит при cross-board вложенности: инициатива физически принадлежит
+      // другой доске (её initBoardId мог быть перезаписан при синхронизации другой команды),
+      // но задача правильно ссылается на неё.
+      const extraInitiatives: typeof allInitiatives = [];
+      const extraInitiativeCardIds = new Set<number>();
+      for (const task of initiativeTasks) {
+        const id = task.initCardId;
+        if (!id || id === 0 || allInitiativeCardIds.has(id) || extraInitiativeCardIds.has(id)) continue;
+        const globalInit = globalInitiativeMap.get(id);
+        if (globalInit && (globalInit.type === 'Epic' || globalInit.type === 'Compliance' || globalInit.type === 'Enabler')) {
+          extraInitiatives.push(globalInit);
+          extraInitiativeCardIds.add(id);
+          initiativeTypeMap.set(id, globalInit.type);
+        }
+      }
+
+      // Если нашли «чужие» инициативы, добавляем их в список отображения
+      if (extraInitiatives.length > 0) {
+        initiatives = [...initiatives, ...extraInitiatives];
+        for (const ei of extraInitiatives) allInitiativeCardIds.add(ei.cardId);
+      }
       
       // Перенаправляем задачи из неизвестных инициатив и не-Epic/Compliance/Enabler в "Поддержку бизнеса"
       initiativeTasks = initiativeTasks.map(task => {

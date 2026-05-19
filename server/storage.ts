@@ -643,7 +643,12 @@ export class DbStorage implements IStorage {
         state, 
         condition, 
         size, 
-        initBoardId: boardId, 
+        // Сохраняем оригинальную "домашнюю" доску инициативы.
+        // Если инициатива уже привязана к одной доске (initBoardId), а синхронизация
+        // пришла с другой доски (cross-board вложенность), не перезаписываем boardId.
+        // Это предотвращает баг, когда задачи перестают находить свою инициативу
+        // в таймлайне команды после синхронизации соседней команды.
+        initBoardId: existing.initBoardId !== boardId ? existing.initBoardId : boardId,
         type: type || null,
         dueDate: dueDate || null,
         doneDate: doneDate || null,
