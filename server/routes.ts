@@ -776,6 +776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 sprint.actual_finish_date,
                 sprint.goal
               );
+              await storage.syncSprintMemberVelocity(sprint.id, sprint.velocity_details);
               
               syncedSprints.push(sprint);
             } catch (sprintError: unknown) {
@@ -2734,6 +2735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           kaitenSprint.actual_finish_date || null,
           kaitenSprint.goal || null
         );
+        await storage.syncSprintMemberVelocity(kaitenSprint.id, kaitenSprint.velocity_details);
         
         const tasksSynced = await syncSprintTasks(kaitenSprint.id, kaitenSprint);
         return { sprintId: kaitenSprint.id, tasksSynced };
@@ -2757,6 +2759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               refreshedSprint.actual_finish_date || null,
               refreshedSprint.goal || null
             );
+            await storage.syncSprintMemberVelocity(refreshedSprint.id, refreshedSprint.velocity_details);
             
             previousSprintTasksSynced = await syncSprintTasks(refreshedSprint.id, refreshedSprint);
             previousSprintUpdated = true;
@@ -2909,6 +2912,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         kaitenSprint.actual_finish_date || null,
         kaitenSprint.goal || null
       );
+      await storage.syncSprintMemberVelocity(kaitenSprint.id, kaitenSprint.velocity_details);
 
       // Удаляем все старые задачи этого спринта перед синхронизацией новых
       await storage.deleteTasksForSprint(sprintId);
@@ -3952,6 +3956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sprintDetails.actual_finish_date || null,
           sprintDetails.goal || null
         );
+        await storage.syncSprintMemberVelocity(sprintDetails.id, sprintDetails.velocity_details);
         
         syncedSprints.push(synced);
         
@@ -4295,6 +4300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const dbSprint of sprintsToSync) {
             try {
               const sprintDetails = await kaitenClient.getSprint(dbSprint.sprintId);
+              await storage.syncSprintMemberVelocity(sprintDetails.id, sprintDetails.velocity_details);
               
               if (sprintDetails.cards && Array.isArray(sprintDetails.cards) && sprintDetails.cards.length > 0) {
                 for (const sprintCard of sprintDetails.cards) {

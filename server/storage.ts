@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, type TeamMemberRow, type PersonalMetricsRow, users, departments, teams, initiatives, tasks, sprints, teamYearlyData, teamMembers, personalMetrics } from "@shared/schema";
+import { type User, type InsertUser, type TeamData, type Department, type DepartmentWithTeamCount, type TeamRow, type InitiativeRow, type InsertInitiative, type TaskRow, type InsertTask, type SprintRow, type InsertSprint, type TeamYearlyDataRow, type InsertTeamYearlyData, type TeamMemberRow, type PersonalMetricsRow, type SprintMemberVelocityRow, users, departments, teams, initiatives, tasks, sprints, teamYearlyData, teamMembers, personalMetrics, sprintMemberVelocity } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, sql, asc, desc, and, gte, lt, ne } from "drizzle-orm";
@@ -77,6 +77,8 @@ export interface IStorage {
   getAllSprints(): Promise<SprintRow[]>;
   getSprintsByBoardId(boardId: number): Promise<SprintRow[]>;
   getSprint(sprintId: number): Promise<SprintRow | undefined>;
+  syncSprintMemberVelocity(sprintId: number, velocityDetails: { by_members: Array<{ user_id: number; velocity: number }> } | null | undefined): Promise<void>;
+  getSprintMemberVelocity(sprintId: number): Promise<SprintMemberVelocityRow[]>;
   getLatestSprintByBoardId(boardId: number): Promise<SprintRow | undefined>;
   getTasksBySprint(sprintId: number): Promise<TaskRow[]>;
   getTasksByTeamAndDoneDateRange(teamId: string, startDate: Date, endDate: Date): Promise<TaskRow[]>;
@@ -1014,6 +1016,25 @@ export class DbStorage implements IStorage {
         .returning();
       return newSprint;
     }
+  }
+
+  async syncSprintMemberVelocity(
+    sprintId: number,
+    velocityDetails: { by_members: Array<{ user_id: number; velocity: number }> } | null | undefined
+  ): Promise<void> {
+    await db.delete(sprintMemberVelocity).where(eq(sprintMemberVelocity.sprintId, sprintId));
+    if (!velocityDetails?.by_members?.length) return;
+    await db.insert(sprintMemberVelocity).values(
+      velocityDetails.by_members.map(m => ({
+        sprintId,
+        userId: m.user_id,
+        velocity: m.velocity,
+      }))
+    );
+  }
+
+  async getSprintMemberVelocity(sprintId: number): Promise<SprintMemberVelocityRow[]> {
+    return db.select().from(sprintMemberVelocity).where(eq(sprintMemberVelocity.sprintId, sprintId));
   }
 
   async getTeamYearlyData(teamId: string, year: number): Promise<TeamYearlyDataRow | undefined> {

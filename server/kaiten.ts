@@ -43,6 +43,15 @@ export interface KaitenBoardResponse {
 export interface KaitenSprintResponse {
   id: number;
   title: string;
+  board_id?: number;
+  velocity?: number;
+  velocity_details?: {
+    by_members: Array<{ user_id: number; velocity: number }>;
+  } | null;
+  start_date?: string;
+  finish_date?: string;
+  actual_finish_date?: string | null;
+  goal?: string | null;
   cards?: Array<{ id: number; [key: string]: any }>;
   [key: string]: any;
 }

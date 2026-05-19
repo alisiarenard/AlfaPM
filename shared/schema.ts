@@ -71,6 +71,17 @@ export const insertSprintSchema = createInsertSchema(sprints);
 export type InsertSprint = z.infer<typeof insertSprintSchema>;
 export type SprintRow = typeof sprints.$inferSelect;
 
+export const sprintMemberVelocity = pgTable("sprint_member_velocity", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sprintId: integer("sprint_id").notNull(),
+  userId: integer("user_id").notNull(),
+  velocity: real("velocity").notNull(),
+});
+
+export const insertSprintMemberVelocitySchema = createInsertSchema(sprintMemberVelocity).omit({ id: true });
+export type InsertSprintMemberVelocity = z.infer<typeof insertSprintMemberVelocitySchema>;
+export type SprintMemberVelocityRow = typeof sprintMemberVelocity.$inferSelect;
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
