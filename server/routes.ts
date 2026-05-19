@@ -3789,6 +3789,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!team) {
         throw new Error(`No team found for sprint board ${dbSprint.boardId}`);
       }
+
+      // Сохраняем velocity_details в sprint_member_velocity
+      await storage.syncSprintMemberVelocity(sprintId, sprint.velocity_details, team.teamId);
       
       const syncedTasks = [];
       let errorCount = 0;
