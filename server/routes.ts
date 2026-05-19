@@ -1109,7 +1109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const payload = { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd, ...(contributionContext ? { contributionContext } : {}) };
-      console.log(`[Evaluations] POST ${serviceUrl}`, JSON.stringify(payload));
+      console.log(`[Evaluations] POST sync → ${serviceUrl}\n${JSON.stringify(payload, null, 2)}`);
       const response = await fetch(serviceUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
