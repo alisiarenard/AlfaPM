@@ -270,25 +270,21 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const memberNames = memberVelocityData?.memberNames ?? [];
   const rawMemberSprints = memberVelocityData?.sprints ?? [];
 
-  const memberVelocityChartData = allMonths.map(m => {
-    const sprintsInMonth = rawMemberSprints.filter(
-      s => new Date(s.finishDate).getMonth() === m.monthIndex
-    );
-    const point: Record<string, any> = {
-      month: m.monthLabel,
-      monthIndex: m.monthIndex,
-      _sprints: sprintsInMonth.map(s => ({
-        title: s.sprintTitle,
-        startDate: s.startDate,
-        finishDate: s.finishDate,
-      })),
-    };
-    for (const name of memberNames) {
-      const total = sprintsInMonth.reduce((sum, s) => sum + (s.members[name] ?? 0), 0);
-      point[name] = sprintsInMonth.length > 0 ? Math.round(total * 10) / 10 : null;
-    }
-    return point;
-  });
+  const memberVelocityChartData = rawMemberSprints
+    .slice()
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .map(s => {
+      const d = new Date(s.startDate);
+      const label = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '');
+      const point: Record<string, any> = {
+        month: label,
+        _sprints: [{ title: s.sprintTitle, startDate: s.startDate, finishDate: s.finishDate }],
+      };
+      for (const name of memberNames) {
+        point[name] = s.members[name] != null ? Math.round(s.members[name] * 10) / 10 : null;
+      }
+      return point;
+    });
 
   const hasSprintData = rawMemberSprints.length > 0;
   const hasMemberLines = memberNames.length > 0;
