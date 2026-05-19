@@ -275,7 +275,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
 
   async function syncMember(m: TeamMemberRow, allMembers: TeamMemberRow[]) {
     const sameTeamRole = allMembers.filter((x) => x.teamId === m.teamId && x.role === m.role);
-    const gitlabUsernames = sameTeamRole.map((x) => x.gitlabUsername).filter((u): u is string => !!u);
+    const gitlabUsernames = m.gitlabUsername ? [m.gitlabUsername] : [];
     const { periodStart, periodEnd } = getPeriod(year, quarter);
     const payload = {
       developerId: m.username,
