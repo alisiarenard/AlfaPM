@@ -132,6 +132,13 @@ export class KaitenClient {
     return this.makeRequest<KaitenCard>(`/cards/${cardId}`);
   }
 
+  async getUsers(userIds: number[]): Promise<Array<{ id: number; full_name: string; username: string }>> {
+    if (userIds.length === 0) return [];
+    const ids = userIds.join(',');
+    const result = await this.makeRequest<Array<{ id: number; full_name: string; username: string }>>(`/users?ids=${ids}`);
+    return Array.isArray(result) ? result : [];
+  }
+
   async getCardsFromBoard(boardId: number): Promise<KaitenCard[]> {
     const response = await this.makeRequest<KaitenBoardResponse>(`/boards/${boardId}`);
     

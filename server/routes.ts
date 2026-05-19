@@ -6003,11 +6003,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const team = await storage.getTeamById(teamId);
       if (!team) return res.status(404).json({ success: false, error: "Team not found" });
 
-      const members = await storage.getMembersByTeam(teamId);
-      const membersByKaitenId = new Map(
-        members.filter(m => m.kaitenUserId != null).map(m => [m.kaitenUserId!, m])
-      );
-
       const allSprints = team.sprintBoardId ? await storage.getSprintsByBoardId(team.sprintBoardId) : [];
       const yearSprints = allSprints
         .filter(s => {
@@ -6015,6 +6010,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return start >= yearStart && start <= yearEnd && new Date(s.finishDate) < now;
         })
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+      // Collect all velocity rows first to get unique user IDs
+      const sprintVelocityMap = new Map<number, Awaited<ReturnType<typeof storage.getSprintMemberVelocity>>>();
+      for (const sprint of yearSprints) {
+        const rows = await storage.getSprintMemberVelocity(sprint.sprintId);
+        sprintVelocityMap.set(sprint.sprintId, rows);
+      }
+
+      const allUserIds = Array.from(
+        new Set(Array.from(sprintVelocityMap.values()).flat().map(r => r.userId))
+      );
+
+      // Fetch full names from Kaiten API
+      const kaitenUserMap = new Map<number, string>();
+      try {
+        const kaitenUsers = await kaitenClient.getUsers(allUserIds);
+        for (const u of kaitenUsers) {
+          kaitenUserMap.set(u.id, u.full_name || u.username || `user_${u.id}`);
+        }
+      } catch {
+        // Kaiten unavailable — fall back to ID labels
+      }
 
       const sprintDataList: Array<{
         sprintId: number;
@@ -6027,13 +6044,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const memberNameSet = new Set<string>();
 
       for (const sprint of yearSprints) {
-        const velocityRows = await storage.getSprintMemberVelocity(sprint.sprintId);
+        const velocityRows = sprintVelocityMap.get(sprint.sprintId) ?? [];
         const membersVelocity: Record<string, number> = {};
         for (const row of velocityRows) {
-          const member = membersByKaitenId.get(row.userId);
-          const label = member
-            ? (member.fullName || member.username)
-            : `user_${row.userId}`;
+          const label = kaitenUserMap.get(row.userId) ?? `user_${row.userId}`;
           membersVelocity[label] = (membersVelocity[label] ?? 0) + row.velocity;
           memberNameSet.add(label);
         }
