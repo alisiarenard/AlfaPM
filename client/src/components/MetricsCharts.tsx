@@ -33,8 +33,16 @@ const PLANNED_COLOR = "#888888";
 const AVG_LINE_COLOR = "#888888";
 
 const MEMBER_COLORS = [
-  "#4f86c6", "#5cb85c", "#f0ad4e", "#9b59b6", "#1abc9c",
-  "#e67e22", "#3498db", "#2ecc71", "#e74c3c", "#16a085",
+  "#cd253d",
+  "#e05a6e",
+  "#a01d30",
+  "#e8899a",
+  "#7a1525",
+  "#f0b8c2",
+  "#551020",
+  "#c26070",
+  "#3a0a16",
+  "#d94058",
 ];
 
 interface MemberVelocitySprintData {
@@ -251,14 +259,25 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     ? Math.round(dataWithVel.reduce((sum, d) => sum + (d.velocity ?? 0), 0) / dataWithVel.length)
     : 0;
 
-  const memberVelocityChartData = (memberVelocityData?.sprints ?? []).map(s => ({
-    sprintTitle: s.sprintTitle,
-    startDate: s.startDate,
-    finishDate: s.finishDate,
-    ...s.members,
-  }));
   const memberNames = memberVelocityData?.memberNames ?? [];
-  const hasSprintData = memberVelocityChartData.length > 0;
+  const rawMemberSprints = memberVelocityData?.sprints ?? [];
+
+  const memberVelocityChartData = allMonths.map(m => {
+    const sprintsInMonth = rawMemberSprints.filter(
+      s => new Date(s.finishDate).getMonth() === m.monthIndex
+    );
+    const point: Record<string, any> = {
+      month: m.monthLabel,
+      monthIndex: m.monthIndex,
+    };
+    for (const name of memberNames) {
+      const total = sprintsInMonth.reduce((sum, s) => sum + (s.members[name] ?? 0), 0);
+      point[name] = sprintsInMonth.length > 0 ? Math.round(total * 10) / 10 : null;
+    }
+    return point;
+  });
+
+  const hasSprintData = rawMemberSprints.length > 0;
   const hasMemberLines = memberNames.length > 0;
 
   return (
@@ -430,17 +449,13 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
         ) : (
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={memberVelocityChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+              <LineChart data={memberVelocityChartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
-                  dataKey="sprintTitle"
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  dataKey="month"
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                   tickLine={{ stroke: 'hsl(var(--border))' }}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
-                  interval={0}
-                  angle={-30}
-                  textAnchor="end"
-                  height={48}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
