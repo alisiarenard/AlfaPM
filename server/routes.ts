@@ -6031,11 +6031,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const membersVelocity: Record<string, number> = {};
         for (const row of velocityRows) {
           const member = membersByKaitenId.get(row.userId);
-          if (member) {
-            const label = member.fullName || member.username;
-            membersVelocity[label] = (membersVelocity[label] ?? 0) + row.velocity;
-            memberNameSet.add(label);
-          }
+          const label = member
+            ? (member.fullName || member.username)
+            : `user_${row.userId}`;
+          membersVelocity[label] = (membersVelocity[label] ?? 0) + row.velocity;
+          memberNameSet.add(label);
         }
         sprintDataList.push({
           sprintId: sprint.sprintId,

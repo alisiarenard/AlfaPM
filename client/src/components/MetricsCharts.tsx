@@ -258,7 +258,8 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     ...s.members,
   }));
   const memberNames = memberVelocityData?.memberNames ?? [];
-  const hasMemberVelocityData = memberVelocityChartData.length > 0 && memberNames.length > 0;
+  const hasSprintData = memberVelocityChartData.length > 0;
+  const hasMemberLines = memberNames.length > 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 px-8 py-4">
@@ -414,11 +415,22 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
         </div>
       </div>
 
-      {hasMemberVelocityData && (
-        <div className="col-span-1 lg:col-span-3 flex flex-col">
+      <div className="col-span-1 lg:col-span-3 flex flex-col">
+        <div className="text-center text-sm font-medium text-muted-foreground mb-2">
+          Velocity по участникам (SP)
+        </div>
+        {!hasSprintData ? (
+          <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
+            Нет данных за {selectedYear} год — синхронизируйте спринты
+          </div>
+        ) : !hasMemberLines ? (
+          <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
+            Нет данных по участникам — синхронизируйте спринты для получения velocity
+          </div>
+        ) : (
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={memberVelocityChartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+              <LineChart data={memberVelocityChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="sprintTitle"
@@ -457,11 +469,8 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-center text-sm font-medium text-muted-foreground mt-1">
-            Velocity по участникам (SP)
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
