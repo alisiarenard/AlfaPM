@@ -21,30 +21,25 @@ async function findInitiativeInParentChain(
 ): Promise<number> {
   if (depth > 10) return 0;
 
-  // Проверяем, является ли текущая карточка инициативой
+  // Проверяем, является ли текущая карточка инициативой в БД
   const initiative = await storage.getInitiativeByCardId(parentCardId);
   if (initiative) {
-    // Если есть предпочтительная доска и инициатива НА ней — сразу возвращаем
+    // Если preferBoardId задан — принимаем инициативу только если она на нужной доске.
+    // Инициативы с других досок (cross-board нестинг) игнорируем и идём выше по цепочке.
     if (!preferBoardId || initiative.initBoardId === preferBoardId) {
       return parentCardId;
     }
-    // Инициатива найдена, но на другой доске (cross-board нестинг).
-    // Продолжаем поиск ВВЕРХ по цепочке — вдруг найдём инициативу на нужной доске.
-    // Если выше ничего нет — вернём эту как fallback (ниже).
+    // Инициатива есть, но с чужой доски — не используем её, продолжаем поиск выше.
   }
 
   let card;
   try {
     card = await kaitenClient.getCard(parentCardId);
   } catch {
-    // Нет доступа к карточке — возвращаем fallback (если нашли инициативу выше)
-    if (initiative) return parentCardId;
     return 0;
   }
 
   if (!card.parents_ids || !Array.isArray(card.parents_ids) || card.parents_ids.length === 0) {
-    // Цепочка закончилась — возвращаем fallback
-    if (initiative) return parentCardId;
     return 0;
   }
 
@@ -54,12 +49,9 @@ async function findInitiativeInParentChain(
 
   // Если не нашли — ищем через второго родителя (если есть)
   if (card.parents_ids.length > 1) {
-    const secondResult = await findInitiativeInParentChain(card.parents_ids[1], depth + 1, originalTaskId, preferBoardId);
-    if (secondResult !== 0) return secondResult;
+    return await findInitiativeInParentChain(card.parents_ids[1], depth + 1, originalTaskId, preferBoardId);
   }
 
-  // Нигде выше не нашли инициативу на нужной доске — возвращаем текущую как fallback
-  if (initiative) return parentCardId;
   return 0;
 }
 
@@ -1520,46 +1512,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Загружаем все задачи один раз (избегаем N+1)
       const allInitiativeCardIds = new Set(allInitiatives.map(i => i.cardId));
 
-      // Загружаем ВСЕ инициативы из БД (со всех досок) для корректного определения типов.
-      // Это нужно для случаев cross-board вложенности: задача может ссылаться на инициативу,
-      // чей initBoardId не совпадает с текущим (из-за особенностей синхронизации),
-      // но инициатива реально существует и имеет корректный тип Epic/Compliance/Enabler.
-      const allInitiativesGlobal = await storage.getAllInitiatives();
-      const globalInitiativeMap = new Map(allInitiativesGlobal.map(init => [init.cardId, init]));
-
       const allTasks = await storage.getAllTasks();
-      // Берём ВСЕ задачи команды, включая с initCardId=null (они станут "Поддержкой бизнеса")
+      // Берём ВСЕ задачи команды, включая с initCardId=null (они станут "Поддержкой бизнеса").
       // Исключаем карточки, чей cardId совпадает с cardId инициатив —
-      // это сами инициативные карточки, которые могли быть синхронизированы как задачи
+      // это сами инициативные карточки, которые могли быть синхронизированы как задачи.
       let initiativeTasks = allTasks
         .filter(task => task.teamId === teamId && !allInitiativeCardIds.has(task.cardId))
         .map(task => task.initCardId === null ? { ...task, initCardId: 0 } : task);
-      
-      // Создаем Map для быстрого поиска типа инициативы по cardId (только текущая доска)
+
+      // Map для быстрого поиска типа инициативы — только инициативы текущей доски команды.
+      // Задачи, чей initCardId указывает на инициативы с других досок, будут перенаправлены
+      // в "Поддержку бизнеса". Правильный initCardId устанавливается при синхронизации
+      // через findInitiativeInParentChain с передачей preferBoardId = initBoardId команды.
       const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
-
-      // Собираем инициативы из других досок, на которые ссылаются задачи команды.
-      // Это происходит при cross-board вложенности: инициатива физически принадлежит
-      // другой доске (её initBoardId мог быть перезаписан при синхронизации другой команды),
-      // но задача правильно ссылается на неё.
-      const extraInitiatives: typeof allInitiatives = [];
-      const extraInitiativeCardIds = new Set<number>();
-      for (const task of initiativeTasks) {
-        const id = task.initCardId;
-        if (!id || id === 0 || allInitiativeCardIds.has(id) || extraInitiativeCardIds.has(id)) continue;
-        const globalInit = globalInitiativeMap.get(id);
-        if (globalInit && (globalInit.type === 'Epic' || globalInit.type === 'Compliance' || globalInit.type === 'Enabler')) {
-          extraInitiatives.push(globalInit);
-          extraInitiativeCardIds.add(id);
-          initiativeTypeMap.set(id, globalInit.type);
-        }
-      }
-
-      // Если нашли «чужие» инициативы, добавляем их в список отображения
-      if (extraInitiatives.length > 0) {
-        initiatives = [...initiatives, ...extraInitiatives];
-        for (const ei of extraInitiatives) allInitiativeCardIds.add(ei.cardId);
-      }
       
       // Перенаправляем задачи из неизвестных инициатив и не-Epic/Compliance/Enabler в "Поддержку бизнеса"
       initiativeTasks = initiativeTasks.map(task => {
