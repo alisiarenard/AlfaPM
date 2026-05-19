@@ -153,9 +153,10 @@ function MemberVelocityTooltip({ active, payload }: any) {
           .slice()
           .sort((a: any, b: any) => b.value - a.value)
           .map((p: any) => (
-            <p key={p.dataKey} style={{ color: p.color, margin: 0, fontSize: '12px', marginBottom: '2px' }}>
-              {p.name}: <strong>{p.value?.toFixed(1)} SP</strong>
-            </p>
+            <div key={p.dataKey} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '2px' }}>
+              <span style={{ color: p.color, fontSize: '12px' }}>{p.name}</span>
+              <strong style={{ color: p.color, fontSize: '12px', whiteSpace: 'nowrap' }}>{p.value?.toFixed(1)} SP</strong>
+            </div>
           ))}
       </div>
     </div>
