@@ -3769,8 +3769,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Получаем данные спринта из Kaiten
       const sprint = await kaitenClient.getSprint(sprintId);
-      const { cards: _sprintCards, ...sprintMeta } = sprint;
-      console.log(`[SyncSprint] Ответ Kaiten для спринта ${sprintId}:`, JSON.stringify(sprintMeta));
 
       if (!sprint.cards || !Array.isArray(sprint.cards)) {
         return res.json({
@@ -3862,7 +3860,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errors: errorCount,
         sprintId,
         tasks: syncedTasks,
-        kaitenSprint: sprintMeta,
       });
     } catch (error) {
       console.error(`[SYNC-SPRINT] Error:`, error instanceof Error ? error.message : String(error));

@@ -106,7 +106,6 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
   const [savingField, setSavingField] = useState<EditableField | null>(null);
   const [isDownloadingReport, setIsDownloadingReport] = useState(false);
   const [isSyncingSprintData, setIsSyncingSprintData] = useState(false);
-  const [kaitenSprintDebug, setKaitenSprintDebug] = useState<any>(null);
   const [isBsExpanded, setIsBsExpanded] = useState(false);
   const fieldInputRef = useRef<HTMLInputElement>(null);
   const currentSprintRef = useRef<HTMLTableCellElement>(null);
@@ -2357,7 +2356,7 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
         </DialogContent>
       </Dialog>
 
-      <Dialog open={sprintModalOpen} onOpenChange={(v) => { setSprintModalOpen(v); if (!v) setKaitenSprintDebug(null); }}>
+      <Dialog open={sprintModalOpen} onOpenChange={setSprintModalOpen}>
         <DialogContent className="max-w-3xl max-h-[60vh] flex flex-col p-0">
           {/* Фиксированный хедер */}
           <DialogHeader className="px-6 pt-[0.7rem] pb-0">
@@ -2637,16 +2636,6 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
             </div>
           </div>
           
-          {/* Debug: raw Kaiten response after sync */}
-          {kaitenSprintDebug && (
-            <div className="mx-4 mb-2">
-              <div className="text-xs font-semibold text-muted-foreground mb-1">Ответ Kaiten (без cards):</div>
-              <pre className="text-xs bg-muted rounded-md p-3 overflow-auto max-h-48 whitespace-pre-wrap break-all">
-                {JSON.stringify(kaitenSprintDebug, null, 2)}
-              </pre>
-            </div>
-          )}
-
           {/* Footer с кнопками */}
           <div className="p-4 flex items-center justify-end gap-2">
             <Button
@@ -2687,13 +2676,14 @@ export function InitiativesTimeline({ initiatives, allInitiatives, team, sprints
                   const result = await response.json();
                   
                   setIsSyncingSprintData(false);
-                  setKaitenSprintDebug(result.kaitenSprint ?? null);
                   queryClient.invalidateQueries({ queryKey: ["/api/timeline", team.teamId] });
                   
                   toast({
                     title: "Данные обновлены",
                     description: `Синхронизировано ${result.synced || 0} задач`,
                   });
+                  
+                  setSprintModalOpen(false);
                 } catch (error) {
                   console.error('Error syncing sprint:', error);
                   setIsSyncingSprintData(false);
