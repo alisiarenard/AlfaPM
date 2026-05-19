@@ -110,7 +110,7 @@ function RatingCircles({ value }: { value: number | null | undefined }) {
       {Array.from({ length: 5 }, (_, i) => (
         <span
           key={i}
-          style={{ width: 8, height: 15, borderRadius: 1, display: 'inline-block', flexShrink: 0 }}
+          style={{ width: 8, height: 15, borderRadius: 2, display: 'inline-block', flexShrink: 0 }}
           className={i < v ? filled : "bg-muted"}
         />
       ))}
@@ -467,7 +467,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                             return (
                               <tr
                                 key={m.id}
-                                className="hover-elevate cursor-pointer"
+                                className="cursor-pointer transition-colors duration-150 hover:bg-muted/50"
                                 data-testid={`row-member-${m.id}`}
                                 onClick={(e) => {
                                   const target = e.target as HTMLElement;
