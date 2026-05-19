@@ -1031,8 +1031,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baseUrl = process.env.EVALUATIONS_BASE_URL;
       if (baseUrl && members.length > 0) {
         const developerIds = members.map((m) => m.username);
+
+        // Считаем долю velocity каждого разработчика за квартал из sprint_member_velocity
+        const velocityData = await storage.getVelocityShareByPeriod(members, periodStart, periodEnd);
+
         const batchUrl = `${baseUrl.replace(/\/$/, "")}/api/evaluations/batch-status`;
-        const payload = { developerIds, periodStart, periodEnd };
+        const payload = { developerIds, periodStart, periodEnd, velocityData };
         console.log(`[Evaluations] batch-status URL: ${batchUrl}`);
         console.log(`[Evaluations] batch-status request:`, JSON.stringify(payload, null, 2));
         try {
@@ -1201,7 +1205,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ success: false, error: "Пользователь уже добавлен в эту команду" });
       }
       const { fullName, avatarUrl, gitlabUsername } = req.body;
-      const member = await storage.createTeamMember({ teamId, departmentId, role, username, fullName: fullName || null, avatarUrl: avatarUrl || null, gitlabUsername: gitlabUsername || null });
+
+      // Автоматически получаем Kaiten user_id по username для последующего расчёта velocity
+      let kaitenUserId: number | null = null;
+      try {
+        const kaitenUser = await kaitenClient.getUserByUsername(username);
+        if (kaitenUser?.id) kaitenUserId = kaitenUser.id;
+      } catch {
+        // Продолжаем без kaitenUserId — не критично
+      }
+
+      const member = await storage.createTeamMember({
+        teamId, departmentId, role, username,
+        fullName: fullName || null,
+        avatarUrl: avatarUrl || null,
+        gitlabUsername: gitlabUsername || null,
+        kaitenUserId,
+      });
       res.json(member);
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message || "Failed to create member" });

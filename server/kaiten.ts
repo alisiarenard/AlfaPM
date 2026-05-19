@@ -404,12 +404,12 @@ export class KaitenClient {
     }
   }
 
-  async getUserByUsername(username: string): Promise<{ username: string; full_name: string } | null> {
+  async getUserByUsername(username: string): Promise<{ id: number; username: string; full_name: string } | null> {
     try {
       const response = await this.makeRequest<any[]>(`/users?username=${encodeURIComponent(username)}`);
       if (Array.isArray(response) && response.length > 0) {
         const user = response.find((u: any) => u.username === username) || response[0];
-        return { username: user.username, full_name: user.full_name || user.fullName || null };
+        return { id: user.id, username: user.username, full_name: user.full_name || user.fullName || null };
       }
       return null;
     } catch {

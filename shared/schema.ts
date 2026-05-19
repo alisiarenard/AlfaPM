@@ -145,6 +145,7 @@ export const teamMembers = pgTable("team_members", {
   fullName: varchar("full_name"),
   avatarUrl: varchar("avatar_url"),
   gitlabUsername: varchar("gitlab_username"),
+  kaitenUserId: integer("kaiten_user_id"),
 });
 
 export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({ id: true });

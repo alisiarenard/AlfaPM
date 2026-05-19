@@ -100,8 +100,9 @@ export interface IStorage {
   deleteTeamYearlyData(teamId: string): Promise<void>;
   getMembersByTeam(teamId: string): Promise<TeamMemberRow[]>;
   getMembersByDepartment(departmentId: string): Promise<TeamMemberRow[]>;
-  createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null; gitlabUsername?: string | null }): Promise<TeamMemberRow>;
+  createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null; gitlabUsername?: string | null; kaitenUserId?: number | null }): Promise<TeamMemberRow>;
   deleteTeamMember(id: string): Promise<void>;
+  getVelocityShareByPeriod(members: TeamMemberRow[], periodStart: string, periodEnd: string): Promise<Record<string, { developerVelocity: number; totalVelocity: number; velocityShare: number }>>;
   getPersonalMetricsByDepartment(departmentId: string, year: number, quarter: number): Promise<PersonalMetricsRow[]>;
   upsertPersonalMetrics(memberId: string, year: number, quarter: number, data: Partial<Omit<PersonalMetricsRow, "id" | "memberId" | "year" | "quarter">>): Promise<PersonalMetricsRow>;
 }
@@ -1094,13 +1095,65 @@ export class DbStorage implements IStorage {
     return await db.select().from(teamMembers).where(eq(teamMembers.departmentId, departmentId));
   }
 
-  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null; gitlabUsername?: string | null }): Promise<TeamMemberRow> {
+  async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null; gitlabUsername?: string | null; kaitenUserId?: number | null }): Promise<TeamMemberRow> {
     const [created] = await db.insert(teamMembers).values(member).returning();
     return created;
   }
 
   async deleteTeamMember(id: string): Promise<void> {
     await db.delete(teamMembers).where(eq(teamMembers.id, id));
+  }
+
+  async getVelocityShareByPeriod(
+    members: TeamMemberRow[],
+    periodStart: string,
+    periodEnd: string
+  ): Promise<Record<string, { developerVelocity: number; totalVelocity: number; velocityShare: number }>> {
+    const membersWithKaitenId = members.filter(m => m.kaitenUserId != null);
+    if (membersWithKaitenId.length === 0) return {};
+
+    // Находим спринты, чьи startDate попадают в квартал
+    const sprintsInPeriod = await db
+      .select({ sprintId: sprints.sprintId })
+      .from(sprints)
+      .where(
+        and(
+          sql`${sprints.startDate} >= ${periodStart}`,
+          sql`${sprints.startDate} <= ${periodEnd}`
+        )
+      );
+    if (sprintsInPeriod.length === 0) return {};
+
+    const sprintIds = sprintsInPeriod.map(s => s.sprintId);
+
+    // Суммируем velocity за все эти спринты по всем участникам
+    const velocityRows = await db
+      .select({ userId: sprintMemberVelocity.userId, velocity: sprintMemberVelocity.velocity })
+      .from(sprintMemberVelocity)
+      .where(
+        sql`${sprintMemberVelocity.sprintId} = ANY(ARRAY[${sql.join(sprintIds.map(id => sql`${id}`), sql`, `)}]::int[])`
+      );
+
+    // Агрегируем по userId
+    const velocityByUserId = new Map<number, number>();
+    let totalVelocity = 0;
+    for (const row of velocityRows) {
+      const prev = velocityByUserId.get(row.userId) ?? 0;
+      velocityByUserId.set(row.userId, prev + (row.velocity ?? 0));
+      totalVelocity += row.velocity ?? 0;
+    }
+
+    // Строим результат: username → данные
+    const result: Record<string, { developerVelocity: number; totalVelocity: number; velocityShare: number }> = {};
+    for (const member of membersWithKaitenId) {
+      const devVelocity = velocityByUserId.get(member.kaitenUserId!) ?? 0;
+      result[member.username] = {
+        developerVelocity: devVelocity,
+        totalVelocity,
+        velocityShare: totalVelocity > 0 ? devVelocity / totalVelocity : 0,
+      };
+    }
+    return result;
   }
 
   async getPersonalMetricsByDepartment(departmentId: string, year: number, quarter: number): Promise<PersonalMetricsRow[]> {
