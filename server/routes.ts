@@ -1144,9 +1144,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const key = String(t.size);
             rawTasksBySize[key] = (rawTasksBySize[key] ?? 0) + 1;
           }
-          const teamTasksBySize: Record<string, number> = Object.fromEntries(
-            Object.entries(rawTasksBySize).sort((a, b) => Number(b[0]) - Number(a[0]))
-          );
+          const teamTasksBySize = Object.entries(rawTasksBySize)
+            .sort((a, b) => Number(b[0]) - Number(a[0]))
+            .map(([size, count]) => ({ size: Number(size), count }));
           contributionContext = { teamTotalStoryPoints, teamTotalTasks, complexityScale, teamTasksBySize };
         } catch (ctxErr: any) {
           console.log(`[Evaluations] Failed to build contributionContext: ${ctxErr.message}`);
