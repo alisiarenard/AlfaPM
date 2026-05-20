@@ -1118,6 +1118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd, ...restBody } = req.body;
       if (!developerId || !teamId) return res.status(400).json({ success: false, error: "developerId and teamId required" });
+      console.log(`[Evaluations] sync request: developerId=${developerId} teamId=${teamId} totalTeamSize=${totalTeamSize} period=${periodStart}..${periodEnd}`);
       const serviceUrl = process.env.EVALUATIONS_SERVICE_URL;
       if (!serviceUrl) {
         console.log("[Evaluations] EVALUATIONS_SERVICE_URL not set");
@@ -1129,66 +1130,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let contributionContext: { teamTotalStoryPoints: number; teamTotalTasks: number; complexityScale: number[]; teamTasksBySize: Record<string, number> } | undefined;
       if (periodStart && periodEnd) {
         try {
-          let teamTotalStoryPoints = 0;
-          let teamTotalTasks = 0;
-          const complexitySizes = new Set<number>();
-          const teamTasksBySize: Record<string, number> = {};
-
-          // Сначала пробуем из локальной базы
-          const dbTasks = await storage.getTasksByTeamAndDoneDateRange(
+          const teamTasks = await storage.getTasksByTeamAndDoneDateRange(
             teamId,
             new Date(periodStart),
             new Date(periodEnd)
           );
+          console.log(`[Evaluations] contributionContext: team=${teamId} period=${periodStart}..${periodEnd} → DB tasks total=${teamTasks.length}`);
+          const tasksWithSize = teamTasks.filter(t => t.size != null && t.size > 0);
+          console.log(`[Evaluations] tasks with size>0: ${tasksWithSize.length}, sample sizes: [${tasksWithSize.slice(0, 10).map(t => t.size).join(', ')}]`);
 
-          if (dbTasks.length > 0) {
-            for (const t of dbTasks) {
-              teamTotalStoryPoints += t.size ?? 0;
-              teamTotalTasks++;
-              if (t.size != null && t.size > 0) {
-                complexitySizes.add(t.size);
-                const key = String(t.size);
-                teamTasksBySize[key] = (teamTasksBySize[key] ?? 0) + 1;
-              }
-            }
-            console.log(`[Evaluations] contributionContext from DB: ${dbTasks.length} tasks`);
-          } else {
-            // Фолбэк: берём задачи из Kaiten API напрямую
-            const boardIds: number[] = [];
-            if (teamObj?.sprintBoardId) boardIds.push(teamObj.sprintBoardId);
-            if (teamObj?.kaitenBoardId && !boardIds.includes(teamObj.kaitenBoardId)) boardIds.push(teamObj.kaitenBoardId);
-            if (teamObj?.omniBoardId && !boardIds.includes(teamObj.omniBoardId)) boardIds.push(teamObj.omniBoardId);
-
-            console.log(`[Evaluations] contributionContext: DB empty, falling back to Kaiten for boards ${boardIds.join(',')}`);
-
-            const periodEndMs = new Date(periodEnd).getTime() + 2 * 24 * 60 * 60 * 1000;
-
-            for (const boardId of boardIds) {
-              const cards = await kaitenClient.getCardsWithDateFilter({
-                boardId,
-                lastMovedToDoneAtAfter: periodStart,
-                limit: 1000,
-              });
-              for (const c of cards) {
-                if (!c.last_moved_to_done_at) continue;
-                const doneMs = new Date(c.last_moved_to_done_at).getTime();
-                if (doneMs > periodEndMs) continue;
-                const size = c.size;
-                teamTotalTasks++;
-                if (size != null && size > 0) {
-                  teamTotalStoryPoints += size;
-                  complexitySizes.add(size);
-                  const key = String(size);
-                  teamTasksBySize[key] = (teamTasksBySize[key] ?? 0) + 1;
-                }
-              }
-            }
-            console.log(`[Evaluations] contributionContext from Kaiten: ${teamTotalTasks} tasks`);
+          const teamTotalStoryPoints = teamTasks.reduce((sum, t) => sum + (t.size ?? 0), 0);
+          const teamTotalTasks = teamTasks.length;
+          const complexityScale = [...new Set(tasksWithSize.map(t => t.size as number))].sort((a, b) => a - b);
+          const teamTasksBySize: Record<string, number> = {};
+          for (const t of tasksWithSize) {
+            const key = String(t.size);
+            teamTasksBySize[key] = (teamTasksBySize[key] ?? 0) + 1;
           }
-
-          const complexityScale = [...complexitySizes].sort((a, b) => a - b);
           contributionContext = { teamTotalStoryPoints, teamTotalTasks, complexityScale, teamTasksBySize };
-          console.log(`[Evaluations] contributionContext for team ${teamId}:`, JSON.stringify(contributionContext));
+          console.log(`[Evaluations] contributionContext result:`, JSON.stringify(contributionContext));
         } catch (ctxErr: any) {
           console.log(`[Evaluations] Failed to build contributionContext: ${ctxErr.message}`);
         }
