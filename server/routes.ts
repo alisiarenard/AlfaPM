@@ -1118,7 +1118,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd, ...restBody } = req.body;
       if (!developerId || !teamId) return res.status(400).json({ success: false, error: "developerId and teamId required" });
-      console.log(`[Evaluations] sync request: developerId=${developerId} teamId=${teamId} totalTeamSize=${totalTeamSize} period=${periodStart}..${periodEnd}`);
       const serviceUrl = process.env.EVALUATIONS_SERVICE_URL;
       if (!serviceUrl) {
         console.log("[Evaluations] EVALUATIONS_SERVICE_URL not set");
@@ -1135,9 +1134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             new Date(periodStart),
             new Date(periodEnd)
           );
-          console.log(`[Evaluations] contributionContext: team=${teamId} period=${periodStart}..${periodEnd} → DB tasks total=${teamTasks.length}`);
           const tasksWithSize = teamTasks.filter(t => t.size != null && t.size > 0);
-          console.log(`[Evaluations] tasks with size>0: ${tasksWithSize.length}, sample sizes: [${tasksWithSize.slice(0, 10).map(t => t.size).join(', ')}]`);
 
           const teamTotalStoryPoints = teamTasks.reduce((sum, t) => sum + (t.size ?? 0), 0);
           const teamTotalTasks = teamTasks.length;
@@ -1148,7 +1145,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             teamTasksBySize[key] = (teamTasksBySize[key] ?? 0) + 1;
           }
           contributionContext = { teamTotalStoryPoints, teamTotalTasks, complexityScale, teamTasksBySize };
-          console.log(`[Evaluations] contributionContext result:`, JSON.stringify(contributionContext));
         } catch (ctxErr: any) {
           console.log(`[Evaluations] Failed to build contributionContext: ${ctxErr.message}`);
         }
