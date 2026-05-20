@@ -1139,11 +1139,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const teamTotalStoryPoints = teamTasks.reduce((sum, t) => sum + (t.size ?? 0), 0);
           const teamTotalTasks = teamTasks.length;
           const complexityScale = [...new Set(tasksWithSize.map(t => t.size as number))].sort((a, b) => a - b);
-          const teamTasksBySize: Record<string, number> = {};
+          const rawTasksBySize: Record<string, number> = {};
           for (const t of tasksWithSize) {
             const key = String(t.size);
-            teamTasksBySize[key] = (teamTasksBySize[key] ?? 0) + 1;
+            rawTasksBySize[key] = (rawTasksBySize[key] ?? 0) + 1;
           }
+          const teamTasksBySize: Record<string, number> = Object.fromEntries(
+            Object.entries(rawTasksBySize).sort((a, b) => Number(b[0]) - Number(a[0]))
+          );
           contributionContext = { teamTotalStoryPoints, teamTotalTasks, complexityScale, teamTasksBySize };
         } catch (ctxErr: any) {
           console.log(`[Evaluations] Failed to build contributionContext: ${ctxErr.message}`);
