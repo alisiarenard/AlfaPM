@@ -1124,24 +1124,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(503).json({ success: false, error: "Evaluations service URL not configured" });
       }
 
-      let contributionContext: { teamTotalStoryPoints: number; teamTotalTasks: number; complexityScale: number[] } | undefined;
+      const teamObj = await storage.getTeamById(teamId);
+
+      let contributionContext: { teamTotalStoryPoints: number; teamTotalTasks: number; complexityScale: number[]; teamTasksBySize: Record<string, number> } | undefined;
       if (periodStart && periodEnd) {
         try {
-          const teamTasks = await storage.getTasksByTeamAndDoneDateRange(
+          let teamTotalStoryPoints = 0;
+          let teamTotalTasks = 0;
+          const complexitySizes = new Set<number>();
+          const teamTasksBySize: Record<string, number> = {};
+
+          // Сначала пробуем из локальной базы
+          const dbTasks = await storage.getTasksByTeamAndDoneDateRange(
             teamId,
             new Date(periodStart),
             new Date(periodEnd)
           );
-          const teamTotalStoryPoints = teamTasks.reduce((sum, t) => sum + (t.size ?? 0), 0);
-          const teamTotalTasks = teamTasks.length;
-          const complexityScale = [...new Set(teamTasks.map((t) => t.size).filter((s): s is number => s != null && s > 0))].sort((a, b) => a - b);
-          const teamTasksBySize: Record<string, number> = {};
-          for (const t of teamTasks) {
-            if (t.size != null && t.size > 0) {
-              const key = String(t.size);
-              teamTasksBySize[key] = (teamTasksBySize[key] ?? 0) + 1;
+
+          if (dbTasks.length > 0) {
+            for (const t of dbTasks) {
+              teamTotalStoryPoints += t.size ?? 0;
+              teamTotalTasks++;
+              if (t.size != null && t.size > 0) {
+                complexitySizes.add(t.size);
+                const key = String(t.size);
+                teamTasksBySize[key] = (teamTasksBySize[key] ?? 0) + 1;
+              }
             }
+            console.log(`[Evaluations] contributionContext from DB: ${dbTasks.length} tasks`);
+          } else {
+            // Фолбэк: берём задачи из Kaiten API напрямую
+            const boardIds: number[] = [];
+            if (teamObj?.sprintBoardId) boardIds.push(teamObj.sprintBoardId);
+            if (teamObj?.kaitenBoardId && !boardIds.includes(teamObj.kaitenBoardId)) boardIds.push(teamObj.kaitenBoardId);
+            if (teamObj?.omniBoardId && !boardIds.includes(teamObj.omniBoardId)) boardIds.push(teamObj.omniBoardId);
+
+            console.log(`[Evaluations] contributionContext: DB empty, falling back to Kaiten for boards ${boardIds.join(',')}`);
+
+            const periodEndMs = new Date(periodEnd).getTime() + 2 * 24 * 60 * 60 * 1000;
+
+            for (const boardId of boardIds) {
+              const cards = await kaitenClient.getCardsWithDateFilter({
+                boardId,
+                lastMovedToDoneAtAfter: periodStart,
+                limit: 1000,
+              });
+              for (const c of cards) {
+                if (!c.last_moved_to_done_at) continue;
+                const doneMs = new Date(c.last_moved_to_done_at).getTime();
+                if (doneMs > periodEndMs) continue;
+                const size = c.size;
+                teamTotalTasks++;
+                if (size != null && size > 0) {
+                  teamTotalStoryPoints += size;
+                  complexitySizes.add(size);
+                  const key = String(size);
+                  teamTasksBySize[key] = (teamTasksBySize[key] ?? 0) + 1;
+                }
+              }
+            }
+            console.log(`[Evaluations] contributionContext from Kaiten: ${teamTotalTasks} tasks`);
           }
+
+          const complexityScale = [...complexitySizes].sort((a, b) => a - b);
           contributionContext = { teamTotalStoryPoints, teamTotalTasks, complexityScale, teamTasksBySize };
           console.log(`[Evaluations] contributionContext for team ${teamId}:`, JSON.stringify(contributionContext));
         } catch (ctxErr: any) {
@@ -1153,7 +1198,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let velocityData: { developerVelocity: number; totalVelocity: number; velocityShare: number; teamMembersCount: number } | undefined;
       if (periodStart && periodEnd) {
         try {
-          const teamObj = await storage.getTeamById(teamId);
           const allTeamSprints = teamObj?.sprintBoardId
             ? await storage.getSprintsByBoardId(teamObj.sprintBoardId)
             : [];
