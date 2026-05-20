@@ -341,13 +341,13 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
   const evaluationsMap = Object.fromEntries(evaluations.map((e) => [e.developerId, e]));
 
   async function syncMember(m: TeamMemberRow, allMembers: TeamMemberRow[]) {
-    const sameTeamRole = allMembers.filter((x) => x.teamId === m.teamId && x.role === m.role);
+    const teamDevelopers = allMembers.filter((x) => x.teamId === m.teamId && x.role === "Разработчик");
     const gitlabUsernames = m.gitlabUsername ? [m.gitlabUsername] : [];
     const { periodStart, periodEnd } = getPeriod(year, quarter);
     const payload = {
       developerId: m.username,
       teamId: m.teamId,
-      totalTeamSize: sameTeamRole.length,
+      totalTeamSize: teamDevelopers.length,
       gitlabUsernames,
       periodStart,
       periodEnd,
