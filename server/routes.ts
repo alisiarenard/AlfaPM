@@ -1210,16 +1210,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      console.log(`[Evaluations] Response status: ${response.status}`);
       if (!response.ok) {
         const body = await response.text();
-        console.log(`[Evaluations] Error body: ${body}`);
         return res.status(response.status).json({ success: false, error: body });
       }
       const data = await response.json().catch(() => ({}));
       res.json({ success: true, data });
     } catch (error: any) {
-      console.log(`[Evaluations] Exception: ${error.message}`);
       res.status(500).json({ success: false, error: error.message });
     }
   });
