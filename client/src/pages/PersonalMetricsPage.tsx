@@ -40,6 +40,8 @@ interface ContributionSnapshot {
   medium_complexity_rate: number;
   team_total_story_points: number;
   contribution_tasks_share: number;
+  developer_elevated_count?: number;
+  team_elevated_count?: number;
 }
 
 interface ContributionStatus {
@@ -199,11 +201,18 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
   );
 }
 
-const CONTRIBUTION_LABELS: { key: keyof ContributionSnapshot; label: string; format?: (v: any) => string }[] = [
-  { key: "contribution_sp_share",   label: "Доля SP",    format: pct },
-  { key: "contribution_tasks_share",label: "Доля задач", format: pct },
-  { key: "high_complexity_rate",    label: "Высокая сложность", format: pct },
-  { key: "medium_complexity_rate",  label: "Средняя сложность", format: pct },
+const CONTRIBUTION_LABELS: { label: string; compute: (s: ContributionSnapshot) => string }[] = [
+  { label: "Доля SP",    compute: s => pct(s.contribution_sp_share) },
+  { label: "Доля задач", compute: s => pct(s.contribution_tasks_share) },
+  {
+    label: "Задачи повышенной сложности",
+    compute: s => {
+      const dev = s.developer_elevated_count ?? 0;
+      const team = s.team_elevated_count ?? 0;
+      if (team === 0) return "—";
+      return `${dev} / ${team} (${pct(dev / team)})`;
+    },
+  },
 ];
 
 function ContributionCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
@@ -228,16 +237,12 @@ function ContributionCell({ evaluation }: { evaluation: EvaluationStatus | undef
           <div className="inline-flex cursor-default">{circles}</div>
         </TooltipTrigger>
         <TooltipContent side="top" className="p-3 text-xs space-y-1.5 min-w-52">
-          {CONTRIBUTION_LABELS.map(({ key, label, format }) => {
-            const raw = snap[key];
-            const displayed = format ? format(raw as number) : String(raw);
-            return (
-              <div key={key} className="flex justify-between gap-6">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="font-medium tabular-nums">{displayed}</span>
-              </div>
-            );
-          })}
+          {CONTRIBUTION_LABELS.map(({ label, compute }) => (
+            <div key={label} className="flex justify-between gap-6">
+              <span className="text-muted-foreground">{label}</span>
+              <span className="font-medium tabular-nums">{compute(snap)}</span>
+            </div>
+          ))}
         </TooltipContent>
       </Tooltip>
     </td>
