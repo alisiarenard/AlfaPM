@@ -413,17 +413,26 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
                 ) : (
                   <div className="rounded-md border border-border overflow-hidden">
                     <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-between gap-2">
-                      <div className="relative flex items-center">
-                        <Search className="absolute left-0 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                        <input
-                          type="text"
-                          placeholder="Поиск сотрудника..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-5 pr-3 py-1.5 text-sm bg-transparent border-0 border-b border-border outline-none focus:ring-0 w-56"
-                          data-testid="input-search-member"
-                        />
-                      </div>
+                      {selectedTeamId === "all" ? (
+                        <div className="relative flex items-center">
+                          <Search className="absolute left-0 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                          <input
+                            type="text"
+                            placeholder="Поиск сотрудника..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-5 pr-3 py-1.5 text-sm bg-transparent border-0 border-b border-border outline-none focus:ring-0 w-56"
+                            data-testid="input-search-member"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                          data-testid="button-sync-team"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                      )}
                       <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
                         {QUARTER_TABS.map(({ key, label }) => (
                           <button
