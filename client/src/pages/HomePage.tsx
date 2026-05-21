@@ -700,7 +700,7 @@ function TeamInitiativesTab({ team, showActiveOnly, setShowActiveOnly, selectedY
         onViewTabChange={setViewTab}
         year={selectedYear ? parseInt(selectedYear) : undefined}
       />
-      <div className="overflow-auto custom-scrollbar pr-6" style={{ height: '60vh' }}>
+      <div className="overflow-auto custom-scrollbar pr-6" style={{ height: '65vh' }}>
         {viewTab === "initiatives" ? (
           <InitiativesTimeline initiatives={sortedInitiatives} allInitiatives={allInitiatives} team={teamData} sprints={sprints || []} sprintActualIRs={sprintActualIRs} />
         ) : (
