@@ -306,6 +306,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
   const [quarter, setQuarter] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingMemberId, setSyncingMemberId] = useState<string | null>(null);
+  const [isSyncingTeam, setIsSyncingTeam] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -345,6 +346,26 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
   const teamMap = Object.fromEntries((teams ?? []).map((t) => [t.teamId, t.teamName]));
   const metricsMap = Object.fromEntries(metricsRows.map((r) => [r.memberId, r]));
   const evaluationsMap = Object.fromEntries(evaluations.map((e) => [e.developerId, e]));
+
+  async function syncTeam() {
+    if (!selectedTeamId || selectedTeamId === "all") return;
+    setIsSyncingTeam(true);
+    try {
+      const res = await fetch("/api/evaluations/sync-team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId: selectedTeamId, quarter, year, forceRecompute: false }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Ошибка синхронизации");
+      toast({ title: "Синхронизация завершена", description: "Данные команды отправлены в сервис оценки" });
+      queryClient.invalidateQueries({ queryKey: ["/api/personal-metrics", departmentId, year, quarter] });
+    } catch (e: any) {
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
+    } finally {
+      setIsSyncingTeam(false);
+    }
+  }
 
   async function syncMember(m: TeamMemberRow, allMembers: TeamMemberRow[]) {
     const teamDevelopers = allMembers.filter((x) => x.teamId === m.teamId && x.role === "Разработчик");
@@ -427,10 +448,12 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
                         </div>
                       ) : (
                         <button
-                          className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={syncTeam}
+                          disabled={isSyncingTeam}
+                          className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           data-testid="button-sync-team"
                         >
-                          <RefreshCw className="h-4 w-4" />
+                          <RefreshCw className={`h-4 w-4 ${isSyncingTeam ? "animate-spin" : ""}`} />
                         </button>
                       )}
                       <div className="flex gap-0.5 bg-muted rounded-md p-0.5">

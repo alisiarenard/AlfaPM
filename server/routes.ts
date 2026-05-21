@@ -1224,6 +1224,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/evaluations/sync-team", async (req, res) => {
+    try {
+      const { teamId, quarter, year, forceRecompute = false } = req.body;
+      if (!teamId || !quarter || !year) return res.status(400).json({ success: false, error: "teamId, quarter, year required" });
+
+      const serviceUrl = process.env.EVALUATIONS_TEAM_SYNC_URL;
+      if (!serviceUrl) {
+        console.log("[Evaluations] EVALUATIONS_TEAM_SYNC_URL not set");
+        return res.status(503).json({ success: false, error: "EVALUATIONS_TEAM_SYNC_URL not configured" });
+      }
+
+      const team = await storage.getTeamById(teamId);
+      if (!team) return res.status(404).json({ success: false, error: "Team not found" });
+
+      const periodRanges: Record<number, [string, string]> = {
+        1: [`${year}-01-01`, `${year}-03-31`],
+        2: [`${year}-04-01`, `${year}-06-30`],
+        3: [`${year}-07-01`, `${year}-09-30`],
+        4: [`${year}-10-01`, `${year}-12-31`],
+      };
+      const [startDate, finishDate] = periodRanges[quarter] ?? periodRanges[1];
+
+      const allMembers = await storage.getMembersByTeam(teamId);
+      const developers = allMembers
+        .filter(m => m.role === "Разработчик")
+        .map(m => ({
+          id: m.username,
+          gitlabUsernames: m.gitlabUsername ? [m.gitlabUsername] : [],
+        }));
+
+      const teamTasks = await storage.getTasksByTeamAndDoneDateRange(
+        teamId,
+        new Date(startDate),
+        new Date(finishDate)
+      );
+      const tasks = teamTasks.map(t => ({
+        id: t.cardId,
+        size: t.size,
+        doneDate: t.doneDate,
+      }));
+
+      const payload = {
+        teamId,
+        startDate,
+        finishDate,
+        role: "developer",
+        developerColumn: team.devColumnId ?? null,
+        tasks,
+        developers,
+        forceRecompute,
+      };
+
+      console.log(`[Evaluations] POST sync-team → ${serviceUrl}\n${JSON.stringify(payload, null, 2)}`);
+      const response = await fetch(serviceUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const body = await response.text();
+        return res.status(response.status).json({ success: false, error: body });
+      }
+      const data = await response.json().catch(() => ({}));
+      res.json({ success: true, data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   app.get("/api/departments/:departmentId/members", async (req, res) => {
     try {
       const { departmentId } = req.params;
