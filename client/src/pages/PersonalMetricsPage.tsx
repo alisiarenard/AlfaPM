@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +11,7 @@ import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema"
 interface Props {
   selectedDepartment: string;
   selectedYear: string;
+  selectedTeamId: string;
 }
 
 interface MetricsSnapshot {
@@ -299,13 +299,12 @@ function getPeriod(year: number, quarter: number): { periodStart: string; period
   return { periodStart, periodEnd };
 }
 
-export default function PersonalMetricsPage({ selectedDepartment, selectedYear }: Props) {
+export default function PersonalMetricsPage({ selectedDepartment, selectedYear, selectedTeamId }: Props) {
   const departmentId = selectedDepartment;
   const year = Number(selectedYear);
   const [activeTab, setActiveTab] = useState(ROLE_TABS[0].value);
   const [quarter, setQuarter] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTeamId, setSelectedTeamId] = useState<string>("all");
   const [syncingMemberId, setSyncingMemberId] = useState<string | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -414,31 +413,16 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear }
                 ) : (
                   <div className="rounded-md border border-border overflow-hidden">
                     <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="relative flex items-center">
-                          <Search className="absolute left-0 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                          <input
-                            type="text"
-                            placeholder="Поиск сотрудника..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-5 pr-3 py-1.5 text-sm bg-transparent border-0 border-b border-border outline-none focus:ring-0 w-56"
-                            data-testid="input-search-member"
-                          />
-                        </div>
-                        {(teams ?? []).length > 1 && (
-                          <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                            <SelectTrigger className="w-44 h-8 text-xs" data-testid="select-team-filter">
-                              <SelectValue placeholder="Все команды" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">Все команды</SelectItem>
-                              {(teams ?? []).map((t) => (
-                                <SelectItem key={t.teamId} value={t.teamId}>{t.teamName}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
+                      <div className="relative flex items-center">
+                        <Search className="absolute left-0 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder="Поиск сотрудника..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-5 pr-3 py-1.5 text-sm bg-transparent border-0 border-b border-border outline-none focus:ring-0 w-56"
+                          data-testid="input-search-member"
+                        />
                       </div>
                       <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
                         {QUARTER_TABS.map(({ key, label }) => (

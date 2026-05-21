@@ -140,6 +140,7 @@ function AppLayout() {
   const [spaceFilter, setSpaceFilter] = useState<SpaceFilterState | null>(null);
   const [memberInfo, setMemberInfo] = useState<{ fullName: string; role: string; teamName: string; avatarUrl?: string | null } | null>(null);
   const [memberQuarter, setMemberQuarter] = useState<number>(1);
+  const [personalTeamId, setPersonalTeamId] = useState<string>("all");
 
   const isMemberPage = !!matchMember;
   const isProductMetricsPage = location.startsWith("/product-metrics");
@@ -154,6 +155,20 @@ function AppLayout() {
     const deptId = memberParams?.departmentId ?? personalParams?.departmentId;
     if (deptId) setSelectedDepartment(deptId);
   }, [matchPersonal, matchMember, personalParams?.departmentId, memberParams?.departmentId]);
+
+  useEffect(() => {
+    setPersonalTeamId("all");
+  }, [selectedDepartment]);
+
+  const { data: personalTeams } = useQuery<{ teamId: string; teamName: string }[]>({
+    queryKey: ["/api/teams", selectedDepartment],
+    queryFn: async () => {
+      const res = await fetch(`/api/teams/${selectedDepartment}`);
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: isPersonalMetricsPage && !!selectedDepartment,
+  });
 
   useEffect(() => {
     if (!isMemberPage) setMemberInfo(null);
@@ -235,6 +250,19 @@ function AppLayout() {
                       onToggleSpace={spaceFilter.onToggleSpace}
                       onSelectAll={spaceFilter.onSelectAll}
                     />
+                  )}
+                  {isPersonalMetricsPage && !isMemberPage && (personalTeams ?? []).length > 1 && (
+                    <Select value={personalTeamId} onValueChange={setPersonalTeamId} data-testid="select-personal-team">
+                      <SelectTrigger className="w-[200px] bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white">
+                        <SelectItem value="all">Все команды</SelectItem>
+                        {(personalTeams ?? []).map((t) => (
+                          <SelectItem key={t.teamId} value={t.teamId}>{t.teamName}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                   <Select
                     value={selectedDepartment}
@@ -324,6 +352,7 @@ function AppLayout() {
             <PersonalMetricsPage
               selectedDepartment={selectedDepartment}
               selectedYear={selectedYear}
+              selectedTeamId={personalTeamId}
             />
           </Route>
           <Route component={NotFound} />
