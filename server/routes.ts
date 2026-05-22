@@ -1005,11 +1005,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const y = Number(year);
 
       const teamIdStr = teamId && teamId !== "all" ? String(teamId) : null;
-      console.log(`[personal-metrics] teamId param="${teamId}", resolved="${teamIdStr}"`);
       const members = teamIdStr
         ? await storage.getMembersByTeam(teamIdStr)
         : await storage.getMembersByDepartment(String(departmentId));
-      console.log(`[personal-metrics] members returned=${members.length}`);
 
       const rows = await storage.getPersonalMetricsByDepartment(String(departmentId), y, q);
 
@@ -1031,18 +1029,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const batchUrl = `${baseUrl.replace(/\/$/, "")}/api/evaluations/batch-status`;
         const payload = { developerIds, periodStart, periodEnd, velocityData };
-        console.log(`[Evaluations] batch-status URL: ${batchUrl}`);
-        console.log(`[Evaluations] batch-status request:`, JSON.stringify(payload, null, 2));
         try {
           const evalRes = await fetch(batchUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
-          console.log(`[Evaluations] batch-status response status: ${evalRes.status}`);
           if (evalRes.ok) {
             const raw: any[] = await evalRes.json();
-            console.log(`[Evaluations] batch-status response:`, JSON.stringify(raw, null, 2));
             evaluations = raw.map((item: any) => {
               const cq = item.criteria?.code_quality;
               const contrib = item.criteria?.contribution;
@@ -1056,15 +1050,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 contribution: contrib ?? null,
               };
             });
-          } else {
-            const errBody = await evalRes.text();
-            console.log(`[Evaluations] batch-status error body: ${errBody}`);
           }
         } catch (e: any) {
-          console.log(`[Evaluations] batch-status exception: ${e.message}`);
+          console.error(`[Evaluations] batch-status error: ${e.message}`);
         }
-      } else {
-        console.log(`[Evaluations] batch-status skipped: EVALUATIONS_BASE_URL=${baseUrl ?? "not set"}, members=${members.length}`);
       }
 
       res.json({ metrics: rows, evaluations, members });
