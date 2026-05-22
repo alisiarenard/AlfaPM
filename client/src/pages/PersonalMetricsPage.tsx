@@ -29,18 +29,21 @@ interface MetricsSnapshot {
 }
 
 interface ContributionSnapshot {
-  tech_debt_rate: number;
-  total_team_size: number;
-  team_total_tasks: number;
-  tasks_without_size: number;
-  low_complexity_rate: number;
-  high_complexity_rate: number;
-  contribution_sp_share: number;
-  developer_tasks_count: number;
-  developer_story_points: number;
-  medium_complexity_rate: number;
-  team_total_story_points: number;
-  contribution_tasks_share: number;
+  sp_share?: number;
+  elevated_rate?: number;
+  rework_rate?: number;
+  tech_debt_rate?: number;
+  total_team_size?: number;
+  team_total_tasks?: number;
+  tasks_without_size?: number;
+  low_complexity_rate?: number;
+  high_complexity_rate?: number;
+  contribution_sp_share?: number;
+  developer_tasks_count?: number;
+  developer_story_points?: number;
+  medium_complexity_rate?: number;
+  team_total_story_points?: number;
+  contribution_tasks_share?: number;
   developer_elevated_count?: number;
   team_elevated_count?: number;
 }
@@ -203,16 +206,17 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
 }
 
 const CONTRIBUTION_LABELS: { label: string; compute: (s: ContributionSnapshot) => string }[] = [
-  { label: "Доля SP",    compute: s => pct(s.contribution_sp_share) },
-  { label: "Доля задач", compute: s => pct(s.contribution_tasks_share) },
+  {
+    label: "Доля SP",
+    compute: s => s.sp_share != null ? pct(s.sp_share) : "—",
+  },
   {
     label: "Задачи повышенной сложности",
-    compute: s => {
-      const dev = s.developer_elevated_count ?? 0;
-      const team = s.team_elevated_count ?? 0;
-      if (team === 0) return "—";
-      return `${dev} / ${team} (${pct(dev / team)})`;
-    },
+    compute: s => s.elevated_rate != null ? pct(s.elevated_rate) : "—",
+  },
+  {
+    label: "Rework",
+    compute: s => s.rework_rate != null ? pct(s.rework_rate) : "—",
   },
 ];
 
