@@ -283,10 +283,7 @@ function AverageCell({ metrics, evaluation }: { metrics: PersonalMetricsRow | un
     );
   }
 
-  const color =
-    avg <= 2 ? "text-destructive" :
-    avg <= 4 ? "text-destructive/70" :
-    "text-destructive";
+  const color = avg <= 2 ? "text-destructive" : "text-foreground/60";
 
   return (
     <td className={`border-b border-border px-3 py-2.5 text-center font-bold text-sm ${color}`} style={{ minWidth: 80 }}>
@@ -431,9 +428,17 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
               (m) => m.role === tab.value && (selectedTeamId === "all" || m.teamId === selectedTeamId)
             );
             const q = searchQuery.trim().toLowerCase();
-            const filtered = q
+            const filtered = (q
               ? byRole.filter((m) => (m.fullName || m.username).toLowerCase().includes(q))
-              : byRole;
+              : byRole
+            ).slice().sort((a, b) => {
+              const avgA = calcAverage(metricsMap[a.id], evaluationsMap[a.username]);
+              const avgB = calcAverage(metricsMap[b.id], evaluationsMap[b.username]);
+              if (avgA === null && avgB === null) return 0;
+              if (avgA === null) return 1;
+              if (avgB === null) return -1;
+              return avgB - avgA;
+            });
             return (
               <TabsContent key={tab.value} value={tab.value} className="mt-0">
                 {byRole.length === 0 ? (
