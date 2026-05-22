@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, RefreshCw, Loader2 } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
@@ -272,21 +272,13 @@ function calcAverage(metrics: PersonalMetricsRow | undefined, evaluation: Evalua
   return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
 }
 
-function AverageCell({ metrics, evaluation, queryKey, onSync, syncing }: { metrics: PersonalMetricsRow | undefined; evaluation: EvaluationStatus | undefined; queryKey: unknown[]; onSync: () => void; syncing: boolean }) {
+function AverageCell({ metrics, evaluation }: { metrics: PersonalMetricsRow | undefined; evaluation: EvaluationStatus | undefined }) {
   const avg = calcAverage(metrics, evaluation);
 
   if (avg === null) {
     return (
-      <td className="border-b border-border px-2 py-2.5 text-center" style={{ minWidth: 80 }}>
-        <button
-          onClick={onSync}
-          disabled={syncing}
-          className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-          title="Получить данные"
-          data-testid="button-refetch-metrics"
-        >
-          {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-        </button>
+      <td className="border-b border-border px-3 py-2.5 text-center text-muted-foreground text-sm" style={{ minWidth: 80 }}>
+        —
       </td>
     );
   }
@@ -562,9 +554,6 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
                                 <AverageCell
                                   metrics={metrics}
                                   evaluation={evaluation}
-                                  queryKey={["/api/personal-metrics", departmentId, year, quarter]}
-                                  onSync={() => syncMember(m, members ?? [])}
-                                  syncing={syncingMemberId === m.id}
                                 />
                               </tr>
                             );
