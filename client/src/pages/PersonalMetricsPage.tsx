@@ -110,7 +110,14 @@ const METRIC_COLS: { key: MetricKey; label: string }[] = [
 
 function RatingCircles({ value }: { value: number | null | undefined }) {
   const v = value ?? 0;
-  const filled = v > 2 ? "bg-destructive" : "bg-muted-foreground/50";
+  const filledClass: Record<number, string> = {
+    1: "bg-destructive/20",
+    2: "bg-destructive/40",
+    3: "bg-destructive/60",
+    4: "bg-destructive/80",
+    5: "bg-destructive",
+  };
+  const filled = filledClass[v] ?? "bg-muted-foreground/30";
   return (
     <div className="flex items-center justify-center" style={{ gap: 2 }}>
       {Array.from({ length: 5 }, (_, i) => (
