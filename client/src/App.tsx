@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Users, LayoutDashboard, Settings, ChevronDown, ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import HomePage from "@/pages/HomePage";
 import ProductMetricsPage from "@/pages/ProductMetricsPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -140,12 +140,23 @@ function AppLayout() {
   const [spaceFilter, setSpaceFilter] = useState<SpaceFilterState | null>(null);
   const [memberInfo, setMemberInfo] = useState<{ fullName: string; role: string; teamName: string; avatarUrl?: string | null } | null>(null);
   const [memberQuarter, setMemberQuarter] = useState<number>(1);
-  const [personalTeamId, setPersonalTeamId] = useState<string>("all");
-
   const isMemberPage = !!matchMember;
   const isProductMetricsPage = location.startsWith("/product-metrics");
   const isSettingsPage = location.startsWith("/settings");
   const isPersonalMetricsPage = location.startsWith("/personal-metrics");
+
+  // personalTeamId is URL-driven (?team=xxx)
+  const personalTeamId = useMemo(
+    () => new URLSearchParams(window.location.search).get("team") ?? "all",
+    [location]
+  );
+
+  function setPersonalTeamId(teamId: string) {
+    const p = new URLSearchParams(window.location.search);
+    if (teamId === "all") p.delete("team"); else p.set("team", teamId);
+    const qs = p.toString();
+    setLocation(window.location.pathname + (qs ? `?${qs}` : ""));
+  }
 
   const { data: departments } = useQuery<DepartmentWithTeamCount[]>({
     queryKey: ["/api/departments"],
@@ -156,8 +167,14 @@ function AppLayout() {
     if (deptId) setSelectedDepartment(deptId);
   }, [matchPersonal, matchMember, personalParams?.departmentId, memberParams?.departmentId]);
 
+  // Reset team in URL when department changes
   useEffect(() => {
-    setPersonalTeamId("all");
+    const p = new URLSearchParams(window.location.search);
+    if (p.has("team")) {
+      p.delete("team");
+      const qs = p.toString();
+      setLocation(window.location.pathname + (qs ? `?${qs}` : ""));
+    }
   }, [selectedDepartment]);
 
   const { data: personalTeams } = useQuery<{ teamId: string; teamName: string }[]>({
@@ -352,7 +369,6 @@ function AppLayout() {
             <PersonalMetricsPage
               selectedDepartment={selectedDepartment}
               selectedYear={selectedYear}
-              selectedTeamId={personalTeamId}
             />
           </Route>
           <Route component={NotFound} />

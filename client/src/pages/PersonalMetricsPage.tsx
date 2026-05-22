@@ -11,7 +11,6 @@ import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema"
 interface Props {
   selectedDepartment: string;
   selectedYear: string;
-  selectedTeamId: string;
 }
 
 interface MetricsSnapshot {
@@ -70,6 +69,7 @@ interface EvaluationStatus {
 interface PersonalMetricsResponse {
   metrics: PersonalMetricsRow[];
   evaluations: EvaluationStatus[];
+  members: TeamMemberRow[];
 }
 
 const ROLE_TABS = [
@@ -302,26 +302,27 @@ function getPeriod(year: number, quarter: number): { periodStart: string; period
   return { periodStart, periodEnd };
 }
 
-export default function PersonalMetricsPage({ selectedDepartment, selectedYear, selectedTeamId }: Props) {
+export default function PersonalMetricsPage({ selectedDepartment, selectedYear }: Props) {
   const departmentId = selectedDepartment;
   const year = Number(selectedYear);
   const [activeTab, setActiveTab] = useState(ROLE_TABS[0].value);
-  const [quarter, setQuarter] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingMemberId, setSyncingMemberId] = useState<string | null>(null);
   const [isSyncingTeam, setIsSyncingTeam] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const { data: members, isLoading } = useQuery<TeamMemberRow[]>({
-    queryKey: ["/api/departments", departmentId, "members"],
-    queryFn: async () => {
-      const res = await fetch(`/api/departments/${departmentId}/members`);
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
-    enabled: !!departmentId,
-  });
+  // URL-driven team and quarter (location from wouter triggers re-renders on navigation)
+  const urlParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const teamId = urlParams.get("team") ?? "all";
+  const quarter = Number(urlParams.get("quarter") ?? "1");
+
+  function setQuarter(q: number) {
+    const p = new URLSearchParams(window.location.search);
+    if (q === 1) p.delete("quarter"); else p.set("quarter", String(q));
+    const qs = p.toString();
+    setLocation(window.location.pathname + (qs ? `?${qs}` : ""));
+  }
 
   const { data: teams } = useQuery<TeamRow[]>({
     queryKey: ["/api/teams", departmentId],
@@ -333,16 +334,19 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
     enabled: !!departmentId,
   });
 
-  const { data: metricsData } = useQuery<PersonalMetricsResponse>({
-    queryKey: ["/api/personal-metrics", departmentId, year, quarter],
+  const { data: metricsData, isLoading } = useQuery<PersonalMetricsResponse>({
+    queryKey: ["/api/personal-metrics", departmentId, year, quarter, teamId],
     queryFn: async () => {
-      const res = await fetch(`/api/personal-metrics?departmentId=${departmentId}&year=${year}&quarter=${quarter}`);
+      const p = new URLSearchParams({ departmentId, year: String(year), quarter: String(quarter) });
+      if (teamId !== "all") p.set("teamId", teamId);
+      const res = await fetch(`/api/personal-metrics?${p.toString()}`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
     enabled: !!departmentId,
   });
 
+  const members = metricsData?.members ?? [];
   const metricsRows = metricsData?.metrics ?? [];
   const evaluations = metricsData?.evaluations ?? [];
 
@@ -351,18 +355,18 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
   const evaluationsMap = Object.fromEntries(evaluations.map((e) => [e.developerId, e]));
 
   async function syncTeam() {
-    if (!selectedTeamId || selectedTeamId === "all") return;
+    if (!teamId || teamId === "all") return;
     setIsSyncingTeam(true);
     try {
       const res = await fetch("/api/evaluations/sync-team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId: selectedTeamId, quarter, year, forceRecompute: true }),
+        body: JSON.stringify({ teamId, quarter, year, forceRecompute: true }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Ошибка синхронизации");
       toast({ title: "Синхронизация завершена", description: "Данные команды отправлены в сервис оценки" });
-      queryClient.invalidateQueries({ queryKey: ["/api/personal-metrics", departmentId, year, quarter] });
+      queryClient.invalidateQueries({ queryKey: ["/api/personal-metrics", departmentId, year, quarter, teamId] });
     } catch (e: any) {
       toast({ title: "Ошибка", description: e.message, variant: "destructive" });
     } finally {
@@ -370,8 +374,8 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
     }
   }
 
-  async function syncMember(m: TeamMemberRow, allMembers: TeamMemberRow[]) {
-    const teamDevelopers = allMembers.filter((x) => x.teamId === m.teamId && x.role === "Разработчик");
+  async function syncMember(m: TeamMemberRow) {
+    const teamDevelopers = members.filter((x) => x.teamId === m.teamId && x.role === "Разработчик");
     const gitlabUsernames = m.gitlabUsername ? [m.gitlabUsername] : [];
     const { periodStart, periodEnd } = getPeriod(year, quarter);
     const payload = {
@@ -423,9 +427,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
           </TabsList>
 
           {ROLE_TABS.map((tab) => {
-            const byRole = (members ?? []).filter(
-              (m) => m.role === tab.value && (selectedTeamId === "all" || m.teamId === selectedTeamId)
-            );
+            const byRole = members.filter((m) => m.role === tab.value);
             const q = searchQuery.trim().toLowerCase();
             const filtered = (q
               ? byRole.filter((m) => (m.fullName || m.username).toLowerCase().includes(q))
@@ -445,7 +447,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
                 ) : (
                   <div className="rounded-md border border-border overflow-hidden flex flex-col max-h-[85vh]">
                     <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-between gap-2 shrink-0">
-                      {selectedTeamId === "all" ? (
+                      {teamId === "all" ? (
                         <div className="relative flex items-center">
                           <Search className="absolute left-0 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                           <input

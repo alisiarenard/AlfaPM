@@ -999,15 +999,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/personal-metrics", async (req, res) => {
     try {
-      const { departmentId, year, quarter } = req.query;
+      const { departmentId, year, quarter, teamId } = req.query;
       if (!departmentId || !year) return res.status(400).json({ success: false, error: "departmentId and year required" });
       const q = Number(quarter ?? 1);
       const y = Number(year);
 
-      const [rows, members] = await Promise.all([
-        storage.getPersonalMetricsByDepartment(String(departmentId), y, q),
-        storage.getMembersByDepartment(String(departmentId)),
-      ]);
+      const allMembers = await storage.getMembersByDepartment(String(departmentId));
+      const members = teamId && teamId !== "all"
+        ? allMembers.filter((m) => m.teamId === String(teamId))
+        : allMembers;
+
+      const rows = await storage.getPersonalMetricsByDepartment(String(departmentId), y, q);
 
       const periodRanges: Record<number, [string, string]> = {
         1: [`${y}-01-01`, `${y}-03-31`],
@@ -1063,7 +1065,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[Evaluations] batch-status skipped: EVALUATIONS_BASE_URL=${baseUrl ?? "not set"}, members=${members.length}`);
       }
 
-      res.json({ metrics: rows, evaluations });
+      res.json({ metrics: rows, evaluations, members });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
