@@ -154,7 +154,14 @@ const VERDICT_COLOR: Record<string, string> = {
 
 function RatingCircles({ value }: { value: number | null | undefined; size?: "sm" | "md" | "lg" }) {
   const v = value ?? 0;
-  const filled = v > 2 ? "bg-destructive" : "bg-muted-foreground/50";
+  const filledClass: Record<number, string> = {
+    1: "bg-destructive/20",
+    2: "bg-destructive/40",
+    3: "bg-destructive/60",
+    4: "bg-destructive/80",
+    5: "bg-destructive",
+  };
+  const filled = filledClass[v] ?? "bg-muted-foreground/30";
   return (
     <div className="flex items-center" style={{ gap: 2 }}>
       {Array.from({ length: 5 }, (_, i) => (
@@ -318,8 +325,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
               <p className="text-sm text-muted-foreground">@{member.gitlabUsername}</p>
             )}
             <div className="ml-auto flex items-baseline gap-2">
-              <span className={`text-2xl font-bold ${scoreColor(avg)}`}>{avg}</span>
-              <span className={`text-sm font-medium ${scoreColor(avg)}`}>{scoreLabel(avg)}</span>
+              <span className="text-2xl font-bold text-foreground">{avg}</span>
               <span className="text-xs text-muted-foreground">средний балл</span>
             </div>
           </div>
@@ -343,13 +349,10 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                 <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-tight">{col.label}</p>
                 <div className="flex items-center justify-between gap-1">
                   <RatingCircles value={displayValue} size="md" />
-                  <span className={`text-xl font-bold ${scoreColor(displayValue)}`}>
+                  <span className="text-xl font-bold text-foreground">
                     {displayValue ?? "—"}
                   </span>
                 </div>
-                {displayValue !== null && (
-                  <p className={`text-[10px] font-medium ${scoreColor(displayValue)}`}>{scoreLabel(displayValue)}</p>
-                )}
               </div>
             );
 
