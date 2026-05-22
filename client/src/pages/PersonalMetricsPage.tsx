@@ -290,7 +290,7 @@ function AverageCell({ metrics, queryKey, onSync, syncing }: { metrics: Personal
 
   return (
     <td className={`border-b border-border px-3 py-2.5 text-center font-semibold text-sm ${color}`} style={{ minWidth: 80 }}>
-      {avg}
+      {avg.toFixed(1)}
     </td>
   );
 }
