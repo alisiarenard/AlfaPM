@@ -1004,12 +1004,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const q = Number(quarter ?? 1);
       const y = Number(year);
 
-      const allMembers = await storage.getMembersByDepartment(String(departmentId));
-      console.log(`[personal-metrics] teamId param="${teamId}", allMembers=${allMembers.length}, teamIds=${JSON.stringify([...new Set(allMembers.map(m => m.teamId))])}`);
-      const members = teamId && teamId !== "all"
-        ? allMembers.filter((m) => m.teamId === String(teamId))
-        : allMembers;
-      console.log(`[personal-metrics] filtered members=${members.length}`);
+      const teamIdStr = teamId && teamId !== "all" ? String(teamId) : null;
+      console.log(`[personal-metrics] teamId param="${teamId}", resolved="${teamIdStr}"`);
+      const members = teamIdStr
+        ? await storage.getMembersByTeam(teamIdStr)
+        : await storage.getMembersByDepartment(String(departmentId));
+      console.log(`[personal-metrics] members returned=${members.length}`);
 
       const rows = await storage.getPersonalMetricsByDepartment(String(departmentId), y, q);
 

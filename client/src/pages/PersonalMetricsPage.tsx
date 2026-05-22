@@ -340,9 +340,13 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
     queryFn: async () => {
       const p = new URLSearchParams({ departmentId, year: String(year), quarter: String(quarter) });
       if (teamId !== "all") p.set("teamId", teamId);
-      const res = await fetch(`/api/personal-metrics?${p.toString()}`);
+      const url = `/api/personal-metrics?${p.toString()}`;
+      console.log(`[PersonalMetricsPage] fetch teamId="${teamId}" url=${url}`);
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed");
-      return res.json();
+      const data = await res.json();
+      console.log(`[PersonalMetricsPage] response members=${data.members?.length}`);
+      return data;
     },
     enabled: !!departmentId,
   });
