@@ -214,10 +214,6 @@ const CONTRIBUTION_LABELS: { label: string; compute: (s: ContributionSnapshot) =
     label: "Задачи повышенной сложности",
     compute: s => s.elevated_rate != null ? pct(s.elevated_rate) : "—",
   },
-  {
-    label: "Rework",
-    compute: s => s.rework_rate != null ? pct(s.rework_rate) : "—",
-  },
 ];
 
 function ContributionCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
