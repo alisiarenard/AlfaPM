@@ -1005,9 +1005,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const y = Number(year);
 
       const allMembers = await storage.getMembersByDepartment(String(departmentId));
+      console.log(`[personal-metrics] teamId param="${teamId}", allMembers=${allMembers.length}, teamIds=${JSON.stringify([...new Set(allMembers.map(m => m.teamId))])}`);
       const members = teamId && teamId !== "all"
         ? allMembers.filter((m) => m.teamId === String(teamId))
         : allMembers;
+      console.log(`[personal-metrics] filtered members=${members.length}`);
 
       const rows = await storage.getPersonalMetricsByDepartment(String(departmentId), y, q);
 
