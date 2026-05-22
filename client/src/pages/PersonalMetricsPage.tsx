@@ -76,7 +76,6 @@ const ROLE_TABS = [
   { value: "Разработчик", label: "Разработчики" },
   { value: "Тестировщик", label: "Тестировщики" },
   { value: "Аналитик",   label: "Аналитики" },
-  { value: "Дизайнер",   label: "Дизайнеры" },
 ];
 
 const QUARTER_TABS = [
