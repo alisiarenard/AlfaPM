@@ -11,6 +11,7 @@ import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema"
 interface Props {
   selectedDepartment: string;
   selectedYear: string;
+  selectedTeamId: string;
 }
 
 interface MetricsSnapshot {
@@ -302,22 +303,22 @@ function getPeriod(year: number, quarter: number): { periodStart: string; period
   return { periodStart, periodEnd };
 }
 
-export default function PersonalMetricsPage({ selectedDepartment, selectedYear }: Props) {
+export default function PersonalMetricsPage({ selectedDepartment, selectedYear, selectedTeamId }: Props) {
   const departmentId = selectedDepartment;
   const year = Number(selectedYear);
+  const teamId = selectedTeamId;
   const [activeTab, setActiveTab] = useState(ROLE_TABS[0].value);
+  const [quarter, setQuarterState] = useState<number>(
+    () => Number(new URLSearchParams(window.location.search).get("quarter") ?? "1")
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingMemberId, setSyncingMemberId] = useState<string | null>(null);
   const [isSyncingTeam, setIsSyncingTeam] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // URL-driven team and quarter (location from wouter triggers re-renders on navigation)
-  const urlParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-  const teamId = urlParams.get("team") ?? "all";
-  const quarter = Number(urlParams.get("quarter") ?? "1");
-
   function setQuarter(q: number) {
+    setQuarterState(q);
     const p = new URLSearchParams(window.location.search);
     if (q === 1) p.delete("quarter"); else p.set("quarter", String(q));
     const qs = p.toString();

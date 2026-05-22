@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Users, LayoutDashboard, Settings, ChevronDown, ArrowLeft } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import HomePage from "@/pages/HomePage";
 import ProductMetricsPage from "@/pages/ProductMetricsPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -145,13 +145,12 @@ function AppLayout() {
   const isSettingsPage = location.startsWith("/settings");
   const isPersonalMetricsPage = location.startsWith("/personal-metrics");
 
-  // personalTeamId is URL-driven (?team=xxx)
-  const personalTeamId = useMemo(
-    () => new URLSearchParams(window.location.search).get("team") ?? "all",
-    [location]
+  const [personalTeamId, setPersonalTeamIdState] = useState<string>(
+    () => new URLSearchParams(window.location.search).get("team") ?? "all"
   );
 
   function setPersonalTeamId(teamId: string) {
+    setPersonalTeamIdState(teamId);
     const p = new URLSearchParams(window.location.search);
     if (teamId === "all") p.delete("team"); else p.set("team", teamId);
     const qs = p.toString();
@@ -167,8 +166,8 @@ function AppLayout() {
     if (deptId) setSelectedDepartment(deptId);
   }, [matchPersonal, matchMember, personalParams?.departmentId, memberParams?.departmentId]);
 
-  // Reset team in URL when department changes
   useEffect(() => {
+    setPersonalTeamIdState("all");
     const p = new URLSearchParams(window.location.search);
     if (p.has("team")) {
       p.delete("team");
@@ -369,6 +368,7 @@ function AppLayout() {
             <PersonalMetricsPage
               selectedDepartment={selectedDepartment}
               selectedYear={selectedYear}
+              selectedTeamId={personalTeamId}
             />
           </Route>
           <Route component={NotFound} />
