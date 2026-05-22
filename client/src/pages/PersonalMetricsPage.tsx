@@ -354,7 +354,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
       const res = await fetch("/api/evaluations/sync-team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId: selectedTeamId, quarter, year, forceRecompute: false }),
+        body: JSON.stringify({ teamId: selectedTeamId, quarter, year, forceRecompute: true }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Ошибка синхронизации");
