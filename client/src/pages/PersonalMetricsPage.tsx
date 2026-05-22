@@ -259,13 +259,13 @@ function ContributionCell({ evaluation }: { evaluation: EvaluationStatus | undef
 
 function calcAverage(metrics: PersonalMetricsRow | undefined, evaluation: EvaluationStatus | undefined): number | null {
   const vals: number[] = [];
-  if (evaluation?.status === "completed" && evaluation.score != null) vals.push(evaluation.score);
-  if (evaluation?.contribution?.status === "completed" && evaluation.contribution.score != null) vals.push(evaluation.contribution.score);
+  if (evaluation?.status === "completed" && evaluation.score != null && evaluation.score > 0) vals.push(evaluation.score);
+  if (evaluation?.contribution?.status === "completed" && evaluation.contribution.score != null && evaluation.contribution.score > 0) vals.push(evaluation.contribution.score);
   if (metrics) {
     const metricKeys: (keyof PersonalMetricsRow)[] = ["productivity", "estimationAccuracy", "aiUsage", "communication", "discipline"];
     for (const k of metricKeys) {
       const v = metrics[k];
-      if (typeof v === "number") vals.push(v);
+      if (typeof v === "number" && v > 0) vals.push(v);
     }
   }
   if (vals.length === 0) return null;
