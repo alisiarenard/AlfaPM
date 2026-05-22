@@ -284,12 +284,12 @@ function AverageCell({ metrics, evaluation }: { metrics: PersonalMetricsRow | un
   }
 
   const color =
-    avg <= 2 ? "text-muted-foreground" :
+    avg <= 2 ? "text-destructive" :
     avg <= 4 ? "text-destructive/70" :
     "text-destructive";
 
   return (
-    <td className={`border-b border-border px-3 py-2.5 text-center font-semibold text-sm ${color}`} style={{ minWidth: 80 }}>
+    <td className={`border-b border-border px-3 py-2.5 text-center font-bold text-sm ${color}`} style={{ minWidth: 80 }}>
       {avg.toFixed(1)}
     </td>
   );
@@ -439,7 +439,7 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
                 {byRole.length === 0 ? (
                   <p className="text-sm text-muted-foreground mt-4">Нет участников с ролью «{tab.label}»</p>
                 ) : (
-                  <div className="rounded-md border border-border overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="rounded-md border border-border overflow-hidden flex flex-col max-h-[85vh]">
                     <div className="px-4 py-2 border-b border-border bg-card flex items-center justify-between gap-2 shrink-0">
                       {selectedTeamId === "all" ? (
                         <div className="relative flex items-center">
