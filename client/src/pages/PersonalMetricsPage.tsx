@@ -102,7 +102,7 @@ const METRIC_COLS: { key: MetricKey; label: string }[] = [
   { key: "taskComplexity",     label: "Вклад" },
   { key: "productivity",       label: "Производительность" },
   { key: "estimationAccuracy", label: "Точность оценки" },
-  { key: "aiUsage",            label: "AI-usage" },
+  { key: "aiUsage",            label: "AI-влияние" },
   { key: "communication",      label: "Коммуникации" },
   { key: "discipline",         label: "Дисциплина" },
 ];
