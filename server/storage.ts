@@ -567,6 +567,7 @@ export class DbStorage implements IStorage {
       }
 
       await tx.delete(teamYearlyData).where(eq(teamYearlyData.teamId, teamId));
+      await tx.delete(teamMembers).where(eq(teamMembers.teamId, teamId));
 
       await tx.delete(teams).where(eq(teams.teamId, teamId));
     });
@@ -1095,7 +1096,12 @@ export class DbStorage implements IStorage {
   }
 
   async getMembersByDepartment(departmentId: string): Promise<TeamMemberRow[]> {
-    return await db.select().from(teamMembers).where(eq(teamMembers.departmentId, departmentId));
+    const rows = await db
+      .select({ member: teamMembers })
+      .from(teamMembers)
+      .innerJoin(teams, eq(teamMembers.teamId, teams.teamId))
+      .where(eq(teamMembers.departmentId, departmentId));
+    return rows.map((r) => r.member);
   }
 
   async createTeamMember(member: { teamId: string; departmentId: string; role: string; username: string; fullName?: string | null; avatarUrl?: string | null; gitlabUsername?: string | null; kaitenUserId?: number | null }): Promise<TeamMemberRow> {
