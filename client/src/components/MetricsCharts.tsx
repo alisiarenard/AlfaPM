@@ -32,18 +32,31 @@ const CHART_COLOR = "#cd253d";
 const PLANNED_COLOR = "#888888";
 const AVG_LINE_COLOR = "#888888";
 
-const MEMBER_COLORS = [
-  "#cd253d",
-  "#e05a6e",
-  "#a01d30",
-  "#e8899a",
-  "#7a1525",
-  "#f0b8c2",
-  "#551020",
-  "#c26070",
-  "#3a0a16",
-  "#d94058",
-];
+const ROLE_RED_SHADES = ["#cd253d", "#d94058", "#e05a6e", "#e8899a", "#f0b8c2", "#f8d5db"];
+const ANALYST_COLOR = "#888888";
+const OTHER_COLOR = "#c8c8c8";
+
+function getMemberLineProps(
+  name: string,
+  memberRoles: Record<string, string>,
+  roleCounters: Record<string, number>
+): { color: string; strokeDasharray?: string } {
+  const role = memberRoles[name];
+  if (role === "Разработчик") {
+    const idx = roleCounters["dev"] ?? 0;
+    roleCounters["dev"] = idx + 1;
+    return { color: ROLE_RED_SHADES[idx % ROLE_RED_SHADES.length] };
+  }
+  if (role === "Тестировщик") {
+    const idx = roleCounters["test"] ?? 0;
+    roleCounters["test"] = idx + 1;
+    return { color: ROLE_RED_SHADES[idx % ROLE_RED_SHADES.length], strokeDasharray: "5 3" };
+  }
+  if (role === "Аналитик") {
+    return { color: ANALYST_COLOR };
+  }
+  return { color: OTHER_COLOR };
+}
 
 interface MemberVelocitySprintData {
   sprintId: number;
@@ -493,19 +506,26 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                   iconType="plainline"
                   wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
                 />
-                {memberNames.map((name, i) => (
-                  <Line
-                    key={name}
-                    type="monotone"
-                    dataKey={name}
-                    name={memberRoles[name] ? `${name} (${memberRoles[name]})` : name}
-                    stroke={MEMBER_COLORS[i % MEMBER_COLORS.length]}
-                    strokeWidth={2}
-                    dot={{ r: 2, fill: MEMBER_COLORS[i % MEMBER_COLORS.length], strokeWidth: 0 }}
-                    activeDot={{ r: 4 }}
-                    connectNulls={false}
-                  />
-                ))}
+                {(() => {
+                  const roleCounters: Record<string, number> = {};
+                  return memberNames.map((name) => {
+                    const { color, strokeDasharray } = getMemberLineProps(name, memberRoles, roleCounters);
+                    return (
+                      <Line
+                        key={name}
+                        type="monotone"
+                        dataKey={name}
+                        name={name}
+                        stroke={color}
+                        strokeWidth={2}
+                        strokeDasharray={strokeDasharray}
+                        dot={{ r: 2, fill: color, strokeWidth: 0 }}
+                        activeDot={{ r: 4, fill: color }}
+                        connectNulls={false}
+                      />
+                    );
+                  });
+                })()}
               </LineChart>
             </ResponsiveContainer>
           </div>
