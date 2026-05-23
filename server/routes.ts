@@ -6133,11 +6133,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Kaiten unavailable — fall back to ID labels
       }
 
-      // Build kaitenUserId → role map from team members
+      // Build role lookup from team members: by kaitenUserId and by short name fallback
       const teamMembersList = await storage.getMembersByTeam(teamId);
       const kaitenRoleMap = new Map<number, string>();
+      const nameRoleMap = new Map<string, string>();
       for (const m of teamMembersList) {
         if (m.kaitenUserId != null) kaitenRoleMap.set(m.kaitenUserId, m.role);
+        if (m.fullName) {
+          const shortName = m.fullName.trim().split(/\s+/).slice(0, 2).join(' ');
+          nameRoleMap.set(shortName, m.role);
+        }
       }
 
       const sprintDataList: Array<{
@@ -6158,7 +6163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const label = kaitenUserMap.get(row.userId) ?? `user_${row.userId}`;
           membersVelocity[label] = (membersVelocity[label] ?? 0) + row.velocity;
           memberNameSet.add(label);
-          const role = kaitenRoleMap.get(row.userId);
+          const role = kaitenRoleMap.get(row.userId) ?? nameRoleMap.get(label);
           if (role) memberRoles[label] = role;
         }
         sprintDataList.push({
