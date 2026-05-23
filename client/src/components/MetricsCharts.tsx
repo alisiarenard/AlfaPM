@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from "recharts";
 import { format } from "date-fns";
@@ -290,6 +291,18 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const memberRoles = memberVelocityData?.memberRoles ?? {};
   const rawMemberSprints = memberVelocityData?.sprints ?? [];
 
+  const [hoveredMember, setHoveredMember] = useState<string | null>(null);
+
+  const memberTotalSP = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const sprint of rawMemberSprints) {
+      for (const [n, sp] of Object.entries(sprint.members)) {
+        totals[n] = (totals[n] ?? 0) + sp;
+      }
+    }
+    return totals;
+  }, [rawMemberSprints]);
+
   const mvYearStart = new Date(selectedYear, 0, 1);
   const mvYearDays = (selectedYear % 4 === 0 && (selectedYear % 100 !== 0 || selectedYear % 400 === 0)) ? 366 : 365;
   const mvDayOfYear = (date: Date) =>
@@ -501,7 +514,33 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                   tickFormatter={(v) => `${v} SP`}
                 />
-                <Tooltip content={<MemberVelocityTooltip />} />
+                <Tooltip
+                  content={(props: any) => {
+                    if (hoveredMember) {
+                      const roleCountersForTooltip: Record<string, number> = {};
+                      memberNames.forEach(n => getMemberLineProps(n, memberRoles, roleCountersForTooltip));
+                      const rcForColor: Record<string, number> = {};
+                      const { color } = getMemberLineProps(hoveredMember, memberRoles, rcForColor);
+                      const total = memberTotalSP[hoveredMember] ?? 0;
+                      return (
+                        <div style={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                          padding: '8px 12px',
+                        }}>
+                          <p style={{ color, margin: 0, fontSize: '13px', fontWeight: 600, marginBottom: '2px' }}>
+                            {hoveredMember}
+                          </p>
+                          <p style={{ color: 'hsl(var(--muted-foreground))', margin: 0, fontSize: '12px' }}>
+                            Итого: <strong style={{ color }}>{Math.round(total * 10) / 10} SP</strong>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return <MemberVelocityTooltip {...props} />;
+                  }}
+                />
                 <Legend
                   iconType="plainline"
                   wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
@@ -510,6 +549,8 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                   const roleCounters: Record<string, number> = {};
                   return memberNames.map((name) => {
                     const { color, strokeDasharray } = getMemberLineProps(name, memberRoles, roleCounters);
+                    const isHovered = hoveredMember === name;
+                    const isDimmed = hoveredMember !== null && !isHovered;
                     return (
                       <Line
                         key={name}
@@ -517,11 +558,14 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                         dataKey={name}
                         name={name}
                         stroke={color}
-                        strokeWidth={2}
+                        strokeWidth={isHovered ? 4 : isDimmed ? 1 : 2}
                         strokeDasharray={strokeDasharray}
-                        dot={{ r: 2, fill: color, strokeWidth: 0 }}
-                        activeDot={{ r: 4, fill: color }}
+                        strokeOpacity={isDimmed ? 0.3 : 1}
+                        dot={{ r: isHovered ? 3 : 2, fill: color, strokeWidth: 0 }}
+                        activeDot={{ r: isHovered ? 5 : 4, fill: color }}
                         connectNulls={false}
+                        onMouseEnter={() => setHoveredMember(name)}
+                        onMouseLeave={() => setHoveredMember(null)}
                       />
                     );
                   });
