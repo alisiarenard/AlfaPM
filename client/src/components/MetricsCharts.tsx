@@ -483,15 +483,15 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
 
       <div className="col-span-1 lg:col-span-3 flex flex-col">
         {!hasSprintData ? (
-          <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
+          <div className="h-[230px] flex items-center justify-center text-sm text-muted-foreground">
             Нет данных за {selectedYear} год — синхронизируйте спринты
           </div>
         ) : !hasMemberLines ? (
-          <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
+          <div className="h-[230px] flex items-center justify-center text-sm text-muted-foreground">
             Нет данных по участникам — синхронизируйте спринты для получения velocity
           </div>
         ) : (
-          <div className="h-[200px]">
+          <div className="h-[230px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={memberVelocityChartData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
