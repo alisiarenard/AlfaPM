@@ -6133,6 +6133,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Kaiten unavailable — fall back to ID labels
       }
 
+      // Build kaitenUserId → role map from team members
+      const teamMembersList = await storage.getMembersByTeam(teamId);
+      const kaitenRoleMap = new Map<number, string>();
+      for (const m of teamMembersList) {
+        if (m.kaitenUserId != null) kaitenRoleMap.set(m.kaitenUserId, m.role);
+      }
+
       const sprintDataList: Array<{
         sprintId: number;
         sprintTitle: string;
@@ -6142,6 +6149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }> = [];
 
       const memberNameSet = new Set<string>();
+      const memberRoles: Record<string, string> = {};
 
       for (const sprint of yearSprints) {
         const velocityRows = sprintVelocityMap.get(sprint.sprintId) ?? [];
@@ -6150,6 +6158,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const label = kaitenUserMap.get(row.userId) ?? `user_${row.userId}`;
           membersVelocity[label] = (membersVelocity[label] ?? 0) + row.velocity;
           memberNameSet.add(label);
+          const role = kaitenRoleMap.get(row.userId);
+          if (role) memberRoles[label] = role;
         }
         sprintDataList.push({
           sprintId: sprint.sprintId,
@@ -6164,6 +6174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         sprints: sprintDataList,
         memberNames: Array.from(memberNameSet),
+        memberRoles,
       });
     } catch (error) {
       res.status(500).json({ success: false, error: error instanceof Error ? error.message : "Failed" });

@@ -57,6 +57,7 @@ interface MemberVelocityResponse {
   success: boolean;
   sprints: MemberVelocitySprintData[];
   memberNames: string[];
+  memberRoles: Record<string, string>;
 }
 
 function formatDateRange(startDate: string, finishDate: string): string {
@@ -273,6 +274,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     : 0;
 
   const memberNames = memberVelocityData?.memberNames ?? [];
+  const memberRoles = memberVelocityData?.memberRoles ?? {};
   const rawMemberSprints = memberVelocityData?.sprints ?? [];
 
   const mvYearStart = new Date(selectedYear, 0, 1);
@@ -496,7 +498,7 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                     key={name}
                     type="monotone"
                     dataKey={name}
-                    name={name}
+                    name={memberRoles[name] ? `${name} (${memberRoles[name]})` : name}
                     stroke={MEMBER_COLORS[i % MEMBER_COLORS.length]}
                     strokeWidth={2}
                     dot={{ r: 2, fill: MEMBER_COLORS[i % MEMBER_COLORS.length], strokeWidth: 0 }}
