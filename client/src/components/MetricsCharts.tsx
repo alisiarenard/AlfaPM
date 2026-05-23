@@ -532,6 +532,11 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
                           <p style={{ color, margin: 0, fontSize: '13px', fontWeight: 600, marginBottom: '2px' }}>
                             {hoveredMember}
                           </p>
+                          {memberRoles[hoveredMember] && (
+                            <p style={{ color: 'hsl(var(--muted-foreground))', margin: 0, fontSize: '11px', marginBottom: '4px' }}>
+                              {memberRoles[hoveredMember]}
+                            </p>
+                          )}
                           <p style={{ color: 'hsl(var(--muted-foreground))', margin: 0, fontSize: '12px' }}>
                             Итого: <strong style={{ color }}>{Math.round(total * 10) / 10} SP</strong>
                           </p>
