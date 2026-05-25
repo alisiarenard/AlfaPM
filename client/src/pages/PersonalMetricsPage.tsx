@@ -195,7 +195,7 @@ function CodeQualityCell({ evaluation }: { evaluation: EvaluationStatus | undefi
               const total = Object.values(snap.severity_distribution).reduce((s, v) => s + v, 0);
               const critical = snap.severity_distribution["critical"] ?? 0;
               const pctCritical = total > 0 ? Math.round((critical / total) * 100) : 0;
-              rows.push({ label: "MR с критичными изменениями", value: `${pctCritical}%` });
+              rows.push({ label: "MR с critical замечаниями", value: `${pctCritical}%` });
             }
 
             if (rows.length === 0) return null;
