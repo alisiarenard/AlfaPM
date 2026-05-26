@@ -562,71 +562,92 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
       {timelineData?.events && timelineData.events.length > 0 && (
         <div>
           <SectionTitle>Активность за период</SectionTitle>
-          <div className="relative pl-6">
-            <div className="absolute left-[7px] top-1 bottom-1 w-px bg-border" />
-            <div className="space-y-3">
-              {timelineData.events
-                .slice()
-                .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-                .map((event, i) => {
-                  const date = new Date(event.at);
-                  const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-                  const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-                  const isMR = event.type === "gitlab_mr_opened";
-                  const isTask = event.type === "kaiten_task_started";
-                  const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
-                  const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
-                    ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
-                    : null;
-                  const href = isMR ? event.details.webUrl : kaitenUrl;
+          <div className="rounded-md border border-border overflow-hidden">
+            <div className="relative pl-10 py-3 pr-4">
+              <div className="absolute left-[27px] top-0 bottom-0 w-px bg-border" />
+              <div className="space-y-4">
+                {timelineData.events
+                  .slice()
+                  .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+                  .map((event, i) => {
+                    const date = new Date(event.at);
+                    const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+                    const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+                    const isMR = event.type === "gitlab_mr_opened";
+                    const isTask = event.type === "kaiten_task_started";
+                    const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
+                    const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
+                      ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
+                      : null;
+                    const mrUrl = isMR ? event.details.webUrl : null;
 
-                  return (
-                    <div key={i} className="flex gap-3 items-start">
-                      <div className="absolute left-0 mt-1 flex items-center justify-center w-[15px] h-[15px] rounded-full bg-card border border-border z-10">
-                        {isMR
-                          ? <GitMerge className="w-2.5 h-2.5 text-muted-foreground" />
-                          : <Play className="w-2.5 h-2.5 text-muted-foreground" />
-                        }
-                      </div>
-                      <div className="flex-1 min-w-0 rounded-md border border-border bg-card px-3 py-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                                {isMR ? "MR открыт" : isTask ? "Задача начата" : event.type}
-                              </span>
-                              {isTask && event.details.size != null && event.details.size > 0 && (
-                                <span className="text-[10px] text-muted-foreground">{event.details.size} SP</span>
+                    return (
+                      <div key={i} className="flex gap-3 items-start">
+                        <div className="absolute left-[20px] mt-[3px] flex items-center justify-center w-[15px] h-[15px] rounded-full bg-background border border-border z-10">
+                          {isMR
+                            ? <GitMerge className="w-2.5 h-2.5 text-muted-foreground" />
+                            : <Play className="w-2.5 h-2.5 text-muted-foreground" />
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          {isTask ? (
+                            <>
+                              <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="text-[10px] text-muted-foreground/60">{dateStr}, {timeStr}</span>
+                              </div>
+                              <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
+                                {kaitenUrl ? (
+                                  <a
+                                    href={kaitenUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-foreground hover:underline"
+                                  >
+                                    {event.details.title ?? `Карточка #${event.details.cardId}`}
+                                  </a>
+                                ) : (
+                                  <span className="text-sm text-foreground">
+                                    {event.details.title ?? `Карточка #${event.details.cardId}`}
+                                  </span>
+                                )}
+                                <span className="text-[11px] text-muted-foreground/50">взята в работу</span>
+                              </div>
+                              {event.details.size != null && event.details.size > 0 && (
+                                <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
                               )}
-                            </div>
-                            {event.details.title ? (
-                              <p className="text-sm text-foreground truncate">{event.details.title}</p>
-                            ) : isMR && event.details.iid ? (
-                              <p className="text-sm text-foreground">MR !{event.details.iid}</p>
-                            ) : null}
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="text-right">
-                              <p className="text-[11px] text-muted-foreground">{dateStr}</p>
-                              <p className="text-[10px] text-muted-foreground/60">{timeStr}</p>
-                            </div>
-                            {href && (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-muted-foreground hover:text-foreground transition-colors"
-                                onClick={e => e.stopPropagation()}
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-                          </div>
+                            </>
+                          ) : isMR ? (
+                            <>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-[10px] text-muted-foreground/60">{dateStr}, {timeStr}</span>
+                                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">MR открыт</span>
+                              </div>
+                              {mrUrl ? (
+                                <a
+                                  href={mrUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-foreground hover:underline mt-0.5 block truncate"
+                                >
+                                  {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
+                                </a>
+                              ) : (
+                                <p className="text-sm text-foreground mt-0.5 truncate">
+                                  {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-[10px] text-muted-foreground/60">{dateStr}, {timeStr}</span>
+                              <p className="text-sm text-foreground mt-0.5">{event.type}</p>
+                            </>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+              </div>
             </div>
           </div>
         </div>
