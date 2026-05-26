@@ -140,7 +140,6 @@ const METRIC_COLS: { key: keyof PersonalMetricsRow; label: string }[] = [
   { key: "codeQuality",        label: "Качество кода" },
   { key: "taskComplexity",     label: "Вклад" },
   { key: "productivity",       label: "Производительность" },
-  { key: "estimationAccuracy", label: "Точность оценки" },
   { key: "aiUsage",            label: "AI-usage" },
   { key: "communication",      label: "Коммуникации" },
   { key: "discipline",         label: "Дисциплина" },
