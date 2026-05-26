@@ -343,7 +343,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
   const evidenceRefs = detail?.evidenceRefs ?? [];
 
   const [bottomTab, setBottomTab] = useState<"activity" | "evaluation">("activity");
-  const hasEvalData = !!(devSummary || mgrSummary || evidenceRefs.length > 0);
+  const hasEvalData = !!(avg !== null || devSummary || mgrSummary || evidenceRefs.length > 0);
 
   if (!member) {
     return (
@@ -355,115 +355,6 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
   return (
     <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto px-6 pt-6 pb-12 space-y-8">
-
-      {/* ── Метрики: одна строка ── */}
-      <div>
-        {avg !== null && (
-          <div className="flex items-center gap-3 mb-4">
-            {member.gitlabUsername && (
-              <p className="text-sm text-muted-foreground">@{member.gitlabUsername}</p>
-            )}
-            <div className="ml-auto flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-foreground">{avg}</span>
-              <span className="text-xs text-muted-foreground">средний балл</span>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-7 gap-2">
-          {METRIC_COLS.map((col) => {
-            const isCodeQuality = col.key === "codeQuality";
-            const isContribution = col.key === "taskComplexity";
-            const rawValue = metrics?.[col.key] as number | null | undefined;
-            const displayValue =
-              isCodeQuality && hasEval ? evaluation!.score :
-              isContribution && hasContrib ? contrib!.score :
-              rawValue ?? null;
-
-            const card = (
-              <div
-                key={col.key}
-                className="rounded-md border border-border bg-card p-3 flex flex-col gap-2"
-              >
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-tight">{col.label}</p>
-                <div className="flex items-center justify-between gap-1">
-                  <RatingCircles value={displayValue} size="md" />
-                  <span className="text-xl font-bold text-foreground">
-                    {displayValue ?? "—"}
-                  </span>
-                </div>
-              </div>
-            );
-
-            if (isCodeQuality && snap) {
-              return (
-                <Tooltip key={col.key}>
-                  <TooltipTrigger asChild>
-                    <div className="cursor-default">{card}</div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="p-3 text-xs space-y-1.5 min-w-52">
-                    {SNAPSHOT_LABELS.map(({ key, label, format }) => {
-                      const raw = snap[key as keyof MetricsSnapshot];
-                      const displayed = format ? format(raw as number) : String(raw);
-                      const isRed = key === "problem_mr_rate" && (raw as number) > 0.3;
-                      return (
-                        <div key={key} className="flex justify-between gap-6">
-                          <span className="text-muted-foreground">{label}</span>
-                          <span className={`font-medium tabular-nums ${isRed ? "text-destructive" : ""}`}>
-                            {displayed}
-                          </span>
-                        </div>
-                      );
-                    })}
-                    {(() => {
-                      const rows: { label: string; value: string; red?: boolean }[] = [];
-                      if (snap.verdict_distribution) {
-                        const total = Object.values(snap.verdict_distribution).reduce((s, v) => s + v, 0);
-                        const blocked = snap.verdict_distribution["blocked"] ?? 0;
-                        const pctBlocked = total > 0 ? Math.round((blocked / total) * 100) : 0;
-                        rows.push({ label: "Блокирующие MRs", value: `${pctBlocked}%`, red: pctBlocked > 20 });
-                      }
-                      if (snap.severity_distribution) {
-                        const total = Object.values(snap.severity_distribution).reduce((s, v) => s + v, 0);
-                        const critical = snap.severity_distribution["critical"] ?? 0;
-                        const pctCritical = total > 0 ? Math.round((critical / total) * 100) : 0;
-                        rows.push({ label: "MR с critical замечаниями", value: `${pctCritical}%` });
-                      }
-                      if (rows.length === 0) return null;
-                      return rows.map(({ label, value, red }) => (
-                        <div key={label} className="flex justify-between gap-6">
-                          <span className="text-muted-foreground">{label}</span>
-                          <span className={`font-medium tabular-nums ${red ? "text-destructive" : ""}`}>{value}</span>
-                        </div>
-                      ));
-                    })()}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            if (isContribution && contribSnap) {
-              return (
-                <Tooltip key={col.key}>
-                  <TooltipTrigger asChild>
-                    <div className="cursor-default">{card}</div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="p-3 text-xs space-y-1.5 min-w-52">
-                    {CONTRIBUTION_LABELS.map(({ label, compute }) => (
-                      <div key={label} className="flex justify-between gap-6">
-                        <span className="text-muted-foreground">{label}</span>
-                        <span className="font-medium tabular-nums">{compute(contribSnap)}</span>
-                      </div>
-                    ))}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return card;
-          })}
-        </div>
-      </div>
 
       {/* ── Активность & Оценка ── */}
       <div className="rounded-md border border-border">
@@ -579,6 +470,99 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
             <>
               {hasEvalData ? (
                 <div className="space-y-6">
+                  {/* Карточки метрик */}
+                  <div>
+                    {avg !== null && (
+                      <div className="flex items-center gap-3 mb-4">
+                        {member.gitlabUsername && (
+                          <p className="text-sm text-muted-foreground">@{member.gitlabUsername}</p>
+                        )}
+                        <div className="ml-auto flex items-baseline gap-2">
+                          <span className="text-2xl font-bold text-foreground">{avg}</span>
+                          <span className="text-xs text-muted-foreground">средний балл</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-7 gap-2">
+                      {METRIC_COLS.map((col) => {
+                        const isCodeQuality = col.key === "codeQuality";
+                        const isContribution = col.key === "taskComplexity";
+                        const rawValue = metrics?.[col.key] as number | null | undefined;
+                        const displayValue =
+                          isCodeQuality && hasEval ? evaluation!.score :
+                          isContribution && hasContrib ? contrib!.score :
+                          rawValue ?? null;
+                        const card = (
+                          <div key={col.key} className="rounded-md border border-border bg-card p-3 flex flex-col gap-2">
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-tight">{col.label}</p>
+                            <div className="flex items-center justify-between gap-1">
+                              <RatingCircles value={displayValue} size="md" />
+                              <span className="text-xl font-bold text-foreground">{displayValue ?? "—"}</span>
+                            </div>
+                          </div>
+                        );
+                        if (isCodeQuality && snap) {
+                          return (
+                            <Tooltip key={col.key}>
+                              <TooltipTrigger asChild><div className="cursor-default">{card}</div></TooltipTrigger>
+                              <TooltipContent side="bottom" className="p-3 text-xs space-y-1.5 min-w-52">
+                                {SNAPSHOT_LABELS.map(({ key, label, format }) => {
+                                  const raw = snap[key as keyof MetricsSnapshot];
+                                  const displayed = format ? format(raw as number) : String(raw);
+                                  const isRed = key === "problem_mr_rate" && (raw as number) > 0.3;
+                                  return (
+                                    <div key={key} className="flex justify-between gap-6">
+                                      <span className="text-muted-foreground">{label}</span>
+                                      <span className={`font-medium tabular-nums ${isRed ? "text-destructive" : ""}`}>{displayed}</span>
+                                    </div>
+                                  );
+                                })}
+                                {(() => {
+                                  const rows: { label: string; value: string; red?: boolean }[] = [];
+                                  if (snap.verdict_distribution) {
+                                    const total = Object.values(snap.verdict_distribution).reduce((s, v) => s + v, 0);
+                                    const blocked = snap.verdict_distribution["blocked"] ?? 0;
+                                    const pctBlocked = total > 0 ? Math.round((blocked / total) * 100) : 0;
+                                    rows.push({ label: "Блокирующие MRs", value: `${pctBlocked}%`, red: pctBlocked > 20 });
+                                  }
+                                  if (snap.severity_distribution) {
+                                    const total = Object.values(snap.severity_distribution).reduce((s, v) => s + v, 0);
+                                    const critical = snap.severity_distribution["critical"] ?? 0;
+                                    const pctCritical = total > 0 ? Math.round((critical / total) * 100) : 0;
+                                    rows.push({ label: "MR с critical замечаниями", value: `${pctCritical}%` });
+                                  }
+                                  if (rows.length === 0) return null;
+                                  return rows.map(({ label, value, red }) => (
+                                    <div key={label} className="flex justify-between gap-6">
+                                      <span className="text-muted-foreground">{label}</span>
+                                      <span className={`font-medium tabular-nums ${red ? "text-destructive" : ""}`}>{value}</span>
+                                    </div>
+                                  ));
+                                })()}
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        }
+                        if (isContribution && contribSnap) {
+                          return (
+                            <Tooltip key={col.key}>
+                              <TooltipTrigger asChild><div className="cursor-default">{card}</div></TooltipTrigger>
+                              <TooltipContent side="bottom" className="p-3 text-xs space-y-1.5 min-w-52">
+                                {CONTRIBUTION_LABELS.map(({ label, compute }) => (
+                                  <div key={label} className="flex justify-between gap-6">
+                                    <span className="text-muted-foreground">{label}</span>
+                                    <span className="font-medium tabular-nums">{compute(contribSnap)}</span>
+                                  </div>
+                                ))}
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        }
+                        return card;
+                      })}
+                    </div>
+                  </div>
+
                   {devSummary && (
                     <div>
                       <SectionTitle>Качество кода</SectionTitle>
