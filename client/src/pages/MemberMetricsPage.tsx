@@ -2,8 +2,9 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Play } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import gitlabIcon from "@assets/Group_210_1779799366626.png";
+import kaitenIcon from "@assets/Group_1_1779800626242.png";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface MetricsSnapshot {
@@ -587,7 +588,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                         <div className="absolute left-[18px] mt-[2px] flex items-center justify-center w-[18px] h-[18px] z-10">
                           {isMR
                             ? <img src={gitlabIcon} alt="gitlab" className="w-[18px] h-[18px]" />
-                            : <div className="flex items-center justify-center w-[15px] h-[15px] rounded-full bg-background border border-border"><Play className="w-2.5 h-2.5 text-muted-foreground" /></div>
+                            : <img src={kaitenIcon} alt="kaiten" className="w-[18px] h-[18px]" />
                           }
                         </div>
                         <div className="flex-1 min-w-0">
