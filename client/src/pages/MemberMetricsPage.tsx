@@ -447,18 +447,18 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                   )}
                                 </>
                               ) : isMR ? (
-                                <>
-                                  <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">MR открыт</span>
+                                <div className="flex items-baseline gap-1.5 flex-wrap">
                                   {mrUrl ? (
-                                    <a href={mrUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline mt-0.5 block truncate">
+                                    <a href={mrUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline truncate">
                                       {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
                                     </a>
                                   ) : (
-                                    <p className="text-sm text-foreground mt-0.5 truncate">
+                                    <span className="text-sm text-foreground truncate">
                                       {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
-                                    </p>
+                                    </span>
                                   )}
-                                </>
+                                  <span className="text-xs text-muted-foreground">создан merge request</span>
+                                </div>
                               ) : (
                                 <p className="text-sm text-foreground">{event.type}</p>
                               )}
