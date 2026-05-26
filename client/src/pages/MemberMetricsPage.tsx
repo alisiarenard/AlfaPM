@@ -439,7 +439,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                     ) : (
                                       <span className="text-sm text-foreground">{event.details.title ?? `Карточка #${event.details.cardId}`}</span>
                                     )}
-                                    <span className="text-xs text-muted-foreground/50">взята в работу</span>
+                                    <span className="text-xs text-muted-foreground">взята в работу</span>
                                   </div>
                                   {event.details.size != null && event.details.size > 0 && (
                                     <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
