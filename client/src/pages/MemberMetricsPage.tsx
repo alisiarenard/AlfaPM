@@ -358,7 +358,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
       {/* ── Активность & Оценка ── */}
       <div className="rounded-md border border-border flex flex-col" style={{ height: "80vh" }}>
-        <div className="flex items-center justify-end px-4 py-2 border-b border-border bg-card shrink-0">
+        <div className="flex items-center justify-end px-4 py-2 border-b border-border bg-card shrink-0 rounded-t-md">
           <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
             <button
               onClick={() => setBottomTab("activity")}
