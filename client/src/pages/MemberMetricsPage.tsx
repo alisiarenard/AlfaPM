@@ -410,8 +410,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                         <div key={i} className="flex items-start gap-3">
                           {/* date/time — left column */}
                           <div className="w-20 shrink-0 text-right pt-2">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight">{dateStr}</p>
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight">{timeStr}</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{dateStr}, {timeStr}</p>
                           </div>
                           {/* icon */}
                           <div className="shrink-0 z-10 relative">
