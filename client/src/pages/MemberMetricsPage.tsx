@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
-import gitlabIcon from "@assets/Group_210_1779799366626.png";
-import kaitenIcon from "@assets/Group_1_1779800626242.png";
+import gitlabIcon from "../assets/icon-gitlab.png";
+import kaitenIcon from "../assets/icon-kaiten.png";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface MetricsSnapshot {
