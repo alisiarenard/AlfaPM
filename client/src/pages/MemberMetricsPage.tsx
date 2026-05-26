@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, GitMerge, Play } from "lucide-react";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface MetricsSnapshot {
@@ -102,6 +102,30 @@ interface EvaluationStatus {
 interface PersonalMetricsResponse {
   metrics: PersonalMetricsRow[];
   evaluations: EvaluationStatus[];
+}
+
+interface TimelineEventDetails {
+  iid?: number;
+  title?: string;
+  projectId?: number;
+  webUrl?: string;
+  cardId?: number;
+  size?: number;
+  spaceId?: number;
+}
+
+interface TimelineEvent {
+  type: string;
+  at: string;
+  details: TimelineEventDetails;
+}
+
+interface TimelineResponse {
+  success: boolean;
+  developerId: string;
+  from: string;
+  to: string;
+  events: TimelineEvent[];
 }
 
 interface Props {
@@ -269,6 +293,18 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
     4: [`${year}-10-01`, `${year}-12-31`],
   };
   const [periodStart, periodEnd] = periodRanges[quarter] ?? periodRanges[1];
+
+  const { data: timelineData } = useQuery<TimelineResponse>({
+    queryKey: ["/api/developers/timeline", member?.username, periodStart, periodEnd],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/developers/${encodeURIComponent(member!.username)}/timeline?from=${periodStart}&to=${periodEnd}`
+      );
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    enabled: !!member?.username,
+  });
 
   const { data: detail } = useQuery<EvaluationDetail>({
     queryKey: ["/api/evaluations/detail", member?.username, periodStart, periodEnd],
@@ -519,6 +555,80 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* ── Таймлайн активности ── */}
+      {timelineData?.events && timelineData.events.length > 0 && (
+        <div>
+          <SectionTitle>Активность за период</SectionTitle>
+          <div className="relative pl-6">
+            <div className="absolute left-[7px] top-1 bottom-1 w-px bg-border" />
+            <div className="space-y-3">
+              {timelineData.events
+                .slice()
+                .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+                .map((event, i) => {
+                  const date = new Date(event.at);
+                  const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+                  const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+                  const isMR = event.type === "gitlab_mr_opened";
+                  const isTask = event.type === "kaiten_task_started";
+                  const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
+                  const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
+                    ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
+                    : null;
+                  const href = isMR ? event.details.webUrl : kaitenUrl;
+
+                  return (
+                    <div key={i} className="flex gap-3 items-start">
+                      <div className="absolute left-0 mt-1 flex items-center justify-center w-[15px] h-[15px] rounded-full bg-card border border-border z-10">
+                        {isMR
+                          ? <GitMerge className="w-2.5 h-2.5 text-muted-foreground" />
+                          : <Play className="w-2.5 h-2.5 text-muted-foreground" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0 rounded-md border border-border bg-card px-3 py-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                {isMR ? "MR открыт" : isTask ? "Задача начата" : event.type}
+                              </span>
+                              {isTask && event.details.size != null && event.details.size > 0 && (
+                                <span className="text-[10px] text-muted-foreground">{event.details.size} SP</span>
+                              )}
+                            </div>
+                            {event.details.title ? (
+                              <p className="text-sm text-foreground truncate">{event.details.title}</p>
+                            ) : isMR && event.details.iid ? (
+                              <p className="text-sm text-foreground">MR !{event.details.iid}</p>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="text-right">
+                              <p className="text-[11px] text-muted-foreground">{dateStr}</p>
+                              <p className="text-[10px] text-muted-foreground/60">{timeStr}</p>
+                            </div>
+                            {href && (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         </div>
       )}

@@ -1107,6 +1107,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/developers/:developerId/timeline", async (req, res) => {
+    try {
+      const { developerId } = req.params;
+      const { from, to } = req.query as { from?: string; to?: string };
+
+      const baseUrl = process.env.EVALUATIONS_BASE_URL;
+      if (!baseUrl) {
+        return res.status(503).json({ success: false, error: "EVALUATIONS_BASE_URL not configured" });
+      }
+      const normalizedBase = baseUrl.replace(/\/$/, "");
+      const url = `${normalizedBase}/api/developers/${encodeURIComponent(developerId)}/timeline?from=${from ?? ""}&to=${to ?? ""}`;
+
+      const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
+      if (!response.ok) {
+        const body = await response.text();
+        return res.status(response.status).json({ success: false, error: body });
+      }
+
+      const data = await response.json().catch(() => ({}));
+
+      // Enrich kaiten_task_started events with title and spaceId from our DB
+      if (Array.isArray(data.events)) {
+        for (const event of data.events) {
+          if (event.type === "kaiten_task_started" && event.details?.cardId) {
+            const task = await storage.getTaskByCardId(Number(event.details.cardId));
+            if (task) {
+              event.details.title = task.title;
+              if (task.teamId) {
+                const team = await storage.getTeamById(task.teamId);
+                if (team) event.details.spaceId = team.spaceId;
+              }
+            }
+          }
+        }
+      }
+
+      res.json({ success: true, ...data });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   app.post("/api/evaluations/sync", async (req, res) => {
     try {
       const { developerId, teamId, totalTeamSize, gitlabUsernames, periodStart, periodEnd, ...restBody } = req.body;
