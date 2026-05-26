@@ -407,9 +407,9 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                         : null;
                       const mrUrl = isMR ? event.details.webUrl : null;
                       return (
-                        <div key={i} className="flex items-start gap-3">
+                        <div key={i} className="flex items-center gap-3">
                           {/* date/time — left column */}
-                          <div className="w-20 shrink-0 text-right pt-2">
+                          <div className="w-20 shrink-0 text-right">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{dateStr}, {timeStr}</p>
                           </div>
                           {/* icon */}
@@ -420,7 +420,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                             }
                           </div>
                           {/* content */}
-                          <div className="flex-1 min-w-0 pt-2">
+                          <div className="flex-1 min-w-0">
                             {isTask ? (
                               <>
                                 <div className="flex items-baseline gap-1.5 flex-wrap">
