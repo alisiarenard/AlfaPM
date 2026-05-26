@@ -564,8 +564,8 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
         <div>
           <SectionTitle>Активность за период</SectionTitle>
           <div className="rounded-md border border-border overflow-hidden">
-            <div className="relative pl-10 py-3 pr-4">
-              <div className="absolute left-[27px] top-0 bottom-0 w-px bg-border" />
+            <div className="relative pl-14 py-3 pr-4">
+              <div className="absolute left-[31px] top-0 bottom-0 w-px bg-border" />
               <div className="space-y-4">
                 {timelineData.events
                   .slice()
@@ -584,10 +584,10 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
                     return (
                       <div key={i} className="flex gap-3 items-start">
-                        <div className="absolute left-[18px] mt-[2px] flex items-center justify-center w-[18px] h-[18px] z-10">
+                        <div className="absolute left-[14px] mt-[1px] flex items-center justify-center w-[36px] h-[36px] z-10">
                           {isMR
-                            ? <img src={gitlabIcon} alt="gitlab" className="w-[18px] h-[18px]" />
-                            : <img src={kaitenIcon} alt="kaiten" className="w-[18px] h-[18px]" />
+                            ? <img src={gitlabIcon} alt="gitlab" className="w-[36px] h-[36px]" />
+                            : <img src={kaitenIcon} alt="kaiten" className="w-[36px] h-[36px]" />
                           }
                         </div>
                         <div className="flex-1 min-w-0">
