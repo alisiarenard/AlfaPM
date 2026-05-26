@@ -389,76 +389,75 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
           {bottomTab === "activity" && (
             <>
               {timelineData?.events && timelineData.events.length > 0 ? (
-                <div className="relative pl-14">
-                  <div className="absolute left-[31px] top-0 bottom-0 w-px bg-border" />
-                  <div className="space-y-4">
-                    {timelineData.events
-                      .slice()
-                      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-                      .map((event, i) => {
-                        const date = new Date(event.at);
-                        const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-                        const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-                        const isMR = event.type === "gitlab_mr_opened";
-                        const isTask = event.type === "kaiten_task_started";
-                        const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
-                        const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
-                          ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
-                          : null;
-                        const mrUrl = isMR ? event.details.webUrl : null;
-                        return (
-                          <div key={i} className="flex gap-3 items-start">
-                            <div className="absolute left-[14px] mt-[1px] flex items-center justify-center w-[36px] h-[36px] z-10">
-                              {isMR
-                                ? <img src={gitlabIcon} alt="gitlab" className="w-[36px] h-[36px]" />
-                                : <img src={kaitenIcon} alt="kaiten" className="w-[36px] h-[36px]" />
-                              }
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              {isTask ? (
-                                <>
-                                  <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
-                                  <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
-                                    {kaitenUrl ? (
-                                      <a href={kaitenUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline">
-                                        {event.details.title ?? `Карточка #${event.details.cardId}`}
-                                      </a>
-                                    ) : (
-                                      <span className="text-sm text-foreground">{event.details.title ?? `Карточка #${event.details.cardId}`}</span>
-                                    )}
-                                    <span className="text-xs text-muted-foreground/50">взята в работу</span>
-                                  </div>
-                                  {event.details.size != null && event.details.size > 0 && (
-                                    <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
-                                  )}
-                                </>
-                              ) : isMR ? (
-                                <>
-                                  <div className="flex items-baseline gap-2">
-                                    <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
-                                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">MR открыт</span>
-                                  </div>
-                                  {mrUrl ? (
-                                    <a href={mrUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline mt-0.5 block truncate">
-                                      {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
+                <div className="relative space-y-4">
+                  {/* vertical line through icon centres: date-col(80px) + gap(12px) + half-icon(18px) = 110px */}
+                  <div className="absolute left-[110px] top-0 bottom-0 w-px bg-border" />
+                  {timelineData.events
+                    .slice()
+                    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+                    .map((event, i) => {
+                      const date = new Date(event.at);
+                      const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+                      const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+                      const isMR = event.type === "gitlab_mr_opened";
+                      const isTask = event.type === "kaiten_task_started";
+                      const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
+                      const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
+                        ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
+                        : null;
+                      const mrUrl = isMR ? event.details.webUrl : null;
+                      return (
+                        <div key={i} className="flex items-start gap-3">
+                          {/* date/time — left column */}
+                          <div className="w-20 shrink-0 text-right pt-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight">{dateStr}</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight">{timeStr}</p>
+                          </div>
+                          {/* icon */}
+                          <div className="shrink-0 z-10 relative">
+                            {isMR
+                              ? <img src={gitlabIcon} alt="gitlab" className="w-[36px] h-[36px]" />
+                              : <img src={kaitenIcon} alt="kaiten" className="w-[36px] h-[36px]" />
+                            }
+                          </div>
+                          {/* content */}
+                          <div className="flex-1 min-w-0 pt-2">
+                            {isTask ? (
+                              <>
+                                <div className="flex items-baseline gap-1.5 flex-wrap">
+                                  {kaitenUrl ? (
+                                    <a href={kaitenUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline">
+                                      {event.details.title ?? `Карточка #${event.details.cardId}`}
                                     </a>
                                   ) : (
-                                    <p className="text-sm text-foreground mt-0.5 truncate">
-                                      {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
-                                    </p>
+                                    <span className="text-sm text-foreground">{event.details.title ?? `Карточка #${event.details.cardId}`}</span>
                                   )}
-                                </>
-                              ) : (
-                                <>
-                                  <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
-                                  <p className="text-sm text-foreground mt-0.5">{event.type}</p>
-                                </>
-                              )}
-                            </div>
+                                  <span className="text-xs text-muted-foreground/50">взята в работу</span>
+                                </div>
+                                {event.details.size != null && event.details.size > 0 && (
+                                  <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
+                                )}
+                              </>
+                            ) : isMR ? (
+                              <>
+                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">MR открыт</span>
+                                {mrUrl ? (
+                                  <a href={mrUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline mt-0.5 block truncate">
+                                    {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
+                                  </a>
+                                ) : (
+                                  <p className="text-sm text-foreground mt-0.5 truncate">
+                                    {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
+                                  </p>
+                                )}
+                              </>
+                            ) : (
+                              <p className="text-sm text-foreground">{event.type}</p>
+                            )}
                           </div>
-                        );
-                      })}
-                  </div>
+                        </div>
+                      );
+                    })}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground py-6 text-center">Активность за выбранный период недоступна</p>
