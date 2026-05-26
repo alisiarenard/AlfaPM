@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
@@ -342,6 +343,9 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
   const mgrSummary = detail?.managerSummary;
   const evidenceRefs = detail?.evidenceRefs ?? [];
 
+  const [bottomTab, setBottomTab] = useState<"activity" | "evaluation">("activity");
+  const hasEvalData = !!(devSummary || mgrSummary || evidenceRefs.length > 0);
+
   if (!member) {
     return (
       <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto px-6 pt-8">
@@ -462,197 +466,165 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
         </div>
       </div>
 
-      {/* ── Секция для разработчика ── */}
-      {devSummary && (
-        <div>
-          <SectionTitle>Качество кода</SectionTitle>
-          <div className="grid grid-cols-3 gap-3">
-            <ListCard
-              title="Сильные стороны"
-              items={devSummary.strengths}
-              color="text-emerald-500"
-            />
-            <ListCard
-              title="Зоны роста"
-              items={devSummary.growthAreas}
-              color="text-yellow-500"
-            />
-            <ListCard
-              title="Рекомендации"
-              items={devSummary.recommendations}
-              color="text-blue-400"
-            />
-          </div>
+      {/* ── Активность & Оценка ── */}
+      <div className="rounded-md border border-border">
+        <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-border">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Активность &amp; Оценка</p>
+          <Tabs value={bottomTab} onValueChange={(v) => setBottomTab(v as "activity" | "evaluation")}>
+            <TabsList>
+              <TabsTrigger value="activity" data-testid="tab-activity">Активность</TabsTrigger>
+              <TabsTrigger value="evaluation" data-testid="tab-evaluation">Оценка</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-      )}
 
-      {/* ── Секция для руководителя ── */}
-      {mgrSummary && (
-        <div>
-          <SectionTitle>Для руководителя</SectionTitle>
-          <div className="space-y-3">
-
-            {/* Обоснование грейда + calibration */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-md border border-border bg-card p-4 space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Обоснование грейда</p>
-                <p className="text-sm text-foreground leading-relaxed">{mgrSummary.gradeRationale}</p>
-              </div>
-              <div className="rounded-md border border-border bg-card p-4 space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Калибровочные заметки</p>
-                <p className="text-sm text-foreground leading-relaxed">{mgrSummary.calibrationNotes}</p>
-              </div>
-            </div>
-
-            {/* Критические проблемы + паттерны + сильные стороны */}
-            <div className="grid grid-cols-3 gap-3">
-              <ListCard
-                title="Критические проблемы"
-                items={mgrSummary.criticalIssues}
-                color="text-destructive"
-              />
-              <ListCard
-                title="Повторяющиеся паттерны"
-                items={mgrSummary.recurringPatterns}
-                color="text-yellow-500"
-              />
-              <ListCard
-                title="Сильные стороны"
-                items={mgrSummary.keyStrengths}
-                color="text-emerald-500"
-              />
-            </div>
-
-            {/* Evidence refs */}
-            {evidenceRefs.length > 0 && (
-              <div className="rounded-md bg-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Примеры MR</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {evidenceRefs.map((ref, i) => (
-                    <a
-                      key={i}
-                      href={ref.mr_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-start justify-between gap-3 rounded border border-border px-3 py-2 hover-elevate group"
-                    >
-                      <div className="min-w-0 flex-1 space-y-0.5">
-                        <p className="text-xs text-muted-foreground">{ref.note}</p>
-                        <p className="text-sm text-foreground truncate">{ref.mr_title}</p>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-medium ${VERDICT_COLOR[ref.verdict] ?? "text-muted-foreground"}`}>
-                            {ref.verdict}
-                          </span>
-                          {ref.issues_count > 0 && (
-                            <span className="text-xs text-muted-foreground">{ref.issues_count} замеч.</span>
-                          )}
-                        </div>
-                      </div>
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-      {/* ── Таймлайн активности ── */}
-      {timelineData?.events && timelineData.events.length > 0 && (
-        <div>
-          <SectionTitle>Активность за период</SectionTitle>
-          <div className="rounded-md border border-border overflow-hidden">
-            <div className="relative pl-14 py-3 pr-4">
-              <div className="absolute left-[31px] top-0 bottom-0 w-px bg-border" />
-              <div className="space-y-4">
-                {timelineData.events
-                  .slice()
-                  .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-                  .map((event, i) => {
-                    const date = new Date(event.at);
-                    const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-                    const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-                    const isMR = event.type === "gitlab_mr_opened";
-                    const isTask = event.type === "kaiten_task_started";
-                    const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
-                    const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
-                      ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
-                      : null;
-                    const mrUrl = isMR ? event.details.webUrl : null;
-
-                    return (
-                      <div key={i} className="flex gap-3 items-start">
-                        <div className="absolute left-[14px] mt-[1px] flex items-center justify-center w-[36px] h-[36px] z-10">
-                          {isMR
-                            ? <img src={gitlabIcon} alt="gitlab" className="w-[36px] h-[36px]" />
-                            : <img src={kaitenIcon} alt="kaiten" className="w-[36px] h-[36px]" />
-                          }
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          {isTask ? (
-                            <>
-                              <div className="flex items-baseline gap-2 flex-wrap">
-                                <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
-                              </div>
-                              <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
-                                {kaitenUrl ? (
-                                  <a
-                                    href={kaitenUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm text-foreground hover:underline"
-                                  >
-                                    {event.details.title ?? `Карточка #${event.details.cardId}`}
-                                  </a>
-                                ) : (
-                                  <span className="text-sm text-foreground">
-                                    {event.details.title ?? `Карточка #${event.details.cardId}`}
-                                  </span>
-                                )}
-                                <span className="text-xs text-muted-foreground/50">взята в работу</span>
-                              </div>
-                              {event.details.size != null && event.details.size > 0 && (
-                                <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
-                              )}
-                            </>
-                          ) : isMR ? (
-                            <>
-                              <div className="flex items-baseline gap-2">
-                                <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
-                                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">MR открыт</span>
-                              </div>
-                              {mrUrl ? (
-                                <a
-                                  href={mrUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-foreground hover:underline mt-0.5 block truncate"
-                                >
-                                  {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
-                                </a>
+        <div className="p-4">
+          {bottomTab === "activity" && (
+            <>
+              {timelineData?.events && timelineData.events.length > 0 ? (
+                <div className="relative pl-14">
+                  <div className="absolute left-[31px] top-0 bottom-0 w-px bg-border" />
+                  <div className="space-y-4">
+                    {timelineData.events
+                      .slice()
+                      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+                      .map((event, i) => {
+                        const date = new Date(event.at);
+                        const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+                        const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+                        const isMR = event.type === "gitlab_mr_opened";
+                        const isTask = event.type === "kaiten_task_started";
+                        const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
+                        const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
+                          ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
+                          : null;
+                        const mrUrl = isMR ? event.details.webUrl : null;
+                        return (
+                          <div key={i} className="flex gap-3 items-start">
+                            <div className="absolute left-[14px] mt-[1px] flex items-center justify-center w-[36px] h-[36px] z-10">
+                              {isMR
+                                ? <img src={gitlabIcon} alt="gitlab" className="w-[36px] h-[36px]" />
+                                : <img src={kaitenIcon} alt="kaiten" className="w-[36px] h-[36px]" />
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              {isTask ? (
+                                <>
+                                  <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
+                                  <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
+                                    {kaitenUrl ? (
+                                      <a href={kaitenUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline">
+                                        {event.details.title ?? `Карточка #${event.details.cardId}`}
+                                      </a>
+                                    ) : (
+                                      <span className="text-sm text-foreground">{event.details.title ?? `Карточка #${event.details.cardId}`}</span>
+                                    )}
+                                    <span className="text-xs text-muted-foreground/50">взята в работу</span>
+                                  </div>
+                                  {event.details.size != null && event.details.size > 0 && (
+                                    <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
+                                  )}
+                                </>
+                              ) : isMR ? (
+                                <>
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
+                                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">MR открыт</span>
+                                  </div>
+                                  {mrUrl ? (
+                                    <a href={mrUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline mt-0.5 block truncate">
+                                      {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
+                                    </a>
+                                  ) : (
+                                    <p className="text-sm text-foreground mt-0.5 truncate">
+                                      {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
+                                    </p>
+                                  )}
+                                </>
                               ) : (
-                                <p className="text-sm text-foreground mt-0.5 truncate">
-                                  {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
-                                </p>
+                                <>
+                                  <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
+                                  <p className="text-sm text-foreground mt-0.5">{event.type}</p>
+                                </>
                               )}
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-[10px] text-muted-foreground/60">{dateStr}, {timeStr}</span>
-                              <p className="text-sm text-foreground mt-0.5">{event.type}</p>
-                            </>
-                          )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-6 text-center">Активность за выбранный период недоступна</p>
+              )}
+            </>
+          )}
+
+          {bottomTab === "evaluation" && (
+            <>
+              {hasEvalData ? (
+                <div className="space-y-6">
+                  {devSummary && (
+                    <div>
+                      <SectionTitle>Качество кода</SectionTitle>
+                      <div className="grid grid-cols-3 gap-3">
+                        <ListCard title="Сильные стороны" items={devSummary.strengths} color="text-emerald-500" />
+                        <ListCard title="Зоны роста" items={devSummary.growthAreas} color="text-yellow-500" />
+                        <ListCard title="Рекомендации" items={devSummary.recommendations} color="text-blue-400" />
+                      </div>
+                    </div>
+                  )}
+                  {mgrSummary && (
+                    <div>
+                      <SectionTitle>Для руководителя</SectionTitle>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="rounded-md border border-border bg-card p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Обоснование грейда</p>
+                            <p className="text-sm text-foreground leading-relaxed">{mgrSummary.gradeRationale}</p>
+                          </div>
+                          <div className="rounded-md border border-border bg-card p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Калибровочные заметки</p>
+                            <p className="text-sm text-foreground leading-relaxed">{mgrSummary.calibrationNotes}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <ListCard title="Критические проблемы" items={mgrSummary.criticalIssues} color="text-destructive" />
+                          <ListCard title="Повторяющиеся паттерны" items={mgrSummary.recurringPatterns} color="text-yellow-500" />
+                          <ListCard title="Сильные стороны" items={mgrSummary.keyStrengths} color="text-emerald-500" />
                         </div>
                       </div>
-                    );
-                  })}
-              </div>
-            </div>
-          </div>
+                    </div>
+                  )}
+                  {evidenceRefs.length > 0 && (
+                    <div>
+                      <SectionTitle>Примеры MR</SectionTitle>
+                      <div className="grid grid-cols-2 gap-2">
+                        {evidenceRefs.map((ref, i) => (
+                          <a key={i} href={ref.mr_url} target="_blank" rel="noopener noreferrer"
+                            className="flex items-start justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 hover-elevate group"
+                          >
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                              <p className="text-xs text-muted-foreground">{ref.note}</p>
+                              <p className="text-sm text-foreground truncate">{ref.mr_title}</p>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-medium ${VERDICT_COLOR[ref.verdict] ?? "text-muted-foreground"}`}>{ref.verdict}</span>
+                                {ref.issues_count > 0 && <span className="text-xs text-muted-foreground">{ref.issues_count} замеч.</span>}
+                              </div>
+                            </div>
+                            <ExternalLink className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-6 text-center">Оценка за выбранный период пока не доступна</p>
+              )}
+            </>
+          )}
         </div>
-      )}
+      </div>
 
     </div>
   );
