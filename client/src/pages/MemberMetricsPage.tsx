@@ -411,7 +411,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                       const isFirst = i === 0;
                       const isLast = i === total - 1;
                       return (
-                        <div key={i} className="flex items-stretch gap-3">
+                        <div key={i} className="flex items-stretch gap-3 min-h-[64px]">
                           {/* date/time — left column, centred vertically */}
                           <div className="w-36 shrink-0 text-right flex items-center justify-end py-3">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{dateStr}, {dayStr}, {timeStr}</p>
