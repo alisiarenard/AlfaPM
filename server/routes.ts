@@ -1119,16 +1119,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedBase = baseUrl.replace(/\/$/, "");
       const url = `${normalizedBase}/api/developers/${encodeURIComponent(developerId)}/timeline?from=${from ?? ""}&to=${to ?? ""}`;
 
+      console.log(`[Timeline] → GET ${url}`);
       const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
+      console.log(`[Timeline] ← status ${response.status}`);
+
       if (!response.ok) {
         const body = await response.text();
+        console.log(`[Timeline] ← error body: ${body}`);
         return res.status(response.status).json({ success: false, error: body });
       }
 
-      const data = await response.json().catch(() => ({}));
+      const raw = await response.text();
+      console.log(`[Timeline] ← raw body: ${raw}`);
+      const data = JSON.parse(raw);
 
       // Enrich kaiten_task_started events with title and spaceId from our DB
       if (Array.isArray(data.events)) {
+        console.log(`[Timeline] enriching ${data.events.length} events`);
         for (const event of data.events) {
           if (event.type === "kaiten_task_started" && event.details?.cardId) {
             const task = await storage.getTaskByCardId(Number(event.details.cardId));
@@ -1141,9 +1148,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
         }
+      } else {
+        console.log(`[Timeline] data.events is not an array:`, JSON.stringify(data));
       }
 
-      res.json({ success: true, ...data });
+      const result = { success: true, ...data };
+      console.log(`[Timeline] → response to client:`, JSON.stringify(result));
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
