@@ -357,7 +357,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
     <div className="max-w-[1200px] xl:max-w-none xl:w-[95%] mx-auto px-6 pt-6 pb-12 space-y-8">
 
       {/* ── Активность & Оценка ── */}
-      <div className="rounded-md border border-border flex flex-col" style={{ height: "85vh" }}>
+      <div className="rounded-md border border-border flex flex-col" style={{ height: "80vh" }}>
         <div className="flex items-center justify-end px-4 py-2 border-b border-border bg-card shrink-0">
           <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
             <button
