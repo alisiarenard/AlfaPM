@@ -413,7 +413,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                       return (
                         <div key={i} className="flex items-stretch gap-3">
                           {/* date/time — left column, centred vertically */}
-                          <div className="w-20 shrink-0 text-right flex items-center justify-end py-3">
+                          <div className="w-36 shrink-0 text-right flex items-center justify-end py-3">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{dateStr}, {dayStr}, {timeStr}</p>
                           </div>
                           {/* icon column: top-segment | icon | bottom-segment */}
