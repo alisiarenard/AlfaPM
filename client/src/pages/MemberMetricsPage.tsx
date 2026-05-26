@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, GitMerge, Play } from "lucide-react";
+import { ExternalLink, Play } from "lucide-react";
+import gitlabIcon from "@assets/Group_210_1779799366626.png";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface MetricsSnapshot {
@@ -583,17 +584,17 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
                     return (
                       <div key={i} className="flex gap-3 items-start">
-                        <div className="absolute left-[20px] mt-[3px] flex items-center justify-center w-[15px] h-[15px] rounded-full bg-background border border-border z-10">
+                        <div className="absolute left-[18px] mt-[2px] flex items-center justify-center w-[18px] h-[18px] z-10">
                           {isMR
-                            ? <GitMerge className="w-2.5 h-2.5 text-muted-foreground" />
-                            : <Play className="w-2.5 h-2.5 text-muted-foreground" />
+                            ? <img src={gitlabIcon} alt="gitlab" className="w-[18px] h-[18px]" />
+                            : <div className="flex items-center justify-center w-[15px] h-[15px] rounded-full bg-background border border-border"><Play className="w-2.5 h-2.5 text-muted-foreground" /></div>
                           }
                         </div>
                         <div className="flex-1 min-w-0">
                           {isTask ? (
                             <>
                               <div className="flex items-baseline gap-2 flex-wrap">
-                                <span className="text-[10px] text-muted-foreground/60">{dateStr}, {timeStr}</span>
+                                <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
                               </div>
                               <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
                                 {kaitenUrl ? (
@@ -610,7 +611,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                     {event.details.title ?? `Карточка #${event.details.cardId}`}
                                   </span>
                                 )}
-                                <span className="text-[11px] text-muted-foreground/50">взята в работу</span>
+                                <span className="text-xs text-muted-foreground/50">взята в работу</span>
                               </div>
                               {event.details.size != null && event.details.size > 0 && (
                                 <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
@@ -619,8 +620,8 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                           ) : isMR ? (
                             <>
                               <div className="flex items-baseline gap-2">
-                                <span className="text-[10px] text-muted-foreground/60">{dateStr}, {timeStr}</span>
-                                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">MR открыт</span>
+                                <span className="text-xs text-muted-foreground/60">{dateStr}, {timeStr}</span>
+                                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">MR открыт</span>
                               </div>
                               {mrUrl ? (
                                 <a
