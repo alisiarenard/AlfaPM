@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
@@ -468,14 +467,31 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
 
       {/* ── Активность & Оценка ── */}
       <div className="rounded-md border border-border">
-        <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-border">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Активность &amp; Оценка</p>
-          <Tabs value={bottomTab} onValueChange={(v) => setBottomTab(v as "activity" | "evaluation")}>
-            <TabsList>
-              <TabsTrigger value="activity" data-testid="tab-activity">Активность</TabsTrigger>
-              <TabsTrigger value="evaluation" data-testid="tab-evaluation">Оценка</TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <div className="flex items-center justify-end px-4 py-2 border-b border-border">
+          <div className="flex gap-0.5 bg-muted rounded-md p-0.5">
+            <button
+              onClick={() => setBottomTab("activity")}
+              data-testid="tab-activity"
+              className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
+                bottomTab === "activity"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Активность
+            </button>
+            <button
+              onClick={() => setBottomTab("evaluation")}
+              data-testid="tab-evaluation"
+              className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
+                bottomTab === "evaluation"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Оценка
+            </button>
+          </div>
         </div>
 
         <div className="p-4">
