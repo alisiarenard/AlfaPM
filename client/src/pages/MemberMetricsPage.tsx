@@ -399,6 +399,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                     return sorted.map((event, i) => {
                       const date = new Date(event.at);
                       const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+                      const dayStr = date.toLocaleDateString("ru-RU", { weekday: "short" });
                       const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
                       const isMR = event.type === "gitlab_mr_opened";
                       const isTask = event.type === "kaiten_task_started";
@@ -413,7 +414,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                         <div key={i} className="flex items-stretch gap-3">
                           {/* date/time — left column, centred vertically */}
                           <div className="w-20 shrink-0 text-right flex items-center justify-end py-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{dateStr}, {timeStr}</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{dateStr}, {dayStr}, {timeStr}</p>
                           </div>
                           {/* icon column: top-segment | icon | bottom-segment */}
                           <div className="shrink-0 flex flex-col items-center z-10">
