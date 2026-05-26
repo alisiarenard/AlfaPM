@@ -389,13 +389,14 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
           {bottomTab === "activity" && (
             <>
               {timelineData?.events && timelineData.events.length > 0 ? (
-                <div className="relative space-y-4">
-                  {/* vertical line through icon centres: date-col(80px) + gap(12px) + half-icon(18px) = 110px */}
-                  <div className="absolute left-[110px] top-0 bottom-0 w-px bg-border" />
-                  {timelineData.events
-                    .slice()
-                    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-                    .map((event, i) => {
+                <div className="relative space-y-0">
+                  {/* no single line — segments drawn per-item around icon */}
+                  {(() => {
+                    const sorted = timelineData.events
+                      .slice()
+                      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+                    const total = sorted.length;
+                    return sorted.map((event, i) => {
                       const date = new Date(event.at);
                       const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
                       const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
@@ -406,57 +407,66 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                         ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
                         : null;
                       const mrUrl = isMR ? event.details.webUrl : null;
+                      const isFirst = i === 0;
+                      const isLast = i === total - 1;
                       return (
-                        <div key={i} className="flex items-center gap-3">
-                          {/* date/time — left column */}
-                          <div className="w-20 shrink-0 text-right">
+                        <div key={i} className="flex items-stretch gap-3">
+                          {/* date/time — left column, centred vertically */}
+                          <div className="w-20 shrink-0 text-right flex items-center justify-end py-3">
                             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{dateStr}, {timeStr}</p>
                           </div>
-                          {/* icon */}
-                          <div className="shrink-0 z-10 relative">
-                            {isMR
-                              ? <img src={gitlabIcon} alt="gitlab" className="w-[36px] h-[36px]" />
-                              : <img src={kaitenIcon} alt="kaiten" className="w-[36px] h-[36px]" />
-                            }
+                          {/* icon column: top-segment | icon | bottom-segment */}
+                          <div className="shrink-0 flex flex-col items-center z-10">
+                            <div className={`w-0.5 flex-1 ${isFirst ? "bg-transparent" : "bg-border"}`} />
+                            <div className="bg-background rounded-full p-0.5 shrink-0">
+                              {isMR
+                                ? <img src={gitlabIcon} alt="gitlab" className="w-[32px] h-[32px] block" />
+                                : <img src={kaitenIcon} alt="kaiten" className="w-[32px] h-[32px] block" />
+                              }
+                            </div>
+                            <div className={`w-0.5 flex-1 ${isLast ? "bg-transparent" : "bg-border"}`} />
                           </div>
-                          {/* content */}
-                          <div className="flex-1 min-w-0">
-                            {isTask ? (
-                              <>
-                                <div className="flex items-baseline gap-1.5 flex-wrap">
-                                  {kaitenUrl ? (
-                                    <a href={kaitenUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline">
-                                      {event.details.title ?? `Карточка #${event.details.cardId}`}
+                          {/* content, centred vertically */}
+                          <div className="flex-1 min-w-0 flex items-center py-3">
+                            <div className="w-full">
+                              {isTask ? (
+                                <>
+                                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                                    {kaitenUrl ? (
+                                      <a href={kaitenUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline">
+                                        {event.details.title ?? `Карточка #${event.details.cardId}`}
+                                      </a>
+                                    ) : (
+                                      <span className="text-sm text-foreground">{event.details.title ?? `Карточка #${event.details.cardId}`}</span>
+                                    )}
+                                    <span className="text-xs text-muted-foreground/50">взята в работу</span>
+                                  </div>
+                                  {event.details.size != null && event.details.size > 0 && (
+                                    <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
+                                  )}
+                                </>
+                              ) : isMR ? (
+                                <>
+                                  <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">MR открыт</span>
+                                  {mrUrl ? (
+                                    <a href={mrUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline mt-0.5 block truncate">
+                                      {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
                                     </a>
                                   ) : (
-                                    <span className="text-sm text-foreground">{event.details.title ?? `Карточка #${event.details.cardId}`}</span>
+                                    <p className="text-sm text-foreground mt-0.5 truncate">
+                                      {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
+                                    </p>
                                   )}
-                                  <span className="text-xs text-muted-foreground/50">взята в работу</span>
-                                </div>
-                                {event.details.size != null && event.details.size > 0 && (
-                                  <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
-                                )}
-                              </>
-                            ) : isMR ? (
-                              <>
-                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">MR открыт</span>
-                                {mrUrl ? (
-                                  <a href={mrUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-foreground hover:underline mt-0.5 block truncate">
-                                    {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
-                                  </a>
-                                ) : (
-                                  <p className="text-sm text-foreground mt-0.5 truncate">
-                                    {event.details.title ?? (event.details.iid ? `MR !${event.details.iid}` : "MR")}
-                                  </p>
-                                )}
-                              </>
-                            ) : (
-                              <p className="text-sm text-foreground">{event.type}</p>
-                            )}
+                                </>
+                              ) : (
+                                <p className="text-sm text-foreground">{event.type}</p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
-                    })}
+                    });
+                  })()}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground py-6 text-center">Активность за выбранный период недоступна</p>
