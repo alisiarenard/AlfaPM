@@ -454,11 +454,19 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                         <Tooltip>
                                           <TooltipTrigger asChild>
                                             <span className="text-[11px] text-muted-foreground cursor-default">
-                                              {Math.round(event.details.developerColumnTotalSeconds / 3600)} ч
+                                              {(() => {
+                                                const totalH = Math.round(event.details.developerColumnTotalSeconds / 3600);
+                                                if (totalH >= 24) {
+                                                  const days = Math.floor(totalH / 24);
+                                                  const hrs = totalH % 24;
+                                                  return hrs > 0 ? `${days} д ${hrs} ч` : `${days} д`;
+                                                }
+                                                return `${totalH} ч`;
+                                              })()}
                                             </span>
                                           </TooltipTrigger>
                                           <TooltipContent side="bottom" className="text-xs max-w-[26rem] text-left">
-                                            Суммарное время рабочих часов, которое задача находилась в колонке «В работе»
+                                            Суммарное время, которое задача находилась в колонке "В работе"
                                           </TooltipContent>
                                         </Tooltip>
                                       )}
