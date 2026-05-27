@@ -457,7 +457,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                               {Math.round(event.details.developerColumnTotalSeconds / 3600)} ч
                                             </span>
                                           </TooltipTrigger>
-                                          <TooltipContent side="bottom" className="text-xs max-w-52 text-center">
+                                          <TooltipContent side="bottom" className="text-xs max-w-[26rem] text-left">
                                             Суммарное время рабочих часов, которое задача находилась в колонке «В работе»
                                           </TooltipContent>
                                         </Tooltip>
