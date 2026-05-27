@@ -203,6 +203,8 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
     enabled: !!team.teamId,
   });
 
+  const [hoveredMember, setHoveredMember] = useState<string | null>(null);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -291,17 +293,15 @@ export function MetricsCharts({ team, selectedYear }: MetricsChartsProps) {
   const memberRoles = memberVelocityData?.memberRoles ?? {};
   const rawMemberSprints = memberVelocityData?.sprints ?? [];
 
-  const [hoveredMember, setHoveredMember] = useState<string | null>(null);
-
   const memberTotalSP = useMemo(() => {
     const totals: Record<string, number> = {};
-    for (const sprint of rawMemberSprints) {
+    for (const sprint of memberVelocityData?.sprints ?? []) {
       for (const [n, sp] of Object.entries(sprint.members)) {
         totals[n] = (totals[n] ?? 0) + sp;
       }
     }
     return totals;
-  }, [rawMemberSprints]);
+  }, [memberVelocityData]);
 
   const mvYearStart = new Date(selectedYear, 0, 1);
   const mvYearDays = (selectedYear % 4 === 0 && (selectedYear % 100 !== 0 || selectedYear % 400 === 0)) ? 366 : 365;
