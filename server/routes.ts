@@ -1298,6 +1298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .map(m => ({
           id: m.username,
           gitlabUsernames: m.gitlabUsername ? [m.gitlabUsername] : [],
+          emails: m.gitlabUsername ? [`${m.gitlabUsername}@alfastrah.ru`] : [],
         }));
 
       const teamTasks = await storage.getTasksByTeamAndDoneDateRange(
