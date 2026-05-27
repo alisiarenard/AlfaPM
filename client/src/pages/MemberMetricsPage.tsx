@@ -442,9 +442,28 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                     )}
                                     <span className="text-xs text-muted-foreground">взята в работу</span>
                                   </div>
-                                  {event.details.size != null && event.details.size > 0 && (
-                                    <p className="text-[11px] text-muted-foreground mt-0.5">{event.details.size} SP</p>
-                                  )}
+                                  {(event.details.size != null && event.details.size > 0) || event.details.developerColumnTotalSeconds != null ? (
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      {event.details.size != null && event.details.size > 0 && (
+                                        <span className="text-[11px] text-muted-foreground">{event.details.size} SP</span>
+                                      )}
+                                      {event.details.size != null && event.details.size > 0 && event.details.developerColumnTotalSeconds != null && (
+                                        <span className="text-[11px] text-muted-foreground/50">·</span>
+                                      )}
+                                      {event.details.developerColumnTotalSeconds != null && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span className="text-[11px] text-muted-foreground cursor-default">
+                                              {Math.round(event.details.developerColumnTotalSeconds / 3600)} ч
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="bottom" className="text-xs max-w-52 text-center">
+                                            Суммарное время рабочих часов, которое задача находилась в колонке «В работе»
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      )}
+                                    </div>
+                                  ) : null}
                                 </>
                               ) : isMR ? (
                                 <div className="flex items-baseline gap-1.5 flex-wrap">
