@@ -390,36 +390,92 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
             <>
               {timelineData?.events && timelineData.events.length > 0 ? (
                 <div className="relative space-y-0">
-                  {/* no single line — segments drawn per-item around icon */}
+                  {/* grouped by day */}
                   {(() => {
                     const sorted = timelineData.events
                       .slice()
                       .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
-                    const total = sorted.length;
-                    return sorted.map((event, i) => {
+
+                    // Group events by calendar day (YYYY-MM-DD)
+                    const groups: { dayKey: string; dateStr: string; dayStr: string; events: typeof sorted }[] = [];
+                    for (const event of sorted) {
                       const date = new Date(event.at);
-                      const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-                      const dayStr = date.toLocaleDateString("ru-RU", { weekday: "short" });
-                      const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-                      const isMR = event.type === "gitlab_mr_opened";
-                      const isTask = event.type === "kaiten_task_started";
+                      const dayKey = date.toISOString().slice(0, 10);
+                      if (!groups.length || groups[groups.length - 1].dayKey !== dayKey) {
+                        groups.push({
+                          dayKey,
+                          dateStr: date.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }),
+                          dayStr:  date.toLocaleDateString("ru-RU", { weekday: "long" }),
+                          events: [],
+                        });
+                      }
+                      groups[groups.length - 1].events.push(event);
+                    }
+
+                    const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
+
+                    // Flatten to renderable rows: header + events per day
+                    type Row =
+                      | { kind: "header"; dateStr: string; dayStr: string }
+                      | { kind: "event"; event: (typeof sorted)[number]; timeStr: string };
+
+                    const rows: Row[] = [];
+                    for (const g of groups) {
+                      rows.push({ kind: "header", dateStr: g.dateStr, dayStr: g.dayStr });
+                      for (const ev of g.events) {
+                        const date = new Date(ev.at);
+                        rows.push({
+                          kind: "event",
+                          event: ev,
+                          timeStr: date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+                        });
+                      }
+                    }
+
+                    const totalRows = rows.length;
+
+                    return rows.map((row, ri) => {
+                      const isFirstRow = ri === 0;
+                      const isLastRow  = ri === totalRows - 1;
+
+                      if (row.kind === "header") {
+                        return (
+                          <div key={`h-${ri}`} className="flex items-stretch gap-3">
+                            {/* time column — empty */}
+                            <div className="w-16 shrink-0" />
+                            {/* vertical line passes through (no icon) */}
+                            <div className="shrink-0 flex flex-col items-center z-10">
+                              <div className={`w-0.5 flex-1 ${isFirstRow ? "bg-transparent" : "bg-border"}`} style={{ minHeight: 8 }} />
+                              <div className="w-0.5 flex-1 bg-transparent" style={{ minHeight: 8 }} />
+                            </div>
+                            {/* date label */}
+                            <div className="flex-1 min-w-0 flex items-center py-1 pl-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                                {row.dateStr}, {row.dayStr}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      const { event, timeStr } = row;
+                      const isMR      = event.type === "gitlab_mr_opened";
+                      const isTask    = event.type === "kaiten_task_started";
                       const isMeeting = event.type === "kontur_meeting";
-                      const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
                       const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
                         ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
                         : null;
                       const mrUrl = isMR ? event.details.webUrl : null;
-                      const isFirst = i === 0;
-                      const isLast = i === total - 1;
+
                       return (
-                        <div key={i} className="flex items-stretch gap-3 min-h-[64px]">
-                          {/* date/time — left column, centred vertically */}
-                          <div className="w-36 shrink-0 text-right flex items-center justify-end py-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{dateStr}, {dayStr}, {timeStr}</p>
+                        <div key={`e-${ri}`} className="flex items-stretch gap-3 min-h-[64px]">
+                          {/* time — left column */}
+                          <div className="w-16 shrink-0 text-right flex items-center justify-end py-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight whitespace-nowrap">{timeStr}</p>
                           </div>
                           {/* icon column: top-segment | icon | bottom-segment */}
                           <div className="shrink-0 flex flex-col items-center z-10">
-                            <div className={`w-0.5 flex-1 ${isFirst ? "bg-transparent" : "bg-border"}`} />
+                            <div className={`w-0.5 flex-1 ${isFirstRow ? "bg-transparent" : "bg-border"}`} />
                             <div className="bg-background rounded-full p-0.5 shrink-0">
                               {isMR
                                 ? <img src={gitlabIcon} alt="gitlab" className="w-[32px] h-[32px] block" />
@@ -428,9 +484,9 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                   : <img src={kaitenIcon} alt="kaiten" className="w-[32px] h-[32px] block" />
                               }
                             </div>
-                            <div className={`w-0.5 flex-1 ${isLast ? "bg-transparent" : "bg-border"}`} />
+                            <div className={`w-0.5 flex-1 ${isLastRow ? "bg-transparent" : "bg-border"}`} />
                           </div>
-                          {/* content, centred vertically */}
+                          {/* content */}
                           <div className="flex-1 min-w-0 flex items-center py-3">
                             <div className="w-full">
                               {isTask ? (
