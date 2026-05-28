@@ -1042,6 +1042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             evaluations = raw.map((item: any) => {
               const cq = item.criteria?.code_quality;
               const contrib = item.criteria?.contribution;
+              const comms = item.criteria?.communications;
               return {
                 developerId: item.developerId,
                 status: cq?.status ?? "not_found",
@@ -1050,6 +1051,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 metricsSnapshot: cq?.metricsSnapshot ?? null,
                 evaluatedAt: cq?.evaluatedAt ?? null,
                 contribution: contrib ?? null,
+                communications: comms ?? null,
               };
             });
           }

@@ -57,6 +57,29 @@ interface ContributionStatus {
   errorMessage: string | null;
 }
 
+interface CommunicationsSnapshot {
+  low_data?: boolean;
+  team_size?: number;
+  meetings_share?: number;
+  developer_meeting_count?: number;
+  developer_unique_meeting_hours?: number;
+  working_hours_in_period?: number;
+  team_avg_meetings_share?: number;
+}
+
+interface CommunicationsStatus {
+  status: "completed" | "in_progress" | "not_found";
+  score: number | null;
+  grade: string | null;
+  metricsSnapshot?: CommunicationsSnapshot | null;
+  breakdown?: {
+    score: number;
+    lowData: boolean;
+    appliedRole: string;
+    scoreLevelMax: number;
+  } | null;
+}
+
 interface EvaluationStatus {
   developerId: string;
   status: "completed" | "in_progress" | "not_found";
@@ -65,6 +88,7 @@ interface EvaluationStatus {
   metricsSnapshot: MetricsSnapshot | null;
   evaluatedAt: string | null;
   contribution?: ContributionStatus;
+  communications?: CommunicationsStatus | null;
 }
 
 interface PersonalMetricsResponse {
@@ -256,12 +280,62 @@ function ContributionCell({ evaluation }: { evaluation: EvaluationStatus | undef
   );
 }
 
+const COMMUNICATIONS_LABELS: { key: keyof CommunicationsSnapshot; label: string; format?: (v: any) => string }[] = [
+  { key: "meetings_share",                label: "Доля времени в митингах",   format: v => `${Math.round(v * 100)}%` },
+  { key: "team_avg_meetings_share",       label: "Среднее по команде",        format: v => `${Math.round(v * 100)}%` },
+  { key: "developer_meeting_count",       label: "Количество митингов",       format: v => String(v) },
+  { key: "developer_unique_meeting_hours",label: "Часов в митингах",          format: v => `${Math.round(v * 10) / 10}` },
+  { key: "working_hours_in_period",       label: "Рабочих часов в периоде",   format: v => String(v) },
+];
+
+function CommunicationCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
+  const comms = evaluation?.communications;
+  const hasScore = comms?.status === "completed" && comms.score !== null;
+  const snap = hasScore ? comms!.metricsSnapshot : null;
+
+  const circles = <RatingCircles value={hasScore ? comms!.score : null} />;
+
+  if (!snap) {
+    return (
+      <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+        {circles}
+      </td>
+    );
+  }
+
+  return (
+    <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="inline-flex cursor-default">{circles}</div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="p-3 text-xs space-y-1.5 min-w-52">
+          {COMMUNICATIONS_LABELS.map(({ key, label, format }) => {
+            const raw = snap[key];
+            if (raw == null) return null;
+            return (
+              <div key={key} className="flex justify-between gap-6">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-medium tabular-nums">{format ? format(raw) : String(raw)}</span>
+              </div>
+            );
+          })}
+          {snap.low_data && (
+            <div className="text-muted-foreground italic pt-1">Мало данных</div>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </td>
+  );
+}
+
 function calcAverage(metrics: PersonalMetricsRow | undefined, evaluation: EvaluationStatus | undefined): number | null {
   const vals: number[] = [];
   if (evaluation?.status === "completed" && evaluation.score != null && evaluation.score > 0) vals.push(evaluation.score);
   if (evaluation?.contribution?.status === "completed" && evaluation.contribution.score != null && evaluation.contribution.score > 0) vals.push(evaluation.contribution.score);
+  if (evaluation?.communications?.status === "completed" && evaluation.communications.score != null && evaluation.communications.score > 0) vals.push(evaluation.communications.score);
   if (metrics) {
-    const metricKeys: (keyof PersonalMetricsRow)[] = ["productivity", "estimationAccuracy", "aiUsage", "communication", "discipline"];
+    const metricKeys: (keyof PersonalMetricsRow)[] = ["productivity", "estimationAccuracy", "aiUsage", "discipline"];
     for (const k of metricKeys) {
       const v = metrics[k];
       if (typeof v === "number" && v > 0) vals.push(v);
@@ -553,6 +627,8 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
                                     <CodeQualityCell key={col.key} evaluation={evaluation} />
                                   ) : col.key === "taskComplexity" ? (
                                     <ContributionCell key={col.key} evaluation={evaluation} />
+                                  ) : col.key === "communication" ? (
+                                    <CommunicationCell key={col.key} evaluation={evaluation} />
                                   ) : (
                                     <MetricCell key={col.key} value={metrics?.[col.key] ?? null} />
                                   )
