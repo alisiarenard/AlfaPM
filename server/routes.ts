@@ -1038,7 +1038,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           if (evalRes.ok) {
             const raw: any[] = await evalRes.json();
-            console.log(`[Evaluations] batch-status response:`, JSON.stringify(raw, null, 2));
             evaluations = raw.map((item: any) => {
               const cq = item.criteria?.code_quality;
               const contrib = item.criteria?.contribution;
@@ -1130,8 +1129,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const raw = await response.text();
-      console.log(`[Timeline] ← raw body: ${raw}`);
       const data = JSON.parse(raw);
+      console.log(`[Timeline] response:`, JSON.stringify(data, null, 2));
 
       // Enrich kaiten_task_started events with title and spaceId from our DB
       if (Array.isArray(data.events)) {
