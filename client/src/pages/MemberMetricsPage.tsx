@@ -449,7 +449,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                               <div className={`w-0.5 flex-1 ${isLastRow ? "bg-transparent" : "bg-border"}`} />
                             </div>
                             {/* date label — shifted right, more padding */}
-                            <div className="flex-1 min-w-0 flex items-center py-2.5 pl-0">
+                            <div className="flex-1 min-w-0 flex items-center pt-2.5 pb-0 pl-0">
                               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                                 {row.dateStr}, {row.dayStr}
                               </p>
