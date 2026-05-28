@@ -1037,6 +1037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           if (evalRes.ok) {
             const raw: any[] = await evalRes.json();
+            console.log(`[Evaluations] batch-status response:`, JSON.stringify(raw, null, 2));
             evaluations = raw.map((item: any) => {
               const cq = item.criteria?.code_quality;
               const contrib = item.criteria?.contribution;
