@@ -1090,9 +1090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(503).json({ success: false, error: "EVALUATIONS_BASE_URL must point to the external evaluations service, not to this app" });
       }
       const url = `${normalizedBase}/api/evaluations/detail?developerId=${developerId}&periodStart=${periodStart ?? ""}&periodEnd=${periodEnd ?? ""}`;
-      console.log(`[Evaluations] GET detail → ${url}`);
       const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
-      console.log(`[Evaluations] detail response status: ${response.status}`);
       if (!response.ok) {
         const body = await response.text();
         console.log(`[Evaluations] detail error body: ${body}`);
@@ -1119,9 +1117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedBase = baseUrl.replace(/\/$/, "");
       const url = `${normalizedBase}/api/developers/${encodeURIComponent(developerId)}/timeline?from=${from ?? ""}&to=${to ?? ""}`;
 
-      console.log(`[Timeline] → GET ${url}`);
       const response = await fetch(url, { headers: { "Content-Type": "application/json" } });
-      console.log(`[Timeline] ← status ${response.status}`);
 
       if (!response.ok) {
         const body = await response.text();
