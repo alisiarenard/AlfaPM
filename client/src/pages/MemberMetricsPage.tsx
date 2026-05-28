@@ -490,22 +490,24 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                   <span className="text-xs text-muted-foreground">создан merge request</span>
                                 </div>
                               ) : isMeeting ? (
-                                <div className="flex items-baseline gap-1.5 flex-wrap">
+                                <>
                                   <span className="text-sm text-foreground">{event.details.subject ?? "Митинг"}</span>
                                   {event.details.durationMinutes != null && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {(() => {
-                                        const m = event.details.durationMinutes;
-                                        if (m >= 60) {
-                                          const h = Math.floor(m / 60);
-                                          const rem = m % 60;
-                                          return rem > 0 ? `${h} ч ${rem} мин` : `${h} ч`;
-                                        }
-                                        return `${m} мин`;
-                                      })()}
-                                    </span>
+                                    <div className="mt-0.5">
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {(() => {
+                                          const m = event.details.durationMinutes;
+                                          if (m >= 60) {
+                                            const h = Math.floor(m / 60);
+                                            const rem = m % 60;
+                                            return rem > 0 ? `${h} ч ${rem} мин` : `${h} ч`;
+                                          }
+                                          return `${m} мин`;
+                                        })()}
+                                      </span>
+                                    </div>
                                   )}
-                                </div>
+                                </>
                               ) : (
                                 <p className="text-sm text-foreground">{event.type}</p>
                               )}
