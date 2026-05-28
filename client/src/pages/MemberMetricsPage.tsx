@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Users } from "lucide-react";
 import { gitlabIcon, kaitenIcon } from "../assets/timeline-icons";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
@@ -403,6 +403,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                       const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
                       const isMR = event.type === "gitlab_mr_opened";
                       const isTask = event.type === "kaiten_task_started";
+                      const isMeeting = event.type === "kontur_meeting";
                       const kaitenDomain = import.meta.env.VITE_KAITEN_DOMAIN;
                       const kaitenUrl = isTask && event.details.spaceId && event.details.cardId
                         ? `https://${kaitenDomain}/space/${event.details.spaceId}/card/${event.details.cardId}`
@@ -422,7 +423,9 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                             <div className="bg-background rounded-full p-0.5 shrink-0">
                               {isMR
                                 ? <img src={gitlabIcon} alt="gitlab" className="w-[32px] h-[32px] block" />
-                                : <img src={kaitenIcon} alt="kaiten" className="w-[32px] h-[32px] block" />
+                                : isMeeting
+                                  ? <div className="w-[32px] h-[32px] flex items-center justify-center rounded-full bg-muted"><Users className="w-4 h-4 text-muted-foreground" /></div>
+                                  : <img src={kaitenIcon} alt="kaiten" className="w-[32px] h-[32px] block" />
                               }
                             </div>
                             <div className={`w-0.5 flex-1 ${isLast ? "bg-transparent" : "bg-border"}`} />
@@ -485,6 +488,23 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                     </span>
                                   )}
                                   <span className="text-xs text-muted-foreground">создан merge request</span>
+                                </div>
+                              ) : isMeeting ? (
+                                <div className="flex items-baseline gap-1.5 flex-wrap">
+                                  <span className="text-sm text-foreground">{event.details.subject ?? "Митинг"}</span>
+                                  {event.details.durationMinutes != null && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {(() => {
+                                        const m = event.details.durationMinutes;
+                                        if (m >= 60) {
+                                          const h = Math.floor(m / 60);
+                                          const rem = m % 60;
+                                          return rem > 0 ? `${h} ч ${rem} мин` : `${h} ч`;
+                                        }
+                                        return `${m} мин`;
+                                      })()}
+                                    </span>
+                                  )}
                                 </div>
                               ) : (
                                 <p className="text-sm text-foreground">{event.type}</p>
