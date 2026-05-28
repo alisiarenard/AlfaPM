@@ -443,13 +443,13 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                           <div key={`h-${ri}`} className="flex items-stretch gap-3">
                             {/* time column — empty */}
                             <div className="w-16 shrink-0" />
-                            {/* vertical line passes through (no icon) */}
+                            {/* vertical line passes through continuously */}
                             <div className="shrink-0 flex flex-col items-center z-10">
-                              <div className={`w-0.5 flex-1 ${isFirstRow ? "bg-transparent" : "bg-border"}`} style={{ minHeight: 8 }} />
-                              <div className="w-0.5 flex-1 bg-transparent" style={{ minHeight: 8 }} />
+                              <div className={`w-0.5 flex-1 ${isFirstRow ? "bg-transparent" : "bg-border"}`} />
+                              <div className={`w-0.5 flex-1 ${isLastRow ? "bg-transparent" : "bg-border"}`} />
                             </div>
-                            {/* date label */}
-                            <div className="flex-1 min-w-0 flex items-center py-1 pl-1">
+                            {/* date label — shifted right, more padding */}
+                            <div className="flex-1 min-w-0 flex items-center py-4 pl-10">
                               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                                 {row.dateStr}, {row.dayStr}
                               </p>
