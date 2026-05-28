@@ -491,9 +491,11 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                                 </div>
                               ) : isMeeting ? (
                                 <>
-                                  <span className="text-sm text-foreground">{event.details.subject ?? "Митинг"}</span>
+                                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                                    <span className="text-sm text-foreground">{event.details.subject ?? "Митинг"}</span>
+                                  </div>
                                   {event.details.durationMinutes != null && (
-                                    <div className="mt-0.5">
+                                    <div className="flex items-center gap-1.5 mt-0.5">
                                       <span className="text-[11px] text-muted-foreground">
                                         {(() => {
                                           const m = event.details.durationMinutes;
