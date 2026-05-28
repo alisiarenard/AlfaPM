@@ -281,11 +281,7 @@ function ContributionCell({ evaluation }: { evaluation: EvaluationStatus | undef
 }
 
 const COMMUNICATIONS_LABELS: { key: keyof CommunicationsSnapshot; label: string; format?: (v: any) => string }[] = [
-  { key: "meetings_share",                label: "Доля времени в митингах",   format: v => `${Math.round(v * 100)}%` },
-  { key: "team_avg_meetings_share",       label: "Среднее по команде",        format: v => `${Math.round(v * 100)}%` },
-  { key: "developer_meeting_count",       label: "Количество митингов",       format: v => String(v) },
-  { key: "developer_unique_meeting_hours",label: "Часов в митингах",          format: v => `${Math.round(v * 10) / 10}` },
-  { key: "working_hours_in_period",       label: "Рабочих часов в периоде",   format: v => String(v) },
+  { key: "meetings_share", label: "Доля рабочего времени на митингах", format: v => `${Math.round(v * 100)}%` },
 ];
 
 function CommunicationCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
