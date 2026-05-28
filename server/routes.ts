@@ -1021,6 +1021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let evaluations: any[] = [];
       const baseUrl = process.env.EVALUATIONS_BASE_URL;
+      console.log(`[Evaluations] EVALUATIONS_BASE_URL=${baseUrl ?? "(not set)"}, members=${members.length}`);
       if (baseUrl && members.length > 0) {
         const developerIds = members.map((m) => m.username);
 
