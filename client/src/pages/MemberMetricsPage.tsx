@@ -443,8 +443,8 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                           <div key={`h-${ri}`} className="flex items-stretch gap-3">
                             {/* time column — empty */}
                             <div className="w-16 shrink-0" />
-                            {/* vertical line passes through continuously */}
-                            <div className="shrink-0 flex flex-col items-center z-10">
+                            {/* vertical line passes through continuously — same width as icon column */}
+                            <div className="shrink-0 flex flex-col items-center z-10" style={{ width: 36 }}>
                               <div className={`w-0.5 flex-1 ${isFirstRow ? "bg-transparent" : "bg-border"}`} />
                               <div className={`w-0.5 flex-1 ${isLastRow ? "bg-transparent" : "bg-border"}`} />
                             </div>
