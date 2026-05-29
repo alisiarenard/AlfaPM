@@ -16,6 +16,85 @@ import type { DepartmentWithTeamCount, TeamRow, Department, TeamYearlyDataRow, T
 
 const MEMBER_ROLES = ["Разработчик", "Тестировщик", "Аналитик", "Дизайнер"] as const;
 
+function ExtraBoardRow({
+  board,
+  idx,
+  onChange,
+  onRemove,
+  testIdPrefix,
+}: {
+  board: { spaceId: string; boardId: string };
+  idx: number;
+  onChange: (idx: number, field: "spaceId" | "boardId", value: string) => void;
+  onRemove: (idx: number) => void;
+  testIdPrefix: string;
+}) {
+  const validSpaceId = board.spaceId && !isNaN(parseInt(board.spaceId)) && parseInt(board.spaceId) > 0;
+  const { data: boards, isFetching } = useQuery<{ id: number; title: string }[]>({
+    queryKey: ["/api/kaiten/spaces", board.spaceId, "boards"],
+    queryFn: async () => {
+      const res = await fetch(`/api/kaiten/spaces/${board.spaceId}/boards`);
+      if (!res.ok) throw new Error("Failed to fetch boards");
+      return res.json();
+    },
+    enabled: !!validSpaceId,
+    staleTime: 60000,
+  });
+
+  return (
+    <div className="flex gap-2 items-end">
+      <div className="flex-1 space-y-1">
+        <Label className="text-xs text-muted-foreground">ID пространства</Label>
+        <Input
+          type="number"
+          placeholder="0"
+          value={board.spaceId}
+          onChange={e => onChange(idx, "spaceId", e.target.value)}
+          className="no-arrows"
+          data-testid={`${testIdPrefix}-space-${idx}`}
+        />
+      </div>
+      <div className="flex-1 space-y-1">
+        <Label className="text-xs text-muted-foreground">Доска</Label>
+        {validSpaceId && boards && boards.length > 0 ? (
+          <Select
+            value={board.boardId}
+            onValueChange={val => onChange(idx, "boardId", val)}
+          >
+            <SelectTrigger data-testid={`${testIdPrefix}-board-${idx}`}>
+              <SelectValue placeholder={isFetching ? "Загрузка..." : "Выберите доску"} />
+            </SelectTrigger>
+            <SelectContent>
+              {boards.map(b => (
+                <SelectItem key={b.id} value={String(b.id)}>{b.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            type="number"
+            placeholder={isFetching ? "Загрузка..." : "0"}
+            value={board.boardId}
+            onChange={e => onChange(idx, "boardId", e.target.value)}
+            className="no-arrows"
+            disabled={isFetching}
+            data-testid={`${testIdPrefix}-board-${idx}`}
+          />
+        )}
+      </div>
+      <Button
+        size="icon"
+        variant="ghost"
+        type="button"
+        data-testid={`${testIdPrefix}-remove-${idx}`}
+        onClick={() => onRemove(idx)}
+      >
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 function DepartmentTreeItem({ 
   department, 
   isExpanded, 
@@ -683,7 +762,10 @@ export default function SettingsPage() {
       const hasSprintsChanged = hasSprints !== origHasSprints;
       const plannedIrChanged = (plannedIr ? parseInt(plannedIr) : null) !== origPlannedIr;
       const sprintIdsChanged = sprintIds.trim() !== "";
-      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || omniBoardIdChanged || devColumnIdChanged || testColumnIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || plannedIrChanged || sprintIdsChanged;
+      const origExtraBoards = (editingTeam.extraBoards || []).map(b => `${b.spaceId}-${b.boardId}`).sort().join(",");
+      const curExtraBoards = extraBoards.filter(b => b.spaceId && b.boardId).map(b => `${b.spaceId}-${b.boardId}`).sort().join(",");
+      const extraBoardsChanged = origExtraBoards !== curExtraBoards;
+      return nameChanged || spaceIdChanged || sprintBoardIdChanged || initBoardIdChanged || initSpaceIdChanged || omniBoardIdChanged || devColumnIdChanged || testColumnIdChanged || velocityChanged || sprintDurationChanged || spPriceChanged || hasSprintsChanged || plannedIrChanged || sprintIdsChanged || extraBoardsChanged;
     }
     return false;
   };
@@ -1292,47 +1374,18 @@ export default function SettingsPage() {
                                 </Button>
                               </div>
                               {extraBoards.map((board, idx) => (
-                                <div key={idx} className="flex gap-2 items-end">
-                                  <div className="flex-1 space-y-1">
-                                    <Label className="text-xs text-muted-foreground">ID пространства</Label>
-                                    <Input
-                                      type="number"
-                                      placeholder="0"
-                                      value={board.spaceId}
-                                      onChange={e => {
-                                        const nb = [...extraBoards];
-                                        nb[idx] = { ...nb[idx], spaceId: e.target.value };
-                                        setExtraBoards(nb);
-                                      }}
-                                      className="no-arrows"
-                                      data-testid={`input-extra-board-space-${idx}`}
-                                    />
-                                  </div>
-                                  <div className="flex-1 space-y-1">
-                                    <Label className="text-xs text-muted-foreground">ID доски</Label>
-                                    <Input
-                                      type="number"
-                                      placeholder="0"
-                                      value={board.boardId}
-                                      onChange={e => {
-                                        const nb = [...extraBoards];
-                                        nb[idx] = { ...nb[idx], boardId: e.target.value };
-                                        setExtraBoards(nb);
-                                      }}
-                                      className="no-arrows"
-                                      data-testid={`input-extra-board-board-${idx}`}
-                                    />
-                                  </div>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    type="button"
-                                    data-testid={`button-remove-extra-board-${idx}`}
-                                    onClick={() => setExtraBoards(extraBoards.filter((_, i) => i !== idx))}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                <ExtraBoardRow
+                                  key={idx}
+                                  board={board}
+                                  idx={idx}
+                                  testIdPrefix="input-extra-board"
+                                  onChange={(i, field, val) => {
+                                    const nb = [...extraBoards];
+                                    nb[i] = { ...nb[i], [field]: val };
+                                    setExtraBoards(nb);
+                                  }}
+                                  onRemove={i => setExtraBoards(extraBoards.filter((_, k) => k !== i))}
+                                />
                               ))}
                             </div>
                           )}
@@ -1691,47 +1744,18 @@ export default function SettingsPage() {
                                 </Button>
                               </div>
                               {extraBoards.map((board, idx) => (
-                                <div key={idx} className="flex gap-2 items-end">
-                                  <div className="flex-1 space-y-1">
-                                    <Label className="text-xs text-muted-foreground">ID пространства</Label>
-                                    <Input
-                                      type="number"
-                                      placeholder="0"
-                                      value={board.spaceId}
-                                      onChange={e => {
-                                        const nb = [...extraBoards];
-                                        nb[idx] = { ...nb[idx], spaceId: e.target.value };
-                                        setExtraBoards(nb);
-                                      }}
-                                      className="no-arrows"
-                                      data-testid={`input-new-extra-board-space-${idx}`}
-                                    />
-                                  </div>
-                                  <div className="flex-1 space-y-1">
-                                    <Label className="text-xs text-muted-foreground">ID доски</Label>
-                                    <Input
-                                      type="number"
-                                      placeholder="0"
-                                      value={board.boardId}
-                                      onChange={e => {
-                                        const nb = [...extraBoards];
-                                        nb[idx] = { ...nb[idx], boardId: e.target.value };
-                                        setExtraBoards(nb);
-                                      }}
-                                      className="no-arrows"
-                                      data-testid={`input-new-extra-board-board-${idx}`}
-                                    />
-                                  </div>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    type="button"
-                                    data-testid={`button-remove-new-extra-board-${idx}`}
-                                    onClick={() => setExtraBoards(extraBoards.filter((_, i) => i !== idx))}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                <ExtraBoardRow
+                                  key={idx}
+                                  board={board}
+                                  idx={idx}
+                                  testIdPrefix="input-new-extra-board"
+                                  onChange={(i, field, val) => {
+                                    const nb = [...extraBoards];
+                                    nb[i] = { ...nb[i], [field]: val };
+                                    setExtraBoards(nb);
+                                  }}
+                                  onRemove={i => setExtraBoards(extraBoards.filter((_, k) => k !== i))}
+                                />
                               ))}
                             </div>
                           )}
