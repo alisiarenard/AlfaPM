@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Users } from "lucide-react";
-import { gitlabIcon, kaitenIcon } from "../assets/timeline-icons";
+import { ExternalLink } from "lucide-react";
+import { gitlabIcon, kaitenIcon, meetingIcon } from "../assets/timeline-icons";
 import type { TeamMemberRow, TeamRow, PersonalMetricsRow } from "@shared/schema";
 
 interface MetricsSnapshot {
@@ -480,7 +480,7 @@ export default function MemberMetricsPage({ departmentId, memberId, quarter, yea
                               {isMR
                                 ? <img src={gitlabIcon} alt="gitlab" className="w-[32px] h-[32px] block" />
                                 : isMeeting
-                                  ? <div className="w-[32px] h-[32px] flex items-center justify-center rounded-full bg-muted"><Users className="w-4 h-4 text-muted-foreground" /></div>
+                                  ? <img src={meetingIcon} alt="meeting" className="w-[32px] h-[32px] block" />
                                   : <img src={kaitenIcon} alt="kaiten" className="w-[32px] h-[32px] block" />
                               }
                             </div>
