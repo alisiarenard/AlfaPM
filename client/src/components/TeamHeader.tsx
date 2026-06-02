@@ -199,7 +199,7 @@ function generateHtmlBody(
 <head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;font-size:15px;color:${TEXT};margin:0;padding:20px;line-height:1.6">
 <p style="margin:0 0 0 0">Коллеги,</p>
-<p style="margin:4px 0 16px 24px">Обзор спринта команд разработки системы ${teamNamesHtml} состоится ${dayWord}<b style="color:${RED}">${esc(dateStr)}</b> в <b style="color:${RED}">${esc(timeStr)}&nbsp;МСК</b> в <b style="color:${RED}">Контур.Толк</b> по следующим вопросам:</p>
+<p style="margin:4px 0 16px 24px">Обзор спринта команд разработки ${teamNamesHtml} состоится ${dayWord}<b style="color:${RED}">${esc(dateStr)}</b> в <b style="color:${RED}">${esc(timeStr)}&nbsp;МСК</b> в <b style="color:${RED}">Контур.Толк</b> по следующим вопросам:</p>
 <p style="margin:0 0 12px 0">Команда <b style="color:${RED}">${esc(teamName)}</b> за <b style="color:${RED}">${esc(sprintTitle)}</b> реализовала следующее:</p>
 <ul style="padding-left:10px;margin:0;list-style-type:none">
 ${listHtml}
