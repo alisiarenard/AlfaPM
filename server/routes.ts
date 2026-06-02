@@ -6396,73 +6396,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const now = new Date();
-      const start = new Date(now);
-      start.setDate(start.getDate() + 7);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(now);
-      end.setDate(end.getDate() + 13);
-      end.setHours(23, 59, 59, 999);
-
       const toYMD = (d: Date) => d.toISOString().slice(0, 10);
-
       const baseUrl = apiUrl.replace(/\/+$/, "");
-      const url = new URL(`${baseUrl}/api/EmailCalendar/${encodeURIComponent(email)}`);
-      url.searchParams.set("start", toYMD(start));
-      url.searchParams.set("end", toYMD(end));
 
-      console.log("[KonturTolk] → REQUEST");
-      console.log("[KonturTolk]   URL:", url.toString());
-      console.log("[KonturTolk]   Headers: X-Auth-Token=<set, length=" + apiKey.length + ">");
-
-      const response = await fetch(url.toString(), {
-        headers: { "X-Auth-Token": apiKey },
+      // Two requests: today+0..+6 and today+7..+13
+      const ranges = [
+        { offset: 0, days: 6 },
+        { offset: 7, days: 13 },
+      ].map(({ offset, days }) => {
+        const s = new Date(now); s.setDate(s.getDate() + offset); s.setHours(0, 0, 0, 0);
+        const e = new Date(now); e.setDate(e.getDate() + days); e.setHours(23, 59, 59, 999);
+        return { start: toYMD(s), end: toYMD(e) };
       });
 
-      const rawText = await response.text();
+      const fetchRange = async (start: string, end: string) => {
+        const url = new URL(`${baseUrl}/api/EmailCalendar/${encodeURIComponent(email)}`);
+        url.searchParams.set("start", start);
+        url.searchParams.set("end", end);
+        console.log(`[KonturTolk] → REQUEST ${start} – ${end}`);
+        const response = await fetch(url.toString(), { headers: { "X-Auth-Token": apiKey } });
+        const rawText = await response.text();
+        if (!response.ok) throw new Error(`Контур.Толк API error ${response.status}: ${rawText.slice(0, 300)}`);
+        return JSON.parse(rawText);
+      };
 
-      console.log("[KonturTolk] ← RESPONSE");
-      console.log("[KonturTolk]   Status:", response.status, response.statusText);
-      console.log("[KonturTolk]   Content-Type:", response.headers.get("content-type"));
-      console.log("[KonturTolk]   Body (first 500 chars):", rawText.slice(0, 500));
-
-      if (!response.ok) {
-        return res.status(response.status).json({ error: `Контур.Толк API error ${response.status}: ${rawText.slice(0, 300)}` });
-      }
-
-      let data: any;
-      try {
-        data = JSON.parse(rawText);
-      } catch (parseErr) {
-        console.log("[KonturTolk]   JSON parse error:", parseErr);
-        return res.status(502).json({ error: `Ответ от Контур.Толк не является JSON. Body: ${rawText.slice(0, 300)}` });
-      }
+      const [data1, data2] = await Promise.all(
+        ranges.map(r => fetchRange(r.start, r.end))
+      );
 
       const extractEmails = (attendees: any[]): string[] =>
         Array.isArray(attendees)
           ? attendees.map((a: any) => (typeof a?.mailbox === "string" ? a.mailbox : (a?.mailbox?.description ?? ""))).filter(Boolean)
           : [];
 
-      const items: {
-        subject: string; description: string; start: string; end: string;
-        requiredEmails: string[]; optionalEmails: string[];
-      }[] = (data.items || []).map((item: any) => ({
-        subject: item.subject ?? "",
-        description: item.description ?? "",
-        start: item.start ?? "",
-        end: item.end ?? "",
-        requiredEmails: extractEmails(item.requiredAttendees),
-        optionalEmails: extractEmails(item.optionalAttendees),
-      }));
+      const REVIEW_RE = /sprint\s*review|обзор\s*спринта|демонстрация\s*спринта/i;
 
-      console.log("[KonturTolk]   Parsed items count:", items.length);
-      items.forEach((item, i) => {
-        const raw = (data.items || [])[i];
-        console.log(`[KonturTolk]   Item[${i}] subject: "${item.subject}"`);
-        console.log(`[KonturTolk]   Item[${i}] raw requiredAttendees:`, JSON.stringify(raw?.requiredAttendees ?? null));
-        console.log(`[KonturTolk]   Item[${i}] raw optionalAttendees:`, JSON.stringify(raw?.optionalAttendees ?? null));
-        console.log(`[KonturTolk]   Item[${i}] requiredEmails:`, item.requiredEmails);
-        console.log(`[KonturTolk]   Item[${i}] optionalEmails:`, item.optionalEmails);
+      const mapItems = (data: any) =>
+        (data.items || []).map((item: any) => ({
+          subject: item.subject ?? "",
+          description: item.description ?? "",
+          start: item.start ?? "",
+          end: item.end ?? "",
+          requiredEmails: extractEmails(item.requiredAttendees),
+          optionalEmails: extractEmails(item.optionalAttendees),
+        }));
+
+      const allItems = [...mapItems(data1), ...mapItems(data2)];
+
+      // Deduplicate by subject+start, then filter by keywords
+      const seen = new Set<string>();
+      const items = allItems.filter(item => {
+        const key = `${item.subject}|${item.start}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return REVIEW_RE.test(item.subject) || REVIEW_RE.test(item.description);
       });
+
+      console.log(`[KonturTolk] Total items after merge+filter: ${items.length}`);
 
       return res.json({ items });
     } catch (error) {
