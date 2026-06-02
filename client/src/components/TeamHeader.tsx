@@ -94,14 +94,16 @@ function esc(s: string): string {
 /** Build sub-grouped HTML for one initiative's task list.
  *  If none of the tasks have a category marker → flat list (no sub-headers).
  *  Otherwise → grouped by category with bold sub-headers. */
+const TASK_LI = `style="list-style-type:none;margin-bottom:3px;padding-left:4px"`;
+const TASK_BULLET = `&#9675;&nbsp;`; // ○
+
 function buildInitiativeTasksHtml(tasks: TaskRow[]): string {
   const parsed = tasks.map(parseTaskTitle);
   const anyHasCategory = parsed.some(p => p.category !== null);
 
   if (!anyHasCategory) {
-    // Flat list — just show task titles as-is
     return parsed
-      .map(p => `<li style="list-style-type:circle;margin-bottom:2px">${esc(p.cleanTitle)}</li>`)
+      .map(p => `<li ${TASK_LI}>${TASK_BULLET}${esc(p.cleanTitle)}</li>`)
       .join("");
   }
 
@@ -120,7 +122,7 @@ function buildInitiativeTasksHtml(tasks: TaskRow[]): string {
     html += `<li style="list-style-type:none;margin-bottom:4px"><b>${esc(cat)}:</b>`;
     html += `<ul style="margin:2px 0 6px 0;padding-left:20px">`;
     for (const p of group) {
-      html += `<li style="list-style-type:circle;margin-bottom:2px">${esc(p.cleanTitle)}</li>`;
+      html += `<li ${TASK_LI}>${TASK_BULLET}${esc(p.cleanTitle)}</li>`;
     }
     html += `</ul></li>`;
   }
@@ -174,28 +176,32 @@ function generateHtmlBody(
     }
   }
 
+  const TEXT = "#333333";
+  const INIT_LI = `style="list-style-type:none;margin-bottom:10px"`;
+  const INIT_BULLET = `&#9679;&nbsp;`; // ●
+
   let listHtml = "";
 
   initiativeGroups.forEach((initTasks, initTitle) => {
     const subHtml = buildInitiativeTasksHtml(initTasks);
-    listHtml += `<li style="margin-bottom:10px"><b>${esc(initTitle)}:</b>`;
-    listHtml += `<ul style="margin:4px 0;padding-left:20px">${subHtml}</ul></li>`;
+    listHtml += `<li ${INIT_LI}><b>${INIT_BULLET}${esc(initTitle)}:</b>`;
+    listHtml += `<ul style="margin:4px 0;padding-left:24px">${subHtml}</ul></li>`;
   });
 
   if (noInitiativeTasks.length > 0) {
     const subHtml = buildInitiativeTasksHtml(noInitiativeTasks);
-    listHtml += `<li style="margin-bottom:10px"><b>Другие задачи:</b>`;
-    listHtml += `<ul style="margin:4px 0;padding-left:20px">${subHtml}</ul></li>`;
+    listHtml += `<li ${INIT_LI}><b>${INIT_BULLET}Другие задачи:</b>`;
+    listHtml += `<ul style="margin:4px 0;padding-left:24px">${subHtml}</ul></li>`;
   }
 
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
-<body style="font-family:Arial,sans-serif;font-size:14px;color:#000;margin:0;padding:20px;line-height:1.5">
+<body style="font-family:Arial,sans-serif;font-size:15px;color:${TEXT};margin:0;padding:20px;line-height:1.6">
 <p style="margin:0 0 0 0">Коллеги,</p>
 <p style="margin:4px 0 16px 24px">Обзор спринта команд разработки системы ${teamNamesHtml} состоится ${dayWord}<b style="color:${RED}">${esc(dateStr)}</b> в <b style="color:${RED}">${esc(timeStr)}&nbsp;МСК</b> в <b style="color:${RED}">Контур.Толк</b> по следующим вопросам:</p>
 <p style="margin:0 0 12px 0">Команда <b style="color:${RED}">${esc(teamName)}</b> за <b style="color:${RED}">${esc(sprintTitle)}</b> реализовала следующее:</p>
-<ul style="padding-left:30px;margin:0">
+<ul style="padding-left:10px;margin:0;list-style-type:none">
 ${listHtml}
 </ul>
 </body>
