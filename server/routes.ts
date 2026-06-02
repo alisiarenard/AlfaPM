@@ -6390,7 +6390,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const toYMD = (d: Date) => d.toISOString().slice(0, 10);
 
-      const url = new URL(`${apiUrl}/api/EmailCalendar/${encodeURIComponent(email)}`);
+      const baseUrl = apiUrl.replace(/\/+$/, "");
+      const url = new URL(`${baseUrl}/api/EmailCalendar/${encodeURIComponent(email)}`);
       url.searchParams.set("start", toYMD(start));
       url.searchParams.set("end", toYMD(end));
 
