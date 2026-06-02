@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { Team, Initiative, TeamRow, SprintRow } from "@shared/schema";
@@ -58,30 +58,23 @@ function SprintReviewModal({
     staleTime: 60000,
   });
 
-  const sortedSprints = sprints
+  const latestSprint = sprints
     ? [...sprints].sort(
         (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-      )
-    : [];
+      )[0]
+    : undefined;
 
-  const [selectedSprint, setSelectedSprint] = useState<string>("");
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set([team.teamId]));
-
-  useEffect(() => {
-    if (sortedSprints.length > 0 && !selectedSprint) {
-      setSelectedSprint(String(sortedSprints[0].sprintId));
-    }
-  }, [sortedSprints.length]);
 
   useEffect(() => {
     if (open) {
       setSelectedTeams(new Set([team.teamId]));
-      setSelectedSprint("");
     }
   }, [open, team.teamId]);
 
   const toggleTeam = (teamId: string) => {
     setSelectedTeams(prev => {
+      if (prev.has(teamId) && prev.size === 1) return prev;
       const next = new Set(prev);
       if (next.has(teamId)) {
         next.delete(teamId);
@@ -92,53 +85,54 @@ function SprintReviewModal({
     });
   };
 
+  const sprintDatesLabel = latestSprint
+    ? `${formatSprintDate(latestSprint.startDate)} — ${formatSprintDate(latestSprint.finishDate)}`
+    : "";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Сформировать письмо для обзора спринта</DialogTitle>
+          <DialogTitle>
+            Письмо для Обзора спринта
+            {sprintDatesLabel && (
+              <span className="block text-sm font-normal text-muted-foreground mt-0.5">
+                {sprintDatesLabel}
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 py-2">
           <div className="space-y-2">
-            <Label>Спринт</Label>
-            <Select value={selectedSprint} onValueChange={setSelectedSprint}>
-              <SelectTrigger data-testid="select-sprint-review-sprint">
-                <SelectValue placeholder={sortedSprints.length === 0 ? "Нет спринтов" : "Выберите спринт"} />
-              </SelectTrigger>
-              <SelectContent>
-                {sortedSprints.map(s => (
-                  <SelectItem key={s.sprintId} value={String(s.sprintId)}>
-                    {formatSprintDate(s.startDate)} — {formatSprintDate(s.finishDate)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label>Команды</Label>
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-              {(departmentTeams || []).map(t => (
-                <div key={t.teamId} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`team-cb-${t.teamId}`}
-                    checked={selectedTeams.has(t.teamId)}
-                    onCheckedChange={() => toggleTeam(t.teamId)}
-                    data-testid={`checkbox-sprint-review-team-${t.teamId}`}
-                  />
-                  <label
-                    htmlFor={`team-cb-${t.teamId}`}
-                    className="text-sm cursor-pointer select-none"
-                  >
-                    {t.teamName}
-                  </label>
-                </div>
-              ))}
-              {!departmentTeams && (
-                <p className="text-xs text-muted-foreground">Загрузка...</p>
-              )}
-            </div>
+            {!departmentTeams ? (
+              <p className="text-xs text-muted-foreground">Загрузка...</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {departmentTeams.map(t => {
+                  const isChecked = selectedTeams.has(t.teamId);
+                  const isDisabled = isChecked && selectedTeams.size === 1;
+                  return (
+                    <div key={t.teamId} className="flex items-center gap-2 min-w-0">
+                      <Checkbox
+                        id={`team-cb-${t.teamId}`}
+                        checked={isChecked}
+                        disabled={isDisabled}
+                        onCheckedChange={() => toggleTeam(t.teamId)}
+                        data-testid={`checkbox-sprint-review-team-${t.teamId}`}
+                      />
+                      <label
+                        htmlFor={`team-cb-${t.teamId}`}
+                        className={`text-sm truncate select-none ${isDisabled ? "text-muted-foreground" : "cursor-pointer"}`}
+                      >
+                        {t.teamName}
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -150,16 +144,6 @@ function SprintReviewModal({
               <SelectContent />
             </Select>
           </div>
-
-          <div className="space-y-2">
-            <Label>Получатели</Label>
-            <div
-              className="min-h-[40px] rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground"
-              data-testid="chips-sprint-review-recipients"
-            >
-              &nbsp;
-            </div>
-          </div>
         </div>
 
         <div className="flex justify-end pt-2">
@@ -170,7 +154,7 @@ function SprintReviewModal({
             data-testid="button-download-sprint-letter"
           >
             <Download className="h-4 w-4 mr-2" />
-            Скачать письмо
+            Скачать
           </Button>
         </div>
       </DialogContent>
@@ -230,8 +214,8 @@ export function TeamHeader({ team, dbTeam, onSync, isSyncing, viewTab, onViewTab
           <button
             onClick={() => onViewTabChange("initiatives")}
             className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
-              viewTab === "initiatives" 
-                ? "bg-background text-foreground shadow-sm" 
+              viewTab === "initiatives"
+                ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
             data-testid="tab-view-initiatives"
@@ -241,8 +225,8 @@ export function TeamHeader({ team, dbTeam, onSync, isSyncing, viewTab, onViewTab
           <button
             onClick={() => onViewTabChange("metrics")}
             className={`px-4 py-1 text-xs font-medium rounded transition-colors ${
-              viewTab === "metrics" 
-                ? "bg-background text-foreground shadow-sm" 
+              viewTab === "metrics"
+                ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
             data-testid="tab-view-metrics"
@@ -251,8 +235,8 @@ export function TeamHeader({ team, dbTeam, onSync, isSyncing, viewTab, onViewTab
           </button>
         </div>
       </div>
-      <SprintInfoDialog 
-        open={sprintInfoOpen} 
+      <SprintInfoDialog
+        open={sprintInfoOpen}
         onOpenChange={setSprintInfoOpen}
         teamId={team.teamId}
       />
