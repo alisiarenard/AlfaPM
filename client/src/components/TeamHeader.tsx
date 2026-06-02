@@ -131,12 +131,56 @@ function buildInitiativeTasksHtml(tasks: TaskRow[]): string {
 
 // ─── Full HTML body ───────────────────────────────────────────────────────────
 
+interface TeamSection {
+  teamName: string;
+  sprintTitle: string;
+  tasks: TaskRow[];
+}
+
+const TEXT = "#333333";
+const INIT_LI = `style="list-style-type:none;margin-bottom:10px"`;
+const INIT_BULLET = `&#9679;&nbsp;`; // ●
+
+function buildTeamSectionHtml(section: TeamSection, initiativesMap: Map<number, string>): string {
+  const activeTasks = section.tasks.filter(t => t.condition !== "3 - deleted");
+
+  const initiativeGroups = new Map<string, TaskRow[]>();
+  const noInitiativeTasks: TaskRow[] = [];
+
+  for (const task of activeTasks) {
+    if (task.initCardId && initiativesMap.has(task.initCardId)) {
+      const title = initiativesMap.get(task.initCardId)!;
+      if (!initiativeGroups.has(title)) initiativeGroups.set(title, []);
+      initiativeGroups.get(title)!.push(task);
+    } else {
+      noInitiativeTasks.push(task);
+    }
+  }
+
+  let listHtml = "";
+
+  initiativeGroups.forEach((initTasks, initTitle) => {
+    const subHtml = buildInitiativeTasksHtml(initTasks);
+    listHtml += `<li ${INIT_LI}><b>${INIT_BULLET}${esc(initTitle)}:</b>`;
+    listHtml += `<ul style="margin:4px 0;padding-left:24px">${subHtml}</ul></li>`;
+  });
+
+  if (noInitiativeTasks.length > 0) {
+    const subHtml = buildInitiativeTasksHtml(noInitiativeTasks);
+    listHtml += `<li ${INIT_LI}><b>${INIT_BULLET}Другие задачи:</b>`;
+    listHtml += `<ul style="margin:4px 0;padding-left:24px">${subHtml}</ul></li>`;
+  }
+
+  return `<p style="margin:16px 0 8px 0">Команда <b style="color:${RED}">${esc(section.teamName)}</b> за <b style="color:${RED}">${esc(section.sprintTitle)}</b> реализовала следующее:</p>
+<ul style="padding-left:10px;margin:0 0 8px 0;list-style-type:none">
+${listHtml}
+</ul>`;
+}
+
 function generateHtmlBody(
   meeting: CalendarItem,
   selectedTeamNames: string[],
-  sprintTitle: string,
-  teamName: string,
-  tasks: TaskRow[],
+  sections: TeamSection[],
   initiativesMap: Map<number, string>
 ): string {
   const meetingDate = meeting.start ? new Date(meeting.start) : null;
@@ -160,39 +204,9 @@ function generateHtmlBody(
     .map(n => `<b style="color:${RED}">${esc(n)}</b>`)
     .join(", ");
 
-  const activeTasks = tasks.filter(t => t.condition !== "3 - deleted");
-
-  // Group tasks by initiative
-  const initiativeGroups = new Map<string, TaskRow[]>(); // initiative title → tasks
-  const noInitiativeTasks: TaskRow[] = [];
-
-  for (const task of activeTasks) {
-    if (task.initCardId && initiativesMap.has(task.initCardId)) {
-      const title = initiativesMap.get(task.initCardId)!;
-      if (!initiativeGroups.has(title)) initiativeGroups.set(title, []);
-      initiativeGroups.get(title)!.push(task);
-    } else {
-      noInitiativeTasks.push(task);
-    }
-  }
-
-  const TEXT = "#333333";
-  const INIT_LI = `style="list-style-type:none;margin-bottom:10px"`;
-  const INIT_BULLET = `&#9679;&nbsp;`; // ●
-
-  let listHtml = "";
-
-  initiativeGroups.forEach((initTasks, initTitle) => {
-    const subHtml = buildInitiativeTasksHtml(initTasks);
-    listHtml += `<li ${INIT_LI}><b>${INIT_BULLET}${esc(initTitle)}:</b>`;
-    listHtml += `<ul style="margin:4px 0;padding-left:24px">${subHtml}</ul></li>`;
-  });
-
-  if (noInitiativeTasks.length > 0) {
-    const subHtml = buildInitiativeTasksHtml(noInitiativeTasks);
-    listHtml += `<li ${INIT_LI}><b>${INIT_BULLET}Другие задачи:</b>`;
-    listHtml += `<ul style="margin:4px 0;padding-left:24px">${subHtml}</ul></li>`;
-  }
+  const sectionsHtml = sections
+    .map(s => buildTeamSectionHtml(s, initiativesMap))
+    .join("");
 
   return `<!DOCTYPE html>
 <html>
@@ -200,10 +214,7 @@ function generateHtmlBody(
 <body style="font-family:Arial,sans-serif;font-size:15px;color:${TEXT};margin:0;padding:20px;line-height:1.6">
 <p style="margin:0 0 0 0">Коллеги,</p>
 <p style="margin:4px 0 16px 24px">Обзор спринта команд разработки ${teamNamesHtml} состоится ${dayWord}<b style="color:${RED}">${esc(dateStr)}</b> в <b style="color:${RED}">${esc(timeStr)}&nbsp;МСК</b> в <b style="color:${RED}">Контур.Толк</b> по следующим вопросам:</p>
-<p style="margin:0 0 12px 0">Команда <b style="color:${RED}">${esc(teamName)}</b> за <b style="color:${RED}">${esc(sprintTitle)}</b> реализовала следующее:</p>
-<ul style="padding-left:10px;margin:0;list-style-type:none">
-${listHtml}
-</ul>
+${sectionsHtml}
 </body>
 </html>`;
 }
@@ -318,6 +329,7 @@ function SprintReviewModal({
 
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set([team.teamId]));
   const [selectedMeetingIdx, setSelectedMeetingIdx] = useState<string>("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -343,38 +355,69 @@ function SprintReviewModal({
   const selectedMeeting =
     selectedMeetingIdx !== "" ? calendarItems[parseInt(selectedMeetingIdx)] : undefined;
 
-  function handleDownload() {
+  async function handleDownload() {
     if (!selectedMeeting) return;
+    setIsDownloading(true);
 
-    const initiativesMap = new Map<number, string>(
-      initiatives.map(i => [i.cardId, i.title])
-    );
+    try {
+      const initiativesMap = new Map<number, string>(
+        initiatives.map(i => [i.cardId, i.title])
+      );
 
-    const selectedTeamNames: string[] = departmentTeams
-      ? departmentTeams.filter(t => selectedTeams.has(t.teamId)).map(t => t.teamName)
-      : [team.name];
+      const selectedTeamRows = departmentTeams
+        ? departmentTeams.filter(t => selectedTeams.has(t.teamId))
+        : [];
+      const selectedTeamNames = selectedTeamRows.map(t => t.teamName);
 
-    const sprintTitle = latestSprint?.title ?? sprintDatesLabel ?? "";
-    const tasks = sprintTasks ?? [];
+      // Fetch latest sprint + tasks for each selected team in parallel
+      const sections: TeamSection[] = (
+        await Promise.all(
+          selectedTeamRows.map(async (teamRow) => {
+            if (!teamRow.sprintBoardId) return null;
+            try {
+              const sprintsRes = await fetch(`/api/sprints/board/${teamRow.sprintBoardId}`);
+              if (!sprintsRes.ok) return null;
+              const sprints: SprintRow[] = await sprintsRes.json();
+              const latest = [...sprints].sort(
+                (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+              )[0];
+              if (!latest) return null;
 
-    const htmlBody = generateHtmlBody(
-      selectedMeeting,
-      selectedTeamNames,
-      sprintTitle,
-      team.name,
-      tasks,
-      initiativesMap
-    );
+              const tasksRes = await fetch(`/api/tasks/sprint/${latest.sprintId}`);
+              if (!tasksRes.ok) return null;
+              const tasks: TaskRow[] = await tasksRes.json();
 
-    const content = generateEml(
-      selectedMeeting.subject,
-      selectedMeeting.requiredEmails,
-      selectedMeeting.optionalEmails,
-      htmlBody
-    );
+              return {
+                teamName: teamRow.teamName,
+                sprintTitle: latest.title ?? `${formatSprintDate(latest.startDate)} — ${formatSprintDate(latest.finishDate)}`,
+                tasks,
+              } satisfies TeamSection;
+            } catch {
+              return null;
+            }
+          })
+        )
+      ).filter((s): s is TeamSection => s !== null);
 
-    const safeName = selectedMeeting.subject.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
-    downloadEml(`${safeName}.eml`, content);
+      const htmlBody = generateHtmlBody(
+        selectedMeeting,
+        selectedTeamNames,
+        sections,
+        initiativesMap
+      );
+
+      const content = generateEml(
+        selectedMeeting.subject,
+        selectedMeeting.requiredEmails,
+        selectedMeeting.optionalEmails,
+        htmlBody
+      );
+
+      const safeName = selectedMeeting.subject.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
+      downloadEml(`${safeName}.eml`, content);
+    } finally {
+      setIsDownloading(false);
+    }
   }
 
   return (
@@ -453,14 +496,16 @@ function SprintReviewModal({
 
         <div className="flex justify-end pt-2">
           <Button
-            disabled={!selectedMeeting}
+            disabled={!selectedMeeting || isDownloading}
             onClick={handleDownload}
             style={{ backgroundColor: "#cd253d" }}
             className="text-white hover:opacity-90 border-0"
             data-testid="button-download-sprint-letter"
           >
-            <Download className="h-4 w-4 mr-2" />
-            Скачать
+            {isDownloading
+              ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              : <Download className="h-4 w-4 mr-2" />}
+            {isDownloading ? "Загрузка..." : "Скачать"}
           </Button>
         </div>
       </DialogContent>
