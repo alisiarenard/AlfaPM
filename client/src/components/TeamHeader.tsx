@@ -97,22 +97,30 @@ function esc(s: string): string {
 const TASK_LI = `style="list-style-type:none;margin-bottom:3px;padding-left:4px"`;
 const TASK_BULLET = `&#9675;&nbsp;`; // ○
 
-function buildInitiativeTasksHtml(tasks: TaskRow[]): string {
-  const parsed = tasks.map(parseTaskTitle);
-  const anyHasCategory = parsed.some(p => p.category !== null);
+// Task representation for email — category parsed from original title, displayTitle from LLM
+interface TaskForEmail {
+  key: string;           // unique id for dedup/mapping
+  displayTitle: string;  // humanized title (or original if LLM unavailable)
+  category: TaskCategory | null; // parsed from ORIGINAL title before humanization
+  condition: string | null;
+  initCardId: number | null;
+}
+
+function buildInitiativeTasksHtml(tasks: TaskForEmail[]): string {
+  const anyHasCategory = tasks.some(t => t.category !== null);
 
   if (!anyHasCategory) {
-    return parsed
-      .map(p => `<li ${TASK_LI}>${TASK_BULLET}${esc(p.cleanTitle)}</li>`)
+    return tasks
+      .map(t => `<li ${TASK_LI}>${TASK_BULLET}${esc(t.displayTitle)}</li>`)
       .join("");
   }
 
-  // Group by category
-  const groups = new Map<string, ParsedTask[]>();
-  for (const p of parsed) {
-    const key = p.category ?? "Другие работы";
+  // Group by pre-parsed category
+  const groups = new Map<string, TaskForEmail[]>();
+  for (const t of tasks) {
+    const key = t.category ?? "Другие работы";
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(p);
+    groups.get(key)!.push(t);
   }
 
   let html = "";
@@ -121,8 +129,8 @@ function buildInitiativeTasksHtml(tasks: TaskRow[]): string {
     if (!group?.length) continue;
     html += `<li style="list-style-type:none;margin-bottom:4px"><b>${esc(cat)}:</b>`;
     html += `<ul style="margin:2px 0 6px 0;padding-left:20px">`;
-    for (const p of group) {
-      html += `<li ${TASK_LI}>${TASK_BULLET}${esc(p.cleanTitle)}</li>`;
+    for (const t of group) {
+      html += `<li ${TASK_LI}>${TASK_BULLET}${esc(t.displayTitle)}</li>`;
     }
     html += `</ul></li>`;
   }
@@ -134,7 +142,7 @@ function buildInitiativeTasksHtml(tasks: TaskRow[]): string {
 interface TeamSection {
   teamName: string;
   sprintTitle: string;
-  tasks: TaskRow[];
+  tasks: TaskForEmail[];
 }
 
 const TEXT = "#333333";
@@ -144,8 +152,8 @@ const INIT_BULLET = `&#9679;&nbsp;`; // ●
 function buildTeamSectionHtml(section: TeamSection, initiativesMap: Map<number, string>): string {
   const activeTasks = section.tasks.filter(t => t.condition !== "3 - deleted");
 
-  const initiativeGroups = new Map<string, TaskRow[]>();
-  const noInitiativeTasks: TaskRow[] = [];
+  const initiativeGroups = new Map<string, TaskForEmail[]>();
+  const noInitiativeTasks: TaskForEmail[] = [];
 
   for (const task of activeTasks) {
     if (task.initCardId && initiativesMap.has(task.initCardId)) {
@@ -399,35 +407,66 @@ function SprintReviewModal({
         )
       ).filter((s): s is TeamSection => s !== null);
 
-      // Humanize all task titles via LLM (one batch across all teams)
+      // Step 1: parse categories from ORIGINAL titles before humanization
+      // key → { category, cleanTitle (markers stripped) }
+      type PreParsed = { category: TaskCategory | null; cleanTitle: string };
+      const preParsedMap = new Map<string, PreParsed>();
+      for (const s of rawSections) {
+        for (const t of s.tasks) {
+          const key = t.cardId?.toString() ?? t.title;
+          if (!preParsedMap.has(key)) {
+            const parsed = parseTaskTitle(t);
+            preParsedMap.set(key, { category: parsed.category, cleanTitle: parsed.cleanTitle });
+          }
+        }
+      }
+
+      // Step 2: humanize the CLEAN titles (markers already stripped) via LLM
       const allTasksFlat = rawSections.flatMap(s =>
-        s.tasks.map(t => ({ id: t.cardId?.toString() ?? t.title, title: t.title }))
+        s.tasks.map(t => {
+          const key = t.cardId?.toString() ?? t.title;
+          const clean = preParsedMap.get(key)?.cleanTitle ?? t.title;
+          return { id: key, title: clean };
+        })
+      );
+
+      // Deduplicate by id before sending to LLM
+      const uniqueTasksForLLM = Array.from(
+        new Map(allTasksFlat.map(t => [t.id, t])).values()
       );
 
       let humanizedMap = new Map<string, string>();
-      if (allTasksFlat.length > 0) {
+      if (uniqueTasksForLLM.length > 0) {
         try {
           const humanizeRes = await fetch("/api/llm/humanize-tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tasks: allTasksFlat }),
+            body: JSON.stringify({ tasks: uniqueTasksForLLM }),
           });
           if (humanizeRes.ok) {
             const { tasks: humanized } = await humanizeRes.json();
             for (const h of humanized) humanizedMap.set(h.id, h.title);
           }
         } catch {
-          // fallback: use original titles
+          // fallback: use clean titles
         }
       }
 
-      // Apply humanized titles to sections
+      // Step 3: build TaskForEmail — category from pre-parsed, displayTitle from LLM (or clean fallback)
       const sections: TeamSection[] = rawSections.map(s => ({
-        ...s,
+        teamName: s.teamName,
+        sprintTitle: s.sprintTitle,
         tasks: s.tasks.map(t => {
           const key = t.cardId?.toString() ?? t.title;
-          const humanTitle = humanizedMap.get(key);
-          return humanTitle ? { ...t, title: humanTitle } : t;
+          const pre = preParsedMap.get(key);
+          const displayTitle = humanizedMap.get(key) ?? pre?.cleanTitle ?? t.title;
+          return {
+            key,
+            displayTitle,
+            category: pre?.category ?? null,
+            condition: t.condition,
+            initCardId: t.initCardId,
+          } satisfies TaskForEmail;
         }),
       }));
 
