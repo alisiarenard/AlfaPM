@@ -6395,11 +6395,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const end = new Date();
-      end.setHours(23, 59, 59, 999);
-      const start = new Date(end);
-      start.setDate(start.getDate() - 10);
+      const start = new Date();
       start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 9);
+      end.setHours(23, 59, 59, 999);
 
       const toYMD = (d: Date) => d.toISOString().slice(0, 10);
 
