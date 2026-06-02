@@ -415,6 +415,7 @@ function SprintReviewModal({
 
       const safeName = selectedMeeting.subject.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
       downloadEml(`${safeName}.eml`, content);
+      onOpenChange(false);
     } finally {
       setIsDownloading(false);
     }
