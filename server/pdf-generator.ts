@@ -1,20 +1,14 @@
 import PDFDocument from 'pdfkit';
-import OpenAI from 'openai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// AI Configuration
-const AI_API_KEY = process.env.OPENAI_API_KEY || '';
-const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
-const AI_BASE_URL = process.env.AI_BASE_URL || undefined;
-
-const openai = new OpenAI({
-  apiKey: AI_API_KEY,
-  baseURL: AI_BASE_URL,
-});
+// AI Configuration (generic LLM, OpenAI-compatible)
+const LLM_API_KEY = process.env.LLM_API_KEY || '';
+const LLM_MODEL   = process.env.LLM_MODEL   || 'gpt-4o-mini';
+const LLM_URL     = (process.env.LLM_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
 
 interface Task {
   title: string;
@@ -177,25 +171,34 @@ async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: str
       
       while (retries < 3) {
         try {
-          response = await openai.chat.completions.create({
-            model: AI_MODEL,
-            messages: [
-              { role: 'system', content: 'Сокращай задачи до 5-7 слов, сохраняя суть.' },
-              { role: 'user', content: prompt }
-            ],
-            temperature: 0.5,
-            max_tokens: 500,
+          const fetchResp = await fetch(`${LLM_URL}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${LLM_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: LLM_MODEL,
+              messages: [
+                { role: 'system', content: 'Сокращай задачи до 5-7 слов, сохраняя суть.' },
+                { role: 'user', content: prompt },
+              ],
+              temperature: 0.5,
+              max_tokens: 500,
+            }),
           });
-          break; // Успешно выполнили запрос
-        } catch (err: any) {
-          if (err.status === 429 && retries < 2) {
-            // Rate limit - ждем и повторяем
-            const waitTime = (retries + 1) * 20000; // 20s, 40s
+          if (fetchResp.status === 429 && retries < 2) {
+            const waitTime = (retries + 1) * 20000;
             await sleep(waitTime);
             retries++;
-          } else {
-            throw err; // Другая ошибка или исчерпаны попытки
+            continue;
           }
+          if (!fetchResp.ok) throw new Error(`LLM API error ${fetchResp.status}`);
+          response = await fetchResp.json();
+          break;
+        } catch (err: any) {
+          if (retries < 2) { retries++; await sleep((retries) * 20000); }
+          else throw err;
         }
       }
 
@@ -203,7 +206,7 @@ async function shortenTasksWithAI(tasks: Task[]): Promise<Array<{ shortened: str
         throw new Error('Failed to get AI response after retries');
       }
 
-      const shortenedText = response.choices[0]?.message?.content || '';
+      const shortenedText = (response as any).choices?.[0]?.message?.content || '';
       const shortenedLines = shortenedText.split('\n').filter(line => line.trim());
 
       batch.forEach((task, idx) => {

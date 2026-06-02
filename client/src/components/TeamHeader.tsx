@@ -370,7 +370,7 @@ function SprintReviewModal({
       const selectedTeamNames = selectedTeamRows.map(t => t.teamName);
 
       // Fetch latest sprint + tasks for each selected team in parallel
-      const sections: TeamSection[] = (
+      const rawSections: TeamSection[] = (
         await Promise.all(
           selectedTeamRows.map(async (teamRow) => {
             if (!teamRow.sprintBoardId) return null;
@@ -398,6 +398,38 @@ function SprintReviewModal({
           })
         )
       ).filter((s): s is TeamSection => s !== null);
+
+      // Humanize all task titles via LLM (one batch across all teams)
+      const allTasksFlat = rawSections.flatMap(s =>
+        s.tasks.map(t => ({ id: t.cardId?.toString() ?? t.title, title: t.title }))
+      );
+
+      let humanizedMap = new Map<string, string>();
+      if (allTasksFlat.length > 0) {
+        try {
+          const humanizeRes = await fetch("/api/llm/humanize-tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tasks: allTasksFlat }),
+          });
+          if (humanizeRes.ok) {
+            const { tasks: humanized } = await humanizeRes.json();
+            for (const h of humanized) humanizedMap.set(h.id, h.title);
+          }
+        } catch {
+          // fallback: use original titles
+        }
+      }
+
+      // Apply humanized titles to sections
+      const sections: TeamSection[] = rawSections.map(s => ({
+        ...s,
+        tasks: s.tasks.map(t => {
+          const key = t.cardId?.toString() ?? t.title;
+          const humanTitle = humanizedMap.get(key);
+          return humanTitle ? { ...t, title: humanTitle } : t;
+        }),
+      }));
 
       const htmlBody = generateHtmlBody(
         selectedMeeting,

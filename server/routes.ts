@@ -6385,6 +6385,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ─── Контур.Толк: календарь встреч ───────────────────────────────────────
+  // POST /api/llm/humanize-tasks — transforms technical task titles into human-readable sprint letter text
+  app.post("/api/llm/humanize-tasks", async (req, res) => {
+    const llmUrl = (process.env.LLM_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+    const llmKey = process.env.LLM_API_KEY || '';
+    const llmModel = process.env.LLM_MODEL || 'gpt-4o-mini';
+
+    if (!llmKey) {
+      return res.status(503).json({ error: "LLM не настроен (LLM_API_KEY)" });
+    }
+
+    const { tasks }: { tasks: { id: string; title: string }[] } = req.body;
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      return res.json({ tasks: [] });
+    }
+
+    try {
+      const titles = tasks.map(t => t.title).join('\n');
+      const systemPrompt = `Ты помогаешь составить письмо об итогах спринта для нетехнической аудитории.
+Перепиши каждое название задачи в короткое предложение на русском языке (5–10 слов).
+Используй глаголы: реализовано, разработано, исправлено, проведено, добавлено, обновлено, улучшено, внедрено, выполнено — в зависимости от смысла.
+Убери технические теги вида [Back], [Front], [QA], [BACK] и т.п. и технический жаргон.
+Отвечай ТОЛЬКО переформулированными строками (одна на строку), без нумерации, без пояснений, без пустых строк.`;
+
+      const fetchResp = await fetch(`${llmUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${llmKey}`,
+        },
+        body: JSON.stringify({
+          model: llmModel,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: titles },
+          ],
+          temperature: 0.4,
+          max_tokens: 1500,
+        }),
+      });
+
+      if (!fetchResp.ok) {
+        const errText = await fetchResp.text();
+        console.error('[LLM humanize] error:', fetchResp.status, errText.slice(0, 300));
+        // Fallback: return original titles
+        return res.json({ tasks });
+      }
+
+      const data: any = await fetchResp.json();
+      const lines: string[] = (data.choices?.[0]?.message?.content || '')
+        .split('\n')
+        .map((l: string) => l.trim())
+        .filter((l: string) => l.length > 0);
+
+      const result = tasks.map((t, i) => ({
+        id: t.id,
+        title: lines[i] || t.title,
+      }));
+
+      return res.json({ tasks: result });
+    } catch (err) {
+      console.error('[LLM humanize] exception:', err);
+      return res.json({ tasks }); // fallback
+    }
+  });
+
   app.get("/api/konturtolk/calendar", async (req, res) => {
     const apiUrl = process.env.KONTURTOLK_API_URL;
     const email = process.env.KONTURTOLK_EMAIL;
