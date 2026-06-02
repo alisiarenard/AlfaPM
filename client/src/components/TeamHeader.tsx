@@ -30,7 +30,8 @@ interface CalendarItem {
   description: string;
   start: string;
   end: string;
-  mailbox: { description: string }[];
+  requiredEmails: string[];
+  optionalEmails: string[];
 }
 
 function formatSprintDate(dateStr: string): string {
@@ -48,6 +49,7 @@ function encodeRfc2047(str: string): string {
 function generateEml(
   subject: string,
   toEmails: string[],
+  ccEmails: string[],
   sprintTitle: string,
   tasks: TaskRow[]
 ): string {
@@ -82,6 +84,7 @@ function generateEml(
     `Content-Transfer-Encoding: 8bit`,
     `Subject: ${encodeRfc2047(subject)}`,
     `To: ${toEmails.join(", ")}`,
+    ...(ccEmails.length > 0 ? [`CC: ${ccEmails.join(", ")}`] : []),
     ``,
     bodyText,
   ];
@@ -196,14 +199,12 @@ function SprintReviewModal({
   function handleDownload() {
     if (!selectedMeeting) return;
 
-    const toEmails = selectedMeeting.mailbox
-      .map(m => m.description)
-      .filter(Boolean);
-
+    const toEmails = selectedMeeting.requiredEmails;
+    const ccEmails = selectedMeeting.optionalEmails;
     const sprintTitle = latestSprint?.title ?? sprintDatesLabel ?? "";
     const tasks = sprintTasks ?? [];
 
-    const content = generateEml(selectedMeeting.subject, toEmails, sprintTitle, tasks);
+    const content = generateEml(selectedMeeting.subject, toEmails, ccEmails, sprintTitle, tasks);
 
     const safeName = selectedMeeting.subject.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
     downloadEml(`${safeName}.eml`, content);

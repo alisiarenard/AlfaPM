@@ -6435,24 +6435,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(502).json({ error: `Ответ от Контур.Толк не является JSON. Body: ${rawText.slice(0, 300)}` });
       }
 
-      const items: { subject: string; description: string; start: string; end: string; mailbox: { description: string }[] }[] =
-        (data.items || []).map((item: any) => ({
-          subject: item.subject ?? "",
-          description: item.description ?? "",
-          start: item.start ?? "",
-          end: item.end ?? "",
-          mailbox: Array.isArray(item.mailbox)
-            ? item.mailbox.map((m: any) => ({ description: m.description ?? "" }))
-            : [],
-        }));
+      const extractEmails = (attendees: any[]): string[] =>
+        Array.isArray(attendees)
+          ? attendees.map((a: any) => a?.mailbox?.description ?? "").filter(Boolean)
+          : [];
+
+      const items: {
+        subject: string; description: string; start: string; end: string;
+        requiredEmails: string[]; optionalEmails: string[];
+      }[] = (data.items || []).map((item: any) => ({
+        subject: item.subject ?? "",
+        description: item.description ?? "",
+        start: item.start ?? "",
+        end: item.end ?? "",
+        requiredEmails: extractEmails(item.requiredAttendees),
+        optionalEmails: extractEmails(item.optionalAttendees),
+      }));
 
       console.log("[KonturTolk]   Parsed items count:", items.length);
       items.forEach((item, i) => {
+        const raw = (data.items || [])[i];
         console.log(`[KonturTolk]   Item[${i}] subject: "${item.subject}"`);
-        console.log(`[KonturTolk]   Item[${i}] mailbox (${item.mailbox.length} entries):`, JSON.stringify(item.mailbox));
-        // Также выводим сырую структуру mailbox из оригинального ответа для сравнения
-        const rawItem = (data.items || [])[i];
-        console.log(`[KonturTolk]   Item[${i}] raw mailbox:`, JSON.stringify(rawItem?.mailbox ?? null));
+        console.log(`[KonturTolk]   Item[${i}] raw requiredAttendees:`, JSON.stringify(raw?.requiredAttendees ?? null));
+        console.log(`[KonturTolk]   Item[${i}] raw optionalAttendees:`, JSON.stringify(raw?.optionalAttendees ?? null));
+        console.log(`[KonturTolk]   Item[${i}] requiredEmails:`, item.requiredEmails);
+        console.log(`[KonturTolk]   Item[${i}] optionalEmails:`, item.optionalEmails);
       });
 
       return res.json({ items });
