@@ -6371,6 +6371,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── Контур.Толк: календарь встреч ───────────────────────────────────────
+  app.get("/api/konturtolk/calendar", async (req, res) => {
+    const apiUrl = process.env.KONTURTOLK_API_URL;
+    const email = process.env.KONTURTOLK_EMAIL;
+    const apiKey = process.env.KONTURTOLK_API_KEY;
+
+    if (!apiUrl || !email || !apiKey) {
+      return res.status(503).json({ error: "Контур.Толк не настроен (KONTURTOLK_API_URL, KONTURTOLK_EMAIL, KONTURTOLK_API_KEY)" });
+    }
+
+    try {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 2);
+      end.setHours(23, 59, 59, 999);
+
+      const url = new URL(`${apiUrl}/api/EmailCalendar/${encodeURIComponent(email)}`);
+      url.searchParams.set("start", start.toISOString());
+      url.searchParams.set("end", end.toISOString());
+
+      const response = await fetch(url.toString(), {
+        headers: { "X-Auth-Token": apiKey },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        return res.status(response.status).json({ error: `Контур.Толк API error: ${text}` });
+      }
+
+      const data = await response.json();
+      const items: { subject: string; description: string; start: string; end: string }[] =
+        (data.items || []).map((item: any) => ({
+          subject: item.subject ?? "",
+          description: item.description ?? "",
+          start: item.start ?? "",
+          end: item.end ?? "",
+        }));
+
+      return res.json({ items });
+    } catch (error) {
+      return res.status(500).json({ error: error instanceof Error ? error.message : "Failed to fetch calendar" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

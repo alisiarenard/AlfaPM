@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { Team, Initiative, TeamRow, SprintRow } from "@shared/schema";
@@ -23,6 +23,13 @@ interface TeamHeaderProps {
   viewTab: "initiatives" | "metrics";
   onViewTabChange: (tab: "initiatives" | "metrics") => void;
   year?: number;
+}
+
+interface CalendarItem {
+  subject: string;
+  description: string;
+  start: string;
+  end: string;
 }
 
 function formatSprintDate(dateStr: string): string {
@@ -58,6 +65,23 @@ function SprintReviewModal({
     staleTime: 60000,
   });
 
+  const { data: calendarData, isFetching: calendarFetching } = useQuery<{ items: CalendarItem[] }>({
+    queryKey: ["/api/konturtolk/calendar"],
+    queryFn: async () => {
+      const res = await fetch("/api/konturtolk/calendar");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to fetch calendar");
+      }
+      return res.json();
+    },
+    enabled: open,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const calendarItems = calendarData?.items ?? [];
+
   const latestSprint = sprints
     ? [...sprints].sort(
         (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
@@ -65,10 +89,12 @@ function SprintReviewModal({
     : undefined;
 
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set([team.teamId]));
+  const [selectedMeeting, setSelectedMeeting] = useState<string>("");
 
   useEffect(() => {
     if (open) {
       setSelectedTeams(new Set([team.teamId]));
+      setSelectedMeeting("");
     }
   }, [open, team.teamId]);
 
@@ -136,11 +162,29 @@ function SprintReviewModal({
 
           <div className="space-y-2">
             <Label>Встреча для рассылки</Label>
-            <Select disabled>
+            <Select
+              value={selectedMeeting}
+              onValueChange={setSelectedMeeting}
+              disabled={calendarFetching || calendarItems.length === 0}
+            >
               <SelectTrigger data-testid="select-sprint-review-meeting">
-                <SelectValue placeholder="—" />
+                <SelectValue
+                  placeholder={
+                    calendarFetching
+                      ? "Загрузка..."
+                      : calendarItems.length === 0
+                      ? "Нет встреч"
+                      : "Выберите встречу"
+                  }
+                />
               </SelectTrigger>
-              <SelectContent />
+              <SelectContent>
+                {calendarItems.map((item, idx) => (
+                  <SelectItem key={idx} value={String(idx)}>
+                    {item.subject || item.description || "Без названия"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
         </div>
