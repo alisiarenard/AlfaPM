@@ -407,7 +407,7 @@ function SprintReviewModal({
                         disabled={isDisabled}
                         onCheckedChange={() => toggleTeam(t.teamId)}
                         data-testid={`checkbox-sprint-review-team-${t.teamId}`}
-                        className="data-[state=checked]:bg-[#cd253d] data-[state=checked]:border-[#cd253d]"
+                        className="border-[#cd253d] data-[state=checked]:bg-[#cd253d] data-[state=checked]:border-[#cd253d]"
                       />
                       <label
                         htmlFor={`team-cb-${t.teamId}`}
@@ -455,8 +455,8 @@ function SprintReviewModal({
           <Button
             disabled={!selectedMeeting}
             onClick={handleDownload}
-            style={selectedMeeting ? { backgroundColor: "#cd253d" } : undefined}
-            className="hover:opacity-90 border-0"
+            style={{ backgroundColor: "#cd253d" }}
+            className="text-white hover:opacity-90 border-0"
             data-testid="button-download-sprint-letter"
           >
             <Download className="h-4 w-4 mr-2" />
