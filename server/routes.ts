@@ -6392,16 +6392,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       url.searchParams.set("start", start.toISOString());
       url.searchParams.set("end", end.toISOString());
 
+      console.log("[KonturTolk] → REQUEST");
+      console.log("[KonturTolk]   URL:", url.toString());
+      console.log("[KonturTolk]   Headers: X-Auth-Token=<set, length=" + apiKey.length + ">");
+
       const response = await fetch(url.toString(), {
         headers: { "X-Auth-Token": apiKey },
       });
 
+      const rawText = await response.text();
+
+      console.log("[KonturTolk] ← RESPONSE");
+      console.log("[KonturTolk]   Status:", response.status, response.statusText);
+      console.log("[KonturTolk]   Content-Type:", response.headers.get("content-type"));
+      console.log("[KonturTolk]   Body (first 500 chars):", rawText.slice(0, 500));
+
       if (!response.ok) {
-        const text = await response.text();
-        return res.status(response.status).json({ error: `Контур.Толк API error: ${text}` });
+        return res.status(response.status).json({ error: `Контур.Толк API error ${response.status}: ${rawText.slice(0, 300)}` });
       }
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.log("[KonturTolk]   JSON parse error:", parseErr);
+        return res.status(502).json({ error: `Ответ от Контур.Толк не является JSON. Body: ${rawText.slice(0, 300)}` });
+      }
+
       const items: { subject: string; description: string; start: string; end: string }[] =
         (data.items || []).map((item: any) => ({
           subject: item.subject ?? "",
@@ -6410,8 +6427,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           end: item.end ?? "",
         }));
 
+      console.log("[KonturTolk]   Parsed items count:", items.length);
+
       return res.json({ items });
     } catch (error) {
+      console.log("[KonturTolk] ✗ Exception:", error);
       return res.status(500).json({ error: error instanceof Error ? error.message : "Failed to fetch calendar" });
     }
   });
