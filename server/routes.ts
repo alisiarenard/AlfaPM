@@ -6447,6 +6447,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
 
       console.log("[KonturTolk]   Parsed items count:", items.length);
+      items.forEach((item, i) => {
+        console.log(`[KonturTolk]   Item[${i}] subject: "${item.subject}"`);
+        console.log(`[KonturTolk]   Item[${i}] mailbox (${item.mailbox.length} entries):`, JSON.stringify(item.mailbox));
+        // Также выводим сырую структуру mailbox из оригинального ответа для сравнения
+        const rawItem = (data.items || [])[i];
+        console.log(`[KonturTolk]   Item[${i}] raw mailbox:`, JSON.stringify(rawItem?.mailbox ?? null));
+      });
 
       return res.json({ items });
     } catch (error) {
