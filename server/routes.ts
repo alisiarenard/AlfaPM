@@ -6388,9 +6388,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       end.setDate(end.getDate() + 2);
       end.setHours(23, 59, 59, 999);
 
+      const toYMD = (d: Date) => d.toISOString().slice(0, 10);
+
       const url = new URL(`${apiUrl}/api/EmailCalendar/${encodeURIComponent(email)}`);
-      url.searchParams.set("start", start.toISOString());
-      url.searchParams.set("end", end.toISOString());
+      url.searchParams.set("start", toYMD(start));
+      url.searchParams.set("end", toYMD(end));
 
       console.log("[KonturTolk] → REQUEST");
       console.log("[KonturTolk]   URL:", url.toString());
