@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import type { Team, Initiative, TeamRow, SprintRow } from "@shared/schema";
+import type { Team, Initiative, TeamRow, SprintRow, TaskRow } from "@shared/schema";
 import { SprintInfoDialog } from "@/components/SprintInfoDialog";
 import { VirtualStartDateDialog } from "@/components/VirtualStartDateDialog";
 
@@ -30,11 +30,73 @@ interface CalendarItem {
   description: string;
   start: string;
   end: string;
+  mailbox: { description: string }[];
 }
 
 function formatSprintDate(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function encodeRfc2047(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach(b => (binary += String.fromCharCode(b)));
+  return `=?UTF-8?B?${btoa(binary)}?=`;
+}
+
+function generateEml(
+  subject: string,
+  toEmails: string[],
+  sprintTitle: string,
+  tasks: TaskRow[]
+): string {
+  const activeTasks = tasks.filter(t => t.condition !== "3 - deleted");
+
+  const lines: string[] = [];
+
+  const byInitiative = new Map<number | null, TaskRow[]>();
+  for (const t of activeTasks) {
+    const key = t.initCardId ?? null;
+    if (!byInitiative.has(key)) byInitiative.set(key, []);
+    byInitiative.get(key)!.push(t);
+  }
+
+  byInitiative.forEach(group => {
+    group.forEach(t => {
+      const owner = t.owner ? ` (${t.owner})` : "";
+      const sp = t.size ? ` [${t.size} SP]` : "";
+      lines.push(`• ${t.title}${owner}${sp}`);
+    });
+  });
+
+  const bodyText = [
+    `Задачи спринта "${sprintTitle}":`,
+    "",
+    ...lines,
+  ].join("\r\n");
+
+  const emlParts = [
+    `MIME-Version: 1.0`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: 8bit`,
+    `Subject: ${encodeRfc2047(subject)}`,
+    `To: ${toEmails.join(", ")}`,
+    ``,
+    bodyText,
+  ];
+
+  return emlParts.join("\r\n");
+}
+
+function downloadEml(filename: string, content: string) {
+  const blob = new Blob([content], { type: "message/rfc822" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function SprintReviewModal({
@@ -80,21 +142,32 @@ function SprintReviewModal({
     retry: false,
   });
 
-  const calendarItems = calendarData?.items ?? [];
-
   const latestSprint = sprints
     ? [...sprints].sort(
         (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
       )[0]
     : undefined;
 
+  const { data: sprintTasks } = useQuery<TaskRow[]>({
+    queryKey: ["/api/tasks/sprint", latestSprint?.sprintId],
+    queryFn: async () => {
+      const res = await fetch(`/api/tasks/sprint/${latestSprint!.sprintId}`);
+      if (!res.ok) throw new Error("Failed to fetch sprint tasks");
+      return res.json();
+    },
+    enabled: open && !!latestSprint?.sprintId,
+    staleTime: 60000,
+  });
+
+  const calendarItems = calendarData?.items ?? [];
+
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set([team.teamId]));
-  const [selectedMeeting, setSelectedMeeting] = useState<string>("");
+  const [selectedMeetingIdx, setSelectedMeetingIdx] = useState<string>("");
 
   useEffect(() => {
     if (open) {
       setSelectedTeams(new Set([team.teamId]));
-      setSelectedMeeting("");
+      setSelectedMeetingIdx("");
     }
   }, [open, team.teamId]);
 
@@ -114,6 +187,27 @@ function SprintReviewModal({
   const sprintDatesLabel = latestSprint
     ? `${formatSprintDate(latestSprint.startDate)} — ${formatSprintDate(latestSprint.finishDate)}`
     : "";
+
+  const selectedMeeting =
+    selectedMeetingIdx !== "" ? calendarItems[parseInt(selectedMeetingIdx)] : undefined;
+
+  const canDownload = !!selectedMeeting;
+
+  function handleDownload() {
+    if (!selectedMeeting) return;
+
+    const toEmails = selectedMeeting.mailbox
+      .map(m => m.description)
+      .filter(Boolean);
+
+    const sprintTitle = latestSprint?.title ?? sprintDatesLabel ?? "";
+    const tasks = sprintTasks ?? [];
+
+    const content = generateEml(selectedMeeting.subject, toEmails, sprintTitle, tasks);
+
+    const safeName = selectedMeeting.subject.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
+    downloadEml(`${safeName}.eml`, content);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -163,8 +257,8 @@ function SprintReviewModal({
           <div className="space-y-2">
             <Label>Встреча для рассылки</Label>
             <Select
-              value={selectedMeeting}
-              onValueChange={setSelectedMeeting}
+              value={selectedMeetingIdx}
+              onValueChange={setSelectedMeetingIdx}
               disabled={calendarFetching || calendarItems.length === 0}
             >
               <SelectTrigger data-testid="select-sprint-review-meeting">
@@ -191,8 +285,9 @@ function SprintReviewModal({
 
         <div className="flex justify-end pt-2">
           <Button
-            disabled
-            style={{ backgroundColor: "#cd253d" }}
+            disabled={!canDownload}
+            onClick={handleDownload}
+            style={canDownload ? { backgroundColor: "#cd253d" } : undefined}
             className="hover:opacity-90 border-0"
             data-testid="button-download-sprint-letter"
           >

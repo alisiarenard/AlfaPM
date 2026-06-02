@@ -3230,6 +3230,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tasks/sprint/:sprintId", async (req, res) => {
+    try {
+      const sprintId = parseInt(req.params.sprintId);
+      if (isNaN(sprintId)) {
+        return res.status(400).json({ error: "Invalid sprint ID" });
+      }
+      const tasks = await storage.getTasksBySprint(sprintId);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to retrieve sprint tasks" });
+    }
+  });
+
   app.get("/api/tasks/:id", async (req, res) => {
     try {
       const { id } = req.params;
@@ -6422,12 +6435,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(502).json({ error: `Ответ от Контур.Толк не является JSON. Body: ${rawText.slice(0, 300)}` });
       }
 
-      const items: { subject: string; description: string; start: string; end: string }[] =
+      const items: { subject: string; description: string; start: string; end: string; mailbox: { description: string }[] }[] =
         (data.items || []).map((item: any) => ({
           subject: item.subject ?? "",
           description: item.description ?? "",
           start: item.start ?? "",
           end: item.end ?? "",
+          mailbox: Array.isArray(item.mailbox)
+            ? item.mailbox.map((m: any) => ({ description: m.description ?? "" }))
+            : [],
         }));
 
       console.log("[KonturTolk]   Parsed items count:", items.length);
