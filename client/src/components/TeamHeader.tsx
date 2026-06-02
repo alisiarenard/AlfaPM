@@ -104,11 +104,9 @@ function SprintReviewModal({
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          <div className="space-y-2">
-            <Label>Команды</Label>
-            {!departmentTeams ? (
-              <p className="text-xs text-muted-foreground">Загрузка...</p>
-            ) : (
+          {departmentTeams && departmentTeams.length > 1 && (
+            <div className="space-y-2">
+              <Label>Команды</Label>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 {departmentTeams.map(t => {
                   const isChecked = selectedTeams.has(t.teamId);
@@ -121,6 +119,7 @@ function SprintReviewModal({
                         disabled={isDisabled}
                         onCheckedChange={() => toggleTeam(t.teamId)}
                         data-testid={`checkbox-sprint-review-team-${t.teamId}`}
+                        className="data-[state=checked]:bg-[#cd253d] data-[state=checked]:border-[#cd253d]"
                       />
                       <label
                         htmlFor={`team-cb-${t.teamId}`}
@@ -132,8 +131,8 @@ function SprintReviewModal({
                   );
                 })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Встреча для рассылки</Label>
