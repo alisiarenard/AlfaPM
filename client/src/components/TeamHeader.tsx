@@ -153,16 +153,14 @@ function buildTeamSectionHtml(section: TeamSection, initiativesMap: Map<number, 
   const activeTasks = section.tasks.filter(t => t.condition !== "3 - deleted");
 
   const initiativeGroups = new Map<string, TaskForEmail[]>();
-  const noInitiativeTasks: TaskForEmail[] = [];
 
   for (const task of activeTasks) {
     if (task.initCardId && initiativesMap.has(task.initCardId)) {
       const title = initiativesMap.get(task.initCardId)!;
       if (!initiativeGroups.has(title)) initiativeGroups.set(title, []);
       initiativeGroups.get(title)!.push(task);
-    } else {
-      noInitiativeTasks.push(task);
     }
+    // Tasks without a known initiative are excluded from the letter
   }
 
   let listHtml = "";
@@ -173,11 +171,7 @@ function buildTeamSectionHtml(section: TeamSection, initiativesMap: Map<number, 
     listHtml += `<ul style="margin:4px 0;padding-left:24px">${subHtml}</ul></li>`;
   });
 
-  if (noInitiativeTasks.length > 0) {
-    const subHtml = buildInitiativeTasksHtml(noInitiativeTasks);
-    listHtml += `<li ${INIT_LI}><b>${INIT_BULLET}Другие задачи:</b>`;
-    listHtml += `<ul style="margin:4px 0;padding-left:24px">${subHtml}</ul></li>`;
-  }
+  // Tasks without an initiative are intentionally excluded from the letter
 
   return `<p style="margin:16px 0 8px 0">Команда <b style="color:${RED}">${esc(section.teamName)}</b> за <b style="color:${RED}">${esc(section.sprintTitle)}</b> реализовала следующее:</p>
 <ul style="padding-left:10px;margin:0 0 8px 0;list-style-type:none">
