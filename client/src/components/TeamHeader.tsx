@@ -368,44 +368,69 @@ function SprintReviewModal({
     setIsDownloading(true);
 
     try {
-      const initiativesMap = new Map<number, string>(
-        initiatives.map(i => [i.cardId, i.title])
-      );
-
       const selectedTeamRows = departmentTeams
         ? departmentTeams.filter(t => selectedTeams.has(t.teamId))
         : [];
       const selectedTeamNames = selectedTeamRows.map(t => t.teamName);
 
-      // Fetch latest sprint + tasks for each selected team in parallel
-      const rawSections: TeamSection[] = (
-        await Promise.all(
-          selectedTeamRows.map(async (teamRow) => {
-            if (!teamRow.sprintBoardId) return null;
+      // Fetch latest sprint + tasks + initiatives for each selected team in parallel
+      type RawSection = { teamName: string; sprintTitle: string; tasks: TaskRow[] };
+      type TeamFetchResult = { section: RawSection | null; teamInitiatives: Initiative[] };
+
+      const fetchResults: TeamFetchResult[] = await Promise.all(
+        selectedTeamRows.map(async (teamRow): Promise<TeamFetchResult> => {
+          // Fetch initiatives for this team's board (for correct grouping)
+          let teamInitiatives: Initiative[] = [];
+          if (teamRow.initBoardId) {
             try {
-              const sprintsRes = await fetch(`/api/sprints/board/${teamRow.sprintBoardId}`);
-              if (!sprintsRes.ok) return null;
-              const sprints: SprintRow[] = await sprintsRes.json();
-              const latest = [...sprints].sort(
-                (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-              )[0];
-              if (!latest) return null;
+              const initRes = await fetch(`/api/initiatives/board/${teamRow.initBoardId}`);
+              if (initRes.ok) teamInitiatives = await initRes.json();
+            } catch { /* ignore */ }
+          }
 
-              const tasksRes = await fetch(`/api/tasks/sprint/${latest.sprintId}`);
-              if (!tasksRes.ok) return null;
-              const tasks: TaskRow[] = await tasksRes.json();
+          if (!teamRow.sprintBoardId) return { section: null, teamInitiatives };
+          try {
+            const sprintsRes = await fetch(`/api/sprints/board/${teamRow.sprintBoardId}`);
+            if (!sprintsRes.ok) return { section: null, teamInitiatives };
+            const sprints: SprintRow[] = await sprintsRes.json();
+            const latest = [...sprints].sort(
+              (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+            )[0];
+            if (!latest) return { section: null, teamInitiatives };
 
-              return {
+            const tasksRes = await fetch(`/api/tasks/sprint/${latest.sprintId}`);
+            if (!tasksRes.ok) return { section: null, teamInitiatives };
+            const tasks: TaskRow[] = await tasksRes.json();
+
+            return {
+              section: {
                 teamName: teamRow.teamName,
                 sprintTitle: latest.title ?? `${formatSprintDate(latest.startDate)} — ${formatSprintDate(latest.finishDate)}`,
                 tasks,
-              } satisfies TeamSection;
-            } catch {
-              return null;
-            }
-          })
-        )
-      ).filter((s): s is TeamSection => s !== null);
+              },
+              teamInitiatives,
+            };
+          } catch {
+            return { section: null, teamInitiatives };
+          }
+        })
+      );
+
+      // Merge all team initiatives into one map (seed with prop initiatives first)
+      const initiativesMap = new Map<number, string>(
+        initiatives.map(i => [i.cardId, i.title])
+      );
+      for (const { teamInitiatives } of fetchResults) {
+        for (const init of teamInitiatives) {
+          if (!initiativesMap.has(init.cardId)) {
+            initiativesMap.set(init.cardId, init.title);
+          }
+        }
+      }
+
+      const rawSections: RawSection[] = fetchResults
+        .map(r => r.section)
+        .filter((s): s is RawSection => s !== null);
 
       // Step 1: parse categories from ORIGINAL titles before humanization
       // key → { category, cleanTitle (markers stripped) }
