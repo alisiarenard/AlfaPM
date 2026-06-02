@@ -6437,7 +6437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const extractEmails = (attendees: any[]): string[] =>
         Array.isArray(attendees)
-          ? attendees.map((a: any) => a?.mailbox?.description ?? "").filter(Boolean)
+          ? attendees.map((a: any) => (typeof a?.mailbox === "string" ? a.mailbox : (a?.mailbox?.description ?? ""))).filter(Boolean)
           : [];
 
       const items: {
