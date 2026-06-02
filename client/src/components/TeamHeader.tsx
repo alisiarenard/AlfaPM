@@ -46,50 +46,126 @@ function encodeRfc2047(str: string): string {
   return `=?UTF-8?B?${btoa(binary)}?=`;
 }
 
+const RED = "#cc0000";
+const CATEGORY_ORDER = ["Frontend", "Backend", "Тестирование", "Другие работы"];
+
+function taskTypeCategory(type: string | null): string {
+  const t = (type || "").toLowerCase().trim();
+  if (t.includes("front") || t === "ui" || t === "fe") return "Frontend";
+  if (t.includes("back") || t === "be" || t === "api" || t === "server") return "Backend";
+  if (t.includes("test") || t.includes("qa") || t.includes("тест") || t === "quality") return "Тестирование";
+  return "Другие работы";
+}
+
+function buildCategoryBlock(tasks: TaskRow[]): string {
+  const byCategory = new Map<string, TaskRow[]>();
+  for (const task of tasks) {
+    const cat = taskTypeCategory(task.type);
+    if (!byCategory.has(cat)) byCategory.set(cat, []);
+    byCategory.get(cat)!.push(task);
+  }
+  let html = "";
+  for (const cat of CATEGORY_ORDER) {
+    const catTasks = byCategory.get(cat);
+    if (!catTasks?.length) continue;
+    html += `<li style="list-style-type:none;margin-bottom:4px"><b>${cat}:</b><ul style="margin:2px 0 6px 0;padding-left:20px">`;
+    for (const task of catTasks) {
+      html += `<li style="list-style-type:circle;margin-bottom:2px">${task.title}</li>`;
+    }
+    html += `</ul></li>`;
+  }
+  return html;
+}
+
+function generateHtmlBody(
+  meeting: CalendarItem,
+  selectedTeamNames: string[],
+  sprintTitle: string,
+  teamName: string,
+  tasks: TaskRow[],
+  initiativesMap: Map<number, string>
+): string {
+  const meetingDate = meeting.start ? new Date(meeting.start) : null;
+  const dateStr = meetingDate
+    ? meetingDate.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : "";
+  const timeStr = meetingDate
+    ? meetingDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+    : "";
+
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow =
+    meetingDate &&
+    meetingDate.getDate() === tomorrow.getDate() &&
+    meetingDate.getMonth() === tomorrow.getMonth() &&
+    meetingDate.getFullYear() === tomorrow.getFullYear();
+  const dayWord = isTomorrow ? "завтра " : "";
+
+  const teamNamesHtml = selectedTeamNames
+    .map(n => `<b style="color:${RED}">${n}</b>`)
+    .join(", ");
+
+  const activeTasks = tasks.filter(t => t.condition !== "3 - deleted");
+
+  const initiativeGroups = new Map<string, TaskRow[]>();
+  const noInitiativeTasks: TaskRow[] = [];
+
+  for (const task of activeTasks) {
+    if (task.initCardId && initiativesMap.has(task.initCardId)) {
+      const title = initiativesMap.get(task.initCardId)!;
+      if (!initiativeGroups.has(title)) initiativeGroups.set(title, []);
+      initiativeGroups.get(title)!.push(task);
+    } else {
+      noInitiativeTasks.push(task);
+    }
+  }
+
+  let listHtml = "";
+
+  initiativeGroups.forEach((initTasks, initTitle) => {
+    listHtml += `<li style="margin-bottom:10px"><b>${initTitle}:</b><ul style="margin:4px 0;padding-left:20px">${buildCategoryBlock(initTasks)}</ul></li>`;
+  });
+
+  if (noInitiativeTasks.length > 0) {
+    const catHtml = buildCategoryBlock(noInitiativeTasks);
+    if (catHtml) {
+      listHtml += `<li style="margin-bottom:10px"><b>Другие задачи:</b><ul style="margin:4px 0;padding-left:20px">${catHtml}</ul></li>`;
+    }
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:Arial,sans-serif;font-size:14px;color:#000;margin:0;padding:20px;line-height:1.5">
+<p style="margin:0 0 0 0">Коллеги,</p>
+<p style="margin:4px 0 16px 24px">Обзор спринта команд разработки системы ${teamNamesHtml} состоится ${dayWord}<b style="color:${RED}">${dateStr}</b> в <b style="color:${RED}">${timeStr}&nbsp;МСК</b> в <b style="color:${RED}">Контур.Толк</b> по следующим вопросам:</p>
+<p style="margin:0 0 12px 0">Команда <b style="color:${RED}">${teamName}</b> за <b style="color:${RED}">${sprintTitle}</b> реализовала следующее:</p>
+<ul style="padding-left:30px;margin:0">
+${listHtml}
+</ul>
+</body>
+</html>`;
+}
+
 function generateEml(
   subject: string,
   toEmails: string[],
   ccEmails: string[],
-  sprintTitle: string,
-  tasks: TaskRow[]
+  htmlBody: string
 ): string {
-  const activeTasks = tasks.filter(t => t.condition !== "3 - deleted");
-
-  const lines: string[] = [];
-
-  const byInitiative = new Map<number | null, TaskRow[]>();
-  for (const t of activeTasks) {
-    const key = t.initCardId ?? null;
-    if (!byInitiative.has(key)) byInitiative.set(key, []);
-    byInitiative.get(key)!.push(t);
-  }
-
-  byInitiative.forEach(group => {
-    group.forEach(t => {
-      const owner = t.owner ? ` (${t.owner})` : "";
-      const sp = t.size ? ` [${t.size} SP]` : "";
-      lines.push(`• ${t.title}${owner}${sp}`);
-    });
-  });
-
-  const bodyText = [
-    `Задачи спринта "${sprintTitle}":`,
-    "",
-    ...lines,
-  ].join("\r\n");
-
-  const emlParts = [
+  const parts = [
     `MIME-Version: 1.0`,
-    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Type: text/html; charset=UTF-8`,
     `Content-Transfer-Encoding: 8bit`,
     `Subject: ${encodeRfc2047(subject)}`,
     `To: ${toEmails.join(", ")}`,
     ...(ccEmails.length > 0 ? [`CC: ${ccEmails.join(", ")}`] : []),
     ``,
-    bodyText,
+    htmlBody,
   ];
-
-  return emlParts.join("\r\n");
+  return parts.join("\r\n");
 }
 
 function downloadEml(filename: string, content: string) {
@@ -107,11 +183,13 @@ function SprintReviewModal({
   onOpenChange,
   team,
   dbTeam,
+  initiatives,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   team: Team;
   dbTeam?: TeamRow;
+  initiatives: Initiative[];
 }) {
   const { data: sprints } = useQuery<SprintRow[]>({
     queryKey: ["/api/sprints/board", team.sprintBoardId],
@@ -178,11 +256,8 @@ function SprintReviewModal({
     setSelectedTeams(prev => {
       if (prev.has(teamId) && prev.size === 1) return prev;
       const next = new Set(prev);
-      if (next.has(teamId)) {
-        next.delete(teamId);
-      } else {
-        next.add(teamId);
-      }
+      if (next.has(teamId)) next.delete(teamId);
+      else next.add(teamId);
       return next;
     });
   };
@@ -199,12 +274,32 @@ function SprintReviewModal({
   function handleDownload() {
     if (!selectedMeeting) return;
 
-    const toEmails = selectedMeeting.requiredEmails;
-    const ccEmails = selectedMeeting.optionalEmails;
+    const initiativesMap = new Map<number, string>(
+      initiatives.map(i => [i.cardId, i.title])
+    );
+
+    const selectedTeamNames: string[] = departmentTeams
+      ? departmentTeams.filter(t => selectedTeams.has(t.teamId)).map(t => t.teamName)
+      : [team.name];
+
     const sprintTitle = latestSprint?.title ?? sprintDatesLabel ?? "";
     const tasks = sprintTasks ?? [];
 
-    const content = generateEml(selectedMeeting.subject, toEmails, ccEmails, sprintTitle, tasks);
+    const htmlBody = generateHtmlBody(
+      selectedMeeting,
+      selectedTeamNames,
+      sprintTitle,
+      team.name,
+      tasks,
+      initiativesMap
+    );
+
+    const content = generateEml(
+      selectedMeeting.subject,
+      selectedMeeting.requiredEmails,
+      selectedMeeting.optionalEmails,
+      htmlBody
+    );
 
     const safeName = selectedMeeting.subject.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
     downloadEml(`${safeName}.eml`, content);
@@ -301,7 +396,7 @@ function SprintReviewModal({
   );
 }
 
-export function TeamHeader({ team, dbTeam, onSync, isSyncing, viewTab, onViewTabChange, year }: TeamHeaderProps) {
+export function TeamHeader({ team, initiatives, dbTeam, onSync, isSyncing, viewTab, onViewTabChange, year }: TeamHeaderProps) {
   const [sprintInfoOpen, setSprintInfoOpen] = useState(false);
   const [virtualStartOpen, setVirtualStartOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -330,7 +425,7 @@ export function TeamHeader({ team, dbTeam, onSync, isSyncing, viewTab, onViewTab
                 onClick={onSync}
                 disabled={isSyncing || !onSync}
               >
-                <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Синхронизировать данные</TooltipContent>
@@ -390,6 +485,7 @@ export function TeamHeader({ team, dbTeam, onSync, isSyncing, viewTab, onViewTab
         onOpenChange={setReviewModalOpen}
         team={team}
         dbTeam={dbTeam}
+        initiatives={initiatives}
       />
     </div>
   );
