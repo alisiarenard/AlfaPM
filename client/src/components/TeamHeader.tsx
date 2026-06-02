@@ -34,48 +34,100 @@ interface CalendarItem {
   optionalEmails: string[];
 }
 
-function formatSprintDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+// ─── Category detection from task title ──────────────────────────────────────
+
+type TaskCategory = "Frontend" | "Backend" | "Тестирование" | "Дизайн";
+
+const CATEGORY_ORDER: (TaskCategory | "Другие работы")[] = [
+  "Frontend", "Backend", "Тестирование", "Дизайн", "Другие работы",
+];
+
+// Patterns: look for [keyword] in title (case-insensitive)
+const TITLE_CATEGORY_PATTERNS: { pattern: RegExp; category: TaskCategory }[] = [
+  { pattern: /\[back(?:end)?\]/gi, category: "Backend" },
+  { pattern: /\[бэк(?:енд)?\]/gi, category: "Backend" },
+  { pattern: /\[back\]/gi, category: "Backend" },
+  { pattern: /\[front(?:end)?\]/gi, category: "Frontend" },
+  { pattern: /\[фронт(?:енд)?\]/gi, category: "Frontend" },
+  { pattern: /\[fe\]/gi, category: "Frontend" },
+  { pattern: /\[qa\]/gi, category: "Тестирование" },
+  { pattern: /\[qа\]/gi, category: "Тестирование" }, // Cyrillic А
+  { pattern: /\[тест(?:ирование)?\]/gi, category: "Тестирование" },
+  { pattern: /\[test(?:ing)?\]/gi, category: "Тестирование" },
+  { pattern: /\[дизайн\]/gi, category: "Дизайн" },
+  { pattern: /\[design\]/gi, category: "Дизайн" },
+  { pattern: /\[ux\]/gi, category: "Дизайн" },
+];
+
+interface ParsedTask {
+  category: TaskCategory | null;
+  cleanTitle: string;
+  original: TaskRow;
 }
 
-function encodeRfc2047(str: string): string {
-  const bytes = new TextEncoder().encode(str);
-  let binary = "";
-  bytes.forEach(b => (binary += String.fromCharCode(b)));
-  return `=?UTF-8?B?${btoa(binary)}?=`;
+function parseTaskTitle(task: TaskRow): ParsedTask {
+  let title = task.title;
+  let category: TaskCategory | null = null;
+
+  for (const { pattern, category: cat } of TITLE_CATEGORY_PATTERNS) {
+    pattern.lastIndex = 0;
+    if (pattern.test(title)) {
+      category = cat;
+      pattern.lastIndex = 0;
+      // Remove ALL matched bracket tokens from title and clean up extra spaces
+      title = title.replace(pattern, "").replace(/\s{2,}/g, " ").trim();
+      break;
+    }
+  }
+
+  return { category, cleanTitle: title, original: task };
 }
+
+// ─── HTML generation helpers ─────────────────────────────────────────────────
 
 const RED = "#cc0000";
-const CATEGORY_ORDER = ["Frontend", "Backend", "Тестирование", "Другие работы"];
 
-function taskTypeCategory(type: string | null): string {
-  const t = (type || "").toLowerCase().trim();
-  if (t.includes("front") || t === "ui" || t === "fe") return "Frontend";
-  if (t.includes("back") || t === "be" || t === "api" || t === "server") return "Backend";
-  if (t.includes("test") || t.includes("qa") || t.includes("тест") || t === "quality") return "Тестирование";
-  return "Другие работы";
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function buildCategoryBlock(tasks: TaskRow[]): string {
-  const byCategory = new Map<string, TaskRow[]>();
-  for (const task of tasks) {
-    const cat = taskTypeCategory(task.type);
-    if (!byCategory.has(cat)) byCategory.set(cat, []);
-    byCategory.get(cat)!.push(task);
+/** Build sub-grouped HTML for one initiative's task list.
+ *  If none of the tasks have a category marker → flat list (no sub-headers).
+ *  Otherwise → grouped by category with bold sub-headers. */
+function buildInitiativeTasksHtml(tasks: TaskRow[]): string {
+  const parsed = tasks.map(parseTaskTitle);
+  const anyHasCategory = parsed.some(p => p.category !== null);
+
+  if (!anyHasCategory) {
+    // Flat list — just show task titles as-is
+    return parsed
+      .map(p => `<li style="list-style-type:circle;margin-bottom:2px">${esc(p.cleanTitle)}</li>`)
+      .join("");
   }
+
+  // Group by category
+  const groups = new Map<string, ParsedTask[]>();
+  for (const p of parsed) {
+    const key = p.category ?? "Другие работы";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(p);
+  }
+
   let html = "";
   for (const cat of CATEGORY_ORDER) {
-    const catTasks = byCategory.get(cat);
-    if (!catTasks?.length) continue;
-    html += `<li style="list-style-type:none;margin-bottom:4px"><b>${cat}:</b><ul style="margin:2px 0 6px 0;padding-left:20px">`;
-    for (const task of catTasks) {
-      html += `<li style="list-style-type:circle;margin-bottom:2px">${task.title}</li>`;
+    const group = groups.get(cat);
+    if (!group?.length) continue;
+    html += `<li style="list-style-type:none;margin-bottom:4px"><b>${esc(cat)}:</b>`;
+    html += `<ul style="margin:2px 0 6px 0;padding-left:20px">`;
+    for (const p of group) {
+      html += `<li style="list-style-type:circle;margin-bottom:2px">${esc(p.cleanTitle)}</li>`;
     }
     html += `</ul></li>`;
   }
   return html;
 }
+
+// ─── Full HTML body ───────────────────────────────────────────────────────────
 
 function generateHtmlBody(
   meeting: CalendarItem,
@@ -93,8 +145,7 @@ function generateHtmlBody(
     ? meetingDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
     : "";
 
-  const now = new Date();
-  const tomorrow = new Date(now);
+  const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const isTomorrow =
     meetingDate &&
@@ -104,12 +155,13 @@ function generateHtmlBody(
   const dayWord = isTomorrow ? "завтра " : "";
 
   const teamNamesHtml = selectedTeamNames
-    .map(n => `<b style="color:${RED}">${n}</b>`)
+    .map(n => `<b style="color:${RED}">${esc(n)}</b>`)
     .join(", ");
 
   const activeTasks = tasks.filter(t => t.condition !== "3 - deleted");
 
-  const initiativeGroups = new Map<string, TaskRow[]>();
+  // Group tasks by initiative
+  const initiativeGroups = new Map<string, TaskRow[]>(); // initiative title → tasks
   const noInitiativeTasks: TaskRow[] = [];
 
   for (const task of activeTasks) {
@@ -125,14 +177,15 @@ function generateHtmlBody(
   let listHtml = "";
 
   initiativeGroups.forEach((initTasks, initTitle) => {
-    listHtml += `<li style="margin-bottom:10px"><b>${initTitle}:</b><ul style="margin:4px 0;padding-left:20px">${buildCategoryBlock(initTasks)}</ul></li>`;
+    const subHtml = buildInitiativeTasksHtml(initTasks);
+    listHtml += `<li style="margin-bottom:10px"><b>${esc(initTitle)}:</b>`;
+    listHtml += `<ul style="margin:4px 0;padding-left:20px">${subHtml}</ul></li>`;
   });
 
   if (noInitiativeTasks.length > 0) {
-    const catHtml = buildCategoryBlock(noInitiativeTasks);
-    if (catHtml) {
-      listHtml += `<li style="margin-bottom:10px"><b>Другие задачи:</b><ul style="margin:4px 0;padding-left:20px">${catHtml}</ul></li>`;
-    }
+    const subHtml = buildInitiativeTasksHtml(noInitiativeTasks);
+    listHtml += `<li style="margin-bottom:10px"><b>Другие задачи:</b>`;
+    listHtml += `<ul style="margin:4px 0;padding-left:20px">${subHtml}</ul></li>`;
   }
 
   return `<!DOCTYPE html>
@@ -140,13 +193,22 @@ function generateHtmlBody(
 <head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;font-size:14px;color:#000;margin:0;padding:20px;line-height:1.5">
 <p style="margin:0 0 0 0">Коллеги,</p>
-<p style="margin:4px 0 16px 24px">Обзор спринта команд разработки системы ${teamNamesHtml} состоится ${dayWord}<b style="color:${RED}">${dateStr}</b> в <b style="color:${RED}">${timeStr}&nbsp;МСК</b> в <b style="color:${RED}">Контур.Толк</b> по следующим вопросам:</p>
-<p style="margin:0 0 12px 0">Команда <b style="color:${RED}">${teamName}</b> за <b style="color:${RED}">${sprintTitle}</b> реализовала следующее:</p>
+<p style="margin:4px 0 16px 24px">Обзор спринта команд разработки системы ${teamNamesHtml} состоится ${dayWord}<b style="color:${RED}">${esc(dateStr)}</b> в <b style="color:${RED}">${esc(timeStr)}&nbsp;МСК</b> в <b style="color:${RED}">Контур.Толк</b> по следующим вопросам:</p>
+<p style="margin:0 0 12px 0">Команда <b style="color:${RED}">${esc(teamName)}</b> за <b style="color:${RED}">${esc(sprintTitle)}</b> реализовала следующее:</p>
 <ul style="padding-left:30px;margin:0">
 ${listHtml}
 </ul>
 </body>
 </html>`;
+}
+
+// ─── EML file generation ──────────────────────────────────────────────────────
+
+function encodeRfc2047(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach(b => (binary += String.fromCharCode(b)));
+  return `=?UTF-8?B?${btoa(binary)}?=`;
 }
 
 function generateEml(
@@ -155,7 +217,7 @@ function generateEml(
   ccEmails: string[],
   htmlBody: string
 ): string {
-  const parts = [
+  return [
     `MIME-Version: 1.0`,
     `Content-Type: text/html; charset=UTF-8`,
     `Content-Transfer-Encoding: 8bit`,
@@ -164,8 +226,7 @@ function generateEml(
     ...(ccEmails.length > 0 ? [`CC: ${ccEmails.join(", ")}`] : []),
     ``,
     htmlBody,
-  ];
-  return parts.join("\r\n");
+  ].join("\r\n");
 }
 
 function downloadEml(filename: string, content: string) {
@@ -176,6 +237,13 @@ function downloadEml(filename: string, content: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ─── Sprint Review Modal ──────────────────────────────────────────────────────
+
+function formatSprintDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function SprintReviewModal({
@@ -268,8 +336,6 @@ function SprintReviewModal({
 
   const selectedMeeting =
     selectedMeetingIdx !== "" ? calendarItems[parseInt(selectedMeetingIdx)] : undefined;
-
-  const canDownload = !!selectedMeeting;
 
   function handleDownload() {
     if (!selectedMeeting) return;
@@ -381,9 +447,9 @@ function SprintReviewModal({
 
         <div className="flex justify-end pt-2">
           <Button
-            disabled={!canDownload}
+            disabled={!selectedMeeting}
             onClick={handleDownload}
-            style={canDownload ? { backgroundColor: "#cd253d" } : undefined}
+            style={selectedMeeting ? { backgroundColor: "#cd253d" } : undefined}
             className="hover:opacity-90 border-0"
             data-testid="button-download-sprint-letter"
           >
@@ -395,6 +461,8 @@ function SprintReviewModal({
     </Dialog>
   );
 }
+
+// ─── TeamHeader ───────────────────────────────────────────────────────────────
 
 export function TeamHeader({ team, initiatives, dbTeam, onSync, isSyncing, viewTab, onViewTabChange, year }: TeamHeaderProps) {
   const [sprintInfoOpen, setSprintInfoOpen] = useState(false);
