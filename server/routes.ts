@@ -20,10 +20,21 @@ async function findInitiativeFromParents(
   originalTaskId?: number,
   preferBoardId?: number
 ): Promise<number> {
-  for (const parentId of parentsIds.slice(0, 2)) {
+  const tag = `[PARENT-CHAIN] task=${originalTaskId ?? "?"}`;
+  console.log(`${tag} START parents=[${parentsIds.join(", ")}] preferBoard=${preferBoardId ?? "any"}`);
+
+  for (let i = 0; i < Math.min(parentsIds.length, 2); i++) {
+    const parentId = parentsIds[i];
+    console.log(`${tag} → trying parent[${i}]=${parentId}`);
     const result = await findInitiativeInParentChain(parentId, 0, originalTaskId, preferBoardId);
-    if (result !== 0) return result;
+    if (result !== 0) {
+      console.log(`${tag} ✓ FOUND initCardId=${result} via parent[${i}]=${parentId}`);
+      return result;
+    }
+    console.log(`${tag} ✗ parent[${i}]=${parentId} → no initiative`);
   }
+
+  console.log(`${tag} ✗ NOT FOUND (falls to "Поддержка бизнеса")`);
   return 0;
 }
 
@@ -33,7 +44,11 @@ async function findInitiativeInParentChain(
   originalTaskId?: number,
   preferBoardId?: number
 ): Promise<number> {
+  const indent = "  ".repeat(depth + 1);
+  const tag = `[PARENT-CHAIN] task=${originalTaskId ?? "?"}`;
+
   if (depth > 10) {
+    console.log(`${indent}${tag} depth>${10} — прерываем`);
     return 0;
   }
 
@@ -41,30 +56,40 @@ async function findInitiativeInParentChain(
   const initiative = await storage.getInitiativeByCardId(parentCardId);
   if (initiative) {
     const boardMatch = !preferBoardId || Number(initiative.initBoardId) === Number(preferBoardId);
+    console.log(`${indent}${tag} card=${parentCardId} → в БД как инициатива "${initiative.title?.slice(0, 30)}" initBoard=${initiative.initBoardId} preferBoard=${preferBoardId ?? "any"} boardMatch=${boardMatch}`);
     if (boardMatch) {
       return parentCardId;
     }
     // Инициатива есть, но с чужой доски — пропускаем, продолжаем выше.
+    console.log(`${indent}${tag} card=${parentCardId} → пропускаем (чужая доска), идём выше`);
+  } else {
+    console.log(`${indent}${tag} card=${parentCardId} → не инициатива в БД, запрашиваем карточку из Kaiten`);
   }
 
   let card;
   try {
     card = await kaitenClient.getCard(parentCardId);
   } catch (e) {
+    console.log(`${indent}${tag} card=${parentCardId} → ошибка запроса Kaiten: ${e instanceof Error ? e.message : String(e)}`);
     return 0;
   }
 
-  if (!card.parents_ids || !Array.isArray(card.parents_ids) || card.parents_ids.length === 0) {
+  const cardParents = card.parents_ids ?? [];
+  console.log(`${indent}${tag} card=${parentCardId} title="${card.title?.slice(0, 30)}" parents=[${cardParents.join(", ")}]`);
+
+  if (!cardParents.length) {
+    console.log(`${indent}${tag} card=${parentCardId} → нет родителей, цепочка обрывается`);
     return 0;
   }
 
   // Ищем инициативу через первого родителя
-  const firstResult = await findInitiativeInParentChain(card.parents_ids[0], depth + 1, originalTaskId, preferBoardId);
+  const firstResult = await findInitiativeInParentChain(cardParents[0], depth + 1, originalTaskId, preferBoardId);
   if (firstResult !== 0) return firstResult;
 
   // Если не нашли — ищем через второго родителя (если есть)
-  if (card.parents_ids.length > 1) {
-    return await findInitiativeInParentChain(card.parents_ids[1], depth + 1, originalTaskId, preferBoardId);
+  if (cardParents.length > 1) {
+    console.log(`${indent}${tag} card=${parentCardId} → первый родитель не дал результата, пробуем parents[1]=${cardParents[1]}`);
+    return await findInitiativeInParentChain(cardParents[1], depth + 1, originalTaskId, preferBoardId);
   }
 
   return 0;
