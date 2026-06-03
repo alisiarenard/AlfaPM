@@ -1030,14 +1030,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const batchUrl = `${baseUrl.replace(/\/$/, "")}/api/evaluations/batch-status`;
         const payload = { developerIds, periodStart, periodEnd, velocityData };
+        console.log(`[Evaluations] batch-status → POST ${batchUrl}`);
+        console.log(`[Evaluations] batch-status payload:`, JSON.stringify(payload, null, 2));
         try {
           const evalRes = await fetch(batchUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
+          console.log(`[Evaluations] batch-status response status: ${evalRes.status} ${evalRes.statusText}`);
           if (evalRes.ok) {
             const raw: any[] = await evalRes.json();
+            console.log(`[Evaluations] batch-status raw response (${raw.length} items):`, JSON.stringify(raw, null, 2));
             evaluations = raw.map((item: any) => {
               const cq = item.criteria?.code_quality;
               const contrib = item.criteria?.contribution;
@@ -1053,6 +1057,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 communications: comms ?? null,
               };
             });
+            console.log(`[Evaluations] batch-status mapped evaluations:`, JSON.stringify(evaluations, null, 2));
+          } else {
+            const errBody = await evalRes.text().catch(() => "(unreadable)");
+            console.error(`[Evaluations] batch-status non-OK response body: ${errBody}`);
           }
         } catch (e: any) {
           console.error(`[Evaluations] batch-status error: ${e.message}`);
