@@ -13,6 +13,20 @@ import { calculateInitiativesInvolvement } from "./utils/involvement";
  * @param originalTaskId - ID исходной задачи (для логирования)
  * @returns ID инициативы или 0, если не найдена
  */
+/** Пробует найти инициативу через первого родителя карточки,
+ *  при неудаче — через второго (если есть). */
+async function findInitiativeFromParents(
+  parentsIds: number[],
+  originalTaskId?: number,
+  preferBoardId?: number
+): Promise<number> {
+  for (const parentId of parentsIds.slice(0, 2)) {
+    const result = await findInitiativeInParentChain(parentId, 0, originalTaskId, preferBoardId);
+    if (result !== 0) return result;
+  }
+  return 0;
+}
+
 async function findInitiativeInParentChain(
   parentCardId: number,
   depth = 0,
@@ -798,7 +812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     // (при cross-board вложенности — продолжаем поиск выше чужих инициатив).
                     let initCardId = 0;
                     if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                      initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, teamData.initBoardId ?? undefined);
+                      initCardId = await findInitiativeFromParents(card.parents_ids, card.id, teamData.initBoardId ?? undefined);
                     }
                     
                     let state: "1-queued" | "2-inProgress" | "3-done";
@@ -862,7 +876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Передаём initBoardId чтобы предпочитать инициативы с доски текущей команды.
               let initCardId = 0;
               if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, teamData.initBoardId ?? undefined);
+                initCardId = await findInitiativeFromParents(card.parents_ids, card.id, teamData.initBoardId ?? undefined);
               }
               
               let state: "1-queued" | "2-inProgress" | "3-done";
@@ -2550,8 +2564,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (parentInitCache.has(parentId)) {
                 initCardId = parentInitCache.get(parentId)!;
               } else {
-                initCardId = await findInitiativeInParentChain(parentId);
+                initCardId = await findInitiativeFromParents(card.parents_ids);
                 parentInitCache.set(parentId, initCardId);
+                if (card.parents_ids.length > 1) parentInitCache.set(card.parents_ids[1], initCardId);
               }
               if (initCardId > 0) {
                 const initiative = await storage.getInitiative(initCardId.toString());
@@ -2875,7 +2890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               let initCardId: number = 0;
               if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, team.initBoardId ?? undefined);
+                initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team.initBoardId ?? undefined);
               }
               
               let state: "1-queued" | "2-inProgress" | "3-done";
@@ -3144,8 +3159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
             let initCardId = 0;
             if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-              const parentCardId = card.parents_ids[0];
-              initCardId = await findInitiativeInParentChain(parentCardId, 0, card.id, team.initBoardId ?? undefined);
+              initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team.initBoardId ?? undefined);
             }
 
             // Преобразуем state и condition из number в строку с валидацией
@@ -3735,7 +3749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
         let initCardId = 0; // По умолчанию - "Поддержка бизнеса"
         if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-          initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, team?.initBoardId ?? undefined);
+          initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team?.initBoardId ?? undefined);
         }
         
         // Синхронизируем таски с state === 3 (done)
@@ -3984,8 +3998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let initCardId: number = 0;
           
           if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-            const parentCardId = card.parents_ids[0];
-            initCardId = await findInitiativeInParentChain(parentCardId, 0, card.id, team.initBoardId ?? undefined);
+            initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team.initBoardId ?? undefined);
           }
 
           
@@ -4088,7 +4101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           let initCardId = 0;
           if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-            initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, team.initBoardId ?? undefined);
+            initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team.initBoardId ?? undefined);
           }
 
           let state: "1-queued" | "2-inProgress" | "3-done";
@@ -4184,7 +4197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               let initCardId: number = 0;
               
               if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, sprintTeam?.initBoardId ?? undefined);
+                initCardId = await findInitiativeFromParents(card.parents_ids, card.id, sprintTeam?.initBoardId ?? undefined);
               }
               
               let state: "1-queued" | "2-inProgress" | "3-done";
@@ -4275,8 +4288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Ищем инициативу в родительской цепочке (поддержка многоуровневой вложенности)
           let initCardId = 0;
           if (taskCard.parents_ids && Array.isArray(taskCard.parents_ids) && taskCard.parents_ids.length > 0) {
-            const parentId = taskCard.parents_ids[0];
-            initCardId = await findInitiativeInParentChain(parentId, 0, taskCard.id, initBoardId);
+            initCardId = await findInitiativeFromParents(taskCard.parents_ids, taskCard.id, initBoardId);
           }
           
           let state: "1-queued" | "2-inProgress" | "3-done";
@@ -4483,7 +4495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               try {
                 let initCardId = 0;
                 if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                  initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, team.initBoardId ?? undefined);
+                  initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team.initBoardId ?? undefined);
                 }
                 let state: "1-queued" | "2-inProgress" | "3-done";
                 if (card.state === 3) state = "3-done";
@@ -4523,7 +4535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     let initCardId: number | null = null;
                     
                     if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                      initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, team.initBoardId ?? undefined);
+                      initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team.initBoardId ?? undefined);
                     }
                     
                     let state: "1-queued" | "2-inProgress" | "3-done";
@@ -4584,7 +4596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               let initCardId = 0;
               if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-                initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, team.initBoardId ?? undefined);
+                initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team.initBoardId ?? undefined);
               }
               let state: "1-queued" | "2-inProgress" | "3-done";
               if (card.state === 3) state = "3-done";
@@ -4642,7 +4654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Ищем инициативу в родительской цепочке
             let initCardId = 0;
             if (card.parents_ids && Array.isArray(card.parents_ids) && card.parents_ids.length > 0) {
-              initCardId = await findInitiativeInParentChain(card.parents_ids[0], 0, card.id, team.initBoardId ?? undefined);
+              initCardId = await findInitiativeFromParents(card.parents_ids, card.id, team.initBoardId ?? undefined);
             }
 
             console.log(`[SMART-SYNC] card.id=${card.id} "${card.title?.slice(0, 30)}" archived=${card.archived} → initCardId=${initCardId}, size=${card.size}, last_moved_to_done_at=${card.last_moved_to_done_at}`);
