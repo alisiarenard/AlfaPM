@@ -1783,6 +1783,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // в "Поддержку бизнеса". Правильный initCardId устанавливается при синхронизации
       // через findInitiativeInParentChain с передачей preferBoardId = initBoardId команды.
       const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
+      // Лог типов инициатив в карте
+      const typeDistribution: Record<string, number> = {};
+      for (const init of allInitiatives) {
+        const t = init.type ?? 'null';
+        typeDistribution[t] = (typeDistribution[t] || 0) + 1;
+      }
+      console.log(`${TL} initiativeTypeMap: всего=${allInitiatives.length} распределение типов:`, JSON.stringify(typeDistribution));
 
       // Шаг 2: анализ initCardId до редиректа
       const beforeRedirect = {
@@ -1797,13 +1804,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Перенаправляем задачи из неизвестных инициатив и не-Epic/Compliance/Enabler в "Поддержку бизнеса"
+      const redirectedTasks: {cardId: number; title: string; initCardId: number; initType: string | undefined}[] = [];
       initiativeTasks = initiativeTasks.map(task => {
         const initType = initiativeTypeMap.get(task.initCardId || 0);
         if (task.initCardId !== 0 && initType !== 'Epic' && initType !== 'Compliance' && initType !== 'Enabler') {
+          redirectedTasks.push({ cardId: task.cardId, title: task.title?.slice(0, 35) ?? '', initCardId: task.initCardId!, initType });
           return { ...task, initCardId: 0, type: initType || task.type };
         }
         return task;
       });
+      if (redirectedTasks.length > 0) {
+        console.log(`${TL} ⚠ РЕДИРЕКТ в "Поддержка бизнеса" (${redirectedTasks.length} задач):`);
+        redirectedTasks.slice(0, 10).forEach(t =>
+          console.log(`${TL}   cardId=${t.cardId} initCardId=${t.initCardId} initType="${t.initType ?? 'нет в карте'}" title="${t.title}"`)
+        );
+      }
 
       // Шаг 3: итог после редиректа
       const withDoneDate = initiativeTasks.filter(t => t.doneDate && t.doneDate !== '');
