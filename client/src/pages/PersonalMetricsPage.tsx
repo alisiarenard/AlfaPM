@@ -80,6 +80,39 @@ interface CommunicationsStatus {
   } | null;
 }
 
+interface PerformanceSnapshot {
+  ratio?: number;
+  mh_share?: number;
+  fair_share?: number;
+  team_size?: number;
+  commits_found?: number;
+  commits_not_found?: number;
+  commits_without_mr_rate?: number;
+  developer_middle_hours?: number;
+  team_total_middle_hours?: number;
+  low_sample?: boolean;
+  mr_low_sample?: boolean;
+}
+
+interface PerformanceBreakdown {
+  base?: number;
+  finalScore?: number;
+  baseReason?: string;
+  lowSample?: boolean;
+  mrLowSample?: boolean;
+  appliedModifiers?: { delta: number; reason: string }[];
+}
+
+interface PerformanceStatus {
+  status: "completed" | "in_progress" | "not_found";
+  score: number | null;
+  grade: string | null;
+  metricsSnapshot?: PerformanceSnapshot | null;
+  breakdown?: PerformanceBreakdown | null;
+  evaluatedAt?: string | null;
+  errorMessage?: string | null;
+}
+
 interface EvaluationStatus {
   developerId: string;
   status: "completed" | "in_progress" | "not_found";
@@ -89,6 +122,7 @@ interface EvaluationStatus {
   evaluatedAt: string | null;
   contribution?: ContributionStatus;
   communications?: CommunicationsStatus | null;
+  performance?: PerformanceStatus | null;
 }
 
 interface PersonalMetricsResponse {
@@ -325,13 +359,90 @@ function CommunicationCell({ evaluation }: { evaluation: EvaluationStatus | unde
   );
 }
 
+function PerformanceCell({ evaluation }: { evaluation: EvaluationStatus | undefined }) {
+  const perf = evaluation?.performance;
+  const hasScore = perf?.status === "completed" && perf.score !== null;
+  const snap = hasScore ? perf!.metricsSnapshot : null;
+  const breakdown = hasScore ? perf!.breakdown : null;
+
+  const circles = <RatingCircles value={hasScore ? perf!.score : null} />;
+
+  if (!snap && !breakdown) {
+    return (
+      <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+        {circles}
+      </td>
+    );
+  }
+
+  return (
+    <td className="border-b border-border px-3 py-2.5 text-center" style={{ minWidth: 100 }}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="inline-flex cursor-default">{circles}</div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="p-3 text-xs space-y-1.5 min-w-56">
+          {snap?.ratio != null && (
+            <div className="flex justify-between gap-6">
+              <span className="text-muted-foreground">Коэффициент нагрузки</span>
+              <span className="font-medium tabular-nums">{snap.ratio.toFixed(2)}</span>
+            </div>
+          )}
+          {snap?.mh_share != null && snap?.fair_share != null && (
+            <div className="flex justify-between gap-6">
+              <span className="text-muted-foreground">Доля часов (факт / норма)</span>
+              <span className="font-medium tabular-nums">{pct(snap.mh_share)} / {pct(snap.fair_share)}</span>
+            </div>
+          )}
+          {snap?.developer_middle_hours != null && (
+            <div className="flex justify-between gap-6">
+              <span className="text-muted-foreground">Часов разработчика</span>
+              <span className="font-medium tabular-nums">{snap.developer_middle_hours}</span>
+            </div>
+          )}
+          {snap?.commits_without_mr_rate != null && (
+            <div className="flex justify-between gap-6">
+              <span className="text-muted-foreground">Коммиты без MR</span>
+              <span className={`font-medium tabular-nums ${snap.commits_without_mr_rate > 0.2 ? "text-destructive" : ""}`}>
+                {pct(snap.commits_without_mr_rate)}
+              </span>
+            </div>
+          )}
+          {breakdown?.baseReason && (
+            <div className="pt-1 border-t border-border/50">
+              <div className="text-muted-foreground mb-1">Базовая оценка: {breakdown.base}</div>
+              <div className="text-muted-foreground">{breakdown.baseReason}</div>
+            </div>
+          )}
+          {breakdown?.appliedModifiers && breakdown.appliedModifiers.length > 0 && (
+            <div className="pt-1 border-t border-border/50 space-y-0.5">
+              {breakdown.appliedModifiers.map((mod, i) => (
+                <div key={i} className="flex justify-between gap-4">
+                  <span className="text-muted-foreground truncate">{mod.reason}</span>
+                  <span className={`font-medium tabular-nums shrink-0 ${mod.delta < 0 ? "text-destructive" : "text-green-600 dark:text-green-400"}`}>
+                    {mod.delta > 0 ? "+" : ""}{mod.delta}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          {(snap?.low_sample || snap?.mr_low_sample) && (
+            <div className="text-muted-foreground italic pt-1">Мало данных</div>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </td>
+  );
+}
+
 function calcAverage(metrics: PersonalMetricsRow | undefined, evaluation: EvaluationStatus | undefined): number | null {
   const vals: number[] = [];
   if (evaluation?.status === "completed" && evaluation.score != null && evaluation.score > 0) vals.push(evaluation.score);
   if (evaluation?.contribution?.status === "completed" && evaluation.contribution.score != null && evaluation.contribution.score > 0) vals.push(evaluation.contribution.score);
   if (evaluation?.communications?.status === "completed" && evaluation.communications.score != null && evaluation.communications.score > 0) vals.push(evaluation.communications.score);
+  if (evaluation?.performance?.status === "completed" && evaluation.performance.score != null && evaluation.performance.score > 0) vals.push(evaluation.performance.score);
   if (metrics) {
-    const metricKeys: (keyof PersonalMetricsRow)[] = ["productivity", "estimationAccuracy", "aiUsage", "discipline"];
+    const metricKeys: (keyof PersonalMetricsRow)[] = ["estimationAccuracy", "aiUsage", "discipline"];
     for (const k of metricKeys) {
       const v = metrics[k];
       if (typeof v === "number" && v > 0) vals.push(v);
@@ -625,6 +736,8 @@ export default function PersonalMetricsPage({ selectedDepartment, selectedYear, 
                                     <ContributionCell key={col.key} evaluation={evaluation} />
                                   ) : col.key === "communication" ? (
                                     <CommunicationCell key={col.key} evaluation={evaluation} />
+                                  ) : col.key === "productivity" ? (
+                                    <PerformanceCell key={col.key} evaluation={evaluation} />
                                   ) : (
                                     <MetricCell key={col.key} value={metrics?.[col.key] ?? null} />
                                   )

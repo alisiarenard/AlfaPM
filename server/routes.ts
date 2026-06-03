@@ -1047,6 +1047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const cq = item.criteria?.code_quality;
               const contrib = item.criteria?.contribution;
               const comms = item.criteria?.communications;
+              const perf = item.criteria?.performance;
               return {
                 developerId: item.developerId,
                 status: cq?.status ?? "not_found",
@@ -1056,6 +1057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 evaluatedAt: cq?.evaluatedAt ?? null,
                 contribution: contrib ?? null,
                 communications: comms ?? null,
+                performance: perf ?? null,
               };
             });
             console.log(`[Evaluations] batch-status mapped evaluations:`, JSON.stringify(evaluations, null, 2));
