@@ -1790,6 +1790,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         typeDistribution[t] = (typeDistribution[t] || 0) + 1;
       }
       console.log(`${TL} initiativeTypeMap: всего=${allInitiatives.length} распределение типов:`, JSON.stringify(typeDistribution));
+      const nonStandardInits = allInitiatives.filter(i => i.type !== 'Epic' && i.type !== 'Compliance' && i.type !== 'Enabler' && i.cardId !== 0);
+      if (nonStandardInits.length > 0) {
+        console.log(`${TL} ⚠ Инициативы с нестандартным типом (задачи на них → Поддержка бизнеса):`);
+        nonStandardInits.forEach(i => console.log(`${TL}   cardId=${i.cardId} type="${i.type}" title="${(i.title ?? '').slice(0, 50)}"`));
+      }
 
       // Шаг 2: анализ initCardId до редиректа
       const beforeRedirect = {
