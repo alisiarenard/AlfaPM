@@ -1761,11 +1761,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allInitiativeCardIds = new Set(allInitiatives.map(i => i.cardId));
 
       const allTasks = await storage.getAllTasks();
+      const TL = `[TIMELINE] team=${teamId}`;
+
+      // Шаг 1: фильтр по teamId + исключение карточек-инициатив
+      const tasksForTeam = allTasks.filter(task => task.teamId === teamId);
+      const tasksExcludedAsInit = tasksForTeam.filter(task => allInitiativeCardIds.has(task.cardId));
+      console.log(`${TL} allTasks=${allTasks.length} → tasksForTeam=${tasksForTeam.length} (исключено как инициативные карточки: ${tasksExcludedAsInit.length})`);
+      if (tasksExcludedAsInit.length > 0) {
+        console.log(`${TL} исключённые как инициативы:`, tasksExcludedAsInit.map(t => ({ cardId: t.cardId, title: t.title?.slice(0, 30) })));
+      }
+
       // Берём ВСЕ задачи команды, включая с initCardId=null (они станут "Поддержкой бизнеса").
       // Исключаем карточки, чей cardId совпадает с cardId инициатив —
       // это сами инициативные карточки, которые могли быть синхронизированы как задачи.
-      let initiativeTasks = allTasks
-        .filter(task => task.teamId === teamId && !allInitiativeCardIds.has(task.cardId))
+      let initiativeTasks = tasksForTeam
+        .filter(task => !allInitiativeCardIds.has(task.cardId))
         .map(task => task.initCardId === null ? { ...task, initCardId: 0 } : task);
 
       // Map для быстрого поиска типа инициативы — только инициативы текущей доски команды.
@@ -1773,6 +1783,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // в "Поддержку бизнеса". Правильный initCardId устанавливается при синхронизации
       // через findInitiativeInParentChain с передачей preferBoardId = initBoardId команды.
       const initiativeTypeMap = new Map(allInitiatives.map(init => [init.cardId, init.type]));
+
+      // Шаг 2: анализ initCardId до редиректа
+      const beforeRedirect = {
+        total: initiativeTasks.length,
+        withInitCardId: initiativeTasks.filter(t => t.initCardId !== 0 && t.initCardId !== null).length,
+        inInitTypeMap: initiativeTasks.filter(t => t.initCardId !== 0 && initiativeTypeMap.has(t.initCardId!)).length,
+        notInMap: initiativeTasks.filter(t => t.initCardId !== 0 && !initiativeTypeMap.has(t.initCardId!)),
+      };
+      console.log(`${TL} до редиректа: всего=${beforeRedirect.total} withInit=${beforeRedirect.withInitCardId} inMap=${beforeRedirect.inInitTypeMap} notInMap=${beforeRedirect.notInMap.length}`);
+      if (beforeRedirect.notInMap.length > 0) {
+        console.log(`${TL} задачи с initCardId НЕ найденным в инициативах доски:`, beforeRedirect.notInMap.slice(0, 5).map(t => ({ cardId: t.cardId, initCardId: t.initCardId, title: t.title?.slice(0, 30) })));
+      }
       
       // Перенаправляем задачи из неизвестных инициатив и не-Epic/Compliance/Enabler в "Поддержку бизнеса"
       initiativeTasks = initiativeTasks.map(task => {
@@ -1782,6 +1804,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return task;
       });
+
+      // Шаг 3: итог после редиректа
+      const withDoneDate = initiativeTasks.filter(t => t.doneDate && t.doneDate !== '');
+      const withoutDoneDate = initiativeTasks.filter(t => !t.doneDate || t.doneDate === '');
+      console.log(`${TL} после редиректа: всего=${initiativeTasks.length} с doneDate=${withDoneDate.length} без doneDate=${withoutDoneDate.length}`);
+      if (withoutDoneDate.length > 0 && withoutDoneDate.length <= 10) {
+        console.log(`${TL} задачи без doneDate:`, withoutDoneDate.map(t => ({ cardId: t.cardId, initCardId: t.initCardId, state: t.state, title: t.title?.slice(0, 30) })));
+      }
 
       // Логика зависит от флага hasSprints:
       // - Если hasSprints === true: используем реальные спринты из БД
